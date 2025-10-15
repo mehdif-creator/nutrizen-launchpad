@@ -356,6 +356,45 @@ export type Database = {
           },
         ]
       }
+      user_points: {
+        Row: {
+          created_at: string | null
+          current_level: string
+          last_login_date: string | null
+          login_streak: number
+          meals_completed: number
+          meals_generated: number
+          referrals: number
+          total_points: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_level?: string
+          last_login_date?: string | null
+          login_streak?: number
+          meals_completed?: number
+          meals_generated?: number
+          referrals?: number
+          total_points?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_level?: string
+          last_login_date?: string | null
+          login_streak?: number
+          meals_completed?: number
+          meals_generated?: number
+          referrals?: number
+          total_points?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -379,6 +418,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_user_level: {
+        Args: { points: number }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

@@ -3,12 +3,14 @@ import { AppFooter } from '@/components/app/AppFooter';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, ShoppingCart, Star, Clock, Sparkles } from 'lucide-react';
+import { Calendar, ShoppingCart, Star, Clock, Sparkles, Crown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLocalDateTime } from '@/hooks/useLocalDateTime';
+import { GamificationWidget } from '@/components/app/GamificationWidget';
+import { Badge } from '@/components/ui/badge';
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, subscription } = useAuth();
   const { toast } = useToast();
   const { formatted: currentDateTime, timezone } = useLocalDateTime({
     updateInterval: 60000, // Update every minute
@@ -17,6 +19,11 @@ export default function Dashboard() {
   });
 
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'toi';
+  
+  // Determine user plan
+  const isFreePlan = !subscription?.subscribed || subscription?.status === 'trialing';
+  const planName = isFreePlan ? 'Gratuit' : 'Premium';
+  const mealsRemaining = isFreePlan ? '3/3' : '∞';
 
   const handleGeneratePlan = () => {
     toast({
@@ -31,9 +38,20 @@ export default function Dashboard() {
 
       <main className="flex-1 container py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">
-            Bienvenue, {firstName} ! 👋
-          </h1>
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-3xl font-bold">
+              Bienvenue, {firstName} ! 👋
+            </h1>
+            <div className="flex items-center gap-2">
+              {!isFreePlan && <Crown className="h-5 w-5 text-yellow-500" />}
+              <Badge variant={isFreePlan ? "secondary" : "default"} className="text-sm">
+                {planName}
+              </Badge>
+              <span className="text-sm text-muted-foreground">
+                {mealsRemaining} repas
+              </span>
+            </div>
+          </div>
           <p className="text-muted-foreground mb-1">
             Voici ton tableau de bord NutriZen
           </p>
@@ -116,6 +134,13 @@ export default function Dashboard() {
             ))}
           </div>
         </Card>
+
+        {/* Gamification Widget - Only for paying users */}
+        {!isFreePlan && (
+          <div className="mb-8">
+            <GamificationWidget />
+          </div>
+        )}
 
         {/* Daily Tip */}
         <Card className="p-6 bg-gradient-to-br from-accent/10 to-primary/10">
