@@ -14,8 +14,8 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
   const plans = [
     {
       name: 'Essentiel',
-      price: annual ? 16.66 : 19.99,
-      originalPrice: annual ? 19.99 : null,
+      price: annual ? 12.49 : 14.99,
+      originalPrice: annual ? 14.99 : null,
       meals: '30 repas / mois',
       mealsPerDay: '≈ 1 repas/jour',
       features: [
@@ -30,8 +30,8 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
     },
     {
       name: 'Équilibre',
-      price: annual ? 20.83 : 24.99,
-      originalPrice: annual ? 24.99 : null,
+      price: annual ? 16.66 : 19.99,
+      originalPrice: annual ? 19.99 : null,
       meals: '60 repas / mois',
       mealsPerDay: '≈ 2 repas/jour + 10 swaps',
       badge: 'Le plus choisi',
@@ -48,8 +48,8 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
     },
     {
       name: 'Premium',
-      price: annual ? 33.33 : 39.99,
-      originalPrice: annual ? 39.99 : null,
+      price: annual ? 24.99 : 29.99,
+      originalPrice: annual ? 29.99 : null,
       meals: '120 repas / mois',
       mealsPerDay: 'Tous tes repas + swaps ∞',
       features: [
@@ -70,7 +70,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
       <div className="container">
         <div className="text-center mb-12 animate-fade-in">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Choisis ton rythme
+            Choisis ton plan et commence dès aujourd'hui
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
             Des tarifs simples et transparents. Toujours annulable en 3 clics.
@@ -101,7 +101,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
         {/* Trial Banner */}
         <div className="mb-8 p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg border text-center">
           <p className="text-sm font-medium">
-            🔥 <strong>1ère semaine gratuite, sans CB</strong>
+            🔥 <strong>1ère semaine gratuite — sans carte bancaire</strong>
           </p>
         </div>
 
@@ -169,32 +169,8 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
           ))}
         </div>
 
-        <div className="mt-12 space-y-8">
-          <div className="text-center text-sm text-muted-foreground">
-            <p>✅ Satisfait ou remboursé — Garantie 30 jours temps-gagné • Annulable en 3 clics</p>
-          </div>
-
-          {/* Économies vs Uber Eats */}
-          <Card className="max-w-2xl mx-auto p-6 bg-background border-border shadow-card">
-            <h3 className="font-bold mb-4 text-center">💰 Économies vs. Uber Eats / resto</h3>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <div className="text-sm text-muted-foreground mb-2">Sans NutriZen</div>
-                <div className="text-2xl font-bold text-error">~400€/mois</div>
-                <div className="text-xs text-muted-foreground">(3× Uber Eats/sem. + restos)</div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground mb-2">Avec NutriZen Équilibre</div>
-                <div className="text-2xl font-bold text-success">~200€/mois</div>
-                <div className="text-xs text-muted-foreground">(courses + abonnement)</div>
-              </div>
-            </div>
-            <div className="text-center mt-4 pt-4 border-t border-border">
-              <div className="text-sm">
-                <span className="font-bold text-success">Économie : ~200€/mois</span> (2 400€/an)
-              </div>
-            </div>
-          </Card>
+        <div className="mt-12 text-center text-sm text-muted-foreground">
+          <p>✅ Satisfait ou remboursé — Garantie 30 jours temps-gagné • Annulable en 3 clics</p>
         </div>
       </div>
     </section>

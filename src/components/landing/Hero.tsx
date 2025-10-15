@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Star, Shield, Check } from 'lucide-react';
+import { Star, Check } from 'lucide-react';
 
 interface HeroProps {
   onCtaClick: () => void;
@@ -44,7 +44,7 @@ export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
               <p className="text-xs text-muted-foreground pl-1">Aucune carte bancaire requise</p>
             </div>
 
-            {/* Trust Indicators */}
+            {/* Trust Row */}
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm">
                 <div className="flex">
@@ -58,21 +58,20 @@ export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
                 <span className="font-medium">4,8/5</span>
                 <span className="text-muted-foreground">sur 2 400+ avis</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Shield className="w-4 h-4 text-primary" />
-                <span>Validé par un(e) diététicien(ne)</span>
-              </div>
-            </div>
 
-            {/* Micro-assurances */}
-            <div className="flex flex-wrap gap-6 pt-4">
-              <div className="flex items-center gap-2 text-sm">
-                <Check className="w-4 h-4 text-success" />
-                <span>Annulable en 3 clics</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Check className="w-4 h-4 text-success" />
-                <span>Remboursé 30 j si aucun temps gagné</span>
+              <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <Check className="w-4 h-4 text-primary" />
+                  <span>Annulable en 3 clics</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Check className="w-4 h-4 text-primary" />
+                  <span>Remboursé 30 j si aucun temps gagné</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Check className="w-4 h-4 text-primary" />
+                  <span>Validé par un(e) diététicien(ne)</span>
+                </div>
               </div>
             </div>
           </div>

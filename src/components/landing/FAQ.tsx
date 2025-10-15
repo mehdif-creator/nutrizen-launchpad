@@ -6,61 +6,64 @@ import {
 } from '@/components/ui/accordion';
 
 export const FAQ = () => {
-  const faqs = [
+  const leftColumnFaqs = [
     {
       question: 'Comment fonctionne la semaine gratuite ?',
-      answer: 'Inscris-toi en 60 secondes, sans carte bancaire. Tu accèdes immédiatement à toutes les fonctionnalités pendant 7 jours. À la fin de l\'essai, tu choisis si tu continues.'
+      answer: 'Inscris-toi sans carte bancaire. Tu bénéficies de 7 jours complets pour tester NutriZen : génère tes menus, découvre les recettes, utilise la liste de courses. Si ça te convient, active un abonnement à la fin de la période d\'essai.'
     },
     {
       question: 'Puis-je annuler à tout moment ?',
-      answer: 'Oui, en 3 clics depuis ton compte. Pas de frais cachés, pas de reconduction forcée. Tu peux annuler à tout moment.'
+      answer: 'Oui, absolument. Ton abonnement est résiliable en 3 clics depuis ton profil. Aucune pénalité, aucune condition. Si tu n\'es pas satisfait dans les 30 premiers jours, tu peux demander un remboursement complet si tu n\'as constaté aucun gain de temps.'
     },
     {
       question: 'Qu\'est-ce qu\'un "swap" ?',
-      answer: 'Un swap te permet de remplacer un repas que tu n\'aimes pas par un autre, en 1 clic. Les swaps sont limités selon ton plan (3, 10 ou illimités).'
+      answer: 'Un swap te permet de remplacer un repas du menu par un autre de ton choix en 1 clic. Si tu n\'aimes pas un plat proposé ou que tu as déjà les ingrédients pour autre chose, tu swappes. Simple et rapide.'
     },
     {
       question: 'Comment fonctionne la garantie 30 jours ?',
-      answer: 'Si tu ne gagnes pas de temps après 30 jours d\'utilisation, écris-nous et on te rembourse intégralement. Simple et honnête.'
+      answer: 'Si après 30 jours d\'utilisation, tu constates que tu n\'as pas gagné de temps avec NutriZen, contacte-nous avec un petit retour. Nous te remboursons intégralement, sans questions compliquées.'
     },
     {
       question: 'Les recettes conviennent-elles aux débutants ?',
-      answer: 'Absolument. Toutes les recettes sont pensées pour être réalisées en 20–30 min max, avec des ingrédients courants et des étapes simples.'
-    },
-    {
-      question: 'Comment gérer les allergies/régimes spéciaux ?',
-      answer: 'Tu indiques tes allergies et préférences lors de l\'onboarding. L\'IA adapte automatiquement les suggestions (végétarien, sans gluten, sans lactose, etc.).'
+      answer: 'Absolument ! Toutes nos recettes sont conçues pour être simples et rapides (20-30 minutes en moyenne). Chaque étape est détaillée clairement, parfait pour tous les niveaux.'
     },
     {
       question: 'Puis-je utiliser NutriZen pour ma famille/enfants ?',
-      answer: 'Oui ! Tu peux adapter les portions et générer des plans pour plusieurs personnes. Les recettes sont équilibrées et conviennent à toute la famille.'
+      answer: 'Oui, NutriZen peut générer des menus adaptés pour toute la famille. Tu peux ajuster les portions et les préférences alimentaires pour inclure les enfants.'
+    },
+  ];
+
+  const rightColumnFaqs = [
+    {
+      question: 'Comment gérer les allergies/régimes spéciaux ?',
+      answer: 'Lors de ton inscription, tu peux indiquer tes allergies et restrictions alimentaires (végétarien, sans gluten, etc.). NutriZen adapte automatiquement tous les menus proposés.'
+    },
+    {
+      question: 'Est-ce végétarien-friendly ?',
+      answer: 'Oui ! Tu peux choisir l\'option végétarienne lors de ton inscription et toutes les recettes proposées seront 100% végétariennes. Tu peux aussi filtrer par type de régime.'
     },
     {
       question: 'Est-ce que mes données sont sécurisées (RGPD) ?',
-      answer: 'Oui, nous sommes conformes RGPD. Tes données sont cryptées et jamais partagées avec des tiers. Tu peux exporter ou supprimer tes données à tout moment.'
+      answer: 'Totalement. Nous sommes conformes RGPD. Tes données personnelles ne sont ni vendues ni partagées. Elles servent uniquement à personnaliser tes menus.'
     },
     {
       question: 'C\'est validé par des professionnels ?',
-      answer: 'Oui. Toutes nos recettes et notre méthodologie sont validées par un(e) diététicien(ne) diplômé(e). NutriZen est un assistant d\'organisation, pas un outil médical.'
+      answer: 'Oui. Nos recettes et équilibres nutritionnels sont validés par un(e) diététicien(ne) diplômé(e). Toutefois, NutriZen n\'est pas un service médical : il ne remplace pas un suivi personnalisé par un professionnel de santé.'
     },
     {
       question: 'Comment contacter le support ?',
-      answer: 'Écris-nous à support@nutrizen.app ou via le chat dans l\'app. Temps de réponse : <24h (plan Essentiel), <8h (Premium).'
+      answer: 'Tu peux nous contacter via le formulaire de contact sur le site, par email à support@nutrizen.fr, ou directement depuis ton espace membre. Nous répondons sous 24h en moyenne.'
     },
     {
       question: 'Les paiements sont-ils sécurisés ?',
-      answer: 'Oui, nous utilisons Stripe (leader mondial) pour tous les paiements. Tes données bancaires ne transitent jamais par nos serveurs.'
+      answer: 'Oui, tous les paiements sont sécurisés via Stripe, leader mondial du paiement en ligne. Nous ne stockons aucune information bancaire.'
     },
-    {
-      question: 'Quelle est la différence entre les plans ?',
-      answer: 'Essentiel (30 repas/mois, 3 swaps) pour tester. Équilibre (60 repas, 10 swaps, batch-cooking) pour une utilisation régulière. Premium (120 repas, swaps illimités, coaching) pour les plus engagés.'
-    }
   ];
 
   return (
-    <section id="faq" className="py-16 bg-background">
-      <div className="container max-w-3xl">
-        <div className="text-center mb-12 animate-fade-in">
+    <section id="faq" className="py-16 bg-muted/30">
+      <div className="container">
+        <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Questions fréquentes
           </h2>
@@ -69,22 +72,39 @@ export const FAQ = () => {
           </p>
         </div>
 
-        <Accordion type="single" collapsible className="space-y-4">
-          {faqs.map((faq, index) => (
-            <AccordionItem
-              key={index}
-              value={`item-${index}`}
-              className="border rounded-lg px-6"
-            >
-              <AccordionTrigger className="text-left font-medium hover:no-underline">
-                {faq.question}
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
-                {faq.answer}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+        <div className="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto">
+          {/* Left Column */}
+          <div>
+            <Accordion type="single" collapsible>
+              {leftColumnFaqs.map((faq, index) => (
+                <AccordionItem key={index} value={`left-${index}`}>
+                  <AccordionTrigger className="text-left">
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground">
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
+
+          {/* Right Column */}
+          <div>
+            <Accordion type="single" collapsible>
+              {rightColumnFaqs.map((faq, index) => (
+                <AccordionItem key={index} value={`right-${index}`}>
+                  <AccordionTrigger className="text-left">
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground">
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
+        </div>
       </div>
     </section>
   );
