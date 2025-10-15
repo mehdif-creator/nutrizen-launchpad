@@ -8,25 +8,92 @@ import { useToast } from '@/hooks/use-toast';
 import { useLocalDateTime } from '@/hooks/useLocalDateTime';
 import { GamificationWidget } from '@/components/app/GamificationWidget';
 import { Badge } from '@/components/ui/badge';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Navigate } from 'react-router-dom';
 
 export default function Dashboard() {
-  const { user, subscription, refreshSubscription } = useAuth();
+  const { user, subscription, refreshSubscription, isAdmin } = useAuth();
   const { toast } = useToast();
   const { formatted: currentDateTime, timezone } = useLocalDateTime({
-    updateInterval: 60000, // Update every minute
+    updateInterval: 60000,
     dateStyle: 'full',
     timeStyle: 'short',
   });
 
+  const [stats, setStats] = useState({
+    swapsUsed: 0,
+    swapsQuota: 10,
+    ratingsCount: 0,
+    timeSaved: 0,
+    daysRemaining: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'toi';
   
-  // Refresh subscription status on mount
+  // Redirect admin to admin dashboard
+  if (isAdmin) {
+    return <Navigate to="/admin" replace />;
+  }
+  
   useEffect(() => {
     refreshSubscription();
+    fetchUserStats();
   }, []);
+
+  const fetchUserStats = async () => {
+    if (!user) return;
+
+    try {
+      // Get swaps data for current month
+      const currentMonth = new Date().toISOString().split('T')[0].slice(0, 7) + '-01';
+      const { data: swapsData } = await supabase
+        .from('swaps')
+        .select('used, quota')
+        .eq('user_id', user.id)
+        .eq('month', currentMonth)
+        .maybeSingle();
+
+      // Get ratings count
+      const { data: mealPlans } = await supabase
+        .from('meal_plans')
+        .select('id')
+        .eq('user_id', user.id);
+
+      const mealPlanIds = mealPlans?.map(p => p.id) || [];
+      let ratingsCount = 0;
+      
+      if (mealPlanIds.length > 0) {
+        const { count } = await supabase
+          .from('meal_ratings')
+          .select('*', { count: 'exact', head: true })
+          .in('meal_plan_id', mealPlanIds);
+        ratingsCount = count || 0;
+      }
+
+      // Calculate time saved (estimate: 30min per meal plan * number of meal plans)
+      const timeSaved = (mealPlans?.length || 0) * 0.5; // in hours
+
+      // Calculate days remaining in current week
+      const today = new Date();
+      const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      const daysRemaining = 7 - dayOfWeek;
+
+      setStats({
+        swapsUsed: swapsData?.used || 0,
+        swapsQuota: swapsData?.quota || 10,
+        ratingsCount,
+        timeSaved,
+        daysRemaining,
+      });
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
   
-  // Determine user plan
   const isFreePlan = !subscription?.subscribed || subscription?.status === 'trialing';
   const planName = isFreePlan ? 'Gratuit' : 'Premium';
   const mealsRemaining = isFreePlan ? '3/3' : '∞';
@@ -36,6 +103,7 @@ export default function Dashboard() {
       title: '🎉 Menu généré !',
       description: 'Ton menu de la semaine est prêt.',
     });
+    fetchUserStats(); // Refresh stats after generating plan
   };
 
   return (
@@ -74,7 +142,9 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Swaps restants</p>
-                <p className="text-2xl font-bold">8/10</p>
+                <p className="text-2xl font-bold">
+                  {loading ? '...' : `${stats.swapsQuota - stats.swapsUsed}/${stats.swapsQuota}`}
+                </p>
               </div>
               <Sparkles className="h-8 w-8 text-primary" />
             </div>
@@ -84,7 +154,9 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Recettes notées</p>
-                <p className="text-2xl font-bold">12</p>
+                <p className="text-2xl font-bold">
+                  {loading ? '...' : stats.ratingsCount}
+                </p>
               </div>
               <Star className="h-8 w-8 text-accent" />
             </div>
@@ -94,7 +166,9 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Temps gagné</p>
-                <p className="text-2xl font-bold">3h</p>
+                <p className="text-2xl font-bold">
+                  {loading ? '...' : `${stats.timeSaved}h`}
+                </p>
               </div>
               <Clock className="h-8 w-8 text-green-500" />
             </div>
@@ -104,7 +178,9 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Jours restants</p>
-                <p className="text-2xl font-bold">5</p>
+                <p className="text-2xl font-bold">
+                  {loading ? '...' : stats.daysRemaining}
+                </p>
               </div>
               <Calendar className="h-8 w-8 text-blue-500" />
             </div>
