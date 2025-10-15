@@ -7,20 +7,24 @@ export const AppFooter = () => {
       <div className="container">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 className="font-semibold mb-4">Produit</h3>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/app" className="hover:text-foreground">Fonctionnement</Link></li>
-              <li><Link to="/app/mealplan" className="hover:text-foreground">Exemples</Link></li>
-              <li><Link to="/app/settings" className="hover:text-foreground">Tarifs</Link></li>
-              <li><Link to="/blog" className="hover:text-foreground">Blog</Link></li>
-            </ul>
+            <div className="flex items-center mb-4">
+              <img 
+                src="/favicon.png" 
+                alt="NutriZen Logo" 
+                className="h-12 w-auto"
+              />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              L'assistant qui organise tes repas en 30 secondes.
+            </p>
           </div>
 
           <div>
             <h3 className="font-semibold mb-4">Ressources</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/app/support" className="hover:text-foreground">Aide</Link></li>
-              <li><a href="#" className="hover:text-foreground">Guides</a></li>
+              <li><Link to="/blog" className="hover:text-foreground">Blog</Link></li>
+              <li><a href="/#faq" className="hover:text-foreground">FAQ</a></li>
+              <li><Link to="/contact" className="hover:text-foreground">Contact</Link></li>
             </ul>
           </div>
 
@@ -30,7 +34,6 @@ export const AppFooter = () => {
               <li><Link to="/legal/cgv" className="hover:text-foreground">CGV</Link></li>
               <li><Link to="/legal/confidentialite" className="hover:text-foreground">Confidentialité</Link></li>
               <li><Link to="/legal/mentions" className="hover:text-foreground">Mentions légales</Link></li>
-              <li><Link to="/legal/resiliation" className="hover:text-foreground">Résiliation</Link></li>
             </ul>
           </div>
 
@@ -38,8 +41,7 @@ export const AppFooter = () => {
             <h3 className="font-semibold mb-4">Entreprise</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><a href="#" className="hover:text-foreground">À propos</a></li>
-              <li><a href="#" className="hover:text-foreground">Contact</a></li>
-              <li><a href="#" className="hover:text-foreground">RC Pro</a></li>
+              <li><Link to="/contact" className="hover:text-foreground">Contact</Link></li>
             </ul>
           </div>
         </div>
@@ -61,7 +63,7 @@ export const AppFooter = () => {
           </div>
 
           <p className="text-sm text-muted-foreground">
-            © 2025 NutriZen. Tous droits réservés. 🇫🇷
+            © 2025 NutriZen. Tous droits réservés.
           </p>
         </div>
       </div>

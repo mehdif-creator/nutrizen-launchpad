@@ -13,17 +13,16 @@ export const Footer = () => {
     {
       title: 'Légal',
       links: [
-        { label: 'Mentions légales', href: '/legal/mentions' },
         { label: 'CGV', href: '/legal/cgv' },
         { label: 'Confidentialité', href: '/legal/confidentialite' },
-        { label: 'Résiliation', href: '/legal/resiliation' }
+        { label: 'Mentions légales', href: '/legal/mentions' }
       ]
     },
     {
-      title: 'Nos Univers',
+      title: 'Entreprise',
       links: [
-        { label: 'NutriZen Fit', href: '/fit' },
-        { label: 'NutriZen Mum', href: '/mum' }
+        { label: 'À propos', href: '#' },
+        { label: 'Contact', href: '/contact' }
       ]
     }
   ];
