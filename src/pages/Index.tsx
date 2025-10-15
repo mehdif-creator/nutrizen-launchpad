@@ -5,10 +5,15 @@ import { Hero } from '@/components/landing/Hero';
 import { TrustRow } from '@/components/landing/TrustRow';
 import { PersonaCards } from '@/components/landing/PersonaCards';
 import { PASSection } from '@/components/landing/PASSection';
+import { Testimonials } from '@/components/landing/Testimonials';
 import { HowItWorks } from '@/components/landing/HowItWorks';
+import { ExampleWeek } from '@/components/landing/ExampleWeek';
 import { Pricing } from '@/components/landing/Pricing';
 import { FAQ } from '@/components/landing/FAQ';
+import { LeadMagnet } from '@/components/landing/LeadMagnet';
 import { Footer } from '@/components/landing/Footer';
+import { CookieBanner } from '@/components/landing/CookieBanner';
+import { MobileStickyCTA } from '@/components/landing/MobileStickyCTA';
 import { personaConfig, getPersonaFromUrl, PersonaKey } from '@/config/personas';
 import { useToast } from '@/hooks/use-toast';
 
@@ -43,7 +48,7 @@ const Index = () => {
   };
 
   const handleExampleClick = () => {
-    // For now, scroll to examples section
+    // Scroll to examples section
     const element = document.getElementById('exemples');
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
@@ -68,21 +73,15 @@ const Index = () => {
       <TrustRow />
       <PersonaCards onPersonaChange={handlePersonaChange} />
       <PASSection config={config} />
+      <Testimonials config={config} />
       <HowItWorks />
-      <div id="exemples" className="py-16 bg-muted/30">
-        <div className="container text-center">
-          <h2 className="text-3xl font-bold mb-4">Exemples de menus</h2>
-          <p className="text-muted-foreground mb-8">Section à venir — aperçu des plans hebdo</p>
-          <div className="max-w-2xl mx-auto p-8 bg-background rounded-lg border">
-            <p className="text-sm text-muted-foreground">
-              {config.exampleWeekHints.join(' • ')}
-            </p>
-          </div>
-        </div>
-      </div>
+      <ExampleWeek />
       <Pricing onCtaClick={handleCtaClick} pricingNote={config.pricingNote} />
       <FAQ />
+      <LeadMagnet />
       <Footer />
+      <CookieBanner />
+      <MobileStickyCTA onCtaClick={handleCtaClick} />
     </div>
   );
 };

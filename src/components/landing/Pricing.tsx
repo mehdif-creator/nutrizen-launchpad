@@ -16,7 +16,8 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
       name: 'Essentiel',
       price: annual ? 12.49 : 14.99,
       originalPrice: annual ? 14.99 : null,
-      credits: '≈30 crédits/mois',
+      meals: '30 repas / mois',
+      mealsPerDay: '≈ 1 repas/jour',
       features: [
         'Génération de menus hebdo',
         'Liste de courses auto',
@@ -31,7 +32,9 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
       name: 'Équilibre',
       price: annual ? 20.83 : 24.99,
       originalPrice: annual ? 24.99 : null,
-      credits: '≈60 crédits + 10 swaps',
+      meals: '60 repas / mois',
+      mealsPerDay: '≈ 2 repas/jour + 10 swaps',
+      badge: 'Le plus choisi',
       features: [
         'Tout Essentiel',
         '10 swaps par mois',
@@ -47,7 +50,8 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
       name: 'Premium',
       price: annual ? 33.33 : 39.99,
       originalPrice: annual ? 39.99 : null,
-      credits: '≈120 crédits + swaps ∞',
+      meals: '120 repas / mois',
+      mealsPerDay: 'Tous tes repas + swaps ∞',
       features: [
         'Tout Équilibre',
         'Swaps illimités',
@@ -118,8 +122,8 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
             >
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <div className="px-4 py-1 bg-gradient-to-r from-primary to-accent text-white text-xs font-bold rounded-full">
-                    RECOMMANDÉ
+                  <div className="px-4 py-1 bg-gradient-to-r from-primary to-accent text-white text-xs font-bold rounded-full shadow-glow">
+                    {plan.badge || 'RECOMMANDÉ'}
                   </div>
                 </div>
               )}
@@ -136,7 +140,8 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
                       {plan.originalPrice}€/mois
                     </p>
                   )}
-                  <p className="text-sm text-muted-foreground mt-1">{plan.credits}</p>
+                  <p className="text-sm font-medium text-primary mt-2">{plan.meals}</p>
+                  <p className="text-xs text-muted-foreground">{plan.mealsPerDay}</p>
                 </div>
 
                 <div className="space-y-3">
@@ -150,9 +155,9 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
 
                 <Button
                   onClick={onCtaClick}
-                  className={`w-full ${
+                  className={`w-full hover:scale-[1.02] active:scale-[0.99] transition-tech ${
                     plan.popular
-                      ? 'bg-gradient-to-r from-primary to-accent text-white glow-primary'
+                      ? 'bg-gradient-to-r from-primary to-accent text-white shadow-glow'
                       : ''
                   }`}
                   variant={plan.popular ? 'default' : 'outline'}
@@ -164,8 +169,32 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
           ))}
         </div>
 
-        <div className="mt-8 text-center text-sm text-muted-foreground">
-          <p>Garantie "temps gagné" 30 jours • Annulable en 3 clics • Support réactif</p>
+        <div className="mt-12 space-y-8">
+          <div className="text-center text-sm text-muted-foreground">
+            <p>✅ Garantie "temps gagné" 30 jours • Annulable en 3 clics • Support réactif</p>
+          </div>
+
+          {/* Économies vs Uber Eats */}
+          <Card className="max-w-2xl mx-auto p-6 bg-background border-border shadow-card">
+            <h3 className="font-bold mb-4 text-center">💰 Économies vs. Uber Eats / resto</h3>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <div className="text-sm text-muted-foreground mb-2">Sans NutriZen</div>
+                <div className="text-2xl font-bold text-error">~400€/mois</div>
+                <div className="text-xs text-muted-foreground">(3× Uber Eats/sem. + restos)</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground mb-2">Avec NutriZen Équilibre</div>
+                <div className="text-2xl font-bold text-success">~200€/mois</div>
+                <div className="text-xs text-muted-foreground">(courses + abonnement)</div>
+              </div>
+            </div>
+            <div className="text-center mt-4 pt-4 border-t border-border">
+              <div className="text-sm">
+                <span className="font-bold text-success">Économie : ~200€/mois</span> (2 400€/an)
+              </div>
+            </div>
+          </Card>
         </div>
       </div>
     </section>

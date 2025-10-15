@@ -129,6 +129,10 @@ All colors MUST be HSL.
     box-shadow: var(--shadow-glow);
   }
 
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
   .card-hover {
     transition: var(--transition-smooth);
   }

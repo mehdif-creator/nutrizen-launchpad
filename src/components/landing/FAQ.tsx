@@ -8,44 +8,52 @@ import {
 export const FAQ = () => {
   const faqs = [
     {
-      question: 'Comment fonctionne l\'essai gratuit ?',
-      answer:
-        'Première semaine 100% gratuite, sans carte bancaire. Tu peux générer ton premier plan hebdo immédiatement. À la fin de la semaine, choisis ton plan ou arrête — aucun engagement.'
+      question: 'Comment fonctionne la semaine gratuite ?',
+      answer: 'Inscris-toi en 60 secondes, sans carte bancaire. Tu accèdes immédiatement à toutes les fonctionnalités pendant 7 jours. À la fin de l\'essai, tu choisis si tu continues.'
     },
     {
       question: 'Puis-je annuler à tout moment ?',
-      answer:
-        'Oui, résiliation en 3 clics depuis ton espace. Conforme à la réglementation française. Aucune justification demandée, aucun frais de résiliation.'
+      answer: 'Oui, en 3 clics depuis ton compte. Pas de frais cachés, pas de reconduction forcée. Tu peux annuler à tout moment.'
     },
     {
-      question: 'Est-ce que je peux adapter les recettes ?',
-      answer:
-        'Absolument. Utilise tes swaps pour remplacer un repas par un autre de macros similaires. Tu peux aussi ajuster les portions et allergènes dans les préférences.'
+      question: 'Qu\'est-ce qu\'un "swap" ?',
+      answer: 'Un swap te permet de remplacer un repas que tu n\'aimes pas par un autre, en 1 clic. Les swaps sont limités selon ton plan (3, 10 ou illimités).'
     },
     {
-      question: 'Comment sont calculés les besoins caloriques ?',
-      answer:
-        'On utilise une formule validée (Harris-Benedict ajustée) selon ton poids, taille, activité. Un(e) diététicien(ne) a supervisé notre algorithme. Disclaimer : NutriZen est un assistant d\'organisation, pas un professionnel de santé.'
+      question: 'Comment fonctionne la garantie 30 jours ?',
+      answer: 'Si tu ne gagnes pas de temps après 30 jours d\'utilisation, écris-nous et on te rembourse intégralement. Simple et honnête.'
     },
     {
-      question: 'Que se passe-t-il avec mes données ?',
-      answer:
-        'Tes données sont hébergées en UE (RGPD). Tu peux les exporter ou supprimer à tout moment. On ne partage rien à des tiers. Voir notre Politique de confidentialité pour les détails.'
+      question: 'Les recettes conviennent-elles aux débutants ?',
+      answer: 'Absolument. Toutes les recettes sont pensées pour être réalisées en 20–30 min max, avec des ingrédients courants et des étapes simples.'
     },
     {
-      question: 'Puis-je utiliser NutriZen pour toute ma famille ?',
-      answer:
-        'Chaque compte est personnel (objectifs individuels). Pour plusieurs profils, il faudra plusieurs comptes. On travaille sur un plan "Famille" — reste informé(e) via notre roadmap.'
+      question: 'Comment gérer les allergies/régimes spéciaux ?',
+      answer: 'Tu indiques tes allergies et préférences lors de l\'onboarding. L\'IA adapte automatiquement les suggestions (végétarien, sans gluten, sans lactose, etc.).'
     },
     {
-      question: 'Y a-t-il des recettes végétariennes / vegan ?',
-      answer:
-        'Oui ! Pendant l\'onboarding, tu précises tes préférences alimentaires (végétarien, vegan, sans gluten, etc.). Les menus s\'adaptent automatiquement.'
+      question: 'Puis-je utiliser NutriZen pour ma famille/enfants ?',
+      answer: 'Oui ! Tu peux adapter les portions et générer des plans pour plusieurs personnes. Les recettes sont équilibrées et conviennent à toute la famille.'
     },
     {
-      question: 'La garantie "temps gagné", c\'est quoi ?',
-      answer:
-        'Si après 30 jours tu n\'as pas gagné de temps vs. ton organisation précédente, on te rembourse intégralement. Simple mail au support avec retour sous 48h.'
+      question: 'Est-ce que mes données sont sécurisées (RGPD) ?',
+      answer: 'Oui, nous sommes conformes RGPD. Tes données sont cryptées et jamais partagées avec des tiers. Tu peux exporter ou supprimer tes données à tout moment.'
+    },
+    {
+      question: 'C\'est validé par des professionnels ?',
+      answer: 'Oui. Toutes nos recettes et notre méthodologie sont validées par un(e) diététicien(ne) diplômé(e). NutriZen est un assistant d\'organisation, pas un outil médical.'
+    },
+    {
+      question: 'Comment contacter le support ?',
+      answer: 'Écris-nous à support@nutrizen.app ou via le chat dans l\'app. Temps de réponse : <24h (plan Essentiel), <8h (Premium).'
+    },
+    {
+      question: 'Les paiements sont-ils sécurisés ?',
+      answer: 'Oui, nous utilisons Stripe (leader mondial) pour tous les paiements. Tes données bancaires ne transitent jamais par nos serveurs.'
+    },
+    {
+      question: 'Quelle est la différence entre les plans ?',
+      answer: 'Essentiel (30 repas/mois, 3 swaps) pour tester. Équilibre (60 repas, 10 swaps, batch-cooking) pour une utilisation régulière. Premium (120 repas, swaps illimités, coaching) pour les plus engagés.'
     }
   ];
 

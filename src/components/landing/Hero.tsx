@@ -22,25 +22,38 @@ export const Hero = ({ config, onCtaClick, onExampleClick }: HeroProps) => {
               <p className="text-xl text-muted-foreground">
                 {config.sub}
               </p>
+              
+              {/* Pains explicites */}
+              <div className="space-y-2 pt-2">
+                {config.painExplicit.map((pain, index) => (
+                  <div key={index} className="flex items-center gap-2 text-muted-foreground">
+                    <div className="w-1.5 h-1.5 rounded-full bg-error" />
+                    <span className="text-sm">{pain}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* CTAs */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button
-                onClick={onCtaClick}
-                size="lg"
-                className="bg-gradient-to-r from-primary to-accent text-white hover:opacity-90 glow-primary text-lg px-8"
-              >
-                Commencer la semaine gratuite
-              </Button>
-              <Button
-                onClick={onExampleClick}
-                size="lg"
-                variant="outline"
-                className="text-lg px-8"
-              >
-                Voir un exemple de semaine
-              </Button>
+            <div className="space-y-3">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button
+                  onClick={onCtaClick}
+                  size="lg"
+                  className="bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] shadow-glow transition-tech text-lg px-8"
+                >
+                  Commencer ma semaine gratuite
+                </Button>
+                <Button
+                  onClick={onExampleClick}
+                  size="lg"
+                  variant="outline"
+                  className="text-lg px-8 hover:scale-[1.02] active:scale-[0.99] transition-tech"
+                >
+                  Voir un exemple de semaine
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground pl-1">Aucune CB requise</p>
             </div>
 
             {/* Trust Indicators */}
