@@ -22,6 +22,11 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
     return <Navigate to="/auth/login" replace />;
   }
 
+  // Redirect admin to admin dashboard if they try to access /app
+  if (!requireAdmin && isAdmin && window.location.pathname === '/app') {
+    return <Navigate to="/admin" replace />;
+  }
+
   if (requireAdmin && !isAdmin) {
     return <Navigate to="/app" replace />;
   }
