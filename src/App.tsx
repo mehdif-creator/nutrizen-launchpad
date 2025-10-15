@@ -25,6 +25,7 @@ import Support from "./pages/app/Support";
 
 // Admin
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminUsers from "./pages/admin/AdminUsers";
 
 // Blog
 import BlogIndex from "./pages/blog/BlogIndex";
@@ -67,7 +68,8 @@ const App = () => (
             <Route path="/app/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
             
             {/* Admin (Protected + Admin Only) */}
-            <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/admin/users" element={<ProtectedRoute requireAdmin><AdminUsers /></ProtectedRoute>} />
             
             {/* Blog */}
             <Route path="/blog" element={<BlogIndex />} />

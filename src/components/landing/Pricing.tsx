@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface PricingProps {
   onCtaClick: () => void;
@@ -10,11 +14,16 @@ interface PricingProps {
 
 export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
   const [annual, setAnnual] = useState(false);
+  const { user, session } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState<string | null>(null);
 
   const plans = [
     {
       name: 'Essentiel',
       price: annual ? 12.49 : 14.99,
+      priceId: 'price_1SIWDPEl2hJeGlFp14plp0D5',
       originalPrice: annual ? 14.99 : null,
       meals: '30 repas / mois',
       mealsPerDay: '≈ 1 repas/jour',
@@ -31,6 +40,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
     {
       name: 'Équilibre',
       price: annual ? 16.66 : 19.99,
+      priceId: 'price_1SIWFyEl2hJeGlFp8pQyEMQC',
       originalPrice: annual ? 19.99 : null,
       meals: '60 repas / mois',
       mealsPerDay: '≈ 2 repas/jour + 10 swaps',
@@ -49,6 +59,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
     {
       name: 'Premium',
       price: annual ? 24.99 : 29.99,
+      priceId: 'price_1SIWGdEl2hJeGlFp1e1pekfL',
       originalPrice: annual ? 29.99 : null,
       meals: '120 repas / mois',
       mealsPerDay: 'Tous tes repas + swaps ∞',
@@ -64,6 +75,38 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
       popular: false
     }
   ];
+
+  const handleSubscribe = async (priceId: string, planName: string) => {
+    if (!user || !session) {
+      navigate('/auth/signup');
+      return;
+    }
+
+    setLoading(priceId);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { priceId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error) {
+      console.error('Error creating checkout:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de créer la session de paiement',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(null);
+    }
+  };
 
   return (
     <section id="tarifs" className="py-16 bg-gradient-to-b from-background to-secondary/20">
@@ -154,7 +197,8 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
                 </div>
 
                 <Button
-                  onClick={onCtaClick}
+                  onClick={() => handleSubscribe(plan.priceId, plan.name)}
+                  disabled={loading === plan.priceId}
                   className={`w-full hover:scale-[1.02] active:scale-[0.99] transition-tech ${
                     plan.popular
                       ? 'bg-gradient-to-r from-primary to-accent text-white shadow-glow'
@@ -162,7 +206,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
                   }`}
                   variant={plan.popular ? 'default' : 'outline'}
                 >
-                  {plan.cta}
+                  {loading === plan.priceId ? 'Chargement...' : plan.cta}
                 </Button>
               </div>
             </Card>

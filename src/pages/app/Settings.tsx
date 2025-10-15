@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ExternalLink, Download, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,11 +21,37 @@ import {
 export default function Settings() {
   const { toast } = useToast();
 
-  const handleStripePortal = () => {
-    toast({
-      title: 'Redirection...',
-      description: 'Ouverture du portail Stripe.',
-    });
+  const handleStripePortal = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error) {
+      console.error('Error opening portal:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'ouvrir le portail de gestion",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDeleteAccount = () => {
