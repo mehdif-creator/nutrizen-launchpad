@@ -14,8 +14,8 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
   const plans = [
     {
       name: 'Essentiel',
-      price: annual ? 12.49 : 14.99,
-      originalPrice: annual ? 14.99 : null,
+      price: annual ? 16.66 : 19.99,
+      originalPrice: annual ? 19.99 : null,
       meals: '30 repas / mois',
       mealsPerDay: '≈ 1 repas/jour',
       features: [
