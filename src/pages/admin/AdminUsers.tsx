@@ -16,6 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { toFrenchDate } from '@/lib/date-utils';
 
 interface UserData {
   id: string;
@@ -142,7 +143,7 @@ export default function AdminUsers() {
                     <TableCell className="font-medium">{user.email}</TableCell>
                     <TableCell>{user.full_name || '-'}</TableCell>
                     <TableCell>
-                      {new Date(user.created_at).toLocaleDateString('fr-FR')}
+                      {toFrenchDate(user.created_at)}
                     </TableCell>
                     <TableCell>{getStatusBadge(user.subscription_status || 'none')}</TableCell>
                     <TableCell className="capitalize">

@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { toParisTime } from '@/lib/date-utils';
 
 export default function Profile() {
   const { toast } = useToast();
@@ -48,7 +49,7 @@ export default function Profile() {
       }
 
       if (currentPrefs?.updated_at) {
-        const lastUpdate = new Date(currentPrefs.updated_at);
+        const lastUpdate = toParisTime(currentPrefs.updated_at);
         const minutesSinceUpdate = (Date.now() - lastUpdate.getTime()) / 60000;
 
         if (minutesSinceUpdate < 5) {

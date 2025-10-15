@@ -12,6 +12,7 @@ import { Clock } from 'lucide-react';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { toParisISO } from '@/lib/date-utils';
 
 const ticketSchema = z.object({
   subject: z.string()
@@ -62,7 +63,7 @@ export default function Support() {
         .from('support_tickets')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
-        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+        .gte('created_at', toParisISO(new Date(Date.now() - 24 * 60 * 60 * 1000)));
 
       if (countError) throw countError;
 
@@ -86,7 +87,7 @@ export default function Support() {
             {
               from: 'user',
               text: validation.data.message,
-              timestamp: new Date().toISOString(),
+              timestamp: toParisISO(),
             },
           ],
           status: 'open',

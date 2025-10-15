@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
+import { toParisISO } from '@/lib/date-utils';
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, 'Le nom doit contenir au moins 2 caractères').max(100, 'Le nom ne peut pas dépasser 100 caractères'),
@@ -43,7 +44,7 @@ export default function Contact() {
         },
         body: JSON.stringify({
           ...validatedData,
-          timestamp: new Date().toISOString(),
+          timestamp: toParisISO(),
         }),
       });
 

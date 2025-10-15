@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { Baby, Heart, Clock, Sparkles } from 'lucide-react';
 import { z } from 'zod';
+import { toParisISO } from '@/lib/date-utils';
 
 const leadSchema = z.object({
   email: z.string().trim().email('Email invalide').max(255, 'L\'email ne peut pas dépasser 255 caractères')
@@ -51,7 +52,7 @@ export default function Mum() {
         body: JSON.stringify({
           ...validatedData,
           source: 'nutrizen_mum',
-          timestamp: new Date().toISOString(),
+          timestamp: toParisISO(),
         }),
       });
 
