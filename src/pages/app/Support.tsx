@@ -9,28 +9,108 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Clock } from 'lucide-react';
+import { z } from 'zod';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+
+const ticketSchema = z.object({
+  subject: z.string()
+    .trim()
+    .min(5, 'Le sujet doit contenir au moins 5 caractères')
+    .max(200, 'Le sujet ne peut pas dépasser 200 caractères'),
+  message: z.string()
+    .trim()
+    .min(20, 'Le message doit contenir au moins 20 caractères')
+    .max(5000, 'Le message ne peut pas dépasser 5000 caractères'),
+});
 
 export default function Support() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!user) {
+      toast({
+        title: 'Erreur',
+        description: 'Tu dois être connecté pour créer un ticket.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate input
+    const validation = ticketSchema.safeParse({ subject, message });
+    if (!validation.success) {
+      toast({
+        title: 'Erreur de validation',
+        description: validation.error.errors[0].message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
 
-    // Simulate ticket creation
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      // Check rate limit: 5 tickets per 24 hours
+      const { count, error: countError } = await supabase
+        .from('support_tickets')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
-    toast({
-      title: '✅ Ticket créé',
-      description: 'Notre équipe te répondra sous 24h ouvrées.',
-    });
+      if (countError) throw countError;
 
-    setSubject('');
-    setMessage('');
-    setLoading(false);
+      if (count && count >= 5) {
+        toast({
+          title: 'Limite atteinte',
+          description: 'Tu peux créer maximum 5 tickets par jour. Notre équipe traitera tes demandes existantes bientôt.',
+          variant: 'destructive',
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Insert ticket
+      const { error: insertError } = await supabase
+        .from('support_tickets')
+        .insert({
+          user_id: user.id,
+          subject: validation.data.subject,
+          messages: [
+            {
+              from: 'user',
+              text: validation.data.message,
+              timestamp: new Date().toISOString(),
+            },
+          ],
+          status: 'open',
+        });
+
+      if (insertError) throw insertError;
+
+      toast({
+        title: '✅ Ticket créé',
+        description: 'Notre équipe te répondra sous 24h ouvrées.',
+      });
+
+      setSubject('');
+      setMessage('');
+    } catch (error) {
+      console.error('Error creating ticket:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de créer le ticket. Réessaye plus tard.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

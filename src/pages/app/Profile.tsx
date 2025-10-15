@@ -7,9 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Profile() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [saving, setSaving] = useState(false);
 
   const [prefs, setPrefs] = useState({
@@ -21,17 +24,75 @@ export default function Profile() {
   });
 
   const handleSave = async () => {
+    if (!user) {
+      toast({
+        title: 'Erreur',
+        description: 'Tu dois être connecté pour sauvegarder tes préférences.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setSaving(true);
-    
-    // Simulate save
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    toast({
-      title: '✅ Préférences sauvegardées',
-      description: 'Tes préférences ont été mises à jour.',
-    });
-    
-    setSaving(false);
+
+    try {
+      // Check last update time for rate limiting (5 minutes)
+      const { data: currentPrefs, error: fetchError } = await supabase
+        .from('preferences')
+        .select('updated_at')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
+
+      if (currentPrefs?.updated_at) {
+        const lastUpdate = new Date(currentPrefs.updated_at);
+        const minutesSinceUpdate = (Date.now() - lastUpdate.getTime()) / 60000;
+
+        if (minutesSinceUpdate < 5) {
+          toast({
+            title: 'Trop rapide',
+            description: `Tu peux modifier tes préférences dans ${Math.ceil(5 - minutesSinceUpdate)} minute${Math.ceil(5 - minutesSinceUpdate) > 1 ? 's' : ''}.`,
+            variant: 'destructive',
+          });
+          setSaving(false);
+          return;
+        }
+      }
+
+      // Update or insert preferences
+      const { error: upsertError } = await supabase
+        .from('preferences')
+        .upsert(
+          {
+            user_id: user.id,
+            objectifs: prefs.objectifs,
+            budget: prefs.budget,
+            temps: prefs.temps,
+            personnes: prefs.personnes,
+            allergies: prefs.allergies,
+          },
+          { onConflict: 'user_id' }
+        );
+
+      if (upsertError) throw upsertError;
+
+      toast({
+        title: '✅ Préférences sauvegardées',
+        description: 'Tes préférences ont été mises à jour.',
+      });
+    } catch (error) {
+      console.error('Error saving preferences:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de sauvegarder tes préférences. Réessaye plus tard.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const toggleAllergie = (allergie: string) => {

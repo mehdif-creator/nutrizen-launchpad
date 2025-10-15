@@ -386,6 +386,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      use_swap_atomic: {
+        Args: {
+          p_day: number
+          p_meal_plan_id: string
+          p_month: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
