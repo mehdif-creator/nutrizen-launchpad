@@ -8,6 +8,16 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Chrome, Mail } from 'lucide-react';
 import { emitWebhookEvent } from '@/lib/webhooks';
+import { z } from 'zod';
+
+const signupSchema = z.object({
+  email: z.string().email('Email invalide').max(255, 'Email trop long'),
+  fullName: z.string()
+    .trim()
+    .min(2, 'Le nom doit contenir au moins 2 caractères')
+    .max(100, 'Le nom doit contenir au plus 100 caractères')
+    .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, 'Le nom contient des caractères invalides'),
+});
 
 export default function Signup() {
   const [email, setEmail] = useState('');
@@ -28,15 +38,26 @@ export default function Signup() {
       return;
     }
 
+    // Validate input
+    const validation = signupSchema.safeParse({ email, fullName });
+    if (!validation.success) {
+      toast({
+        title: 'Erreur de validation',
+        description: validation.error.errors[0].message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
       const { error } = await supabase.auth.signInWithOtp({
-        email,
+        email: validation.data.email,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/verify`,
           data: {
-            full_name: fullName,
+            full_name: validation.data.fullName,
           },
         },
       });
@@ -46,8 +67,8 @@ export default function Signup() {
       // Emit webhook event
       await emitWebhookEvent({
         event: 'user.created',
-        email,
-        full_name: fullName,
+        email: validation.data.email,
+        full_name: validation.data.fullName,
         ts: Date.now(),
       });
 
@@ -56,10 +77,10 @@ export default function Signup() {
         description: 'Vérifie ta boîte mail pour activer ton compte.',
       });
     } catch (error: any) {
+      // Generic error message to prevent user enumeration
       toast({
-        title: 'Erreur',
-        description: error.message,
-        variant: 'destructive',
+        title: 'Inscription',
+        description: 'Un email de vérification a été envoyé si le compte n\'existe pas déjà.',
       });
     } finally {
       setLoading(false);

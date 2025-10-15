@@ -32,9 +32,10 @@ export default function Login() {
         description: 'Vérifie ta boîte mail pour te connecter.',
       });
     } catch (error: any) {
+      // Generic error message to prevent user enumeration
       toast({
-        title: 'Erreur',
-        description: error.message,
+        title: 'Connexion',
+        description: 'Email ou mot de passe incorrect.',
         variant: 'destructive',
       });
     } finally {
@@ -51,9 +52,10 @@ export default function Login() {
     });
 
     if (error) {
+      // Generic error message to prevent user enumeration
       toast({
-        title: 'Erreur',
-        description: error.message,
+        title: 'Connexion',
+        description: 'Email ou mot de passe incorrect.',
         variant: 'destructive',
       });
     }

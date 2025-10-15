@@ -27,13 +27,14 @@ export default function Reset() {
       setSent(true);
       toast({
         title: '✉️ Email envoyé',
-        description: 'Vérifie ta boîte mail pour réinitialiser ton mot de passe.',
+        description: 'Si cet email existe, tu recevras un lien de réinitialisation.',
       });
     } catch (error: any) {
+      // Generic message to prevent user enumeration
+      setSent(true);
       toast({
-        title: 'Erreur',
-        description: error.message,
-        variant: 'destructive',
+        title: '✉️ Email envoyé',
+        description: 'Si cet email existe, tu recevras un lien de réinitialisation.',
       });
     } finally {
       setLoading(false);
