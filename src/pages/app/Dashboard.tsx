@@ -8,9 +8,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useLocalDateTime } from '@/hooks/useLocalDateTime';
 import { GamificationWidget } from '@/components/app/GamificationWidget';
 import { Badge } from '@/components/ui/badge';
+import { useEffect } from 'react';
 
 export default function Dashboard() {
-  const { user, subscription } = useAuth();
+  const { user, subscription, refreshSubscription } = useAuth();
   const { toast } = useToast();
   const { formatted: currentDateTime, timezone } = useLocalDateTime({
     updateInterval: 60000, // Update every minute
@@ -19,6 +20,11 @@ export default function Dashboard() {
   });
 
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'toi';
+  
+  // Refresh subscription status on mount
+  useEffect(() => {
+    refreshSubscription();
+  }, []);
   
   // Determine user plan
   const isFreePlan = !subscription?.subscribed || subscription?.status === 'trialing';
