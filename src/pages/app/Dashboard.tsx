@@ -5,10 +5,16 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, ShoppingCart, Star, Clock, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useLocalDateTime } from '@/hooks/useLocalDateTime';
 
 export default function Dashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { formatted: currentDateTime, timezone } = useLocalDateTime({
+    updateInterval: 60000, // Update every minute
+    dateStyle: 'full',
+    timeStyle: 'short',
+  });
 
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'toi';
 
@@ -28,9 +34,14 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold mb-2">
             Bienvenue, {firstName} ! 👋
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mb-1">
             Voici ton tableau de bord NutriZen
           </p>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Clock className="h-4 w-4" />
+            <span>{currentDateTime}</span>
+            <span className="text-xs">({timezone})</span>
+          </div>
         </div>
 
         {/* Quick Stats */}
