@@ -70,10 +70,10 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
       <div className="container">
         <div className="text-center mb-12 animate-fade-in">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Des tarifs simples et transparents
+            Choisis ton rythme
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
-            Choisis le plan qui correspond à tes besoins. Toujours annulable en 3 clics.
+            Des tarifs simples et transparents. Toujours annulable en 3 clics.
           </p>
 
           {/* Toggle Annual/Monthly */}
@@ -101,7 +101,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
         {/* Trial Banner */}
         <div className="mb-8 p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg border text-center">
           <p className="text-sm font-medium">
-            🔥 <strong>1ère semaine gratuite</strong> — aucune CB requise
+            🔥 <strong>1ère semaine gratuite, sans CB</strong>
           </p>
         </div>
 
@@ -171,7 +171,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
 
         <div className="mt-12 space-y-8">
           <div className="text-center text-sm text-muted-foreground">
-            <p>✅ Garantie "temps gagné" 30 jours • Annulable en 3 clics • Support réactif</p>
+            <p>✅ Satisfait ou remboursé — Garantie 30 jours temps-gagné • Annulable en 3 clics</p>
           </div>
 
           {/* Économies vs Uber Eats */}

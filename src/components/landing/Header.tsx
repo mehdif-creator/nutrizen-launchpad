@@ -1,15 +1,12 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
-import { PersonaKey } from '@/config/personas';
 
 interface HeaderProps {
-  currentPersona: PersonaKey;
-  onPersonaChange: (persona: PersonaKey) => void;
   onCtaClick: () => void;
 }
 
-export const Header = ({ currentPersona, onPersonaChange, onCtaClick }: HeaderProps) => {
+export const Header = ({ onCtaClick }: HeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const scrollToSection = (id: string) => {
@@ -43,7 +40,7 @@ export const Header = ({ currentPersona, onPersonaChange, onCtaClick }: HeaderPr
             onClick={() => scrollToSection('comment')}
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-tech"
           >
-            Comment ça marche
+            Fonctionnement
           </button>
           <button
             onClick={() => scrollToSection('exemples')}
@@ -65,46 +62,12 @@ export const Header = ({ currentPersona, onPersonaChange, onCtaClick }: HeaderPr
           </button>
         </nav>
 
-        {/* Persona Pills - Desktop */}
-        <div className="hidden lg:flex items-center gap-2">
-          <button
-            onClick={() => onPersonaChange('thomas')}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-tech ${
-              currentPersona === 'thomas'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-            }`}
-          >
-            Thomas
-          </button>
-          <button
-            onClick={() => onPersonaChange('sarah')}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-tech ${
-              currentPersona === 'sarah'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-            }`}
-          >
-            Sarah
-          </button>
-          <button
-            onClick={() => onPersonaChange('kevin')}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-tech ${
-              currentPersona === 'kevin'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-            }`}
-          >
-            Kevin
-          </button>
-        </div>
-
         {/* CTA Button - Desktop */}
         <div className="hidden md:block">
           <Button
             onClick={onCtaClick}
             size="sm"
-            className="bg-gradient-to-r from-primary to-accent text-white hover:opacity-90 glow-primary"
+            className="bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] transition-tech shadow-glow"
           >
             Commencer gratuitement
           </Button>
@@ -133,7 +96,7 @@ export const Header = ({ currentPersona, onPersonaChange, onCtaClick }: HeaderPr
               onClick={() => scrollToSection('comment')}
               className="text-left text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              Comment ça marche
+              Fonctionnement
             </button>
             <button
               onClick={() => scrollToSection('exemples')}
@@ -153,41 +116,6 @@ export const Header = ({ currentPersona, onPersonaChange, onCtaClick }: HeaderPr
             >
               FAQ
             </button>
-            <div className="pt-4 border-t space-y-2">
-              <p className="text-xs font-medium text-muted-foreground mb-2">Profils</p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => onPersonaChange('thomas')}
-                  className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-tech ${
-                    currentPersona === 'thomas'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary text-secondary-foreground'
-                  }`}
-                >
-                  Thomas
-                </button>
-                <button
-                  onClick={() => onPersonaChange('sarah')}
-                  className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-tech ${
-                    currentPersona === 'sarah'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary text-secondary-foreground'
-                  }`}
-                >
-                  Sarah
-                </button>
-                <button
-                  onClick={() => onPersonaChange('kevin')}
-                  className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-tech ${
-                    currentPersona === 'kevin'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary text-secondary-foreground'
-                  }`}
-                >
-                  Kevin
-                </button>
-              </div>
-            </div>
             <Button
               onClick={onCtaClick}
               className="w-full bg-gradient-to-r from-primary to-accent text-white"

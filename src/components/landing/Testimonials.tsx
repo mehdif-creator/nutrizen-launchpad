@@ -1,25 +1,35 @@
 import { Card } from '@/components/ui/card';
 import { Star, ArrowLeft, ArrowRight } from 'lucide-react';
-import { PersonaConfig } from '@/config/personas';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 
-interface TestimonialsProps {
-  config: PersonaConfig;
-}
-
-export const Testimonials = ({ config }: TestimonialsProps) => {
+export const Testimonials = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const allTestimonials = [
-    ...config.testimonials,
     {
-      quote: "J'ai gagné 4h par semaine. Plus de stress 'qu'est-ce qu'on mange ce soir ?'",
-      name: "Marc T., 41 ans"
+      quote: "Depuis que j'utilise NutriZen, je gagne 4 heures par semaine et j'arrête de commander.",
+      name: "Julie, 34 ans"
+    },
+    {
+      quote: "Fini le stress du 'qu'est-ce qu'on mange ce soir ?'. Tout est déjà planifié et les recettes sont top.",
+      name: "Marc, 41 ans"
     },
     {
       quote: "Les recettes sont vraiment rapides, et la liste de courses automatique change la vie.",
-      name: "Laura B., 27 ans"
+      name: "Laura, 27 ans"
+    },
+    {
+      quote: "Mes enfants adorent les recettes et je dépense moins en courses. C'est magique !",
+      name: "Sophie, 38 ans"
+    },
+    {
+      quote: "Je pensais que ce serait compliqué mais c'est hyper intuitif. Je recommande à 100%.",
+      name: "Thomas, 29 ans"
+    },
+    {
+      quote: "Plus besoin de réfléchir pendant des heures. NutriZen fait tout pour moi.",
+      name: "Céline, 45 ans"
     }
   ];
 
@@ -36,10 +46,10 @@ export const Testimonials = ({ config }: TestimonialsProps) => {
       <div className="container">
         <div className="text-center mb-12 animate-fade-in">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Ils ont repris le contrôle de leur assiette
+            Ils ont essayé NutriZen
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Rejoins plus de 2 400 personnes qui gagnent du temps chaque semaine
+            Déjà plus de 5 000 utilisateurs ont simplifié leurs repas avec NutriZen
           </p>
         </div>
 
@@ -114,23 +124,6 @@ export const Testimonials = ({ config }: TestimonialsProps) => {
           </div>
         </div>
 
-        {/* Avant/Après */}
-        {config.beforeAfter && (
-          <div className="mt-12 max-w-2xl mx-auto">
-            <Card className="p-6 bg-background border-border shadow-card">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="text-center">
-                  <div className="text-sm text-muted-foreground mb-2">Avant</div>
-                  <div className="text-xl font-bold text-error">{config.beforeAfter.before}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-sm text-muted-foreground mb-2">Après</div>
-                  <div className="text-xl font-bold text-success">{config.beforeAfter.after}</div>
-                </div>
-              </div>
-            </Card>
-          </div>
-        )}
       </div>
     </section>
   );

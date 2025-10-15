@@ -1,14 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { Star, Shield, Check } from 'lucide-react';
-import { PersonaConfig } from '@/config/personas';
 
 interface HeroProps {
-  config: PersonaConfig;
   onCtaClick: () => void;
   onExampleClick: () => void;
 }
 
-export const Hero = ({ config, onCtaClick, onExampleClick }: HeroProps) => {
+export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-background via-secondary/30 to-background">
       <div className="container py-16 md:py-24">
@@ -17,21 +15,11 @@ export const Hero = ({ config, onCtaClick, onExampleClick }: HeroProps) => {
           <div className="space-y-8 animate-fade-in">
             <div className="space-y-4">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                {config.h1}
+                Des menus adaptés à toi, prêts en 30 secondes.
               </h1>
-              <p className="text-xl text-muted-foreground">
-                {config.sub}
+              <p className="text-xl text-muted-foreground leading-relaxed">
+                Recettes rapides, équilibrées et personnalisées à ton style de vie.
               </p>
-              
-              {/* Pains explicites */}
-              <div className="space-y-2 pt-2">
-                {config.painExplicit.map((pain, index) => (
-                  <div key={index} className="flex items-center gap-2 text-muted-foreground">
-                    <div className="w-1.5 h-1.5 rounded-full bg-error" />
-                    <span className="text-sm">{pain}</span>
-                  </div>
-                ))}
-              </div>
             </div>
 
             {/* CTAs */}
@@ -53,7 +41,7 @@ export const Hero = ({ config, onCtaClick, onExampleClick }: HeroProps) => {
                   Voir un exemple de semaine
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground pl-1">Aucune CB requise</p>
+              <p className="text-xs text-muted-foreground pl-1">Aucune carte bancaire requise</p>
             </div>
 
             {/* Trust Indicators */}
@@ -91,15 +79,11 @@ export const Hero = ({ config, onCtaClick, onExampleClick }: HeroProps) => {
 
           {/* Right: Hero Image */}
           <div className="relative animate-slide-up">
-            <div className="aspect-square rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
+            <div className="aspect-square rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center overflow-hidden">
               <img
-                src={config.heroImage}
-                alt="Hero illustration"
+                src="/img/hero-default.png"
+                alt="Famille qui cuisine ensemble, ambiance chaleureuse"
                 className="w-full h-full object-cover rounded-2xl"
-                onError={(e) => {
-                  // Fallback to placeholder
-                  e.currentTarget.src = '/placeholder.svg';
-                }}
               />
             </div>
             {/* Floating elements */}
