@@ -6,6 +6,11 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { Baby, Heart, Clock, Sparkles } from 'lucide-react';
+import { z } from 'zod';
+
+const leadSchema = z.object({
+  email: z.string().trim().email('Email invalide').max(255, 'L\'email ne peut pas dépasser 255 caractères')
+});
 
 export default function Mum() {
   const { toast } = useToast();
@@ -18,6 +23,24 @@ export default function Mum() {
     setLoading(true);
 
     try {
+      // Validate email
+      const validatedData = leadSchema.parse({ email });
+
+      // Check rate limiting (max 3 submissions per hour)
+      const rateLimitKey = 'nutrizen_mum_submissions';
+      const now = Date.now();
+      const submissions = JSON.parse(localStorage.getItem(rateLimitKey) || '[]');
+      const recentSubmissions = submissions.filter((ts: number) => now - ts < 3600000);
+      
+      if (recentSubmissions.length >= 3) {
+        toast({
+          title: 'Trop de tentatives',
+          description: 'Tu as atteint la limite d\'inscriptions. Réessaye dans une heure.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const webhookUrl = 'https://n8n.srv1005117.hstgr.cloud/webhook/leadmagnet.submit';
       
       await fetch(webhookUrl, {
@@ -26,11 +49,14 @@ export default function Mum() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email,
+          ...validatedData,
           source: 'nutrizen_mum',
           timestamp: new Date().toISOString(),
         }),
       });
+
+      // Update rate limit
+      localStorage.setItem(rateLimitKey, JSON.stringify([...recentSubmissions, now]));
 
       toast({
         title: '✅ Inscription réussie !',
@@ -39,11 +65,19 @@ export default function Mum() {
 
       setEmail('');
     } catch (error) {
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de t\'inscrire. Réessaye plus tard.',
-        variant: 'destructive',
-      });
+      if (error instanceof z.ZodError) {
+        toast({
+          title: 'Erreur de validation',
+          description: error.errors[0].message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de t\'inscrire. Réessaye plus tard.',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setLoading(false);
     }
