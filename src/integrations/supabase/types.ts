@@ -14,16 +14,381 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      blog_posts: {
+        Row: {
+          author: string | null
+          content: string | null
+          cover_url: string | null
+          created_at: string | null
+          excerpt: string | null
+          id: string
+          published_at: string | null
+          slug: string
+          tags: string[] | null
+          title: string
+        }
+        Insert: {
+          author?: string | null
+          content?: string | null
+          cover_url?: string | null
+          created_at?: string | null
+          excerpt?: string | null
+          id?: string
+          published_at?: string | null
+          slug: string
+          tags?: string[] | null
+          title: string
+        }
+        Update: {
+          author?: string | null
+          content?: string | null
+          cover_url?: string | null
+          created_at?: string | null
+          excerpt?: string | null
+          id?: string
+          published_at?: string | null
+          slug?: string
+          tags?: string[] | null
+          title?: string
+        }
+        Relationships: []
+      }
+      feature_flags: {
+        Row: {
+          description: string | null
+          enabled: boolean | null
+          key: string
+        }
+        Insert: {
+          description?: string | null
+          enabled?: boolean | null
+          key: string
+        }
+        Update: {
+          description?: string | null
+          enabled?: boolean | null
+          key?: string
+        }
+        Relationships: []
+      }
+      meal_plans: {
+        Row: {
+          created_at: string | null
+          id: string
+          items: Json
+          user_id: string
+          week_of: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          items: Json
+          user_id: string
+          week_of: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          items?: Json
+          user_id?: string
+          week_of?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_plans_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meal_ratings: {
+        Row: {
+          created_at: string | null
+          day: number
+          id: string
+          meal_plan_id: string
+          notes: string | null
+          stars: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          day: number
+          id?: string
+          meal_plan_id: string
+          notes?: string | null
+          stars?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          day?: number
+          id?: string
+          meal_plan_id?: string
+          notes?: string | null
+          stars?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_ratings_meal_plan_id_fkey"
+            columns: ["meal_plan_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      preferences: {
+        Row: {
+          allergies: string[] | null
+          budget: string | null
+          objectifs: string[] | null
+          personnes: number | null
+          temps: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          allergies?: string[] | null
+          budget?: string | null
+          objectifs?: string[] | null
+          personnes?: number | null
+          temps?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          allergies?: string[] | null
+          budget?: string | null
+          objectifs?: string[] | null
+          personnes?: number | null
+          temps?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          locale: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          locale?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          locale?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      recipes: {
+        Row: {
+          cover_url: string | null
+          created_at: string | null
+          id: string
+          ingredients: Json | null
+          macros_indicatives: Json | null
+          published: boolean | null
+          steps: Json | null
+          tags: string[] | null
+          title: string
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string | null
+          id?: string
+          ingredients?: Json | null
+          macros_indicatives?: Json | null
+          published?: boolean | null
+          steps?: Json | null
+          tags?: string[] | null
+          title: string
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string | null
+          id?: string
+          ingredients?: Json | null
+          macros_indicatives?: Json | null
+          published?: boolean | null
+          steps?: Json | null
+          tags?: string[] | null
+          title?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string | null
+          current_period_end: string | null
+          plan: string | null
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          trial_end: string | null
+          trial_start: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_period_end?: string | null
+          plan?: string | null
+          status: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_period_end?: string | null
+          plan?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          created_at: string | null
+          id: string
+          messages: Json | null
+          status: string | null
+          subject: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          messages?: Json | null
+          status?: string | null
+          subject: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          messages?: Json | null
+          status?: string | null
+          subject?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      swaps: {
+        Row: {
+          month: string
+          quota: number | null
+          used: number | null
+          user_id: string
+        }
+        Insert: {
+          month: string
+          quota?: number | null
+          used?: number | null
+          user_id: string
+        }
+        Update: {
+          month?: string
+          quota?: number | null
+          used?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "swaps_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +515,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
