@@ -22,11 +22,12 @@ export const Header = ({ onCtaClick }: HeaderProps) => {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-tech">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
-            <span className="text-lg font-bold text-white">N</span>
-          </div>
-          <span className="text-xl font-bold">NutriZen</span>
+        <Link to="/" className="flex items-center hover:opacity-80 transition-tech">
+          <img 
+            src="/favicon.png" 
+            alt="NutriZen Logo" 
+            className="h-10 w-auto"
+          />
         </Link>
 
         {/* Desktop Navigation */}

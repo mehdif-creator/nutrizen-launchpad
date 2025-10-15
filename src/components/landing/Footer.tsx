@@ -34,11 +34,12 @@ export const Footer = () => {
         <div className="grid md:grid-cols-5 gap-8 mb-8">
           {/* Brand */}
           <div className="md:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
-                <span className="text-lg font-bold text-white">N</span>
-              </div>
-              <span className="text-xl font-bold">NutriZen</span>
+            <div className="flex items-center mb-4">
+              <img 
+                src="/favicon.png" 
+                alt="NutriZen Logo" 
+                className="h-12 w-auto"
+              />
             </div>
             <p className="text-sm text-muted-foreground">
               L'assistant qui organise tes repas en 30 secondes.
