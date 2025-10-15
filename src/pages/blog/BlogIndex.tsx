@@ -1,10 +1,14 @@
 import { Link } from 'react-router-dom';
 import { Header } from '@/components/landing/Header';
 import { Footer } from '@/components/landing/Footer';
+import { AppHeader } from '@/components/app/AppHeader';
+import { AppFooter } from '@/components/app/AppFooter';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
 export default function BlogIndex() {
+  const { user } = useAuth();
   const posts = [
     {
       slug: 'batch-cooking-guide',
@@ -34,7 +38,7 @@ export default function BlogIndex() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header onCtaClick={() => {}} />
+      {user ? <AppHeader /> : <Header onCtaClick={() => {}} />}
 
       <main className="flex-1 container py-16">
         <div className="max-w-4xl mx-auto">
@@ -73,7 +77,7 @@ export default function BlogIndex() {
         </div>
       </main>
 
-      <Footer />
+      {user ? <AppFooter /> : <Footer />}
     </div>
   );
 }

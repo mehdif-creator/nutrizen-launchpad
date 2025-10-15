@@ -1,16 +1,20 @@
 import { useParams, Link } from 'react-router-dom';
 import { Header } from '@/components/landing/Header';
 import { Footer } from '@/components/landing/Footer';
+import { AppHeader } from '@/components/app/AppHeader';
+import { AppFooter } from '@/components/app/AppFooter';
+import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
 export default function BlogPost() {
   const { slug } = useParams();
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header onCtaClick={() => {}} />
+      {user ? <AppHeader /> : <Header onCtaClick={() => {}} />}
 
       <main className="flex-1 container py-16">
         <div className="max-w-3xl mx-auto">
@@ -93,7 +97,7 @@ export default function BlogPost() {
         </div>
       </main>
 
-      <Footer />
+      {user ? <AppFooter /> : <Footer />}
     </div>
   );
 }
