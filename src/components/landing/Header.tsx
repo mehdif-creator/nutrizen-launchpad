@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
 
@@ -60,12 +61,12 @@ export const Header = ({ onCtaClick }: HeaderProps) => {
           >
             FAQ
           </button>
-          <a
-            href="/blog"
+          <Link
+            to="/blog"
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-tech"
           >
             Blog
-          </a>
+          </Link>
         </nav>
 
         {/* CTA Button - Desktop */}
@@ -122,12 +123,12 @@ export const Header = ({ onCtaClick }: HeaderProps) => {
             >
               FAQ
             </button>
-            <a
-              href="/blog"
+            <Link
+              to="/blog"
               className="text-left text-sm font-medium text-muted-foreground hover:text-foreground"
             >
               Blog
-            </a>
+            </Link>
             <Button
               onClick={onCtaClick}
               className="w-full bg-gradient-to-r from-primary to-accent text-white"

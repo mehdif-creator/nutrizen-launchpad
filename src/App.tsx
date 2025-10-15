@@ -3,8 +3,38 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+
+// Pages
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+
+// Auth
+import Login from "./pages/auth/Login";
+import Signup from "./pages/auth/Signup";
+import Verify from "./pages/auth/Verify";
+import Reset from "./pages/auth/Reset";
+
+// App
+import Dashboard from "./pages/app/Dashboard";
+import MealPlan from "./pages/app/MealPlan";
+import Profile from "./pages/app/Profile";
+import Settings from "./pages/app/Settings";
+import Support from "./pages/app/Support";
+
+// Admin
+import AdminDashboard from "./pages/admin/AdminDashboard";
+
+// Blog
+import BlogIndex from "./pages/blog/BlogIndex";
+import BlogPost from "./pages/blog/BlogPost";
+
+// Legal
+import MentionsLegales from "./pages/legal/MentionsLegales";
+import CGV from "./pages/legal/CGV";
+import Confidentialite from "./pages/legal/Confidentialite";
+import Resiliation from "./pages/legal/Resiliation";
 
 const queryClient = new QueryClient();
 
@@ -14,11 +44,39 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            
+            {/* Auth */}
+            <Route path="/auth/login" element={<Login />} />
+            <Route path="/auth/signup" element={<Signup />} />
+            <Route path="/auth/verify" element={<Verify />} />
+            <Route path="/auth/reset" element={<Reset />} />
+            
+            {/* App (Protected) */}
+            <Route path="/app" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/app/mealplan" element={<ProtectedRoute><MealPlan /></ProtectedRoute>} />
+            <Route path="/app/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/app/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/app/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
+            
+            {/* Admin (Protected + Admin Only) */}
+            <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
+            
+            {/* Blog */}
+            <Route path="/blog" element={<BlogIndex />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
+            
+            {/* Legal */}
+            <Route path="/legal/mentions" element={<MentionsLegales />} />
+            <Route path="/legal/cgv" element={<CGV />} />
+            <Route path="/legal/confidentialite" element={<Confidentialite />} />
+            <Route path="/legal/resiliation" element={<Resiliation />} />
+            
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
