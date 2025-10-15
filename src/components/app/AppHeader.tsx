@@ -137,6 +137,12 @@ export const AppHeader = () => {
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
+              <Link to="/app">
+                <Home className="mr-2 h-4 w-4" />
+                Tableau de bord
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
               <Link to="/app/profile">
                 <User className="mr-2 h-4 w-4" />
                 Profil
