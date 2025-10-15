@@ -6,6 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { z } from 'zod';
+
+const contactSchema = z.object({
+  name: z.string().trim().min(2, 'Le nom doit contenir au moins 2 caractères').max(100, 'Le nom ne peut pas dépasser 100 caractères'),
+  email: z.string().trim().email('Adresse email invalide').max(255, 'L\'email ne peut pas dépasser 255 caractères'),
+  subject: z.string().trim().min(5, 'Le sujet doit contenir au moins 5 caractères').max(200, 'Le sujet ne peut pas dépasser 200 caractères'),
+  message: z.string().trim().min(20, 'Le message doit contenir au moins 20 caractères').max(5000, 'Le message ne peut pas dépasser 5000 caractères')
+});
 
 export default function Contact() {
   const { toast } = useToast();
@@ -23,6 +31,9 @@ export default function Contact() {
     setLoading(true);
 
     try {
+      // Validate input data
+      const validatedData = contactSchema.parse(formData);
+      
       const webhookUrl = 'https://n8n.srv1005117.hstgr.cloud/webhook/contact';
       
       await fetch(webhookUrl, {
@@ -31,7 +42,7 @@ export default function Contact() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...formData,
+          ...validatedData,
           timestamp: new Date().toISOString(),
         }),
       });
@@ -43,11 +54,19 @@ export default function Contact() {
 
       setFormData({ name: '', email: '', subject: '', message: '' });
     } catch (error) {
-      toast({
-        title: 'Erreur',
-        description: 'Impossible d\'envoyer le message. Réessaye plus tard.',
-        variant: 'destructive',
-      });
+      if (error instanceof z.ZodError) {
+        toast({
+          title: 'Erreur de validation',
+          description: error.errors[0].message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Erreur',
+          description: 'Impossible d\'envoyer le message. Réessaye plus tard.',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setLoading(false);
     }
