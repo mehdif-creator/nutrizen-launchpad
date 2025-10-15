@@ -22,12 +22,12 @@ export const Header = ({ onCtaClick }: HeaderProps) => {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
-        <div className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-tech">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
             <span className="text-lg font-bold text-white">N</span>
           </div>
           <span className="text-xl font-bold">NutriZen</span>
-        </div>
+        </Link>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6">
@@ -66,6 +66,12 @@ export const Header = ({ onCtaClick }: HeaderProps) => {
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-tech"
           >
             Blog
+          </Link>
+          <Link
+            to="/auth/login"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-tech"
+          >
+            Se connecter
           </Link>
         </nav>
 
@@ -128,6 +134,12 @@ export const Header = ({ onCtaClick }: HeaderProps) => {
               className="text-left text-sm font-medium text-muted-foreground hover:text-foreground"
             >
               Blog
+            </Link>
+            <Link
+              to="/auth/login"
+              className="text-left text-sm font-medium text-muted-foreground hover:text-foreground"
+            >
+              Se connecter
             </Link>
             <Button
               onClick={onCtaClick}

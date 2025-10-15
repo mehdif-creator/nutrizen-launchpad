@@ -36,6 +36,11 @@ import CGV from "./pages/legal/CGV";
 import Confidentialite from "./pages/legal/Confidentialite";
 import Resiliation from "./pages/legal/Resiliation";
 
+// Other
+import Contact from "./pages/Contact";
+import Fit from "./pages/Fit";
+import Mum from "./pages/Mum";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -73,6 +78,11 @@ const App = () => (
             <Route path="/legal/cgv" element={<CGV />} />
             <Route path="/legal/confidentialite" element={<Confidentialite />} />
             <Route path="/legal/resiliation" element={<Resiliation />} />
+            
+            {/* Other */}
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/fit" element={<Fit />} />
+            <Route path="/mum" element={<Mum />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

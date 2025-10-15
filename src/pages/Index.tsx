@@ -13,16 +13,13 @@ import { LeadMagnet } from '@/components/landing/LeadMagnet';
 import { FinalCTA } from '@/components/landing/FinalCTA';
 import { Footer } from '@/components/landing/Footer';
 import { MobileStickyCTA } from '@/components/landing/MobileStickyCTA';
-import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
-  const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleCtaClick = () => {
-    toast({
-      title: '🎉 Bienvenue sur NutriZen !',
-      description: 'L\'inscription sera disponible très bientôt. Reste connecté(e) !',
-    });
+    navigate('/auth/signup');
   };
 
   const handleExampleClick = () => {

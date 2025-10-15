@@ -3,21 +3,11 @@ import { Shield, Lock, CreditCard } from 'lucide-react';
 export const Footer = () => {
   const footerSections = [
     {
-      title: 'Produit',
-      links: [
-        { label: 'Fonctionnement', href: '#comment' },
-        { label: 'Exemples', href: '#exemples' },
-        { label: 'Tarifs', href: '#tarifs' },
-        { label: 'Roadmap', href: '/blog' }
-      ]
-    },
-    {
       title: 'Ressources',
       links: [
         { label: 'Blog', href: '/blog' },
-        { label: 'Guides PDF', href: '/blog' },
-        { label: 'FAQ', href: '#faq' },
-        { label: 'Support', href: 'mailto:support@nutrizen.fr' }
+        { label: 'FAQ', href: '/#faq' },
+        { label: 'Contact', href: '/contact' }
       ]
     },
     {
@@ -30,10 +20,10 @@ export const Footer = () => {
       ]
     },
     {
-      title: 'Entreprise',
+      title: 'Nos Univers',
       links: [
-        { label: 'À propos', href: '/about' },
-        { label: 'Contact', href: 'mailto:contact@nutrizen.fr' }
+        { label: 'NutriZen Fit', href: '/fit' },
+        { label: 'NutriZen Mum', href: '/mum' }
       ]
     }
   ];
