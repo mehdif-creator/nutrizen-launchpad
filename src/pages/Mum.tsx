@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { Baby, Heart, Clock, Sparkles } from 'lucide-react';
 import { z } from 'zod';
 import { toParisISO } from '@/lib/date-utils';
+import { supabase } from '@/integrations/supabase/client';
 
 const leadSchema = z.object({
   email: z.string().trim().email('Email invalide').max(255, 'L\'email ne peut pas dépasser 255 caractères')
@@ -42,19 +43,16 @@ export default function Mum() {
         return;
       }
 
-      const webhookUrl = 'https://n8n.srv1005117.hstgr.cloud/webhook/leadmagnet.submit';
-      
-      await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      // Submit via secure edge function
+      const { error } = await supabase.functions.invoke('submit-lead', {
+        body: {
           ...validatedData,
           source: 'nutrizen_mum',
           timestamp: toParisISO(),
-        }),
+        },
       });
+
+      if (error) throw error;
 
       // Update rate limit
       localStorage.setItem(rateLimitKey, JSON.stringify([...recentSubmissions, now]));

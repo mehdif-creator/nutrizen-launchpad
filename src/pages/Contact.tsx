@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { toParisISO } from '@/lib/date-utils';
+import { supabase } from '@/integrations/supabase/client';
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, 'Le nom doit contenir au moins 2 caractères').max(100, 'Le nom ne peut pas dépasser 100 caractères'),
@@ -35,18 +36,15 @@ export default function Contact() {
       // Validate input data
       const validatedData = contactSchema.parse(formData);
       
-      const webhookUrl = 'https://n8n.srv1005117.hstgr.cloud/webhook/contact';
-      
-      await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      // Submit via secure edge function
+      const { error } = await supabase.functions.invoke('submit-contact', {
+        body: {
           ...validatedData,
           timestamp: toParisISO(),
-        }),
+        },
       });
+
+      if (error) throw error;
 
       toast({
         title: 'Message envoyé !',
