@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,6 +21,9 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState<string | null>(null);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [email, setEmail] = useState('');
+  const [selectedPlan, setSelectedPlan] = useState<{ priceId: string; planName: string } | null>(null);
 
   const plans = [
     {
@@ -77,24 +83,28 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
   ];
 
   const handleSubscribe = async (priceId: string, planName: string) => {
-    if (!user || !session) {
-      navigate('/auth/signup');
+    // If user is already logged in, proceed directly
+    if (user && session) {
+      await createCheckoutSession(priceId, user.email || '');
       return;
     }
 
+    // Otherwise, ask for email first
+    setSelectedPlan({ priceId, planName });
+    setShowEmailDialog(true);
+  };
+
+  const createCheckoutSession = async (priceId: string, userEmail: string) => {
     setLoading(priceId);
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { priceId },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
+        body: { priceId, email: userEmail },
       });
 
       if (error) throw error;
 
       if (data?.url) {
-        window.open(data.url, '_blank');
+        window.location.href = data.url; // Redirect to Stripe checkout
       }
     } catch (error) {
       console.error('Error creating checkout:', error);
@@ -105,7 +115,15 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
       });
     } finally {
       setLoading(null);
+      setShowEmailDialog(false);
     }
+  };
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPlan || !email) return;
+    
+    await createCheckoutSession(selectedPlan.priceId, email);
   };
 
   return (
@@ -217,6 +235,35 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
           <p>✅ Satisfait ou remboursé — Garantie 30 jours temps-gagné • Annulable en 3 clics</p>
         </div>
       </div>
+
+      {/* Email Dialog */}
+      <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Commence ton essai gratuit</DialogTitle>
+            <DialogDescription>
+              Entre ton email pour démarrer ton essai de 7 jours gratuit
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEmailSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Adresse email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="ton@email.fr"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoFocus
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={loading !== null}>
+              {loading ? 'Chargement...' : 'Continuer vers le paiement'}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };

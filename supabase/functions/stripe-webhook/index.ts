@@ -64,11 +64,11 @@ serve(async (req) => {
       // Create a random password for the user
       const randomPassword = crypto.randomUUID();
 
-      // Create user in Supabase Auth
+      // Create user in Supabase Auth - email_confirm: false will send a confirmation email
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email: customerEmail,
         password: randomPassword,
-        email_confirm: true,
+        email_confirm: false, // This will trigger Supabase to send a confirmation email
         user_metadata: {
           stripe_customer_id: customerId,
         },
@@ -88,7 +88,7 @@ serve(async (req) => {
           throw authError;
         }
       } else if (authData.user) {
-        logStep("User created successfully", { userId: authData.user.id });
+        logStep("User created successfully - confirmation email sent", { userId: authData.user.id });
         await updateSubscriptionRecord(supabaseAdmin, authData.user.id, customerId, subscriptionId, session, stripe);
       }
     }
@@ -140,9 +140,9 @@ async function updateSubscriptionRecord(
     const priceId = subscription.items.data[0]?.price.id;
     
     // Map price IDs to plans
-    if (priceId === 'price_1QdB8TRtL2BrODRjO7lUPApe') plan = 'essentiel';
-    else if (priceId === 'price_1QdB9VRtL2BrODRjT5kIEBzV') plan = 'equilibre';
-    else if (priceId === 'price_1QdBAgRtL2BrODRjWpLJCVBk') plan = 'premium';
+    if (priceId === 'price_1SIWDPEl2hJeGlFp14plp0D5') plan = 'essentiel';
+    else if (priceId === 'price_1SIWFyEl2hJeGlFp8pQyEMQC') plan = 'equilibre';
+    else if (priceId === 'price_1SIWGdEl2hJeGlFp1e1pekfL') plan = 'premium';
 
     if (subscription.trial_end) {
       trialEnd = new Date(subscription.trial_end * 1000).toISOString();

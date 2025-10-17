@@ -72,26 +72,13 @@ export default function Login() {
             </p>
           </div>
 
-          <div className="space-y-4">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={handleGoogleLogin}
-            >
-              <Chrome className="mr-2 h-5 w-5" />
-              Continuer avec Google
-            </Button>
+          <div className="mb-6 p-4 bg-accent/10 rounded-lg">
+            <p className="text-sm text-center">
+              Pour te connecter, utilise le lien magique envoyé par email après ton inscription via Stripe.
+            </p>
+          </div>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-muted-foreground">
-                  ou par email
-                </span>
-              </div>
-            </div>
+          <div className="space-y-4">
 
             <form onSubmit={handleMagicLink} className="space-y-4">
               <div className="space-y-2">
