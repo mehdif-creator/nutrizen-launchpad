@@ -32,13 +32,11 @@ serve(async (req) => {
     const body = await req.text();
     const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
     
-    let event: Stripe.Event;
-    
-    if (webhookSecret) {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-    } else {
-      event = JSON.parse(body);
+    if (!webhookSecret) {
+      throw new Error("STRIPE_WEBHOOK_SECRET not configured");
     }
+    
+    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
 
     logStep("Event type", { type: event.type });
 
