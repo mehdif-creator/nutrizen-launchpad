@@ -74,12 +74,11 @@ export default function Login() {
 
           <div className="mb-6 p-4 bg-accent/10 rounded-lg">
             <p className="text-sm text-center">
-              Pour te connecter, utilise le lien magique envoyé par email après ton inscription via Stripe.
+              <strong>Nouveau client ?</strong> Après ton paiement via Stripe, tu recevras un email avec un lien magique pour accéder à ton compte.
             </p>
           </div>
 
           <div className="space-y-4">
-
             <form onSubmit={handleMagicLink} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -95,23 +94,33 @@ export default function Login() {
 
               <Button type="submit" className="w-full" disabled={loading}>
                 <Mail className="mr-2 h-4 w-4" />
-                {loading ? 'Envoi...' : 'Recevoir un lien magique'}
+                {loading ? 'Envoi...' : 'Recevoir un nouveau lien magique'}
               </Button>
             </form>
 
-            <div className="text-center text-sm text-muted-foreground">
-              Pas encore de compte ?{' '}
-              <Link to="/auth/signup" className="text-primary hover:underline">
-                Créer un compte
-              </Link>
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-muted-foreground">Ou continuer avec</span>
+              </div>
             </div>
 
-            <div className="text-center">
-              <Link
-                to="/auth/reset"
-                className="text-sm text-muted-foreground hover:text-foreground"
-              >
-                Mot de passe oublié ?
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={handleGoogleLogin}
+            >
+              <Chrome className="mr-2 h-4 w-4" />
+              Google
+            </Button>
+
+            <div className="text-center text-sm text-muted-foreground pt-4">
+              Pas encore de compte ?{' '}
+              <Link to="/#pricing" className="text-primary hover:underline font-medium">
+                Voir les formules
               </Link>
             </div>
           </div>

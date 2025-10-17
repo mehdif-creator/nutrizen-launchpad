@@ -65,11 +65,11 @@ serve(async (req) => {
       // Create a random password for the user
       const randomPassword = crypto.randomUUID();
 
-      // Create user in Supabase Auth - email_confirm: false will send a confirmation email
+      // Create user in Supabase Auth - email_confirm: true to skip default email
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email: customerEmail,
         password: randomPassword,
-        email_confirm: false, // This will trigger Supabase to send a confirmation email
+        email_confirm: true, // Skip default confirmation email - we'll send magic link
         user_metadata: {
           stripe_customer_id: customerId,
         },
@@ -89,8 +89,52 @@ serve(async (req) => {
           throw authError;
         }
       } else if (authData.user) {
-        logStep("User created successfully - confirmation email sent", { userId: authData.user.id });
+        logStep("User created successfully", { userId: authData.user.id });
         await updateSubscriptionRecord(supabaseAdmin, authData.user.id, customerId, subscriptionId, session, stripe);
+        
+        // Generate and send magic link for login
+        const appBaseUrl = Deno.env.get("APP_BASE_URL") || "https://mynutrizen.fr";
+        logStep("Generating magic link", { email: customerEmail, redirectTo: `${appBaseUrl}/app` });
+        
+        const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+          type: 'magiclink',
+          email: customerEmail,
+          options: {
+            redirectTo: `${appBaseUrl}/app`,
+          },
+        });
+        
+        if (linkError) {
+          logStep("ERROR generating magic link", { error: linkError.message });
+        } else {
+          logStep("Magic link generated successfully", { 
+            hasActionLink: !!linkData.properties?.action_link 
+          });
+          
+          // Send email via n8n webhook
+          const n8nWebhookBase = Deno.env.get("N8N_WEBHOOK_BASE");
+          if (n8nWebhookBase && linkData.properties?.action_link) {
+            try {
+              const emailResponse = await fetch(`${n8nWebhookBase}/welcome-email`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  email: customerEmail,
+                  magicLink: linkData.properties.action_link,
+                  name: customerEmail.split('@')[0],
+                }),
+              });
+              
+              if (emailResponse.ok) {
+                logStep("Welcome email sent successfully");
+              } else {
+                logStep("Failed to send welcome email", { status: emailResponse.status });
+              }
+            } catch (emailError) {
+              logStep("Error sending welcome email", { error: emailError });
+            }
+          }
+        }
         
         // Handle referral if present
         if (referralCode) {

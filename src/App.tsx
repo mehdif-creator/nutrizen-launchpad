@@ -44,6 +44,7 @@ import Contact from "./pages/Contact";
 import Fit from "./pages/Fit";
 import Mum from "./pages/Mum";
 import Pro from "./pages/Pro";
+import PostCheckout from "./pages/PostCheckout";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +92,7 @@ const App = () => (
             <Route path="/fit" element={<Fit />} />
             <Route path="/mum" element={<Mum />} />
             <Route path="/pro" element={<Pro />} />
+            <Route path="/post-checkout" element={<PostCheckout />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

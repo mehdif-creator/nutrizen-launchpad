@@ -44,7 +44,17 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "http://localhost:3000";
     
-    logStep("Creating checkout session", { priceId, email });
+    // Determine plan name from priceId
+    let planName = 'standard';
+    if (priceId === 'price_1SIWDPEl2hJeGlFp14plp0D5') planName = 'essentiel';
+    else if (priceId === 'price_1SIWFyEl2hJeGlFp8pQyEMQC') planName = 'equilibre';
+    else if (priceId === 'price_1SIWGdEl2hJeGlFp1e1pekfL') planName = 'premium';
+    
+    // Get referral code from query params if present
+    const url = new URL(req.url);
+    const referralCode = url.searchParams.get('referral_code');
+    
+    logStep("Creating checkout session", { priceId, email, plan: planName, referralCode });
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : email,
@@ -58,7 +68,11 @@ serve(async (req) => {
       subscription_data: {
         trial_period_days: 7,
       },
-      success_url: `${origin}/auth/verify?session_id={CHECKOUT_SESSION_ID}`,
+      metadata: {
+        plan: planName,
+        referral_code: referralCode || '',
+      },
+      success_url: `${origin}/post-checkout?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/?canceled=true`,
     });
 
