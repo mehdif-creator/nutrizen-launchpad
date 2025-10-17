@@ -43,6 +43,7 @@ import Resiliation from "./pages/legal/Resiliation";
 import Contact from "./pages/Contact";
 import Fit from "./pages/Fit";
 import Mum from "./pages/Mum";
+import Pro from "./pages/Pro";
 
 const queryClient = new QueryClient();
 
@@ -89,6 +90,7 @@ const App = () => (
             <Route path="/contact" element={<Contact />} />
             <Route path="/fit" element={<Fit />} />
             <Route path="/mum" element={<Mum />} />
+            <Route path="/pro" element={<Pro />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Home, BookOpen, User, Settings, HelpCircle, LogOut, Shield } from 'lucide-react';
-import nutrizenLogo from '@/assets/nutrizen-text-logo.png';
 import { GamificationHeader } from './GamificationHeader';
 
 export const AppHeader = () => {
@@ -40,7 +39,7 @@ export const AppHeader = () => {
         <div className="flex items-center gap-6">
           <Link to="/app" className="flex items-center hover:opacity-80 transition-opacity">
             <img 
-              src={nutrizenLogo} 
+              src={new URL('@/assets/nutrizen-main-logo.png', import.meta.url).href}
               alt="NutriZen" 
               className="h-10 w-auto"
             />

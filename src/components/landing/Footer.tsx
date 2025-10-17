@@ -24,6 +24,14 @@ export const Footer = () => {
         { label: 'À propos', href: '#' },
         { label: 'Contact', href: '/contact' }
       ]
+    },
+    {
+      title: 'Nos offres',
+      links: [
+        { label: 'NutriZen Fit', href: '/fit' },
+        { label: 'NutriZen Mum', href: '/mum' },
+        { label: 'NutriZen Pro', href: '/pro' }
+      ]
     }
   ];
 
@@ -35,7 +43,7 @@ export const Footer = () => {
           <div className="md:col-span-1">
             <div className="flex items-center mb-4">
               <img 
-                src="/favicon.png" 
+                src={new URL('@/assets/nutrizen-main-logo.png', import.meta.url).href}
                 alt="NutriZen Logo" 
                 className="h-12 w-auto"
               />

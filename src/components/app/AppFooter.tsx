@@ -5,11 +5,11 @@ export const AppFooter = () => {
   return (
     <footer className="border-t bg-muted/30 py-8 mt-auto">
       <div className="container">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
           <div>
             <div className="flex items-center mb-4">
               <img 
-                src="/favicon.png" 
+                src={new URL('@/assets/nutrizen-main-logo.png', import.meta.url).href}
                 alt="NutriZen Logo" 
                 className="h-12 w-auto"
               />
@@ -42,6 +42,15 @@ export const AppFooter = () => {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><a href="#" className="hover:text-foreground">À propos</a></li>
               <li><Link to="/contact" className="hover:text-foreground">Contact</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="font-semibold mb-4">Nos offres</h3>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li><Link to="/fit" className="hover:text-foreground">NutriZen Fit</Link></li>
+              <li><Link to="/mum" className="hover:text-foreground">NutriZen Mum</Link></li>
+              <li><Link to="/pro" className="hover:text-foreground">NutriZen Pro</Link></li>
             </ul>
           </div>
         </div>

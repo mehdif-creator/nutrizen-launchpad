@@ -24,7 +24,7 @@ export const Header = ({ onCtaClick }: HeaderProps) => {
         {/* Logo */}
         <Link to="/" className="flex items-center hover:opacity-80 transition-tech">
           <img 
-            src="/favicon.png" 
+            src={new URL('@/assets/nutrizen-main-logo.png', import.meta.url).href}
             alt="NutriZen Logo" 
             className="h-10 w-auto"
           />
