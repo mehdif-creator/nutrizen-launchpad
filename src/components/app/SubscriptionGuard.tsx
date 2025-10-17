@@ -15,10 +15,22 @@ export const SubscriptionGuard = ({ children, requirePaid = false }: Subscriptio
   useEffect(() => {
     if (loading) return;
 
-    // Check if user has any subscription (trial or active)
-    if (!subscription || (subscription.status !== 'trialing' && subscription.status !== 'active')) {
-      navigate('/', { replace: true });
+    // Check if user has an active subscription
+    const hasValidSubscription = subscription && 
+      (subscription.status === 'trialing' || subscription.status === 'active');
+
+    if (!hasValidSubscription) {
+      navigate('/?expired=true', { replace: true });
       return;
+    }
+
+    // Check if trial has expired
+    if (subscription.status === 'trialing' && subscription.trial_end) {
+      const trialEnd = new Date(subscription.trial_end);
+      if (trialEnd < new Date()) {
+        navigate('/?expired=true', { replace: true });
+        return;
+      }
     }
 
     // If paid plan is required, check if user is not on trial
@@ -35,8 +47,19 @@ export const SubscriptionGuard = ({ children, requirePaid = false }: Subscriptio
     );
   }
 
-  if (!subscription || (subscription.status !== 'trialing' && subscription.status !== 'active')) {
+  const hasValidSubscription = subscription && 
+    (subscription.status === 'trialing' || subscription.status === 'active');
+
+  if (!hasValidSubscription) {
     return null;
+  }
+
+  // Check trial expiration
+  if (subscription.status === 'trialing' && subscription.trial_end) {
+    const trialEnd = new Date(subscription.trial_end);
+    if (trialEnd < new Date()) {
+      return null;
+    }
   }
 
   if (requirePaid && subscription.status === 'trialing') {
