@@ -140,6 +140,41 @@ export async function awardMealCompletionPoints(userId: string): Promise<boolean
 }
 
 /**
+ * Check if user completed all meals for the week and award bonus
+ */
+export async function checkAndAwardWeeklyBonus(userId: string, weekOf: string): Promise<boolean> {
+  try {
+    // Get the meal plan for the week
+    const { data: mealPlan, error: planError } = await supabase
+      .from('meal_plans')
+      .select('items')
+      .eq('user_id', userId)
+      .eq('week_of', weekOf)
+      .maybeSingle();
+
+    if (planError || !mealPlan) {
+      return false;
+    }
+
+    // Check if all meals are completed
+    const items = mealPlan.items as any;
+    const allCompleted = Object.values(items).every((day: any) => {
+      return day.breakfast?.completed && day.lunch?.completed && day.dinner?.completed;
+    });
+
+    if (allCompleted) {
+      // Award weekly completion bonus
+      return awardPoints({ type: 'weekly_completion', userId });
+    }
+
+    return false;
+  } catch (error) {
+    console.error('Error checking weekly bonus:', error);
+    return false;
+  }
+}
+
+/**
  * Award points for referral
  */
 export async function awardReferralPoints(userId: string): Promise<boolean> {

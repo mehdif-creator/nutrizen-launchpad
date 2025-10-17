@@ -252,27 +252,85 @@ export default function Referral() {
             </ol>
           </Card>
 
+          {/* Detailed Analytics */}
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Statistiques détaillées</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="font-medium mb-3">Performance mensuelle</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                    <span className="text-sm">Ce mois</span>
+                    <span className="font-bold text-primary">{referrals.filter(r => {
+                      const date = new Date(r.created_at);
+                      const now = new Date();
+                      return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+                    }).length}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                    <span className="text-sm">Total</span>
+                    <span className="font-bold text-accent">{referrals.length}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-medium mb-3">Taux de conversion</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                    <span className="text-sm">Complétés</span>
+                    <span className="font-bold text-green-500">
+                      {referrals.length > 0 ? Math.round((completedReferrals / referrals.length) * 100) : 0}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                    <span className="text-sm">En attente</span>
+                    <span className="font-bold text-orange-500">
+                      {referrals.length > 0 ? Math.round((pendingReferrals / referrals.length) * 100) : 0}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+
           {/* Recent Referrals */}
           {referrals.length > 0 && (
             <Card className="p-6">
               <h2 className="text-xl font-semibold mb-4">Mes parrainages récents</h2>
               <div className="space-y-3">
-                {referrals.slice(0, 5).map((referral) => (
+                {referrals.slice(0, 10).map((referral) => (
                   <div key={referral.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <div>
-                      <p className="text-sm">
-                        {new Date(referral.created_at).toLocaleDateString('fr-FR')}
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">
+                        {new Date(referral.created_at).toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })}
                       </p>
+                      {referral.completed_at && (
+                        <p className="text-xs text-muted-foreground">
+                          Complété le {new Date(referral.completed_at).toLocaleDateString('fr-FR')}
+                        </p>
+                      )}
                     </div>
-                    <Badge variant={
-                      referral.status === 'rewarded' ? 'default' :
-                      referral.status === 'completed' ? 'secondary' : 
-                      'outline'
-                    }>
-                      {referral.status === 'rewarded' ? 'Récompensé' :
-                       referral.status === 'completed' ? 'Complété' :
-                       'En attente'}
-                    </Badge>
+                    <div className="flex items-center gap-3">
+                      {referral.reward_points > 0 && (
+                        <span className="text-sm font-medium text-green-500">
+                          +{referral.reward_points} pts
+                        </span>
+                      )}
+                      <Badge variant={
+                        referral.status === 'completed' ? 'default' :
+                        referral.status === 'pending' ? 'secondary' : 
+                        'outline'
+                      }>
+                        {referral.status === 'completed' ? 'Complété' :
+                         referral.status === 'pending' ? 'En attente' :
+                         referral.status}
+                      </Badge>
+                    </div>
                   </div>
                 ))}
               </div>

@@ -5,14 +5,18 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useState } from 'react';
-import { Upload, Camera, Loader2, Sparkles } from 'lucide-react';
+import { Upload, Camera, Loader2, Sparkles, Lock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function AITools() {
   const { toast } = useToast();
+  const { subscription } = useAuth();
   const [loading, setLoading] = useState(false);
   const [photoMacrosResult, setPhotoMacrosResult] = useState<any>(null);
   const [fridgeRecipesResult, setFridgeRecipesResult] = useState<any>(null);
+
+  const isPremium = subscription?.status === 'active' || subscription?.status === 'trialing';
 
   const handlePhotoToMacros = async (file: File) => {
     setLoading(true);
@@ -110,22 +114,34 @@ export default function AITools() {
                 </p>
 
                 <div className="space-y-4">
-                  <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => e.target.files?.[0] && handlePhotoToMacros(e.target.files[0])}
-                      className="hidden"
-                      id="photo-macros-input"
-                      disabled={loading}
-                    />
-                    <label htmlFor="photo-macros-input" className="cursor-pointer">
-                      <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">
-                        Clique pour sélectionner une photo de ton plat
+                  {!isPremium ? (
+                    <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center bg-muted/20">
+                      <Lock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Cette fonctionnalité est réservée aux abonnés Premium
                       </p>
-                    </label>
-                  </div>
+                      <Button onClick={() => window.location.href = '/app/settings'}>
+                        Passer Premium
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => e.target.files?.[0] && handlePhotoToMacros(e.target.files[0])}
+                        className="hidden"
+                        id="photo-macros-input"
+                        disabled={loading}
+                      />
+                      <label htmlFor="photo-macros-input" className="cursor-pointer">
+                        <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          Clique pour sélectionner une photo de ton plat
+                        </p>
+                      </label>
+                    </div>
+                  )}
 
                   {loading && (
                     <div className="flex items-center justify-center gap-2 text-primary">
@@ -186,22 +202,34 @@ export default function AITools() {
                 </p>
 
                 <div className="space-y-4">
-                  <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => e.target.files?.[0] && handleFridgeToRecipes(e.target.files[0])}
-                      className="hidden"
-                      id="fridge-recipes-input"
-                      disabled={loading}
-                    />
-                    <label htmlFor="fridge-recipes-input" className="cursor-pointer">
-                      <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">
-                        Clique pour sélectionner une photo de ton frigo
+                  {!isPremium ? (
+                    <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center bg-muted/20">
+                      <Lock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Cette fonctionnalité est réservée aux abonnés Premium
                       </p>
-                    </label>
-                  </div>
+                      <Button onClick={() => window.location.href = '/app/settings'}>
+                        Passer Premium
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => e.target.files?.[0] && handleFridgeToRecipes(e.target.files[0])}
+                        className="hidden"
+                        id="fridge-recipes-input"
+                        disabled={loading}
+                      />
+                      <label htmlFor="fridge-recipes-input" className="cursor-pointer">
+                        <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          Clique pour sélectionner une photo de ton frigo
+                        </p>
+                      </label>
+                    </div>
+                  )}
 
                   {loading && (
                     <div className="flex items-center justify-center gap-2 text-accent">
