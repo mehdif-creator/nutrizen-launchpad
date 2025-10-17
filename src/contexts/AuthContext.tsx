@@ -8,6 +8,8 @@ interface SubscriptionInfo {
   plan: string | null;
   status: string;
   subscription_end: string | null;
+  trial_end?: string | null;
+  current_period_end?: string | null;
 }
 
 interface AuthContextType {

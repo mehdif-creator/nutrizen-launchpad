@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.use-swap]
 verify_jwt = false
+
+[functions.analyze-food-photo]
+verify_jwt = true
+
+[functions.analyze-fridge-photo]
+verify_jwt = true

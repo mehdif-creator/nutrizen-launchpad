@@ -22,6 +22,8 @@ import MealPlan from "./pages/app/MealPlan";
 import Profile from "./pages/app/Profile";
 import Settings from "./pages/app/Settings";
 import Support from "./pages/app/Support";
+import Referral from "./pages/app/Referral";
+import AITools from "./pages/app/AITools";
 
 // Admin
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -61,11 +63,13 @@ const App = () => (
             <Route path="/auth/reset" element={<Reset />} />
             
             {/* App (Protected) */}
-            <Route path="/app" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/app/meal-plan" element={<ProtectedRoute><MealPlan /></ProtectedRoute>} />
-            <Route path="/app/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/app/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            <Route path="/app/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
+          <Route path="/app" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/app/meal-plan" element={<ProtectedRoute><MealPlan /></ProtectedRoute>} />
+          <Route path="/app/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/app/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/app/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
+          <Route path="/app/referral" element={<ProtectedRoute><Referral /></ProtectedRoute>} />
+          <Route path="/app/ai-tools" element={<ProtectedRoute><AITools /></ProtectedRoute>} />
             
             {/* Admin (Protected + Admin Only) */}
         <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />

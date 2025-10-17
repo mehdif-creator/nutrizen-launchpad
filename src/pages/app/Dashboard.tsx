@@ -7,6 +7,7 @@ import { Calendar, ShoppingCart, Star, Clock, Sparkles, Crown } from 'lucide-rea
 import { useToast } from '@/hooks/use-toast';
 import { useLocalDateTime } from '@/hooks/useLocalDateTime';
 import { GamificationWidget } from '@/components/app/GamificationWidget';
+import { PlanDisplay } from '@/components/app/PlanDisplay';
 import { Badge } from '@/components/ui/badge';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,6 +37,10 @@ export default function Dashboard() {
   if (isAdmin) {
     return <Navigate to="/admin" replace />;
   }
+
+  // Check if user has active subscription
+  const hasActiveSubscription = subscription && (subscription.status === 'active' || subscription.status === 'trialing');
+  const isPayingUser = subscription && subscription.status === 'active';
   
   useEffect(() => {
     refreshSubscription();
