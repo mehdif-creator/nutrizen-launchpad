@@ -222,6 +222,11 @@ export default function Dashboard() {
           </div>
         </Card>
 
+        {/* Plan Display */}
+        <div className="mb-8">
+          <PlanDisplay />
+        </div>
+
         {/* Gamification Widget - Only for paying users */}
         {!isFreePlan && (
           <div className="mb-8">
