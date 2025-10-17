@@ -3,13 +3,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Calendar, Zap, TrendingUp } from 'lucide-react';
+import { Calendar, Zap, TrendingUp, Crown, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 export const PlanDisplay = () => {
   const { subscription } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [swapsData, setSwapsData] = useState<{ used: number; quota: number } | null>(null);
 
   useEffect(() => {
@@ -69,12 +71,20 @@ export const PlanDisplay = () => {
   };
 
   const daysRemaining = getDaysRemaining();
+  const isExpiringSoon = daysRemaining !== null && daysRemaining <= 3 && isTrialing;
+
+  const handleUpgrade = () => {
+    navigate('/?pricing=true');
+  };
 
   return (
     <Card className="p-6 bg-gradient-to-br from-primary/5 to-accent/5">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h3 className="font-semibold text-lg mb-1">Mon Abonnement</h3>
+          <h3 className="font-semibold text-lg mb-1 flex items-center gap-2">
+            Mon Abonnement
+            {!isTrialing && <Crown className="h-5 w-5 text-yellow-500" />}
+          </h3>
           <div className="flex items-center gap-2">
             <Badge variant={isTrialing ? "secondary" : "default"}>
               {planName}
@@ -86,17 +96,38 @@ export const PlanDisplay = () => {
             )}
           </div>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={handleManageSubscription}
-        >
-          Gérer
-        </Button>
+        <div className="flex gap-2">
+          {isTrialing && (
+            <Button 
+              size="sm"
+              onClick={handleUpgrade}
+              className="bg-gradient-to-r from-primary to-accent hover:opacity-90"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Passer Premium
+            </Button>
+          )}
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleManageSubscription}
+          >
+            Gérer
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-3">
-        {daysRemaining !== null && (
+        {isExpiringSoon && (
+          <div className="flex items-center gap-2 text-sm bg-orange-500/10 border border-orange-500/20 rounded-lg p-3 mb-3">
+            <Sparkles className="h-4 w-4 text-orange-500" />
+            <span className="text-foreground font-medium">
+              ⏰ Plus que {daysRemaining} jour{daysRemaining! > 1 ? 's' : ''} d'essai ! Profite de l'offre avant qu'il ne soit trop tard.
+            </span>
+          </div>
+        )}
+
+        {daysRemaining !== null && !isExpiringSoon && (
           <div className="flex items-center gap-2 text-sm">
             <Calendar className="h-4 w-4 text-primary" />
             <span>

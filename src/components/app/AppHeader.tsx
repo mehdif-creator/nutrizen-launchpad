@@ -11,6 +11,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Home, BookOpen, User, Settings, HelpCircle, LogOut, Shield } from 'lucide-react';
 import nutrizenLogo from '@/assets/nutrizen-text-logo.png';
+import { GamificationHeader } from './GamificationHeader';
 
 export const AppHeader = () => {
   const { user, isAdmin, signOut } = useAuth();
@@ -114,7 +115,10 @@ export const AppHeader = () => {
           </nav>
         </div>
 
-        <DropdownMenu>
+        <div className="flex items-center gap-4">
+          <GamificationHeader />
+          
+          <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
               <Avatar className="h-10 w-10">
@@ -173,6 +177,7 @@ export const AppHeader = () => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+    </div>
     </header>
   );
 };

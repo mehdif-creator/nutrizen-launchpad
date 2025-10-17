@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { trackDailyLogin } from '@/utils/gamification';
 
 interface SubscriptionInfo {
   subscribed: boolean;
@@ -67,6 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setTimeout(() => {
           checkAdminRole(session.user.id);
           refreshSubscription();
+          trackDailyLogin(session.user.id); // Track daily login for gamification
         }, 0);
       }
       

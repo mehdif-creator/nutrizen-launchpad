@@ -9,6 +9,7 @@ import { Baby, Heart, Clock, Sparkles } from 'lucide-react';
 import { z } from 'zod';
 import { toParisISO } from '@/lib/date-utils';
 import { supabase } from '@/integrations/supabase/client';
+import { useReferralTracking } from '@/hooks/useReferralTracking';
 
 const leadSchema = z.object({
   email: z.string().trim().email('Email invalide').max(255, 'L\'email ne peut pas dépasser 255 caractères')
@@ -19,6 +20,9 @@ export default function Mum() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // Track referral codes from URL
+  useReferralTracking();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

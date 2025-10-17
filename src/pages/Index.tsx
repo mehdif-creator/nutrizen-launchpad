@@ -14,9 +14,13 @@ import { FinalCTA } from '@/components/landing/FinalCTA';
 import { Footer } from '@/components/landing/Footer';
 import { MobileStickyCTA } from '@/components/landing/MobileStickyCTA';
 import { useNavigate } from 'react-router-dom';
+import { useReferralTracking } from '@/hooks/useReferralTracking';
 
 const Index = () => {
   const navigate = useNavigate();
+  
+  // Track referral codes from URL
+  useReferralTracking();
 
   const handleCtaClick = () => {
     navigate('/auth/signup');

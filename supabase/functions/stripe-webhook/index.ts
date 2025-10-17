@@ -52,12 +52,15 @@ serve(async (req) => {
       const customerEmail = session.customer_email || session.customer_details?.email;
       const customerId = session.customer as string;
       const subscriptionId = session.subscription as string;
+      
+      // Get referral code from session metadata if it exists
+      const referralCode = session.metadata?.referral_code;
 
       if (!customerEmail) {
         throw new Error("No customer email found");
       }
 
-      logStep("Creating user account", { email: customerEmail, customerId });
+      logStep("Creating user account", { email: customerEmail, customerId, referralCode });
 
       // Create a random password for the user
       const randomPassword = crypto.randomUUID();
@@ -88,6 +91,38 @@ serve(async (req) => {
       } else if (authData.user) {
         logStep("User created successfully - confirmation email sent", { userId: authData.user.id });
         await updateSubscriptionRecord(supabaseAdmin, authData.user.id, customerId, subscriptionId, session, stripe);
+        
+        // Handle referral if present
+        if (referralCode) {
+          logStep("Processing referral", { referralCode, newUserId: authData.user.id });
+          
+          try {
+            // Call handle-referral function
+            const referralResponse = await fetch(
+              `${Deno.env.get("SUPABASE_URL")}/functions/v1/handle-referral`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+                },
+                body: JSON.stringify({
+                  referralCode,
+                  newUserId: authData.user.id,
+                }),
+              }
+            );
+            
+            if (referralResponse.ok) {
+              logStep("Referral processed successfully");
+            } else {
+              logStep("Referral processing failed", { status: referralResponse.status });
+            }
+          } catch (referralError) {
+            logStep("Referral processing error", { error: referralError });
+            // Don't fail the whole process if referral fails
+          }
+        }
       }
     }
 
