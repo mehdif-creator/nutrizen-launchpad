@@ -80,6 +80,17 @@ export const AppHeader = () => {
               ScanRepas 🍽️
             </Link>
             <Link
+              to="/app/inspi-frigo"
+              className={`text-sm font-medium transition-colors ${
+                isActivePath('/app/inspi-frigo')
+                  ? 'text-[#00B37E] font-semibold'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Camera className="inline h-4 w-4 mr-1" />
+              InspiFrigo 🧊
+            </Link>
+            <Link
               to="/app/profile"
               className={`text-sm font-medium transition-colors ${
                 isActivePath('/app/profile')
