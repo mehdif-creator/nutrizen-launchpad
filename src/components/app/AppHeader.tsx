@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Home, BookOpen, User, Settings, HelpCircle, LogOut, Shield } from 'lucide-react';
+import { Home, BookOpen, User, Settings, HelpCircle, LogOut, Shield, Camera } from 'lucide-react';
 import { GamificationHeader } from './GamificationHeader';
 
 export const AppHeader = () => {
@@ -67,6 +67,17 @@ export const AppHeader = () => {
             >
               <BookOpen className="inline h-4 w-4 mr-1" />
               Recettes
+            </Link>
+            <Link
+              to="/app/scan-repas"
+              className={`text-sm font-medium transition-colors ${
+                isActivePath('/app/scan-repas')
+                  ? 'text-[#00B37E] font-semibold'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Camera className="inline h-4 w-4 mr-1" />
+              ScanRepas 🍽️
             </Link>
             <Link
               to="/app/profile"

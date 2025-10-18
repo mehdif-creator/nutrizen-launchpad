@@ -24,6 +24,7 @@ import Settings from "./pages/app/Settings";
 import Support from "./pages/app/Support";
 import Referral from "./pages/app/Referral";
 import AITools from "./pages/app/AITools";
+import ScanRepas from "./pages/app/ScanRepas";
 
 // Admin
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -72,6 +73,7 @@ const App = () => (
           <Route path="/app/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
           <Route path="/app/referral" element={<ProtectedRoute><Referral /></ProtectedRoute>} />
           <Route path="/app/ai-tools" element={<ProtectedRoute><AITools /></ProtectedRoute>} />
+          <Route path="/app/scan-repas" element={<ProtectedRoute><ScanRepas /></ProtectedRoute>} />
             
             {/* Admin (Protected + Admin Only) */}
         <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
