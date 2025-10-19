@@ -212,6 +212,7 @@ export type Database = {
           created_at: string | null
           id: string
           ingredients: Json | null
+          keywords: string | null
           macros_indicatives: Json | null
           published: boolean | null
           steps: Json | null
@@ -223,6 +224,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           ingredients?: Json | null
+          keywords?: string | null
           macros_indicatives?: Json | null
           published?: boolean | null
           steps?: Json | null
@@ -234,6 +236,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           ingredients?: Json | null
+          keywords?: string | null
           macros_indicatives?: Json | null
           published?: boolean | null
           steps?: Json | null
