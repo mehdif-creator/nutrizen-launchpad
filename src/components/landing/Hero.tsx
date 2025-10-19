@@ -58,14 +58,6 @@ export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
                 >
                   Commencer mon essai gratuit 7 jours – sans engagement.
                 </Button>
-                <Button
-                  onClick={onExampleClick}
-                  size="lg"
-                  variant="outline"
-                  className="text-lg px-8 hover:scale-[1.02] active:scale-[0.99] transition-tech"
-                >
-                  Voir un exemple
-                </Button>
               </div>
               <p className="text-sm text-muted-foreground pl-1">
                 <strong>Essai gratuit 7 jours</strong> · Aucun engagement · Aucune carte bancaire requise
