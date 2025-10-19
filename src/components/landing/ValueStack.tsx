@@ -36,7 +36,7 @@ export const ValueStack = () => {
                   <td className="py-4 text-right text-primary font-semibold">55 €</td>
                 </tr>
                 <tr className="border-t-2 border-primary/50">
-                  <td className="py-4 pr-4 text-left font-bold text-lg">Total valeur perçue</td>
+                  <td className="py-4 pr-4 text-left font-bold text-lg">Total valeur</td>
                   <td className="py-4 text-right text-primary font-bold text-xl">≈ 200 €</td>
                 </tr>
               </tbody>
