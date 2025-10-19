@@ -214,8 +214,8 @@ export default function Mum() {
               <h2 className="text-3xl font-bold mb-4 text-destructive">Offre limitée</h2>
               <p className="text-lg mb-4">
                 Seuls les <strong>75 premières mamans inscrites</strong> bénéficient de la{" "}
-                <strong>valeur perçue complète de 200 €</strong> au tarif de 19,99 €/mois. L'offre pourrait évoluer
-                après cette limite.
+                <strong>valeur complète de 200 €</strong> au tarif de 19,99 €/mois. L'offre pourrait évoluer après cette
+                limite.
               </p>
               <p className="text-lg font-semibold mb-6">
                 L'offre se termine dimanche à <strong className="text-destructive">23h59</strong>.

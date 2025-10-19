@@ -89,9 +89,7 @@ export default function Fit() {
         <section className="py-16">
           <div className="container max-w-4xl">
             <div className="bg-card rounded-2xl shadow-card p-8 md:p-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 text-primary">
-                Ce que tu obtiens (valeur perçue)
-              </h2>
+              <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 text-primary">Ce que tu obtiens</h2>
               <div className="overflow-x-auto">
                 <table className="w-full mb-8">
                   <tbody className="divide-y divide-border">
