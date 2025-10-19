@@ -7,6 +7,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
 };
 
+// Helper function to redact sensitive data
+const redactEmail = (email: string): string => {
+  const [user, domain] = email.split('@');
+  return `${user.slice(0, 2)}***@${domain}`;
+};
+
+const redactId = (id: string): string => {
+  return id ? `${id.slice(0, 8)}***` : '[NONE]';
+};
+
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
@@ -60,7 +70,11 @@ serve(async (req) => {
         throw new Error("No customer email found");
       }
 
-      logStep("Creating user account", { email: customerEmail, customerId, referralCode });
+      logStep("Creating user account", { 
+        email: redactEmail(customerEmail), 
+        customerId: redactId(customerId),
+        referralCode: referralCode ? '[REDACTED]' : null 
+      });
 
       // Create a random password for the user
       const randomPassword = crypto.randomUUID();
@@ -77,7 +91,7 @@ serve(async (req) => {
 
       if (authError) {
         if (authError.message.includes("already registered")) {
-          logStep("User already exists", { email: customerEmail });
+          logStep("User already exists", { email: redactEmail(customerEmail) });
           // Update existing subscription
           const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers();
           const user = existingUser.users.find(u => u.email === customerEmail);
@@ -89,12 +103,12 @@ serve(async (req) => {
           throw authError;
         }
       } else if (authData.user) {
-        logStep("User created successfully", { userId: authData.user.id });
+        logStep("User created successfully", { userId: redactId(authData.user.id) });
         await updateSubscriptionRecord(supabaseAdmin, authData.user.id, customerId, subscriptionId, session, stripe);
         
         // Generate and send magic link for login
         const appBaseUrl = Deno.env.get("APP_BASE_URL") || "https://mynutrizen.fr";
-        logStep("Generating magic link", { email: customerEmail, redirectTo: `${appBaseUrl}/app` });
+        logStep("Generating magic link", { email: redactEmail(customerEmail), redirectTo: `${appBaseUrl}/app` });
         
         const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
           type: 'magiclink',
@@ -138,7 +152,10 @@ serve(async (req) => {
         
         // Handle referral if present
         if (referralCode) {
-          logStep("Processing referral", { referralCode, newUserId: authData.user.id });
+          logStep("Processing referral", { 
+            referralCode: '[REDACTED]', 
+            newUserId: redactId(authData.user.id) 
+          });
           
           try {
             // Call handle-referral function
@@ -247,5 +264,5 @@ async function updateSubscriptionRecord(
     throw subError;
   }
 
-  logStep("Subscription record updated", { userId, plan, status });
+  logStep("Subscription record updated", { userId: redactId(userId), plan, status });
 }
