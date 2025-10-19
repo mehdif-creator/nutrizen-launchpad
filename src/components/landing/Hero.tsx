@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/button';
-import { Star, Check } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Star, Check } from "lucide-react";
 
 interface HeroProps {
   onCtaClick: () => void;
@@ -29,15 +29,21 @@ export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
               <div className="space-y-2 text-lg">
                 <p className="flex items-start gap-2">
                   <span className="text-primary font-bold">→</span>
-                  <span><strong>Gagne 5h par semaine</strong> sur ta planification repas</span>
+                  <span>
+                    <strong>Gagne 5h par semaine</strong> sur ta planification repas
+                  </span>
                 </p>
                 <p className="flex items-start gap-2">
                   <span className="text-primary font-bold">→</span>
-                  <span><strong>Ton plan adapté</strong> à tes objectifs (perte, maintien, prise)</span>
+                  <span>
+                    <strong>Ton plan adapté</strong> à tes objectifs (perte, maintien, prise)
+                  </span>
                 </p>
                 <p className="flex items-start gap-2">
                   <span className="text-primary font-bold">→</span>
-                  <span><strong>Plus de prise de tête</strong> : tout est calculé pour toi</span>
+                  <span>
+                    <strong>Plus de prise de tête</strong> : tout est calculé pour toi
+                  </span>
                 </p>
               </div>
             </div>
@@ -50,7 +56,7 @@ export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
                   size="lg"
                   className="bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] shadow-glow transition-tech text-lg px-8"
                 >
-                  Commencer mon plan gratuit
+                  Commencer mon essai gratuit 7 jours – sans engagement.
                 </Button>
                 <Button
                   onClick={onExampleClick}
@@ -71,10 +77,7 @@ export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
               <div className="flex items-center gap-2 text-sm">
                 <div className="flex">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className="w-4 h-4 fill-accent text-accent"
-                    />
+                    <Star key={star} className="w-4 h-4 fill-accent text-accent" />
                   ))}
                 </div>
                 <span className="font-medium">4,8/5</span>
