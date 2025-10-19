@@ -11,7 +11,6 @@ import { ExampleWeek } from '@/components/landing/ExampleWeek';
 import { Pricing } from '@/components/landing/Pricing';
 import { EconomicComparison } from '@/components/landing/EconomicComparison';
 import { FAQ } from '@/components/landing/FAQ';
-import { Urgency } from '@/components/landing/Urgency';
 import { LeadMagnet } from '@/components/landing/LeadMagnet';
 import { FinalCTA } from '@/components/landing/FinalCTA';
 import { Footer } from '@/components/landing/Footer';
@@ -51,7 +50,6 @@ const Index = () => {
       <Pricing onCtaClick={handleCtaClick} />
       <EconomicComparison />
       <FAQ />
-      <Urgency onCtaClick={handleCtaClick} />
       <LeadMagnet />
       <FinalCTA onCtaClick={handleCtaClick} />
       <Footer />

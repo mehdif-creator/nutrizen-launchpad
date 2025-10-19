@@ -30,7 +30,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
       name: 'Essentiel',
       price: annual ? 12.49 : 14.99,
       priceId: 'price_1SIWDPEl2hJeGlFp14plp0D5',
-      originalPrice: annual ? 14.99 : null,
+      originalPrice: null,
       meals: '30 repas / mois',
       mealsPerDay: '≈ 1 repas/jour',
       features: [
@@ -47,10 +47,11 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
       name: 'Équilibre',
       price: annual ? 16.66 : 19.99,
       priceId: 'price_1SIWFyEl2hJeGlFp8pQyEMQC',
-      originalPrice: annual ? 19.99 : null,
+      originalPrice: null,
       meals: '60 repas / mois',
       mealsPerDay: '≈ 2 repas/jour + 10 swaps',
-      badge: 'Le plus choisi',
+      badge: 'Meilleur choix',
+      popularLabel: '⭐ Le plus populaire (82 % des utilisateurs)',
       features: [
         'Tout Essentiel',
         '10 swaps par mois',
@@ -66,7 +67,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
       name: 'Premium',
       price: annual ? 24.99 : 29.99,
       priceId: 'price_1SIWGdEl2hJeGlFp1e1pekfL',
-      originalPrice: annual ? 29.99 : null,
+      originalPrice: null,
       meals: '120 repas / mois',
       mealsPerDay: 'Tous tes repas + swaps ∞',
       features: [
@@ -217,6 +218,12 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
                   </div>
                 </div>
               )}
+              
+              {plan.popularLabel && (
+                <div className="mb-4 text-center">
+                  <span className="text-sm font-medium text-primary">{plan.popularLabel}</span>
+                </div>
+              )}
 
               <div className="space-y-6">
                 <div>
@@ -225,11 +232,6 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
                     <span className="text-4xl font-bold">{plan.price}€</span>
                     <span className="text-muted-foreground">/ mois</span>
                   </div>
-                  {plan.originalPrice && (
-                    <p className="text-sm text-muted-foreground line-through">
-                      {plan.originalPrice}€/mois
-                    </p>
-                  )}
                   <p className="text-sm font-medium text-primary mt-2">{plan.meals}</p>
                   <p className="text-xs text-muted-foreground">{plan.mealsPerDay}</p>
                 </div>
@@ -255,6 +257,10 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
                 >
                   {loading === plan.priceId ? 'Chargement...' : plan.cta}
                 </Button>
+                
+                <p className="text-xs text-center text-muted-foreground mt-3">
+                  Essai gratuit 7 jours — sans engagement
+                </p>
               </div>
             </Card>
           ))}
