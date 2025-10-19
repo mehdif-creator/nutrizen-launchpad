@@ -1,24 +1,24 @@
-import { Header } from '@/components/landing/Header';
-import { Footer } from '@/components/landing/Footer';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { Clock, Target, Sparkles, ShieldCheck, MessageCircle, AlertCircle } from 'lucide-react';
-import { useReferralTracking } from '@/hooks/useReferralTracking';
+import { Header } from "@/components/landing/Header";
+import { Footer } from "@/components/landing/Footer";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { Clock, Target, Sparkles, ShieldCheck, MessageCircle, AlertCircle } from "lucide-react";
+import { useReferralTracking } from "@/hooks/useReferralTracking";
 
 export default function Mum() {
   const navigate = useNavigate();
-  
+
   // Track referral codes from URL
   useReferralTracking();
 
   const handleCtaClick = () => {
-    navigate('/auth/signup');
+    navigate("/auth/signup");
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
       <Header onCtaClick={handleCtaClick} />
-      
+
       <main className="flex-1">
         {/* Hero */}
         <section className="py-20 md:py-28">
@@ -33,10 +33,11 @@ export default function Mum() {
                 <p>✅ Résultat visible ou 1 mois offert</p>
               </div>
               <p className="text-base md:text-lg font-medium pt-4">
-                Essai gratuit 7 jours + bonus «5 swaps maman».<br />
+                Essai gratuit 7 jours + bonus «5 swaps maman».
+                <br />
                 <span className="text-accent font-bold">Offre spéciale jusqu'à dimanche minuit.</span>
               </p>
-              <Button 
+              <Button
                 onClick={handleCtaClick}
                 size="lg"
                 className="mt-6 bg-accent hover:bg-accent/90 text-white text-lg px-8 py-6 rounded-xl transition-all hover:scale-105"
@@ -64,7 +65,9 @@ export default function Mum() {
                   <Sparkles className="w-8 h-8 text-primary" />
                 </div>
                 <h3 className="text-xl font-bold mb-4">Chaque jour ton menu « Mum » généré</h3>
-                <p className="text-muted-foreground">Des repas équilibrés, rapides, pensés pour les mamans débordées.</p>
+                <p className="text-muted-foreground">
+                  Des repas équilibrés, rapides, pensés pour les mamans débordées.
+                </p>
               </div>
 
               <div className="text-center p-8 bg-card rounded-2xl shadow-card card-hover">
@@ -72,7 +75,9 @@ export default function Mum() {
                   <Clock className="w-8 h-8 text-secondary" />
                 </div>
                 <h3 className="text-xl font-bold mb-4">Swap maman & récup facile</h3>
-                <p className="text-muted-foreground">Un repas ne te plaît pas ? Change-le en version «rapide + nourrissante». Zéro prise de tête.</p>
+                <p className="text-muted-foreground">
+                  Un repas ne te plaît pas ? Change-le en version «rapide + nourrissante». Zéro prise de tête.
+                </p>
               </div>
             </div>
           </div>
@@ -82,9 +87,7 @@ export default function Mum() {
         <section className="py-16">
           <div className="container max-w-4xl">
             <div className="bg-card rounded-2xl shadow-card p-8 md:p-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 text-accent">
-                Ce que tu obtiens (valeur perçue)
-              </h2>
+              <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 text-accent">Ce que tu obtiens</h2>
               <div className="overflow-x-auto">
                 <table className="w-full mb-8">
                   <tbody className="divide-y divide-border">
@@ -124,7 +127,8 @@ export default function Mum() {
                 </table>
               </div>
               <p className="text-center text-2xl font-bold">
-                Ton tarif : <span className="text-accent">19,99 €/mois</span> <span className="text-base font-normal text-muted-foreground">(Essai gratuit 7 jours)</span>
+                Ton tarif : <span className="text-accent">19,99 €/mois</span>{" "}
+                <span className="text-base font-normal text-muted-foreground">(Essai gratuit 7 jours)</span>
               </p>
             </div>
           </div>
@@ -137,7 +141,8 @@ export default function Mum() {
               <ShieldCheck className="w-16 h-16 mx-auto mb-6 text-accent" />
               <h2 className="text-3xl font-bold mb-4 text-accent">Garantie Énergie ou remboursé</h2>
               <p className="text-lg text-muted-foreground">
-                Si après 30 jours d'utilisation, tu ne te sens pas plus énergique et sereine avec NutriZen Mum, contacte-nous. Nous te remboursons intégralement, sans condition compliquée.
+                Si après 30 jours d'utilisation, tu ne te sens pas plus énergique et sereine avec NutriZen Mum,
+                contacte-nous. Nous te remboursons intégralement, sans condition compliquée.
               </p>
             </div>
           </div>
@@ -151,11 +156,12 @@ export default function Mum() {
               <div className="bg-card rounded-2xl shadow-card p-8 hover:shadow-lg transition-shadow">
                 <MessageCircle className="w-8 h-8 text-accent mb-4" />
                 <p className="text-lg mb-4">
-                  « Grâce à MyNutrizen Mum j'ai arrêté de sauter des repas, j'ai plus d'énergie pour jouer avec mon petit, et mes paniers courses sont plus calmes. »
+                  « Grâce à MyNutrizen Mum j'ai arrêté de sauter des repas, j'ai plus d'énergie pour jouer avec mon
+                  petit, et mes paniers courses sont plus calmes. »
                 </p>
                 <p className="text-sm text-muted-foreground">— Julie M.</p>
               </div>
-              
+
               <div className="bg-card rounded-2xl shadow-card p-8 hover:shadow-lg transition-shadow">
                 <MessageCircle className="w-8 h-8 text-accent mb-4" />
                 <p className="text-lg mb-4">
@@ -176,21 +182,23 @@ export default function Mum() {
                 <div>
                   <dt className="font-bold text-lg mb-2">Puis-je adapter mes menus à l'allaitement / restriction ?</dt>
                   <dd className="text-muted-foreground pl-4">
-                    Oui — lors de l'onboarding, mentionne ton statut (allaitement, grossesse, etc.). Les menus sont adaptés.
+                    Oui — lors de l'onboarding, mentionne ton statut (allaitement, grossesse, etc.). Les menus sont
+                    adaptés.
                   </dd>
                 </div>
-                
+
                 <div>
                   <dt className="font-bold text-lg mb-2">Je peux vraiment changer un repas chaque jour ?</dt>
                   <dd className="text-muted-foreground pl-4">
                     Oui – Le swap maman est activé dès le jour 1 : tu changes un repas, version rapide/nourrissante.
                   </dd>
                 </div>
-                
+
                 <div>
                   <dt className="font-bold text-lg mb-2">Et après les 30 jours ?</dt>
                   <dd className="text-muted-foreground pl-4">
-                    Le plan continue, tu peux rester ou passer à un objectif « maintien », «performance », etc., sans perdre ton historique.
+                    Le plan continue, tu peux rester ou passer à un objectif « maintien », «performance », etc., sans
+                    perdre ton historique.
                   </dd>
                 </div>
               </dl>
@@ -205,12 +213,14 @@ export default function Mum() {
               <AlertCircle className="w-16 h-16 mx-auto mb-6 text-destructive" />
               <h2 className="text-3xl font-bold mb-4 text-destructive">Offre limitée</h2>
               <p className="text-lg mb-4">
-                Seuls les <strong>75 premières mamans inscrites</strong> bénéficient de la <strong>valeur perçue complète de 200 €</strong> au tarif de 19,99 €/mois. L'offre pourrait évoluer après cette limite.
+                Seuls les <strong>75 premières mamans inscrites</strong> bénéficient de la{" "}
+                <strong>valeur perçue complète de 200 €</strong> au tarif de 19,99 €/mois. L'offre pourrait évoluer
+                après cette limite.
               </p>
               <p className="text-lg font-semibold mb-6">
                 L'offre se termine dimanche à <strong className="text-destructive">23h59</strong>.
               </p>
-              <Button 
+              <Button
                 onClick={handleCtaClick}
                 size="lg"
                 className="bg-accent hover:bg-accent/90 text-white text-lg px-8 py-6 rounded-xl transition-all hover:scale-105"
@@ -224,7 +234,7 @@ export default function Mum() {
         {/* Final CTA */}
         <section className="py-16">
           <div className="container text-center">
-            <Button 
+            <Button
               onClick={handleCtaClick}
               size="lg"
               className="bg-gradient-to-r from-accent to-primary hover:from-accent/90 hover:to-primary/90 text-white text-xl px-12 py-8 rounded-xl transition-all hover:scale-105 shadow-lg"
@@ -234,7 +244,7 @@ export default function Mum() {
           </div>
         </section>
       </main>
-      
+
       <Footer />
     </div>
   );

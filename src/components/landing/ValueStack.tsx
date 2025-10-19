@@ -3,9 +3,7 @@ export const ValueStack = () => {
     <section className="py-16">
       <div className="container max-w-4xl">
         <div className="bg-card rounded-2xl shadow-card p-8 md:p-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 text-primary">
-            Ce que tu obtiens (valeur perçue)
-          </h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 text-primary">Ce que tu obtiens</h2>
           <div className="overflow-x-auto">
             <table className="w-full mb-8">
               <tbody className="divide-y divide-border">
@@ -45,7 +43,7 @@ export const ValueStack = () => {
             </table>
           </div>
           <p className="text-center text-2xl font-bold">
-            Ton tarif : <span className="text-primary">19,99 €/mois</span>{' '}
+            Ton tarif : <span className="text-primary">19,99 €/mois</span>{" "}
             <span className="text-base font-normal text-muted-foreground">(Essai gratuit 7 jours)</span>
           </p>
         </div>
