@@ -6,26 +6,20 @@ export const HowItWorks = () => {
     {
       icon: Target,
       number: '1',
-      title: 'Onboarding 1 min',
-      description: 'Tes goûts, ton budget, ton temps.'
+      title: 'Réponds à 3 questions en 60 s',
+      description: 'Profils, goûts, objectifs — on crée ton plan.'
     },
     {
       icon: Sparkles,
       number: '2',
-      title: 'Menus générés automatiquement',
-      description: 'L\'IA crée un plan personnalisé en 30 secondes.'
+      title: 'Reçois ton plan repas généré automatiquement',
+      description: 'Chaque jour un menu complet adapté à ton rythme.'
     },
     {
       icon: ShoppingCart,
       number: '3',
-      title: 'Liste de courses prête',
-      description: 'Tous les ingrédients consolidés.'
-    },
-    {
-      icon: ChefHat,
-      number: '4',
-      title: 'Cuisine en 30 min, sans stress',
-      description: 'Recettes simples avec étapes claires.'
+      title: 'Swap libre & profite',
+      description: 'Un plat ne te plaît pas ? Change-le en un clic. Gain de temps. Zéro stress.'
     }
   ];
 
@@ -37,11 +31,11 @@ export const HowItWorks = () => {
             Comment ça marche ?
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            4 étapes simples pour simplifier tes repas
+            3 étapes simples pour simplifier tes repas
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {steps.map((step, index) => {
             const Icon = step.icon;
             return (

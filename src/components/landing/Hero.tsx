@@ -15,11 +15,13 @@ export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
           <div className="space-y-8 animate-fade-in">
             <div className="space-y-4">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                Des menus adaptés à toi, prêts en 30 secondes.
+                Mange mieux sans réfléchir : ton plan repas intelligent en 30 jours
               </h1>
-              <p className="text-xl text-muted-foreground leading-relaxed">
-                Recettes rapides, équilibrées et personnalisées à ton style de vie.
-              </p>
+              <div className="space-y-2 text-lg text-muted-foreground">
+                <p>✅ 1 menu automatisé chaque jour</p>
+                <p>✅ 1 swap libre pour choisir ce que <strong>TU</strong> veux</p>
+                <p>✅ Résultat garanti : "5 h de liberté" en moins par semaine ou on t'offre 1 mois</p>
+              </div>
             </div>
 
             {/* CTAs */}

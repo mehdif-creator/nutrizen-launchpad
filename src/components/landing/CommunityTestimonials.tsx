@@ -3,6 +3,21 @@ import { Card } from '@/components/ui/card';
 
 const testimonials = [
   {
+    name: 'Marie D.',
+    quote: "Grâce à MyNutrizen j'ai arrêté de stresser, je gagne 1h30 par jour et je mange enfin varié.",
+    rating: 5,
+  },
+  {
+    name: 'Paul L.',
+    quote: "J'avais peu de temps, j'ai été bluffé par le swap en un clic. Je ne reviendrai pas aux anciennes applis.",
+    rating: 5,
+  },
+  {
+    name: 'Sonia & Thomas',
+    quote: "Enfant/mari/travail – la planif me saoulait. MyNutrizen s'en occupe.",
+    rating: 5,
+  },
+  {
     name: 'Julie, 34 ans',
     quote: "Depuis que j'utilise NutriZen, je gagne 4 heures par semaine et j'arrête de commander !",
     rating: 5,
@@ -15,21 +30,6 @@ const testimonials = [
   {
     name: 'Emma, 37 ans',
     quote: "J'ai enfin arrêté de me casser la tête pour les repas de la semaine.",
-    rating: 5,
-  },
-  {
-    name: 'Brice R.',
-    quote: "Une petite révolution dans nos vies : économies d'énergie, de temps, d'argent et en plus on mange mieux !",
-    rating: 5,
-  },
-  {
-    name: 'Céline M.',
-    quote: "Ça va faire 5 mois que j'utilise l'application et j'en suis ravie ! Économie flagrante sur le budget courses, menus nombreux et simples.",
-    rating: 5,
-  },
-  {
-    name: 'Camille P.',
-    quote: "Maman de 3 garçons, NutriZen a été pour moi une bouée de secours lancée dans la mer de la parentalité, ça allège considérablement la charge mentale au quotidien.",
     rating: 5,
   },
 ];

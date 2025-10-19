@@ -8,20 +8,20 @@ import {
 export const FAQ = () => {
   const leftColumnFaqs = [
     {
-      question: 'Comment fonctionne la semaine gratuite ?',
-      answer: 'Inscris-toi sans carte bancaire. Tu bénéficies de 7 jours complets pour tester NutriZen : génère tes menus, découvre les recettes, utilise la liste de courses. Si ça te convient, active un abonnement à la fin de la période d\'essai.'
-    },
-    {
       question: 'Puis-je annuler à tout moment ?',
-      answer: 'Oui, absolument. Ton abonnement est résiliable en 3 clics depuis ton profil. Aucune pénalité, aucune condition. Si tu n\'es pas satisfait dans les 30 premiers jours, tu peux demander un remboursement complet si tu n\'as constaté aucun gain de temps.'
+      answer: 'Oui ! Essai gratuit 7 jours, abonnement mensuel ensuite, aucune obligation. Ton abonnement est résiliable en 3 clics depuis ton profil. Aucune pénalité, aucune condition.'
     },
     {
-      question: 'Qu\'est-ce qu\'un "swap" ?',
-      answer: 'Un swap te permet de remplacer un repas du menu par un autre de ton choix en 1 clic. Si tu n\'aimes pas un plat proposé ou que tu as déjà les ingrédients pour autre chose, tu swappes. Simple et rapide.'
+      question: 'Qu\'en est-il de mes préférences & allergies ?',
+      answer: 'Lors de l\'onboarding, tu indiques tes goûts, exclusions & objectifs → menus adaptés. Tu peux indiquer tes allergies et restrictions alimentaires (végétarien, sans gluten, etc.). NutriZen adapte automatiquement tous les menus proposés.'
     },
     {
-      question: 'Comment fonctionne la garantie 30 jours ?',
-      answer: 'Si après 30 jours d\'utilisation, tu constates que tu n\'as pas gagné de temps avec NutriZen, contacte-nous avec un petit retour. Nous te remboursons intégralement, sans questions compliquées.'
+      question: 'Je peux changer un repas chaque jour ?',
+      answer: 'Oui – Le swap libre est actif dès le jour 1 : tu changes ce que TU veux. Un swap te permet de remplacer un repas du menu par un autre de ton choix en 1 clic. Simple et rapide.'
+    },
+    {
+      question: 'Est-ce comme une "diète" ?',
+      answer: 'Non : ce n\'est pas une diète rigide mais un système automatisé intelligent. Mange ce que tu veux (dans les limites de ton profil) sans stress. NutriZen s\'adapte à ton style de vie, pas l\'inverse.'
     },
     {
       question: 'Les recettes conviennent-elles aux débutants ?',
