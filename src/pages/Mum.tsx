@@ -93,34 +93,38 @@ export default function Mum() {
                       <td className="py-4 text-right text-accent font-semibold">59 €</td>
                     </tr>
                     <tr className="hover:bg-muted/50 transition-colors">
-                      <td className="py-4 pr-4 text-left">Swap spécial mamans (1/jour)</td>
+                      <td className="py-4 pr-4 text-left">Swap spécial mamans 1/jour</td>
                       <td className="py-4 text-right text-accent font-semibold">19 €</td>
                     </tr>
                     <tr className="hover:bg-muted/50 transition-colors">
                       <td className="py-4 pr-4 text-left">Module « Boost énergie & récupération »</td>
-                      <td className="py-4 text-right text-accent font-semibold">29 €</td>
+                      <td className="py-4 text-right text-accent font-semibold">39 €</td>
                     </tr>
                     <tr className="hover:bg-muted/50 transition-colors">
                       <td className="py-4 pr-4 text-left">Accès complet app MyNutrizen</td>
                       <td className="py-4 text-right text-accent font-semibold">19 €</td>
                     </tr>
                     <tr className="hover:bg-muted/50 transition-colors">
-                      <td className="py-4 pr-4 text-left">Bonus PDF «10 repas express super-maman»</td>
+                      <td className="py-4 pr-4 text-left">Bonus PDF « 10 repas super-maman express »</td>
                       <td className="py-4 text-right text-accent font-semibold">9 €</td>
                     </tr>
                     <tr className="hover:bg-muted/50 transition-colors">
-                      <td className="py-4 pr-4 text-left">5 crédits bonus (swap maman/inspi)</td>
+                      <td className="py-4 pr-4 text-left">12 crédits maman (swap/inspi/scan)</td>
                       <td className="py-4 text-right text-accent font-semibold">14 €</td>
+                    </tr>
+                    <tr className="hover:bg-muted/50 transition-colors">
+                      <td className="py-4 pr-4 text-left">Garantie « Plus d'énergie ou mois gratuit »</td>
+                      <td className="py-4 text-right text-accent font-semibold">40 €</td>
                     </tr>
                     <tr className="border-t-2 border-accent/50">
                       <td className="py-4 pr-4 text-left font-bold text-lg">Total valeur perçue</td>
-                      <td className="py-4 text-right text-accent font-bold text-xl">≈ 149 €</td>
+                      <td className="py-4 text-right text-accent font-bold text-xl">≈ 200 €</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
               <p className="text-center text-2xl font-bold">
-                Tarif spécial : <span className="text-accent">21,99 €/mois</span> <span className="text-base font-normal text-muted-foreground">(Essai gratuit 7 jours)</span>
+                Ton tarif : <span className="text-accent">19,99 €/mois</span> <span className="text-base font-normal text-muted-foreground">(Essai gratuit 7 jours)</span>
               </p>
             </div>
           </div>
@@ -131,9 +135,9 @@ export default function Mum() {
           <div className="container max-w-3xl">
             <div className="text-center p-10 bg-card rounded-2xl shadow-card">
               <ShieldCheck className="w-16 h-16 mx-auto mb-6 text-accent" />
-              <h2 className="text-3xl font-bold mb-4 text-accent">Garantie Mamans Zen</h2>
+              <h2 className="text-3xl font-bold mb-4 text-accent">Garantie Énergie ou remboursé</h2>
               <p className="text-lg text-muted-foreground">
-                Si après 30 jours tu ne te sens <strong>plus énergique</strong>, <strong>plus sereine</strong> et <strong>moins surmenée</strong>, on t'offre 1 mois gratuit supplémentaire. Sans condition compliquée.
+                Si après 30 jours d'utilisation, tu ne te sens pas plus énergique et sereine avec NutriZen Mum, contacte-nous. Nous te remboursons intégralement, sans condition compliquée.
               </p>
             </div>
           </div>
@@ -201,7 +205,7 @@ export default function Mum() {
               <AlertCircle className="w-16 h-16 mx-auto mb-6 text-destructive" />
               <h2 className="text-3xl font-bold mb-4 text-destructive">Offre limitée</h2>
               <p className="text-lg mb-4">
-                Seuls les <strong>75 premières mamans inscrites</strong> bénéficient du tarif spécial + bonus crédits + garantie renforcée. Prix repassera à <strong>29,99 €/mois</strong> après.
+                Seuls les <strong>75 premières mamans inscrites</strong> bénéficient de la <strong>valeur perçue complète de 200 €</strong> au tarif de 19,99 €/mois. L'offre pourrait évoluer après cette limite.
               </p>
               <p className="text-lg font-semibold mb-6">
                 L'offre se termine dimanche à <strong className="text-destructive">23h59</strong>.

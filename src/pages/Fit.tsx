@@ -90,7 +90,7 @@ export default function Fit() {
                   <tbody className="divide-y divide-border">
                     <tr className="hover:bg-muted/50 transition-colors">
                       <td className="py-4 pr-4 text-left">Plan « Fit » 30 jours personnalisé</td>
-                      <td className="py-4 text-right text-primary font-semibold">59 €</td>
+                      <td className="py-4 text-right text-primary font-semibold">69 €</td>
                     </tr>
                     <tr className="hover:bg-muted/50 transition-colors">
                       <td className="py-4 pr-4 text-left">Swap premium 1/jour</td>
@@ -105,22 +105,26 @@ export default function Fit() {
                       <td className="py-4 text-right text-primary font-semibold">19 €</td>
                     </tr>
                     <tr className="hover:bg-muted/50 transition-colors">
-                      <td className="py-4 pr-4 text-left">Bonus PDF «15 repas performance rapide»</td>
+                      <td className="py-4 pr-4 text-left">Bonus PDF « 10 repas performance rapide »</td>
                       <td className="py-4 text-right text-primary font-semibold">9 €</td>
                     </tr>
                     <tr className="hover:bg-muted/50 transition-colors">
-                      <td className="py-4 pr-4 text-left">10 crédits bonus (swap premium/inspi)</td>
-                      <td className="py-4 text-right text-primary font-semibold">10 €</td>
+                      <td className="py-4 pr-4 text-left">8 crédits premium (swap/inspi/scan)</td>
+                      <td className="py-4 text-right text-primary font-semibold">14 €</td>
+                    </tr>
+                    <tr className="hover:bg-muted/50 transition-colors">
+                      <td className="py-4 pr-4 text-left">Garantie « Résultat ou mois gratuit »</td>
+                      <td className="py-4 text-right text-primary font-semibold">40 €</td>
                     </tr>
                     <tr className="border-t-2 border-primary/50">
                       <td className="py-4 pr-4 text-left font-bold text-lg">Total valeur perçue</td>
-                      <td className="py-4 text-right text-primary font-bold text-xl">≈ 165 €</td>
+                      <td className="py-4 text-right text-primary font-bold text-xl">≈ 200 €</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
               <p className="text-center text-2xl font-bold">
-                Tarif spécial : <span className="text-primary">24,99 €/mois</span> <span className="text-base font-normal text-muted-foreground">(Essai gratuit 7 jours)</span>
+                Ton tarif : <span className="text-primary">19,99 €/mois</span> <span className="text-base font-normal text-muted-foreground">(Essai gratuit 7 jours)</span>
               </p>
             </div>
           </div>
@@ -131,9 +135,9 @@ export default function Fit() {
           <div className="container max-w-3xl">
             <div className="text-center p-10 bg-card rounded-2xl shadow-card">
               <ShieldCheck className="w-16 h-16 mx-auto mb-6 text-primary" />
-              <h2 className="text-3xl font-bold mb-4 text-primary">Garantie Fit Performance</h2>
+              <h2 className="text-3xl font-bold mb-4 text-primary">Garantie Résultat ou remboursé</h2>
               <p className="text-lg text-muted-foreground">
-                Si après 30 jours tu n'as pas gagné <strong>au moins 3 kg de muscle</strong> ou perdu <strong>5 % de masse grasse</strong>, on t'offre 1 mois gratuit supplémentaire. Sans condition compliquée.
+                Si après 30 jours d'utilisation régulière, tu ne constates aucune amélioration de tes performances ou de ta composition corporelle, contacte-nous. Nous te remboursons intégralement.
               </p>
             </div>
           </div>
@@ -201,7 +205,7 @@ export default function Fit() {
               <AlertCircle className="w-16 h-16 mx-auto mb-6 text-destructive" />
               <h2 className="text-3xl font-bold mb-4 text-destructive">Offre limitée</h2>
               <p className="text-lg mb-4">
-                Seuls les <strong>50 premiers inscrits Fit</strong> bénéficient du tarif spécial + bonus crédits + garantie renforcée. Prix repassera à <strong>34,99 €/mois</strong> après.
+                Seuls les <strong>50 premiers inscrits Fit</strong> bénéficient de la <strong>valeur perçue complète de 200 €</strong> au tarif de 19,99 €/mois. L'offre pourrait évoluer après cette limite.
               </p>
               <p className="text-lg font-semibold mb-6">
                 L'offre se termine dimanche à <strong className="text-destructive">23h59</strong>.

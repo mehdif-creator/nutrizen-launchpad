@@ -11,14 +11,14 @@ export const ValueStack = () => {
               <tbody className="divide-y divide-border">
                 <tr className="hover:bg-muted/50 transition-colors">
                   <td className="py-4 pr-4 text-left">Plan personnalisé 30 jours</td>
-                  <td className="py-4 text-right text-primary font-semibold">49 €</td>
+                  <td className="py-4 text-right text-primary font-semibold">59 €</td>
                 </tr>
                 <tr className="hover:bg-muted/50 transition-colors">
                   <td className="py-4 pr-4 text-left">Swap libre 1/jour</td>
                   <td className="py-4 text-right text-primary font-semibold">19 €</td>
                 </tr>
                 <tr className="hover:bg-muted/50 transition-colors">
-                  <td className="py-4 pr-4 text-left">Fonction "InspiFrigo" (bonus early)</td>
+                  <td className="py-4 pr-4 text-left">Module "InspiFrigo"</td>
                   <td className="py-4 text-right text-primary font-semibold">29 €</td>
                 </tr>
                 <tr className="hover:bg-muted/50 transition-colors">
@@ -26,16 +26,20 @@ export const ValueStack = () => {
                   <td className="py-4 text-right text-primary font-semibold">19 €</td>
                 </tr>
                 <tr className="hover:bg-muted/50 transition-colors">
-                  <td className="py-4 pr-4 text-left">Bonus PDF "15 repas express équilibrés"</td>
+                  <td className="py-4 pr-4 text-left">Bonus PDF « 15 repas express équilibrés »</td>
                   <td className="py-4 text-right text-primary font-semibold">9 €</td>
                 </tr>
                 <tr className="hover:bg-muted/50 transition-colors">
-                  <td className="py-4 pr-4 text-left">10 crédits offerts (swap/inspi/scan)</td>
+                  <td className="py-4 pr-4 text-left">12 crédits gratuits (swap/inspi/scan)</td>
                   <td className="py-4 text-right text-primary font-semibold">10 €</td>
+                </tr>
+                <tr className="hover:bg-muted/50 transition-colors">
+                  <td className="py-4 pr-4 text-left">Garantie « Satisfait ou 1 mois gratuit »</td>
+                  <td className="py-4 text-right text-primary font-semibold">55 €</td>
                 </tr>
                 <tr className="border-t-2 border-primary/50">
                   <td className="py-4 pr-4 text-left font-bold text-lg">Total valeur perçue</td>
-                  <td className="py-4 text-right text-primary font-bold text-xl">≈ 135 €</td>
+                  <td className="py-4 text-right text-primary font-bold text-xl">≈ 200 €</td>
                 </tr>
               </tbody>
             </table>
