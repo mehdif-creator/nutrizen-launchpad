@@ -3,16 +3,19 @@ import { Card } from '@/components/ui/card';
 export const Benefits = () => {
   const benefits = [{
     icon: Clock,
-    title: 'Gagne 3h par semaine',
-    description: 'Plus besoin de réfléchir à quoi manger.'
+    title: 'Gagne 5h par semaine',
+    result: 'Plus de temps pour toi',
+    description: 'Fini les 30 min quotidiennes à te demander "qu\'est-ce qu\'on mange ?". Tout est planifié automatiquement.'
   }, {
     icon: Coins,
-    title: 'Économise jusqu\'à 30 %',
-    description: 'Menus optimisés pour ton budget.'
+    title: 'Économise jusqu\'à 30%',
+    result: 'Liste de courses optimisée',
+    description: 'Ton plan génère une liste précise par rayon. Exit les achats impulsifs et le gaspillage.'
   }, {
     icon: Brain,
     title: 'Zéro charge mentale',
-    description: 'Tes repas, courses et recettes prêts en 1 clic.'
+    result: 'Menus équilibrés automatiques',
+    description: 'Ton plan adapté à tes objectifs (perte, maintien, prise). Tout est calculé et prêt en 1 clic.'
   }];
   return <section id="avantages" className="py-16 bg-muted/30">
       <div className="container">
@@ -28,7 +31,8 @@ export const Benefits = () => {
                 <benefit.icon className="w-8 h-8 text-primary" />
               </div>
               <h3 className="text-xl font-bold mb-3">{benefit.title}</h3>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-sm font-medium text-primary mb-2">{benefit.result}</p>
+              <p className="text-muted-foreground leading-relaxed text-sm">
                 {benefit.description}
               </p>
             </Card>)}

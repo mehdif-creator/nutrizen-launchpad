@@ -159,10 +159,39 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
           </div>
         </div>
 
+        {/* Value Anchor */}
+        <div className="mb-8 p-6 bg-gradient-to-br from-accent/10 to-primary/10 rounded-2xl border-2 border-accent/20 text-center">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4">
+            <div className="text-left">
+              <p className="text-sm text-muted-foreground mb-1">Valeur réelle estimée :</p>
+              <p className="text-3xl font-bold line-through text-muted-foreground">200 €/mois</p>
+            </div>
+            <div className="text-4xl font-bold text-accent">→</div>
+            <div className="text-left">
+              <p className="text-sm text-accent font-medium mb-1">Ton tarif aujourd'hui :</p>
+              <p className="text-4xl font-bold text-foreground">19,99 €<span className="text-lg">/mois</span></p>
+            </div>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm">
+            <span className="flex items-center gap-1">
+              <Check className="w-4 h-4 text-accent" />
+              <span>50+ recettes exclusives</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <Check className="w-4 h-4 text-accent" />
+              <span>Support prioritaire</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <Check className="w-4 h-4 text-accent" />
+              <span>Garantie 30 jours</span>
+            </span>
+          </div>
+        </div>
+
         {/* Trial Banner */}
         <div className="mb-8 p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg border text-center">
           <p className="text-sm font-medium">
-            🔥 <strong>1ère semaine gratuite — sans carte bancaire</strong>
+            🔥 <strong>Essai gratuit 7 jours — sans carte bancaire</strong>
           </p>
         </div>
 

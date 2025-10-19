@@ -4,34 +4,46 @@ import { Card } from '@/components/ui/card';
 const testimonials = [
   {
     name: 'Marie D.',
-    quote: "Grâce à MyNutrizen j'ai arrêté de stresser, je gagne 1h30 par jour et je mange enfin varié.",
+    role: 'Maman de 2 enfants',
+    quote: "J'ai arrêté de stresser pour les repas. Je gagne 1h30 par jour et on mange enfin varié. Mes enfants adorent !",
     rating: 5,
+    result: '+7h gagnées/semaine'
   },
   {
     name: 'Paul L.',
-    quote: "J'avais peu de temps, j'ai été bluffé par le swap en un clic. Je ne reviendrai pas aux anciennes applis.",
+    role: 'Entrepreneur',
+    quote: "J'avais peu de temps entre mes projets. Le swap en un clic est génial. Je ne reviendrai pas aux anciennes applis.",
     rating: 5,
+    result: 'Objectif -5kg atteint'
   },
   {
     name: 'Sonia & Thomas',
-    quote: "Enfant/mari/travail – la planif me saoulait. MyNutrizen s'en occupe.",
+    role: 'Jeunes parents',
+    quote: "Entre le bébé, le travail et la maison, la planif des repas nous épuisait. MyNutriZen s'en occupe et c'est parfait.",
     rating: 5,
+    result: '+10h/semaine en famille'
   },
   {
-    name: 'Julie, 34 ans',
-    quote: "Depuis que j'utilise NutriZen, je gagne 4 heures par semaine et j'arrête de commander !",
+    name: 'Julie M.',
+    role: 'Étudiante en médecine',
+    quote: "Menus équilibrés, liste auto, zéro prise de tête. Exactement ce qu'il me fallait avec mes horaires impossibles.",
     rating: 5,
+    result: 'Budget -30%'
   },
   {
-    name: 'Léo, 29 ans',
-    quote: "Menus simples et rapides, c'est devenu mon réflexe du dimanche.",
+    name: 'Marc V.',
+    role: 'Coach sportif',
+    quote: "Sceptique au début sur l'automatisation. Maintenant je ne peux plus m'en passer. Gain de temps énorme pour moi et mes clients.",
     rating: 5,
+    result: '+12 clients orientés'
   },
   {
-    name: 'Emma, 37 ans',
-    quote: "J'ai enfin arrêté de me casser la tête pour les repas de la semaine.",
+    name: 'Sophie R.',
+    role: 'Maman de 4 enfants',
+    quote: "Parfait pour notre famille nombreuse. Fini le \"qu'est-ce qu'on mange ce soir ?\". Les enfants participent au choix des menus.",
     rating: 5,
-  },
+    result: 'Gaspillage divisé par 2'
+  }
 ];
 
 export const CommunityTestimonials = () => {
@@ -51,17 +63,23 @@ export const CommunityTestimonials = () => {
               className="p-6 bg-white border-none shadow-card hover:shadow-glow transition-shadow animate-slide-up"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
-              <div className="flex gap-1 mb-3">
-                {[...Array(testimonial.rating)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-[#D64027] text-[#D64027]" />
-                ))}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex gap-1">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-[#D64027] text-[#D64027]" />
+                  ))}
+                </div>
+                <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded-full">
+                  {testimonial.result}
+                </span>
               </div>
               <p className="text-sm text-foreground mb-4 leading-relaxed">
                 "{testimonial.quote}"
               </p>
-              <p className="text-xs font-medium text-muted-foreground">
-                — {testimonial.name}
-              </p>
+              <div>
+                <p className="text-sm font-semibold">{testimonial.name}</p>
+                <p className="text-xs text-muted-foreground">{testimonial.role}</p>
+              </div>
             </Card>
           ))}
         </div>

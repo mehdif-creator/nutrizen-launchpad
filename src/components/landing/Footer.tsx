@@ -3,9 +3,11 @@ import { Shield, Lock, CreditCard } from 'lucide-react';
 export const Footer = () => {
   const footerSections = [
     {
-      title: 'Ressources',
+      title: 'NutriZen',
       links: [
-        { label: 'Blog', href: '/blog' },
+        { label: 'Fonctionnalités', href: '/#avantages' },
+        { label: 'Tarifs', href: '/#tarifs' },
+        { label: 'Témoignages', href: '/#temoignages' },
         { label: 'FAQ', href: '/#faq' },
         { label: 'Contact', href: '/contact' }
       ]
@@ -17,30 +19,15 @@ export const Footer = () => {
         { label: 'Confidentialité', href: '/legal/confidentialite' },
         { label: 'Mentions légales', href: '/legal/mentions' }
       ]
-    },
-    {
-      title: 'Entreprise',
-      links: [
-        { label: 'À propos', href: '#' },
-        { label: 'Contact', href: '/contact' }
-      ]
-    },
-    {
-      title: 'Nos offres',
-      links: [
-        { label: 'NutriZen Fit', href: '/fit' },
-        { label: 'NutriZen Mum', href: '/mum' },
-        { label: 'NutriZen Pro', href: '/pro' }
-      ]
     }
   ];
 
   return (
     <footer className="bg-muted/30 border-t">
       <div className="container py-12">
-        <div className="grid md:grid-cols-5 gap-8 mb-8">
+        <div className="grid md:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
-          <div className="md:col-span-1">
+          <div className="md:col-span-2">
             <div className="flex items-center mb-4">
               <img 
                 src={new URL('@/assets/nutrizen-main-logo.png', import.meta.url).href}
@@ -48,9 +35,16 @@ export const Footer = () => {
                 className="h-12 w-auto"
               />
             </div>
-            <p className="text-sm text-muted-foreground">
-              L'assistant qui organise tes repas en 30 secondes.
+            <p className="text-sm text-muted-foreground mb-6">
+              Menus adaptés à tes objectifs en 30 secondes.<br />
+              Sans passer des heures à réfléchir, planifier et calculer.
             </p>
+            <a 
+              href="/auth/signup"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-r from-primary to-accent text-white font-medium hover:scale-[1.02] transition-tech text-sm"
+            >
+              Commencer mon plan gratuit
+            </a>
           </div>
 
           {/* Links */}

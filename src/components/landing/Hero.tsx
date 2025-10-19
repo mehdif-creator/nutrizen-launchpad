@@ -13,14 +13,32 @@ export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left: Content */}
           <div className="space-y-8 animate-fade-in">
+            {/* Preuve sociale immédiate */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-accent/10 rounded-full text-sm">
+              <span className="text-accent font-semibold">🔥 +1 000 utilisateurs</span>
+              <span className="text-muted-foreground">· 92% prolongent après essai</span>
+            </div>
+
             <div className="space-y-4">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                Mange mieux sans réfléchir : ton plan repas intelligent en 30 jours
+                Menus adaptés à tes objectifs en 30 secondes
               </h1>
-              <div className="space-y-2 text-lg text-muted-foreground">
-                <p>✅ 1 menu automatisé chaque jour</p>
-                <p>✅ 1 swap libre pour choisir ce que <strong>TU</strong> veux</p>
-                <p>✅ Résultat garanti : "5 h de liberté" en moins par semaine ou on t'offre 1 mois</p>
+              <p className="text-xl text-muted-foreground font-medium">
+                Sans passer des heures à réfléchir, planifier et calculer.
+              </p>
+              <div className="space-y-2 text-lg">
+                <p className="flex items-start gap-2">
+                  <span className="text-primary font-bold">→</span>
+                  <span><strong>Gagne 5h par semaine</strong> sur ta planification repas</span>
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="text-primary font-bold">→</span>
+                  <span><strong>Ton plan adapté</strong> à tes objectifs (perte, maintien, prise)</span>
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="text-primary font-bold">→</span>
+                  <span><strong>Plus de prise de tête</strong> : tout est calculé pour toi</span>
+                </p>
               </div>
             </div>
 
@@ -32,7 +50,7 @@ export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
                   size="lg"
                   className="bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] shadow-glow transition-tech text-lg px-8"
                 >
-                  Commencer ma semaine gratuite
+                  Commencer mon plan gratuit
                 </Button>
                 <Button
                   onClick={onExampleClick}
@@ -40,10 +58,12 @@ export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
                   variant="outline"
                   className="text-lg px-8 hover:scale-[1.02] active:scale-[0.99] transition-tech"
                 >
-                  Voir un exemple de semaine
+                  Voir un exemple
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground pl-1">Aucune carte bancaire requise</p>
+              <p className="text-sm text-muted-foreground pl-1">
+                <strong>Essai gratuit 7 jours</strong> · Aucun engagement · Aucune carte bancaire requise
+              </p>
             </div>
 
             {/* Trust Row */}
@@ -58,7 +78,7 @@ export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
                   ))}
                 </div>
                 <span className="font-medium">4,8/5</span>
-                <span className="text-muted-foreground">sur 2 400+ avis</span>
+                <span className="text-muted-foreground">· +2 400 avis</span>
               </div>
 
               <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
@@ -68,11 +88,11 @@ export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Check className="w-4 h-4 text-primary" />
-                  <span>Remboursé 30 j si aucun temps gagné</span>
+                  <span>Garantie temps-gagné 30j</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Check className="w-4 h-4 text-primary" />
-                  <span>Validé par un(e) diététicien(ne)</span>
+                  <span>Validé par diététicien(ne)</span>
                 </div>
               </div>
             </div>
