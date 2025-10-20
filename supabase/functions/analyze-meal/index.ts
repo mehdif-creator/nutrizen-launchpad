@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,7 +13,69 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Received meal analysis request');
+    // Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    
+    if (authError || !user) {
+      console.error('Authentication error:', authError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('User authenticated:', user.id);
+
+    // Check subscription status
+    const { data: subscription, error: subError } = await supabaseClient
+      .from('subscriptions')
+      .select('status, trial_end')
+      .eq('user_id', user.id)
+      .single();
+
+    if (subError || !subscription) {
+      console.error('Subscription check error:', subError);
+      return new Response(
+        JSON.stringify({ error: 'No active subscription found' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate subscription is active or trialing
+    if (subscription.status !== 'active' && subscription.status !== 'trialing') {
+      return new Response(
+        JSON.stringify({ error: 'Active subscription required' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check if trial has expired
+    if (subscription.status === 'trialing' && subscription.trial_end) {
+      const trialEnd = new Date(subscription.trial_end);
+      if (trialEnd < new Date()) {
+        return new Response(
+          JSON.stringify({ error: 'Trial expired' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    console.log('Subscription validated, processing meal analysis request');
     
     // Get the form data from the request
     const formData = await req.formData();
@@ -24,17 +87,22 @@ serve(async (req) => {
 
     console.log('Image received, forwarding to n8n webhook...');
 
+    // Get webhook base URL from secrets
+    const n8nWebhookBase = Deno.env.get('N8N_WEBHOOK_BASE');
+    if (!n8nWebhookBase) {
+      throw new Error('N8N_WEBHOOK_BASE not configured');
+    }
+
+    const webhookUrl = `${n8nWebhookBase}/Nutrizen-analyse-repas`;
+
     // Forward to n8n webhook
     const n8nFormData = new FormData();
     n8nFormData.append('image', image);
 
-    const response = await fetch(
-      'https://n8n.srv1005117.hstgr.cloud/webhook-test/Nutrizen-analyse-repas',
-      {
-        method: 'POST',
-        body: n8nFormData,
-      }
-    );
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      body: n8nFormData,
+    });
 
     console.log('n8n response status:', response.status);
 

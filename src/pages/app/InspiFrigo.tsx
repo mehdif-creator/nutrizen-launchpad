@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Camera, Upload, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Recipe {
   title: string;
@@ -73,28 +74,29 @@ export default function InspiFrigo() {
       const formData = new FormData();
       formData.append('image', selectedFile);
 
-      const response = await fetch(
-        'https://n8n.srv1005117.hstgr.cloud/webhook-test/analyse-frigo',
-        {
-          method: 'POST',
-          body: formData,
-        }
-      );
+      console.log('Calling analyze-fridge edge function...');
+      
+      const { data, error } = await supabase.functions.invoke('analyze-fridge', {
+        body: formData,
+      });
 
-      if (!response.ok) {
-        throw new Error('Erreur lors de l\'analyse');
+      console.log('Edge function response:', { data, error });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Erreur lors de l\'analyse');
       }
 
-      const data = await response.json();
-      const output = data[0]?.output;
-
-      if (output?.status === 'success' && output.recipes) {
+      if (data?.status === 'success' && data.recipes) {
         setResult({
-          ingredients: output.ingredients || [],
-          recipes: output.recipes,
+          ingredients: data.ingredients || [],
+          recipes: data.recipes,
         });
         toast.success('Analyse terminée avec succès !');
+      } else if (data?.error) {
+        throw new Error(data.error);
       } else {
+        console.error('Invalid response format:', data);
         throw new Error('Format de réponse invalide');
       }
     } catch (error) {

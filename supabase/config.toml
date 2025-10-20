@@ -12,6 +12,9 @@ verify_jwt = true
 [functions.analyze-fridge-photo]
 verify_jwt = true
 
+[functions.analyze-fridge]
+verify_jwt = true
+
 [functions.stripe-webhook]
 verify_jwt = false
 
@@ -38,3 +41,4 @@ verify_jwt = true
 
 [functions.analyze-meal]
 verify_jwt = true
+
