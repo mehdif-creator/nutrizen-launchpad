@@ -74,11 +74,17 @@ export default function ScanRepas() {
     }
 
     setIsAnalyzing(true);
+    console.log('Starting analysis...', { 
+      fileName: selectedFile.name, 
+      fileSize: selectedFile.size,
+      fileType: selectedFile.type 
+    });
 
     try {
       const formData = new FormData();
       formData.append('image', selectedFile);
 
+      console.log('Sending request to webhook...');
       const response = await fetch(
         'https://n8n.srv1005117.hstgr.cloud/webhook-test/Nutrizen-analyse-repas',
         {
@@ -87,24 +93,34 @@ export default function ScanRepas() {
         }
       );
 
+      console.log('Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Erreur lors de l\'analyse');
+        const errorText = await response.text();
+        console.error('Response error:', errorText);
+        throw new Error(`Erreur ${response.status}: ${errorText}`);
       }
 
-      const data = await response.json();
+      const responseText = await response.text();
+      console.log('Response text:', responseText);
+      
+      const data = JSON.parse(responseText);
+      console.log('Parsed data:', data);
 
       if (data?.status === 'success' && data.food && data.total) {
+        console.log('Success! Setting result:', data);
         setResult({
           food: data.food,
           total: data.total,
         });
         toast.success('Analyse terminée avec succès !');
       } else {
+        console.error('Invalid response format:', data);
         throw new Error('Format de réponse invalide');
       }
     } catch (error) {
       console.error('Error analyzing meal:', error);
-      toast.error('Erreur lors de l\'analyse. Merci de réessayer.');
+      toast.error(`Erreur lors de l'analyse: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
     } finally {
       setIsAnalyzing(false);
     }
