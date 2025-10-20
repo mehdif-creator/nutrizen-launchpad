@@ -92,12 +92,11 @@ export default function ScanRepas() {
       }
 
       const data = await response.json();
-      const output = data[0]?.output;
 
-      if (output?.status === 'success' && output.food) {
+      if (data?.status === 'success' && data.food && data.total) {
         setResult({
-          food: output.food,
-          total: output.total,
+          food: data.food,
+          total: data.total,
         });
         toast.success('Analyse terminée avec succès !');
       } else {
