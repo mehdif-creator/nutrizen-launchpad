@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Camera, Upload, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface FoodItem {
   name: string;
@@ -84,28 +85,18 @@ export default function ScanRepas() {
       const formData = new FormData();
       formData.append('image', selectedFile);
 
-      console.log('Sending request to webhook...');
-      const response = await fetch(
-        'https://n8n.srv1005117.hstgr.cloud/webhook-test/Nutrizen-analyse-repas',
-        {
-          method: 'POST',
-          body: formData,
-        }
-      );
-
-      console.log('Response status:', response.status);
+      console.log('Calling analyze-meal edge function...');
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Response error:', errorText);
-        throw new Error(`Erreur ${response.status}: ${errorText}`);
+      const { data, error } = await supabase.functions.invoke('analyze-meal', {
+        body: formData,
+      });
+
+      console.log('Edge function response:', { data, error });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Erreur lors de l\'analyse');
       }
-
-      const responseText = await response.text();
-      console.log('Response text:', responseText);
-      
-      const data = JSON.parse(responseText);
-      console.log('Parsed data:', data);
 
       if (data?.status === 'success' && data.food && data.total) {
         console.log('Success! Setting result:', data);
@@ -114,6 +105,8 @@ export default function ScanRepas() {
           total: data.total,
         });
         toast.success('Analyse terminée avec succès !');
+      } else if (data?.error) {
+        throw new Error(data.error);
       } else {
         console.error('Invalid response format:', data);
         throw new Error('Format de réponse invalide');

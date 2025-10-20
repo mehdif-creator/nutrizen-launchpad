@@ -35,3 +35,6 @@ verify_jwt = true
 
 [functions.suggest-substitution]
 verify_jwt = true
+
+[functions.analyze-meal]
+verify_jwt = true
