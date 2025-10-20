@@ -209,42 +209,52 @@ export default function ScanRepas() {
 
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <label className="flex-1">
+                  <div className="flex-1">
                     <input
                       type="file"
                       accept="image/*"
                       capture="environment"
                       onChange={handleFileSelect}
                       className="hidden"
+                      id="camera-input"
                     />
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={(e) => (e.currentTarget.previousElementSibling as HTMLInputElement)?.click()}
-                    >
-                      <Camera className="mr-2 h-4 w-4" />
-                      Prendre une photo
-                    </Button>
-                  </label>
+                    <label htmlFor="camera-input" className="w-full">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        className="w-full"
+                        asChild
+                      >
+                        <span className="cursor-pointer">
+                          <Camera className="mr-2 h-4 w-4" />
+                          Prendre une photo
+                        </span>
+                      </Button>
+                    </label>
+                  </div>
 
-                  <label className="flex-1">
+                  <div className="flex-1">
                     <input
                       type="file"
                       accept="image/*"
                       onChange={handleFileSelect}
                       className="hidden"
+                      id="file-input"
                     />
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={(e) => (e.currentTarget.previousElementSibling as HTMLInputElement)?.click()}
-                    >
-                      <Upload className="mr-2 h-4 w-4" />
-                      Choisir un fichier
-                    </Button>
-                  </label>
+                    <label htmlFor="file-input" className="w-full">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        className="w-full"
+                        asChild
+                      >
+                        <span className="cursor-pointer">
+                          <Upload className="mr-2 h-4 w-4" />
+                          Choisir un fichier
+                        </span>
+                      </Button>
+                    </label>
+                  </div>
                 </div>
 
                 {selectedFile && (
