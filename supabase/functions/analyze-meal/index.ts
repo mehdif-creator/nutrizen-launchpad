@@ -87,13 +87,7 @@ serve(async (req) => {
 
     console.log('Image received, forwarding to n8n webhook...');
 
-    // Get webhook base URL from secrets
-    const n8nWebhookBase = Deno.env.get('N8N_WEBHOOK_BASE');
-    if (!n8nWebhookBase) {
-      throw new Error('N8N_WEBHOOK_BASE not configured');
-    }
-
-    const webhookUrl = `${n8nWebhookBase}/Nutrizen-analyse-repas`;
+    const webhookUrl = 'https://n8n.srv1005117.hstgr.cloud/webhook-test/Nutrizen-analyse-repas';
 
     // Forward to n8n webhook
     const n8nFormData = new FormData();
