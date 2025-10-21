@@ -52,8 +52,15 @@ serve(async (req) => {
     const data = await response.json();
     console.log('n8n response data:', JSON.stringify(data).substring(0, 200));
 
-    // Extract output from n8n response array format
-    const output = Array.isArray(data) && data[0]?.output ? data[0].output : data;
+    // Extract output from n8n response - handles both [{output: {...}}] and {output: {...}}
+    let output;
+    if (Array.isArray(data) && data[0]?.output) {
+      output = data[0].output;
+    } else if (data?.output) {
+      output = data.output;
+    } else {
+      output = data;
+    }
     
     // Validate response format
     if (!output?.status || output.status !== 'success') {
