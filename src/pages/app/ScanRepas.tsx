@@ -3,7 +3,7 @@ import { AppHeader } from '@/components/app/AppHeader';
 import { AppFooter } from '@/components/app/AppFooter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Camera, Upload, Loader2 } from 'lucide-react';
+import { Camera, Upload, Loader2, Brain } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -24,6 +24,7 @@ interface AnalysisResult {
     carbs: number;
     fat: number;
   };
+  analyse_nutritionnelle?: string;
 }
 
 // Counter animation hook
@@ -103,6 +104,7 @@ export default function ScanRepas() {
         setResult({
           food: data.food,
           total: data.total,
+          analyse_nutritionnelle: data.analyse_nutritionnelle,
         });
         toast.success('Analyse terminée avec succès !');
       } else if (data?.error) {
@@ -282,6 +284,29 @@ export default function ScanRepas() {
           </Card>
         ) : (
           <div className="space-y-6">
+            {/* Summary Card */}
+            <SummaryCard total={result.total} />
+
+            {/* Nutritional Analysis */}
+            {result.analyse_nutritionnelle && (
+              <Card 
+                className="shadow-[rgba(0,0,0,0.05)_2px_2px_5px] border-0"
+                style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out 0.2s both' }}
+              >
+                <CardHeader className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    <Brain className="h-5 w-5" />
+                    Analyse nutritionnelle
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <p className="text-sm leading-relaxed text-foreground/90">
+                    {result.analyse_nutritionnelle}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Food Items Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {result.food.map((item, index) => (
@@ -290,7 +315,7 @@ export default function ScanRepas() {
                   className="shadow-[rgba(0,0,0,0.05)_2px_2px_5px] border-0 hover:shadow-lg transition-all duration-300 hover:scale-105"
                   style={{ 
                     borderRadius: '1.5rem',
-                    animation: `fadeIn 0.5s ease-out ${index * 0.1}s both`
+                    animation: `fadeIn 0.5s ease-out ${(index * 0.1) + 0.4}s both`
                   }}
                 >
                   <CardContent className="p-6">
@@ -322,9 +347,6 @@ export default function ScanRepas() {
                 </Card>
               ))}
             </div>
-
-            {/* Summary Card */}
-            <SummaryCard total={result.total} />
 
             <style>{`
               @keyframes fadeIn {

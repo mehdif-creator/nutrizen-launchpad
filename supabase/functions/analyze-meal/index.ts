@@ -31,7 +31,7 @@ serve(async (req) => {
     n8nFormData.append('image', image);
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 seconds
+    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 seconds
 
     const response = await fetch(webhookUrl, {
       method: 'POST',
@@ -62,13 +62,43 @@ serve(async (req) => {
       output = data;
     }
     
-    // Validate response format
-    if (!output?.status || output.status !== 'success') {
+    // Validate response format (handles both French and English)
+    if (!output?.status || (output.status !== 'success' && output.status !== 'succès')) {
       console.error('Invalid response format:', output);
       throw new Error('Invalid response format from n8n');
     }
 
-    if (!output.food || !output.total) {
+    // Handle French field names from n8n
+    const normalizedOutput = {
+      status: 'success',
+      food: output.aliments || output.food || [],
+      total: output.total || {},
+      analyse_nutritionnelle: output.analyse_nutritionnelle
+    };
+
+    // Map French field names to English for food items
+    if (normalizedOutput.food && Array.isArray(normalizedOutput.food)) {
+      normalizedOutput.food = normalizedOutput.food.map((item: any) => ({
+        name: item.nom || item.name,
+        quantity: item.quantité || item.quantity,
+        calories: item.calories,
+        protein: item.protéines || item.protein,
+        carbs: item.glucides || item.carbs,
+        fat: item.lipides || item.fat
+      }));
+    }
+
+    // Map French field names to English for total
+    if (normalizedOutput.total) {
+      normalizedOutput.total = {
+        calories: normalizedOutput.total.calories,
+        protein: normalizedOutput.total.protéines || normalizedOutput.total.protein,
+        carbs: normalizedOutput.total.glucides || normalizedOutput.total.carbs,
+        fat: normalizedOutput.total.lipides || normalizedOutput.total.fat
+      };
+    }
+
+    if (!normalizedOutput.food || !normalizedOutput.total) {
       console.error('Missing required fields in response:', output);
       throw new Error('Missing food or total data in response');
     }
@@ -76,7 +106,7 @@ serve(async (req) => {
     console.log('Analysis successful, returning data');
 
     return new Response(
-      JSON.stringify(output),
+      JSON.stringify(normalizedOutput),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
