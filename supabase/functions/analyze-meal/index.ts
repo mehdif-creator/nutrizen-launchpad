@@ -46,21 +46,24 @@ serve(async (req) => {
     const data = await response.json();
     console.log('n8n response data:', JSON.stringify(data).substring(0, 200));
 
+    // Extract output from n8n response array format
+    const output = Array.isArray(data) && data[0]?.output ? data[0].output : data;
+    
     // Validate response format
-    if (!data?.status || data.status !== 'success') {
-      console.error('Invalid response format:', data);
+    if (!output?.status || output.status !== 'success') {
+      console.error('Invalid response format:', output);
       throw new Error('Invalid response format from n8n');
     }
 
-    if (!data.food || !data.total) {
-      console.error('Missing required fields in response:', data);
+    if (!output.food || !output.total) {
+      console.error('Missing required fields in response:', output);
       throw new Error('Missing food or total data in response');
     }
 
     console.log('Analysis successful, returning data');
 
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify(output),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
