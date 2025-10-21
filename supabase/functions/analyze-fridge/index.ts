@@ -87,13 +87,8 @@ serve(async (req) => {
 
     console.log('Image received, forwarding to n8n webhook...');
 
-    // Get webhook base URL from secrets
-    const n8nWebhookBase = Deno.env.get('N8N_WEBHOOK_BASE');
-    if (!n8nWebhookBase) {
-      throw new Error('N8N_WEBHOOK_BASE not configured');
-    }
-
-    const webhookUrl = `${n8nWebhookBase}/analyse-frigo`;
+    // Use the new webhook URL directly
+    const webhookUrl = 'https://n8n.srv1005117.hstgr.cloud/webhook-test/analyse-frigo';
 
     // Forward to n8n webhook
     const n8nFormData = new FormData();
@@ -102,6 +97,7 @@ serve(async (req) => {
     const response = await fetch(webhookUrl, {
       method: 'POST',
       body: n8nFormData,
+      signal: AbortSignal.timeout(90000), // 90 second timeout
     });
 
     console.log('n8n response status:', response.status);
@@ -115,10 +111,17 @@ serve(async (req) => {
     const data = await response.json();
     console.log('n8n response received');
 
-    // Extract output from response
-    const output = data[0]?.output;
+    // Extract output from response (handle both array and direct object)
+    let output;
+    if (Array.isArray(data) && data.length > 0 && data[0].output) {
+      output = data[0].output;
+    } else if (data.output) {
+      output = data.output;
+    } else {
+      output = data;
+    }
 
-    if (!output || output.status !== 'success') {
+    if (!output || output.status !== 'succès') {
       console.error('Invalid response format:', data);
       throw new Error('Invalid response format from n8n');
     }

@@ -7,17 +7,29 @@ import { Camera, Upload, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
-interface Recipe {
-  title: string;
-  time: string;
-  difficulty: string;
-  ingredients_used: string[];
-  summary: string;
+interface Ingredient {
+  nom: string;
+  quantité_estimée: string;
+}
+
+interface Recette {
+  étapes: string[];
+  temps_préparation: string;
+  temps_cuisson: string;
+  portions: number;
+}
+
+interface Plat {
+  nom: string;
+  description: string;
+  ingredients_identifiés: Ingredient[];
+  recette: Recette;
+  note_nutritionnelle?: string;
 }
 
 interface AnalysisResult {
-  ingredients: string[];
-  recipes: Recipe[];
+  status: string;
+  plat: Plat;
 }
 
 // Counter animation hook
@@ -87,11 +99,8 @@ export default function InspiFrigo() {
         throw new Error(error.message || 'Erreur lors de l\'analyse');
       }
 
-      if (data?.status === 'success' && data.recipes) {
-        setResult({
-          ingredients: data.ingredients || [],
-          recipes: data.recipes,
-        });
+      if (data?.status === 'succès' && data.plat) {
+        setResult(data);
         toast.success('Analyse terminée avec succès !');
       } else if (data?.error) {
         throw new Error(data.error);
@@ -260,80 +269,91 @@ export default function InspiFrigo() {
           </Card>
         ) : (
           <div className="space-y-6">
-            {/* Detected Ingredients */}
-            {result.ingredients && result.ingredients.length > 0 && (
-              <Card 
-                className="shadow-[rgba(0,0,0,0.05)_2px_2px_5px] border-0"
-                style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out' }}
-              >
-                <CardHeader>
-                  <CardTitle className="text-2xl flex items-center gap-2">
-                    <span className="text-3xl">🧺</span>
-                    Ingrédients détectés
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {result.ingredients.map((ingredient, index) => (
-                      <span
+            {/* Plat suggéré */}
+            <Card 
+              className="shadow-[rgba(0,0,0,0.05)_2px_2px_5px] border-0"
+              style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out' }}
+            >
+              <CardHeader>
+                <CardTitle className="text-3xl flex items-center gap-2">
+                  <span className="text-4xl">🍽️</span>
+                  {result.plat.nom}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <p className="text-lg text-muted-foreground">
+                  {result.plat.description}
+                </p>
+
+                {/* Info rapide */}
+                <div className="flex flex-wrap gap-4 text-sm">
+                  <div className="px-4 py-2 bg-gradient-to-r from-[hsl(129,38%,56%)]/10 to-[hsl(23,100%,63%)]/10 rounded-full font-medium">
+                    ⏱️ Préparation: {result.plat.recette.temps_préparation}
+                  </div>
+                  <div className="px-4 py-2 bg-gradient-to-r from-[hsl(129,38%,56%)]/10 to-[hsl(23,100%,63%)]/10 rounded-full font-medium">
+                    🔥 Cuisson: {result.plat.recette.temps_cuisson}
+                  </div>
+                  <div className="px-4 py-2 bg-gradient-to-r from-[hsl(129,38%,56%)]/10 to-[hsl(23,100%,63%)]/10 rounded-full font-medium">
+                    👥 {result.plat.recette.portions} portion(s)
+                  </div>
+                </div>
+
+                {/* Ingrédients détectés */}
+                <div>
+                  <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
+                    <span className="text-2xl">🧺</span>
+                    Ingrédients identifiés
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {result.plat.ingredients_identifiés.map((ingredient, index) => (
+                      <div
                         key={index}
-                        className="px-4 py-2 bg-gradient-to-r from-[hsl(129,38%,56%)]/10 to-[hsl(23,100%,63%)]/10 rounded-full text-sm font-medium"
+                        className="flex items-center justify-between p-3 bg-gradient-to-r from-[hsl(129,38%,56%)]/5 to-[hsl(23,100%,63%)]/5 rounded-lg"
                         style={{ animation: `fadeIn 0.5s ease-out ${index * 0.1}s both` }}
                       >
-                        {ingredient}
-                      </span>
+                        <span className="font-medium">{ingredient.nom}</span>
+                        <span className="text-sm text-muted-foreground">{ingredient.quantité_estimée}</span>
+                      </div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                </div>
 
-            {/* Recipe Cards */}
-            <div className="space-y-4">
-              <h2 className="text-2xl font-bold text-center mb-6">
-                🍽️ Recettes suggérées
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {result.recipes.map((recipe, index) => (
-                  <Card 
-                    key={index} 
-                    className="shadow-[rgba(0,0,0,0.05)_2px_2px_5px] border-0 hover:shadow-lg transition-all duration-300 hover:scale-105"
-                    style={{ 
-                      borderRadius: '1.5rem',
-                      animation: `fadeIn 0.5s ease-out ${index * 0.15}s both`
-                    }}
-                  >
-                    <CardContent className="p-6">
-                      <div className="space-y-3">
-                        <h3 className="font-bold text-xl text-[hsl(129,38%,46%)]">
-                          🍽️ {recipe.title}
-                        </h3>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            ⏱️ <strong>Temps :</strong> {recipe.time}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            🎯 <strong>Difficulté :</strong> {recipe.difficulty}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold mb-1">🧾 Ingrédients utilisés :</p>
-                          <p className="text-sm text-muted-foreground">
-                            {recipe.ingredients_used.join(', ')}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold mb-1">🧘‍♀️ Résumé :</p>
-                          <p className="text-sm text-muted-foreground">
-                            {recipe.summary}
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
+                {/* Étapes de la recette */}
+                <div>
+                  <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
+                    <span className="text-2xl">📝</span>
+                    Étapes de préparation
+                  </h3>
+                  <ol className="space-y-3">
+                    {result.plat.recette.étapes.map((etape, index) => (
+                      <li
+                        key={index}
+                        className="flex gap-3 p-3 bg-gradient-to-r from-[hsl(129,38%,56%)]/5 to-[hsl(23,100%,63%)]/5 rounded-lg"
+                        style={{ animation: `fadeIn 0.5s ease-out ${index * 0.1}s both` }}
+                      >
+                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[hsl(129,38%,56%)] text-white flex items-center justify-center text-sm font-bold">
+                          {index + 1}
+                        </span>
+                        <span className="flex-1">{etape}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+
+                {/* Note nutritionnelle */}
+                {result.plat.note_nutritionnelle && (
+                  <div className="p-4 bg-gradient-to-r from-[hsl(129,38%,56%)]/10 to-[hsl(23,100%,63%)]/10 rounded-lg">
+                    <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
+                      <span className="text-xl">💚</span>
+                      Note nutritionnelle
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {result.plat.note_nutritionnelle}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             <style>{`
               @keyframes fadeIn {
