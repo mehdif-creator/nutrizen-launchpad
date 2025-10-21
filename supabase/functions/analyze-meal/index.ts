@@ -26,14 +26,20 @@ serve(async (req) => {
 
     const webhookUrl = 'https://n8n.srv1005117.hstgr.cloud/webhook-test/Nutrizen-analyse-repas';
 
-    // Forward to n8n webhook
+    // Forward to n8n webhook with 60 second timeout
     const n8nFormData = new FormData();
     n8nFormData.append('image', image);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 seconds
 
     const response = await fetch(webhookUrl, {
       method: 'POST',
       body: n8nFormData,
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     console.log('n8n response status:', response.status);
 
