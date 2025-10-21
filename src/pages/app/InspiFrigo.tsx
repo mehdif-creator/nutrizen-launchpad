@@ -83,6 +83,15 @@ export default function InspiFrigo() {
     setIsAnalyzing(true);
 
     try {
+      // Get the current session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error('Vous devez être connecté pour utiliser cette fonctionnalité');
+        setIsAnalyzing(false);
+        return;
+      }
+
       const formData = new FormData();
       formData.append('image', selectedFile);
 
@@ -90,6 +99,9 @@ export default function InspiFrigo() {
       
       const { data, error } = await supabase.functions.invoke('analyze-fridge', {
         body: formData,
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       console.log('Edge function response:', { data, error });
