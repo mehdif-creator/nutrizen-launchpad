@@ -38,6 +38,35 @@ serve(async (req) => {
     const body = await req.json()
     const { event, ...eventData } = body
 
+    // Validate event type - only allow specific events
+    const allowedEvents = [
+      'meal_completed',
+      'meal_generated',
+      'login_streak',
+      'referral_made',
+      'referral_completed',
+      'subscription_created',
+      'subscription_updated',
+      'swap_used',
+    ]
+    
+    if (!allowedEvents.includes(event)) {
+      console.error(`Invalid event type attempted: ${event}`)
+      return new Response(
+        JSON.stringify({ error: 'Invalid event type' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Ensure user can only emit events for themselves
+    if (eventData.user_id && eventData.user_id !== user.id) {
+      console.error(`User ${user.id} attempted to emit event for ${eventData.user_id}`)
+      return new Response(
+        JSON.stringify({ error: 'Cannot emit events for other users' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const HMAC_SECRET = Deno.env.get('HMAC_SECRET')
     const N8N_WEBHOOK_BASE = Deno.env.get('N8N_WEBHOOK_BASE')
 
