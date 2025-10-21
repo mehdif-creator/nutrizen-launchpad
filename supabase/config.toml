@@ -4,7 +4,7 @@ project_id = "pghdaozgxkbtsxwydemd"
 verify_jwt = false
 
 [functions.use-swap]
-verify_jwt = false
+verify_jwt = true
 
 [functions.analyze-food-photo]
 verify_jwt = true
@@ -40,5 +40,5 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.analyze-meal]
-verify_jwt = false
+verify_jwt = true
 

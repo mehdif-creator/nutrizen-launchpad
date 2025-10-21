@@ -53,6 +53,184 @@ export type Database = {
         }
         Relationships: []
       }
+      ciqual_compositions: {
+        Row: {
+          alim_code: string | null
+          code_confiance: string | null
+          const_code: string | null
+          id: number
+          max: string | null
+          min: string | null
+          teneur: string | null
+        }
+        Insert: {
+          alim_code?: string | null
+          code_confiance?: string | null
+          const_code?: string | null
+          id?: number
+          max?: string | null
+          min?: string | null
+          teneur?: string | null
+        }
+        Update: {
+          alim_code?: string | null
+          code_confiance?: string | null
+          const_code?: string | null
+          id?: number
+          max?: string | null
+          min?: string | null
+          teneur?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ciqual_compositions_alim_code_fkey"
+            columns: ["alim_code"]
+            isOneToOne: false
+            referencedRelation: "ciqual_foods"
+            referencedColumns: ["alim_code"]
+          },
+          {
+            foreignKeyName: "ciqual_compositions_alim_code_fkey"
+            columns: ["alim_code"]
+            isOneToOne: false
+            referencedRelation: "ciqual_summary"
+            referencedColumns: ["alim_code"]
+          },
+          {
+            foreignKeyName: "ciqual_compositions_const_code_fkey"
+            columns: ["const_code"]
+            isOneToOne: false
+            referencedRelation: "ciqual_constituents"
+            referencedColumns: ["const_code"]
+          },
+        ]
+      }
+      ciqual_constituents: {
+        Row: {
+          const_code: string | null
+          const_nom_eng: string | null
+          const_nom_fr: string | null
+          id: number
+        }
+        Insert: {
+          const_code?: string | null
+          const_nom_eng?: string | null
+          const_nom_fr?: string | null
+          id?: number
+        }
+        Update: {
+          const_code?: string | null
+          const_nom_eng?: string | null
+          const_nom_fr?: string | null
+          id?: number
+        }
+        Relationships: []
+      }
+      ciqual_core: {
+        Row: {
+          alim_code: string | null
+          alim_nom_fr: string | null
+          calories_kcal: number | null
+          carbs_g: number | null
+          categorie: string | null
+          fats_g: number | null
+          fibers_g: number | null
+          proteins_g: number | null
+        }
+        Insert: {
+          alim_code?: string | null
+          alim_nom_fr?: string | null
+          calories_kcal?: number | null
+          carbs_g?: number | null
+          categorie?: string | null
+          fats_g?: number | null
+          fibers_g?: number | null
+          proteins_g?: number | null
+        }
+        Update: {
+          alim_code?: string | null
+          alim_nom_fr?: string | null
+          calories_kcal?: number | null
+          carbs_g?: number | null
+          categorie?: string | null
+          fats_g?: number | null
+          fibers_g?: number | null
+          proteins_g?: number | null
+        }
+        Relationships: []
+      }
+      ciqual_foods: {
+        Row: {
+          alim_code: string | null
+          alim_grp_code: number | null
+          alim_nom_eng: string | null
+          alim_nom_fr: string
+          alim_nom_index_fr: string | null
+          alim_ssgrp_code: number | null
+          alim_ssssgrp_code: number | null
+          id: number
+        }
+        Insert: {
+          alim_code?: string | null
+          alim_grp_code?: number | null
+          alim_nom_eng?: string | null
+          alim_nom_fr: string
+          alim_nom_index_fr?: string | null
+          alim_ssgrp_code?: number | null
+          alim_ssssgrp_code?: number | null
+          id?: number
+        }
+        Update: {
+          alim_code?: string | null
+          alim_grp_code?: number | null
+          alim_nom_eng?: string | null
+          alim_nom_fr?: string
+          alim_nom_index_fr?: string | null
+          alim_ssgrp_code?: number | null
+          alim_ssssgrp_code?: number | null
+          id?: number
+        }
+        Relationships: []
+      }
+      ciqual_groups: {
+        Row: {
+          alim_grp_code: string | null
+          alim_grp_nom_eng: string | null
+          alim_grp_nom_fr: string | null
+          alim_ssgrp_code: number | null
+          alim_ssgrp_nom_eng: string | null
+          alim_ssgrp_nom_fr: string | null
+          alim_ssssgrp_code: number | null
+          alim_ssssgrp_nom_eng: string | null
+          alim_ssssgrp_nom_fr: string | null
+          id: number
+        }
+        Insert: {
+          alim_grp_code?: string | null
+          alim_grp_nom_eng?: string | null
+          alim_grp_nom_fr?: string | null
+          alim_ssgrp_code?: number | null
+          alim_ssgrp_nom_eng?: string | null
+          alim_ssgrp_nom_fr?: string | null
+          alim_ssssgrp_code?: number | null
+          alim_ssssgrp_nom_eng?: string | null
+          alim_ssssgrp_nom_fr?: string | null
+          id?: number
+        }
+        Update: {
+          alim_grp_code?: string | null
+          alim_grp_nom_eng?: string | null
+          alim_grp_nom_fr?: string | null
+          alim_ssgrp_code?: number | null
+          alim_ssgrp_nom_eng?: string | null
+          alim_ssgrp_nom_fr?: string | null
+          alim_ssssgrp_code?: number | null
+          alim_ssssgrp_nom_eng?: string | null
+          alim_ssssgrp_nom_fr?: string | null
+          id?: number
+        }
+        Relationships: []
+      }
       feature_flags: {
         Row: {
           description: string | null
@@ -206,44 +384,210 @@ export type Database = {
         }
         Relationships: []
       }
-      recipes: {
+      recipe_ingredients: {
         Row: {
-          cover_url: string | null
+          ciqual_id: number | null
           created_at: string | null
-          id: string
-          ingredients: Json | null
-          keywords: string | null
-          macros_indicatives: Json | null
-          published: boolean | null
-          steps: Json | null
-          tags: string[] | null
-          title: string
+          id: number
+          ingredient_name: string
+          quantity_g: number
+          recipe_id: string | null
         }
         Insert: {
-          cover_url?: string | null
+          ciqual_id?: number | null
           created_at?: string | null
-          id?: string
-          ingredients?: Json | null
-          keywords?: string | null
-          macros_indicatives?: Json | null
-          published?: boolean | null
-          steps?: Json | null
-          tags?: string[] | null
-          title: string
+          id?: number
+          ingredient_name: string
+          quantity_g: number
+          recipe_id?: string | null
         }
         Update: {
-          cover_url?: string | null
+          ciqual_id?: number | null
           created_at?: string | null
-          id?: string
-          ingredients?: Json | null
-          keywords?: string | null
-          macros_indicatives?: Json | null
-          published?: boolean | null
-          steps?: Json | null
-          tags?: string[] | null
-          title?: string
+          id?: number
+          ingredient_name?: string
+          quantity_g?: number
+          recipe_id?: string | null
         }
         Relationships: []
+      }
+      recipe_macro_audit: {
+        Row: {
+          calculated_at: string | null
+          delta_calories: number | null
+          id: number
+          ingredients_count: number | null
+          new_calories: number | null
+          old_calories: number | null
+          recipe_id: string
+          triggered_by: string | null
+          zero_calorie_ingredients: number | null
+        }
+        Insert: {
+          calculated_at?: string | null
+          delta_calories?: number | null
+          id?: number
+          ingredients_count?: number | null
+          new_calories?: number | null
+          old_calories?: number | null
+          recipe_id: string
+          triggered_by?: string | null
+          zero_calorie_ingredients?: number | null
+        }
+        Update: {
+          calculated_at?: string | null
+          delta_calories?: number | null
+          id?: number
+          ingredients_count?: number | null
+          new_calories?: number | null
+          old_calories?: number | null
+          recipe_id?: string
+          triggered_by?: string | null
+          zero_calorie_ingredients?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_macro_audit_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipes: {
+        Row: {
+          calories: number | null
+          calories_kcal: number | null
+          carbs_g: number | null
+          cook_time_min: number | null
+          created_at: string | null
+          fats_g: number | null
+          fibers_g: number | null
+          id: string
+          image_url: string | null
+          ingredients: Json | null
+          instructions: Json | null
+          keywords: string | null
+          language: string | null
+          macros_calculated: boolean | null
+          macros_indicatives: Json | null
+          prep_time_min: number | null
+          proteins_g: number | null
+          published: boolean | null
+          servings: number | null
+          source_name: string
+          source_uid: string | null
+          source_url: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          calories?: number | null
+          calories_kcal?: number | null
+          carbs_g?: number | null
+          cook_time_min?: number | null
+          created_at?: string | null
+          fats_g?: number | null
+          fibers_g?: number | null
+          id?: string
+          image_url?: string | null
+          ingredients?: Json | null
+          instructions?: Json | null
+          keywords?: string | null
+          language?: string | null
+          macros_calculated?: boolean | null
+          macros_indicatives?: Json | null
+          prep_time_min?: number | null
+          proteins_g?: number | null
+          published?: boolean | null
+          servings?: number | null
+          source_name?: string
+          source_uid?: string | null
+          source_url?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          calories?: number | null
+          calories_kcal?: number | null
+          carbs_g?: number | null
+          cook_time_min?: number | null
+          created_at?: string | null
+          fats_g?: number | null
+          fibers_g?: number | null
+          id?: string
+          image_url?: string | null
+          ingredients?: Json | null
+          instructions?: Json | null
+          keywords?: string | null
+          language?: string | null
+          macros_calculated?: boolean | null
+          macros_indicatives?: Json | null
+          prep_time_min?: number | null
+          proteins_g?: number | null
+          published?: boolean | null
+          servings?: number | null
+          source_name?: string
+          source_uid?: string | null
+          source_url?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      recipes_nutrition: {
+        Row: {
+          carbs_g: number | null
+          computed_at: string | null
+          energy_kcal: number | null
+          fat_g: number | null
+          fiber_g: number | null
+          per_serving: Json | null
+          protein_g: number | null
+          recipe_id: string
+          sat_fat_g: number | null
+          sodium_mg: number | null
+          sugars_g: number | null
+          total_weight_g: number | null
+        }
+        Insert: {
+          carbs_g?: number | null
+          computed_at?: string | null
+          energy_kcal?: number | null
+          fat_g?: number | null
+          fiber_g?: number | null
+          per_serving?: Json | null
+          protein_g?: number | null
+          recipe_id: string
+          sat_fat_g?: number | null
+          sodium_mg?: number | null
+          sugars_g?: number | null
+          total_weight_g?: number | null
+        }
+        Update: {
+          carbs_g?: number | null
+          computed_at?: string | null
+          energy_kcal?: number | null
+          fat_g?: number | null
+          fiber_g?: number | null
+          per_serving?: Json | null
+          protein_g?: number | null
+          recipe_id?: string
+          sat_fat_g?: number | null
+          sodium_mg?: number | null
+          sugars_g?: number | null
+          total_weight_g?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipes_nutrition_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: true
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       referrals: {
         Row: {
@@ -451,9 +795,44 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      ciqual_summary: {
+        Row: {
+          alim_code: string | null
+          alim_nom_fr: string | null
+          calories_kcal: number | null
+          carbs_g: number | null
+          categorie: string | null
+          fats_g: number | null
+          fibers_g: number | null
+          proteins_g: number | null
+        }
+        Relationships: []
+      }
+      v_ri_qc: {
+        Row: {
+          alim_nom_fr: string | null
+          calories_kcal: number | null
+          ciqual_id: number | null
+          ingredient_name: string | null
+          issue: string | null
+          quantity_g: number | null
+          recipe_uuid: string | null
+          ri_id: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      backfill_recipes_with_progress: {
+        Args: { p_batch_size?: number; p_max_batches?: number }
+        Returns: {
+          avg_calories: number
+          batch_num: number
+          elapsed_seconds: number
+          recipes_processed: number
+          warnings: number
+        }[]
+      }
       calculate_user_level: {
         Args: { points: number }
         Returns: string
@@ -462,12 +841,39 @@ export type Database = {
         Args: { user_id: string }
         Returns: string
       }
+      get_recipe_macros: {
+        Args: { recipe_id_input: number }
+        Returns: {
+          total_calories: number
+          total_carbs: number
+          total_fats: number
+          total_fibers: number
+          total_proteins: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      refresh_one_recipe: {
+        Args: { p_recipe_id: number } | { p_recipe_id: string }
+        Returns: {
+          new_calories: number
+          old_calories: number
+          recipe_id: string
+          status: string
+        }[]
+      }
+      refresh_recipe_macros: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      refresh_recipe_macros_from_ciqual: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       use_swap_atomic: {
         Args: {
