@@ -318,31 +318,166 @@ export type Database = {
       }
       preferences: {
         Row: {
+          age: number | null
+          age_enfants: number[] | null
+          aliments_eviter: string[] | null
           allergies: string[] | null
+          allergies_proches: string[] | null
+          apport_proteines_g_kg: number | null
+          autres_adultes: number | null
+          autres_allergies: string | null
+          batch_cooking: string | null
           budget: string | null
+          budget_hebdomadaire: string | null
+          conseils_lifestyle: boolean | null
+          cuisine_pour_enfants: boolean | null
+          cuisine_preferee: string[] | null
+          duree_souhaitee: string | null
+          frequence_courses: string | null
+          frequence_repas_emporter: string | null
+          ingredients_favoris: string[] | null
+          lieu_courses: string | null
+          limiter_sucre: boolean | null
+          metier: string | null
+          mode_cuisson_prefere: string[] | null
+          motivation_principale: string | null
+          niveau_activite: string | null
+          niveau_cuisine: string | null
+          niveau_epices: string | null
+          niveau_sel: string | null
+          niveau_stress: string | null
+          nombre_enfants: number | null
+          objectif_calorique: string | null
+          objectif_principal: string | null
           objectifs: string[] | null
           personnes: number | null
+          poids_actuel_kg: number | null
+          poids_souhaite_kg: number | null
+          portions_par_repas: number | null
+          principal_frein: string | null
+          produits_bio_locaux: string | null
+          produits_laitiers: string | null
+          recettes_riches_fibres: boolean | null
+          repartition_macros: string | null
+          repas_par_jour: number | null
+          sexe: string | null
+          sommeil_heures: number | null
+          taille_cm: number | null
+          taille_portion: string | null
           temps: string | null
+          temps_preparation: string | null
+          type_alimentation: string | null
           updated_at: string | null
           user_id: string
+          ustensiles: string[] | null
         }
         Insert: {
+          age?: number | null
+          age_enfants?: number[] | null
+          aliments_eviter?: string[] | null
           allergies?: string[] | null
+          allergies_proches?: string[] | null
+          apport_proteines_g_kg?: number | null
+          autres_adultes?: number | null
+          autres_allergies?: string | null
+          batch_cooking?: string | null
           budget?: string | null
+          budget_hebdomadaire?: string | null
+          conseils_lifestyle?: boolean | null
+          cuisine_pour_enfants?: boolean | null
+          cuisine_preferee?: string[] | null
+          duree_souhaitee?: string | null
+          frequence_courses?: string | null
+          frequence_repas_emporter?: string | null
+          ingredients_favoris?: string[] | null
+          lieu_courses?: string | null
+          limiter_sucre?: boolean | null
+          metier?: string | null
+          mode_cuisson_prefere?: string[] | null
+          motivation_principale?: string | null
+          niveau_activite?: string | null
+          niveau_cuisine?: string | null
+          niveau_epices?: string | null
+          niveau_sel?: string | null
+          niveau_stress?: string | null
+          nombre_enfants?: number | null
+          objectif_calorique?: string | null
+          objectif_principal?: string | null
           objectifs?: string[] | null
           personnes?: number | null
+          poids_actuel_kg?: number | null
+          poids_souhaite_kg?: number | null
+          portions_par_repas?: number | null
+          principal_frein?: string | null
+          produits_bio_locaux?: string | null
+          produits_laitiers?: string | null
+          recettes_riches_fibres?: boolean | null
+          repartition_macros?: string | null
+          repas_par_jour?: number | null
+          sexe?: string | null
+          sommeil_heures?: number | null
+          taille_cm?: number | null
+          taille_portion?: string | null
           temps?: string | null
+          temps_preparation?: string | null
+          type_alimentation?: string | null
           updated_at?: string | null
           user_id: string
+          ustensiles?: string[] | null
         }
         Update: {
+          age?: number | null
+          age_enfants?: number[] | null
+          aliments_eviter?: string[] | null
           allergies?: string[] | null
+          allergies_proches?: string[] | null
+          apport_proteines_g_kg?: number | null
+          autres_adultes?: number | null
+          autres_allergies?: string | null
+          batch_cooking?: string | null
           budget?: string | null
+          budget_hebdomadaire?: string | null
+          conseils_lifestyle?: boolean | null
+          cuisine_pour_enfants?: boolean | null
+          cuisine_preferee?: string[] | null
+          duree_souhaitee?: string | null
+          frequence_courses?: string | null
+          frequence_repas_emporter?: string | null
+          ingredients_favoris?: string[] | null
+          lieu_courses?: string | null
+          limiter_sucre?: boolean | null
+          metier?: string | null
+          mode_cuisson_prefere?: string[] | null
+          motivation_principale?: string | null
+          niveau_activite?: string | null
+          niveau_cuisine?: string | null
+          niveau_epices?: string | null
+          niveau_sel?: string | null
+          niveau_stress?: string | null
+          nombre_enfants?: number | null
+          objectif_calorique?: string | null
+          objectif_principal?: string | null
           objectifs?: string[] | null
           personnes?: number | null
+          poids_actuel_kg?: number | null
+          poids_souhaite_kg?: number | null
+          portions_par_repas?: number | null
+          principal_frein?: string | null
+          produits_bio_locaux?: string | null
+          produits_laitiers?: string | null
+          recettes_riches_fibres?: boolean | null
+          repartition_macros?: string | null
+          repas_par_jour?: number | null
+          sexe?: string | null
+          sommeil_heures?: number | null
+          taille_cm?: number | null
+          taille_portion?: string | null
           temps?: string | null
+          temps_preparation?: string | null
+          type_alimentation?: string | null
           updated_at?: string | null
           user_id?: string
+          ustensiles?: string[] | null
         }
         Relationships: [
           {
@@ -833,14 +968,8 @@ export type Database = {
           warnings: number
         }[]
       }
-      calculate_user_level: {
-        Args: { points: number }
-        Returns: string
-      }
-      generate_referral_code: {
-        Args: { user_id: string }
-        Returns: string
-      }
+      calculate_user_level: { Args: { points: number }; Returns: string }
+      generate_referral_code: { Args: { user_id: string }; Returns: string }
       get_recipe_macros: {
         Args: { recipe_id_input: number }
         Returns: {
@@ -858,23 +987,21 @@ export type Database = {
         }
         Returns: boolean
       }
-      refresh_one_recipe: {
-        Args: { p_recipe_id: number } | { p_recipe_id: string }
-        Returns: {
-          new_calories: number
-          old_calories: number
-          recipe_id: string
-          status: string
-        }[]
-      }
-      refresh_recipe_macros: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      refresh_recipe_macros_from_ciqual: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      refresh_one_recipe:
+        | {
+            Args: { p_recipe_id: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.refresh_one_recipe(p_recipe_id => int8), public.refresh_one_recipe(p_recipe_id => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"[]
+          }
+        | {
+            Args: { p_recipe_id: number }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.refresh_one_recipe(p_recipe_id => int8), public.refresh_one_recipe(p_recipe_id => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
+      refresh_recipe_macros: { Args: never; Returns: undefined }
+      refresh_recipe_macros_from_ciqual: { Args: never; Returns: undefined }
       use_swap_atomic: {
         Args: {
           p_day: number
