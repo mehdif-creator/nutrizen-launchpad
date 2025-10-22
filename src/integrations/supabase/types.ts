@@ -592,80 +592,137 @@ export type Database = {
       }
       recipes: {
         Row: {
+          ai_keywords: string[] | null
+          allergens: string[] | null
+          batch_cooking_friendly: boolean | null
+          calorie_target: string | null
           calories: number | null
           calories_kcal: number | null
           carbs_g: number | null
           cook_time_min: number | null
+          cooking_method: string[] | null
           created_at: string | null
+          cuisine_type: string | null
+          diet_type: string | null
+          difficulty_level: string | null
+          equipment_needed: string[] | null
+          excluded_ingredients: string[] | null
           fats_g: number | null
           fibers_g: number | null
+          goal_tags: string[] | null
           id: string
           image_url: string | null
+          ingredient_keywords: string[] | null
           ingredients: Json | null
           instructions: Json | null
           keywords: string | null
           language: string | null
           macros_calculated: boolean | null
           macros_indicatives: Json | null
+          main_ingredients: string[] | null
+          meal_type: string | null
+          portable: boolean | null
           prep_time_min: number | null
           proteins_g: number | null
           published: boolean | null
+          rating: number | null
+          salt_level: string | null
           servings: number | null
           source_name: string
           source_uid: string | null
           source_url: string | null
+          spice_level: string | null
+          sugar_level: string | null
           title: string
           updated_at: string | null
         }
         Insert: {
+          ai_keywords?: string[] | null
+          allergens?: string[] | null
+          batch_cooking_friendly?: boolean | null
+          calorie_target?: string | null
           calories?: number | null
           calories_kcal?: number | null
           carbs_g?: number | null
           cook_time_min?: number | null
+          cooking_method?: string[] | null
           created_at?: string | null
+          cuisine_type?: string | null
+          diet_type?: string | null
+          difficulty_level?: string | null
+          equipment_needed?: string[] | null
+          excluded_ingredients?: string[] | null
           fats_g?: number | null
           fibers_g?: number | null
+          goal_tags?: string[] | null
           id?: string
           image_url?: string | null
+          ingredient_keywords?: string[] | null
           ingredients?: Json | null
           instructions?: Json | null
           keywords?: string | null
           language?: string | null
           macros_calculated?: boolean | null
           macros_indicatives?: Json | null
+          main_ingredients?: string[] | null
+          meal_type?: string | null
+          portable?: boolean | null
           prep_time_min?: number | null
           proteins_g?: number | null
           published?: boolean | null
+          rating?: number | null
+          salt_level?: string | null
           servings?: number | null
           source_name?: string
           source_uid?: string | null
           source_url?: string | null
+          spice_level?: string | null
+          sugar_level?: string | null
           title: string
           updated_at?: string | null
         }
         Update: {
+          ai_keywords?: string[] | null
+          allergens?: string[] | null
+          batch_cooking_friendly?: boolean | null
+          calorie_target?: string | null
           calories?: number | null
           calories_kcal?: number | null
           carbs_g?: number | null
           cook_time_min?: number | null
+          cooking_method?: string[] | null
           created_at?: string | null
+          cuisine_type?: string | null
+          diet_type?: string | null
+          difficulty_level?: string | null
+          equipment_needed?: string[] | null
+          excluded_ingredients?: string[] | null
           fats_g?: number | null
           fibers_g?: number | null
+          goal_tags?: string[] | null
           id?: string
           image_url?: string | null
+          ingredient_keywords?: string[] | null
           ingredients?: Json | null
           instructions?: Json | null
           keywords?: string | null
           language?: string | null
           macros_calculated?: boolean | null
           macros_indicatives?: Json | null
+          main_ingredients?: string[] | null
+          meal_type?: string | null
+          portable?: boolean | null
           prep_time_min?: number | null
           proteins_g?: number | null
           published?: boolean | null
+          rating?: number | null
+          salt_level?: string | null
           servings?: number | null
           source_name?: string
           source_uid?: string | null
           source_url?: string | null
+          spice_level?: string | null
+          sugar_level?: string | null
           title?: string
           updated_at?: string | null
         }
