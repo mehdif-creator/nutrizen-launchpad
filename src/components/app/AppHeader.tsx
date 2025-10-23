@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -9,12 +10,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Home, BookOpen, User, Settings, HelpCircle, LogOut, Shield, Camera } from "lucide-react";
+import { Home, BookOpen, User, Settings, HelpCircle, LogOut, Shield, Camera, Menu, X } from "lucide-react";
 import { GamificationHeader } from "./GamificationHeader";
 
 export const AppHeader = () => {
   const { user, isAdmin, signOut } = useAuth();
   const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const getInitials = (name?: string) => {
     if (!name) return "U";
@@ -133,7 +135,9 @@ export const AppHeader = () => {
         </div>
 
         <div className="flex items-center gap-4">
-          <GamificationHeader />
+          <div className="hidden md:block">
+            <GamificationHeader />
+          </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -145,7 +149,7 @@ export const AppHeader = () => {
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end">
+            <DropdownMenuContent className="w-56 bg-background z-50" align="end">
               <div className="flex items-center justify-start gap-2 p-2">
                 <div className="flex flex-col space-y-1 leading-none">
                   {user?.user_metadata?.full_name && <p className="font-medium">{user.user_metadata.full_name}</p>}
@@ -189,8 +193,108 @@ export const AppHeader = () => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2"
+          >
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t bg-background">
+          <nav className="container py-4 flex flex-col gap-4">
+            {/* Gamification in mobile */}
+            <div className="pb-3 border-b">
+              <GamificationHeader />
+            </div>
+            
+            <Link
+              to="/app"
+              className={`text-left text-sm font-medium transition-colors flex items-center gap-2 ${
+                isActivePath("/app") ? "text-primary font-semibold" : "text-muted-foreground"
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <Home className="h-4 w-4" />
+              Tableau de bord
+            </Link>
+            <Link
+              to="/app/meal-plan"
+              className={`text-left text-sm font-medium transition-colors flex items-center gap-2 ${
+                isActivePath("/app/meal-plan") ? "text-primary font-semibold" : "text-muted-foreground"
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <BookOpen className="h-4 w-4" />
+              Recettes
+            </Link>
+            <Link
+              to="/app/scan-repas"
+              className={`text-left text-sm font-medium transition-colors flex items-center gap-2 ${
+                isActivePath("/app/scan-repas") ? "text-primary font-semibold" : "text-muted-foreground"
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <Camera className="h-4 w-4" />
+              ScanRepas
+            </Link>
+            <Link
+              to="/app/inspi-frigo"
+              className={`text-left text-sm font-medium transition-colors flex items-center gap-2 ${
+                isActivePath("/app/inspi-frigo") ? "text-primary font-semibold" : "text-muted-foreground"
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <Camera className="h-4 w-4" />
+              InspiFrigo
+            </Link>
+            <Link
+              to="/app/profile"
+              className={`text-left text-sm font-medium transition-colors flex items-center gap-2 ${
+                isActivePath("/app/profile") ? "text-primary font-semibold" : "text-muted-foreground"
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <User className="h-4 w-4" />
+              Profil
+            </Link>
+            <Link
+              to="/app/settings"
+              className={`text-left text-sm font-medium transition-colors flex items-center gap-2 ${
+                isActivePath("/app/settings") ? "text-primary font-semibold" : "text-muted-foreground"
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <Settings className="h-4 w-4" />
+              Paramètres
+            </Link>
+            <Link
+              to="/app/support"
+              className={`text-left text-sm font-medium transition-colors flex items-center gap-2 ${
+                isActivePath("/app/support") ? "text-primary font-semibold" : "text-muted-foreground"
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <HelpCircle className="h-4 w-4" />
+              Support
+            </Link>
+            <Link
+              to="/blog"
+              className={`text-left text-sm font-medium transition-colors ${
+                isActivePath("/blog") ? "text-primary font-semibold" : "text-muted-foreground"
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Blog
+            </Link>
+          </nav>
+        </div>
+      )}
     </header>
   );
 };

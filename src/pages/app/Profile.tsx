@@ -307,11 +307,11 @@ export default function Profile() {
     <div className="min-h-screen flex flex-col bg-background">
       <AppHeader />
 
-      <main className="flex-1 container py-8">
+      <main className="flex-1 container py-4 md:py-8 px-4">
         <div className="max-w-4xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Tes préférences</h1>
-            <p className="text-muted-foreground">
+          <div className="mb-6 md:mb-8">
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">Tes préférences</h1>
+            <p className="text-sm md:text-base text-muted-foreground">
               Aide-nous à personnaliser tes recommandations au maximum
             </p>
           </div>
@@ -1138,15 +1138,15 @@ export default function Profile() {
             </AccordionItem>
           </Accordion>
 
-          <div className="mt-8">
+          <div className="mt-6 md:mt-8 pb-4">
             <Button 
               onClick={handleSave} 
               disabled={saving} 
-              className="w-full" 
+              className="w-full text-sm md:text-base" 
               size="lg"
             >
               <Save className="w-4 h-4 mr-2" />
-              {saving ? 'Sauvegarde en cours...' : '💾 Sauvegarder mes préférences'}
+              {saving ? 'Sauvegarde...' : '💾 Sauvegarder'}
             </Button>
           </div>
         </div>

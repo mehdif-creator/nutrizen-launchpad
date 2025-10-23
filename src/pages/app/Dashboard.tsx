@@ -286,18 +286,18 @@ export default function Dashboard() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="px-4 sm:px-6 lg:px-10 py-8">
-          <div className="flex items-center justify-between mb-6">
+        <section className="px-4 sm:px-6 lg:px-10 py-4 md:py-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 md:mb-6">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold mb-1">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1">
                 Salut, {firstName} ! 👋
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-sm md:text-base text-muted-foreground">
                 Voici ton tableau de bord NutriZen
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-sm px-3 py-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="text-xs md:text-sm px-2 md:px-3 py-1">
                 <Award className="h-3.5 w-3.5 mr-1" />
                 {zenLevel} · {zenPoints} pts
               </Badge>
@@ -309,56 +309,55 @@ export default function Dashboard() {
         </section>
 
         {/* KPI Row */}
-        <section className="px-4 sm:px-6 lg:px-10 grid md:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+        <section className="px-4 sm:px-6 lg:px-10 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4 mb-6 md:mb-8">
           <StatCard 
             label="Temps gagné" 
             value={`+${Math.round(minutesSaved/60)}h`}
-            sub={`~${minutesSaved} min cette semaine`}
-            icon={<Clock className="h-5 w-5" />}
+            sub={`~${minutesSaved} min`}
+            icon={<Clock className="h-4 w-4 md:h-5 md:w-5" />}
           />
           <StatCard 
             label="Charge mentale" 
             value={`-${chargeMentalDrop}%`}
-            sub="par rapport à la moyenne"
-            icon={<Brain className="h-5 w-5" />}
+            sub="vs moyenne"
+            icon={<Brain className="h-4 w-4 md:h-5 md:w-5" />}
           />
           <StatCard 
-            label="Série en cours" 
-            value={`${streak} jours`}
-            sub="Continue pour +5 crédits"
-            icon={<Flame className="h-5 w-5" />}
+            label="Série" 
+            value={`${streak}j`}
+            sub="+5 crédits"
+            icon={<Flame className="h-4 w-4 md:h-5 md:w-5" />}
           />
           <StatCard 
-            label="Crédits Zen" 
+            label="Crédits" 
             value={`${swapCredits}/10`}
-            sub={`${10 - swapCredits} swaps utilisés`}
-            icon={<Sparkles className="h-5 w-5" />}
+            sub={`${10 - swapCredits} utilisés`}
+            icon={<Sparkles className="h-4 w-4 md:h-5 md:w-5" />}
           />
           <StatCard 
             label="Références" 
             value={`${refCount}`}
-            sub="Amis invités ce mois"
-            icon={<Users className="h-5 w-5" />}
+            sub="Amis invités"
+            icon={<Users className="h-4 w-4 md:h-5 md:w-5" />}
           />
-          <Card className="rounded-2xl shadow-card border p-4">
+          <Card className="rounded-2xl shadow-card border p-3 md:p-4">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-sm text-muted-foreground">Objectif hebdo</div>
-              <div className="text-xs text-primary">{validated}/5 repas validés</div>
+              <div className="text-xs md:text-sm text-muted-foreground">Objectif</div>
+              <div className="text-xs text-primary">{validated}/5</div>
             </div>
-            <Progress value={(validated / 5) * 100} />
-            <div className="text-xs text-muted-foreground mt-1.5">
-              Valide {5 - validated} repas de plus pour le badge{' '}
-              <span className="text-foreground font-medium">Parent Zen</span>.
+            <Progress value={(validated / 5) * 100} className="h-1.5 md:h-2" />
+            <div className="text-xs text-muted-foreground mt-1.5 hidden sm:block">
+              Valide {5 - validated} repas de plus
             </div>
           </Card>
         </section>
 
         {/* Week Planner */}
-        <section className="px-4 sm:px-6 lg:px-10 grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8">
+        <section className="px-4 sm:px-6 lg:px-10 grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
           {/* Left: Meals */}
           <div className="xl:col-span-2">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">Semaine en cours</h2>
+              <h2 className="text-lg md:text-xl font-bold">Semaine en cours</h2>
             </div>
             {loading ? (
               <div className="col-span-full text-center py-12">
@@ -394,19 +393,19 @@ export default function Dashboard() {
           </div>
 
           {/* Right: Sidebar */}
-          <aside className="space-y-6">
+          <aside className="space-y-4 md:space-y-6">
             {/* Liste de courses */}
-            <Card className="rounded-2xl border shadow-sm p-5">
+            <Card className="rounded-2xl border shadow-sm p-4 md:p-5">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold">Liste de courses</h3>
-                <Button variant="outline" size="sm">
+                <h3 className="text-sm md:text-base font-semibold">Liste de courses</h3>
+                <Button variant="outline" size="sm" className="text-xs">
                   <ShoppingCart className="h-3.5 w-3.5 mr-1" />
-                  Exporter
+                  <span className="hidden sm:inline">Exporter</span>
                 </Button>
               </div>
               {shoppingList.length > 0 ? (
                 <>
-                  <ul className="text-sm text-muted-foreground space-y-1 max-h-64 overflow-y-auto">
+                  <ul className="text-xs md:text-sm text-muted-foreground space-y-1 max-h-48 md:max-h-64 overflow-y-auto">
                     {shoppingList.map((ingredient, i) => (
                       <li key={i}>• {ingredient}</li>
                     ))}
@@ -416,21 +415,21 @@ export default function Dashboard() {
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs md:text-sm text-muted-foreground">
                   Génère ton menu hebdomadaire pour voir ta liste de courses.
                 </p>
               )}
             </Card>
 
             {/* Partage Social */}
-            <Card className="rounded-2xl border shadow-sm bg-primary text-primary-foreground p-5">
-              <div className="font-semibold mb-1">Partage ta semaine Zen</div>
-              <div className="text-primary-foreground/90 text-sm mb-3">
+            <Card className="rounded-2xl border shadow-sm bg-primary text-primary-foreground p-4 md:p-5">
+              <div className="text-sm md:text-base font-semibold mb-1">Partage ta semaine Zen</div>
+              <div className="text-primary-foreground/90 text-xs md:text-sm mb-3">
                 Montre tes menus planifiés en 3 minutes — inspire un ami et gagne +5 crédits.
               </div>
               <Button 
                 variant="secondary" 
-                className="w-full"
+                className="w-full text-xs md:text-sm"
                 onClick={() => toast({ title: "Partage en développement", description: "Fonctionnalité bientôt disponible." })}
               >
                 <Share2 className="h-4 w-4 mr-2" />
@@ -439,30 +438,30 @@ export default function Dashboard() {
             </Card>
 
             {/* Invite & gagne */}
-            <Card className="rounded-2xl border shadow-sm p-5">
-              <div className="font-semibold mb-2">Invite & gagne</div>
-              <div className="text-sm text-muted-foreground mb-2">
+            <Card className="rounded-2xl border shadow-sm p-4 md:p-5">
+              <div className="text-sm md:text-base font-semibold mb-2">Invite & gagne</div>
+              <div className="text-xs md:text-sm text-muted-foreground mb-2">
                 Invite 3 amis → 1 mois offert. 5 amis → swaps illimités 30 jours.
               </div>
               <div className="text-xs font-mono bg-muted border rounded-xl p-2 break-all mb-3">
                 {referralUrl}
               </div>
-              <Button variant="outline" size="sm" className="w-full" onClick={handleCopyLink}>
+              <Button variant="outline" size="sm" className="w-full text-xs md:text-sm" onClick={handleCopyLink}>
                 <Copy className="h-3.5 w-3.5 mr-1" />
                 Copier le lien
               </Button>
             </Card>
 
             {/* Badges */}
-            <Card className="rounded-2xl border shadow-sm p-5">
-              <div className="font-semibold mb-1">Badges</div>
-              <div className="text-sm text-muted-foreground mb-3">
+            <Card className="rounded-2xl border shadow-sm p-4 md:p-5">
+              <div className="text-sm md:text-base font-semibold mb-1">Badges</div>
+              <div className="text-xs md:text-sm text-muted-foreground mb-3">
                 Gagne des points en validant des repas, en gardant ta série, et en invitant des amis.
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant={zenLevel === "Bronze" ? "default" : "outline"}>Bronze</Badge>
-                <Badge variant={zenLevel === "Silver" ? "default" : "outline"}>Silver</Badge>
-                <Badge variant={zenLevel === "Gold" ? "default" : "outline"}>Gold</Badge>
+                <Badge variant={zenLevel === "Bronze" ? "default" : "outline"} className="text-xs">Bronze</Badge>
+                <Badge variant={zenLevel === "Silver" ? "default" : "outline"} className="text-xs">Silver</Badge>
+                <Badge variant={zenLevel === "Gold" ? "default" : "outline"} className="text-xs">Gold</Badge>
               </div>
             </Card>
           </aside>
