@@ -1,22 +1,19 @@
-import { AppHeader } from '@/components/app/AppHeader';
-import { AppFooter } from '@/components/app/AppFooter';
-import { useAuth } from '@/contexts/AuthContext';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { 
-  Clock, Sparkles, Flame, Users, 
-  ShoppingCart, Share2, Copy, Award, Brain
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { StatCard } from '@/components/app/StatCard';
-import { Progress } from '@/components/app/Progress';
-import { MealCard } from '@/components/app/MealCard';
-import { Badge } from '@/components/ui/badge';
-import { useState, useMemo, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Navigate, useNavigate } from 'react-router-dom';
-import { useDashboardStats } from '@/hooks/useDashboardStats';
-import { useWeeklyMenu } from '@/hooks/useWeeklyMenu';
+import { AppHeader } from "@/components/app/AppHeader";
+import { AppFooter } from "@/components/app/AppFooter";
+import { useAuth } from "@/contexts/AuthContext";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Clock, Sparkles, Flame, Users, ShoppingCart, Share2, Copy, Award, Brain } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { StatCard } from "@/components/app/StatCard";
+import { Progress } from "@/components/app/Progress";
+import { MealCard } from "@/components/app/MealCard";
+import { Badge } from "@/components/ui/badge";
+import { useState, useMemo, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Navigate, useNavigate } from "react-router-dom";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { useWeeklyMenu } from "@/hooks/useWeeklyMenu";
 
 const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -28,37 +25,36 @@ export default function Dashboard() {
   // Use custom hooks for data fetching with realtime
   const { stats, isLoading: statsLoading } = useDashboardStats(user?.id);
   const { menu, days, hasMenu, isLoading: menuLoading } = useWeeklyMenu(user?.id);
-  
+
   // Fetch swap credits from swaps table
   const [swapCredits, setSwapCredits] = useState(10);
   useEffect(() => {
     const fetchSwaps = async () => {
       if (!user?.id) return;
-      
-      const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
+
+      const currentMonth = new Date().toISOString().slice(0, 7) + "-01";
       const { data, error } = await supabase
-        .from('swaps')
-        .select('quota, used')
-        .eq('user_id', user.id)
-        .eq('month', currentMonth)
+        .from("swaps")
+        .select("quota, used")
+        .eq("user_id", user.id)
+        .eq("month", currentMonth)
         .maybeSingle();
-      
+
       if (data) {
         setSwapCredits(data.quota - data.used);
       }
     };
-    
+
     fetchSwaps();
-    
+
     // Subscribe to swaps changes
     const channel = supabase
-      .channel('swaps-changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'swaps', filter: `user_id=eq.${user?.id}` },
-        () => fetchSwaps()
+      .channel("swaps-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "swaps", filter: `user_id=eq.${user?.id}` }, () =>
+        fetchSwaps(),
       )
       .subscribe();
-    
+
     return () => {
       supabase.removeChannel(channel);
     };
@@ -66,8 +62,8 @@ export default function Dashboard() {
 
   const [generating, setGenerating] = useState(false);
 
-  const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'toi';
-  
+  const firstName = user?.user_metadata?.full_name?.split(" ")[0] || "toi";
+
   // Redirect admin to admin dashboard
   if (isAdmin) {
     return <Navigate to="/admin" replace />;
@@ -81,7 +77,7 @@ export default function Dashboard() {
         title: day.title,
         time: day.prep_min || 0,
         kcal: day.calories || 0,
-        imageUrl: day.image_url
+        imageUrl: day.image_url,
       }));
     }
     return [];
@@ -89,7 +85,7 @@ export default function Dashboard() {
 
   // Fetch ingredients for shopping list
   const [shoppingList, setShoppingList] = useState<string[]>([]);
-  
+
   useEffect(() => {
     const fetchIngredients = async () => {
       if (!weekMeals.length) {
@@ -97,42 +93,45 @@ export default function Dashboard() {
         return;
       }
 
-      const recipeIds = weekMeals.map(meal => meal.id);
-      const { data, error } = await supabase
-        .from('recipes')
-        .select('ingredients')
-        .in('id', recipeIds);
+      const recipeIds = weekMeals.map((meal) => meal.id);
+      const { data, error } = await supabase.from("recipes").select("ingredients").in("id", recipeIds);
 
       if (error) {
-        console.error('Error fetching ingredients:', error);
+        console.error("Error fetching ingredients:", error);
         return;
       }
 
       const allIngredients: string[] = [];
       const ingredientSet = new Set<string>();
-      
+
       data?.forEach((recipe) => {
         if (recipe.ingredients && Array.isArray(recipe.ingredients)) {
           recipe.ingredients.forEach((ing: any) => {
-            let ingredientName = '';
-            
-            if (typeof ing === 'string') {
+            let ingredientName = "";
+
+            if (typeof ing === "string") {
               ingredientName = ing;
             } else if (ing.name) {
               ingredientName = ing.name;
             } else if (ing.ingredient) {
               ingredientName = ing.ingredient;
             }
-            
+
             // Clean ingredient name: remove quantities and measurements
             if (ingredientName) {
               // Remove common quantity patterns (numbers, units, etc.)
               ingredientName = ingredientName
-                .replace(/^\d+(\.\d+)?\s*(g|kg|ml|cl|l|cuillère|c\.|càc|càs|pincée|brin|feuilles?|tranches?|morceaux?|gouttes?|sachet|boîte|paquet|tasse|verre)\s+(de|d'|à)\s*/gi, '')
-                .replace(/^\d+(\.\d+)?\s*(g|kg|ml|cl|l|cuillère|c\.|càc|càs|pincée|brin|feuilles?|tranches?|morceaux?|gouttes?|sachet|boîte|paquet|tasse|verre)\s+/gi, '')
-                .replace(/^\d+\s+/g, '')
+                .replace(
+                  /^\d+(\.\d+)?\s*(g|kg|ml|cl|l|cuillère|c\.|càc|càs|pincée|brin|feuilles?|tranches?|morceaux?|gouttes?|sachet|boîte|paquet|tasse|verre)\s+(de|d'|à)\s*/gi,
+                  "",
+                )
+                .replace(
+                  /^\d+(\.\d+)?\s*(g|kg|ml|cl|l|cuillère|c\.|càc|càs|pincée|brin|feuilles?|tranches?|morceaux?|gouttes?|sachet|boîte|paquet|tasse|verre)\s+/gi,
+                  "",
+                )
+                .replace(/^\d+\s+/g, "")
                 .trim();
-              
+
               if (ingredientName && !ingredientSet.has(ingredientName.toLowerCase())) {
                 ingredientSet.add(ingredientName.toLowerCase());
                 allIngredients.push(ingredientName);
@@ -157,35 +156,35 @@ export default function Dashboard() {
   const zenPoints = Math.floor(minutesSaved / 10);
   const zenLevel = zenPoints < 20 ? "Bronze" : zenPoints < 40 ? "Silver" : "Gold";
   const referralUrl = "https://mynutrizen.fr/i/" + (user?.id.slice(0, 8) || "user");
-  
+
   const loading = statsLoading || menuLoading;
 
   const handleSwap = async (index: number) => {
     if (!user || !menu) return;
-    
+
     if (swapCredits <= 0) {
       toast({
         title: "Plus de crédits",
         description: "Tu as utilisé tous tes swaps ce mois-ci.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
-    
+
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
         throw new Error("No session");
       }
 
-      const { data, error } = await supabase.functions.invoke('use-swap', {
+      const { data, error } = await supabase.functions.invoke("use-swap", {
         headers: {
           Authorization: `Bearer ${session.session.access_token}`,
         },
         body: {
           meal_plan_id: menu.menu_id,
-          day: index
-        }
+          day: index,
+        },
       });
 
       if (error) throw error;
@@ -193,22 +192,22 @@ export default function Dashboard() {
       if (data.success) {
         toast({
           title: "Recette changée !",
-          description: `Il te reste ${data.swapsRemaining} swaps.`
+          description: `Il te reste ${data.swapsRemaining} swaps.`,
         });
         // Realtime will auto-update
       } else {
         toast({
           title: "Erreur",
           description: data.error || "Impossible de changer la recette.",
-          variant: "destructive"
+          variant: "destructive",
         });
       }
     } catch (error) {
-      console.error('Error swapping:', error);
+      console.error("Error swapping:", error);
       toast({
         title: "Erreur",
         description: "Impossible de changer la recette.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -217,22 +216,22 @@ export default function Dashboard() {
     // TODO: Implement meal validation
     toast({
       title: "Validation en cours...",
-      description: "Fonctionnalité bientôt disponible"
+      description: "Fonctionnalité bientôt disponible",
     });
   };
 
   const handleRegenWeek = async () => {
     if (!user || generating) return;
-    
+
     setGenerating(true);
-    
+
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
         throw new Error("No session");
       }
 
-      const { data, error } = await supabase.functions.invoke('generate-menu', {
+      const { data, error } = await supabase.functions.invoke("generate-menu", {
         headers: {
           Authorization: `Bearer ${session.session.access_token}`,
         },
@@ -249,15 +248,15 @@ export default function Dashboard() {
         toast({
           title: "Génération impossible",
           description: data?.message || "Impossible de générer un menu.",
-          variant: "destructive"
+          variant: "destructive",
         });
       }
     } catch (error) {
-      console.error('Error regenerating week:', error);
+      console.error("Error regenerating week:", error);
       toast({
         title: "Erreur",
         description: "Impossible de générer la semaine. Réessaie plus tard.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setGenerating(false);
@@ -269,13 +268,13 @@ export default function Dashboard() {
       await navigator.clipboard.writeText(referralUrl);
       toast({
         title: "Lien copié !",
-        description: "Partage-le pour inviter tes amis."
+        description: "Partage-le pour inviter tes amis.",
       });
     } catch (error) {
       toast({
         title: "Erreur",
         description: "Impossible de copier le lien.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -289,12 +288,8 @@ export default function Dashboard() {
         <section className="px-4 sm:px-6 lg:px-10 py-4 md:py-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 md:mb-6">
             <div>
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1">
-                Salut, {firstName} ! 👋
-              </h1>
-              <p className="text-sm md:text-base text-muted-foreground">
-                Voici ton tableau de bord NutriZen
-              </p>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1">Salut, {firstName} ! 👋</h1>
+              <p className="text-sm md:text-base text-muted-foreground">Voici ton tableau de bord NutriZen</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline" className="text-xs md:text-sm px-2 md:px-3 py-1">
@@ -310,32 +305,32 @@ export default function Dashboard() {
 
         {/* KPI Row */}
         <section className="px-4 sm:px-6 lg:px-10 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4 mb-6 md:mb-8">
-          <StatCard 
-            label="Temps gagné" 
-            value={`+${Math.round(minutesSaved/60)}h`}
+          <StatCard
+            label="Temps gagné"
+            value={`+${Math.round(minutesSaved / 60)}h`}
             sub={`~${minutesSaved} min`}
             icon={<Clock className="h-4 w-4 md:h-5 md:w-5" />}
           />
-          <StatCard 
-            label="Charge mentale" 
+          <StatCard
+            label="Charge mentale"
             value={`-${chargeMentalDrop}%`}
             sub="vs moyenne"
             icon={<Brain className="h-4 w-4 md:h-5 md:w-5" />}
           />
-          <StatCard 
-            label="Série" 
+          <StatCard
+            label="Série"
             value={`${streak}j`}
             sub="+5 crédits"
             icon={<Flame className="h-4 w-4 md:h-5 md:w-5" />}
           />
-          <StatCard 
-            label="Crédits" 
+          <StatCard
+            label="Crédits"
             value={`${swapCredits}/10`}
             sub={`${10 - swapCredits} utilisés`}
             icon={<Sparkles className="h-4 w-4 md:h-5 md:w-5" />}
           />
-          <StatCard 
-            label="Références" 
+          <StatCard
+            label="Références"
             value={`${refCount}`}
             sub="Amis invités"
             icon={<Users className="h-4 w-4 md:h-5 md:w-5" />}
@@ -365,9 +360,7 @@ export default function Dashboard() {
               </div>
             ) : weekMeals.length === 0 ? (
               <div className="col-span-full text-center py-12">
-                <p className="text-muted-foreground mb-4">
-                  Aucun menu généré pour cette semaine.
-                </p>
+                <p className="text-muted-foreground mb-4">Aucun menu généré pour cette semaine.</p>
                 <Button onClick={handleRegenWeek} disabled={generating}>
                   {generating ? "Génération..." : "Générer ma semaine"}
                 </Button>
@@ -375,19 +368,19 @@ export default function Dashboard() {
             ) : (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {weekMeals.map((meal, i) => (
-                <MealCard
-                  key={`${meal.id}-${i}`}
-                  day={weekdays[i]}
-                  title={meal.title}
-                  time={meal.time}
-                  kcal={meal.kcal}
-                  imageUrl={meal.imageUrl}
-                  onValidate={handleValidateMeal}
-                  onSwap={() => handleSwap(i)}
-                  onViewRecipe={() => navigate(`/app/recipes/${meal.id}`)}
-                  swapsRemaining={swapCredits}
-                />
-              ))}
+                  <MealCard
+                    key={`${meal.id}-${i}`}
+                    day={weekdays[i]}
+                    title={meal.title}
+                    time={meal.time}
+                    kcal={meal.kcal}
+                    imageUrl={meal.imageUrl}
+                    onValidate={handleValidateMeal}
+                    onSwap={() => handleSwap(i)}
+                    onViewRecipe={() => navigate(`/app/recipes/${meal.id}`)}
+                    swapsRemaining={swapCredits}
+                  />
+                ))}
               </div>
             )}
           </div>
@@ -397,7 +390,7 @@ export default function Dashboard() {
             {/* Liste de courses */}
             <Card className="rounded-2xl border shadow-sm p-4 md:p-5">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm md:text-base font-semibold">Liste de courses</h3>
+                <h3 className="text-sm md:text-base font-semibold">Liste de courses ( en développement )</h3>
                 <Button variant="outline" size="sm" className="text-xs">
                   <ShoppingCart className="h-3.5 w-3.5 mr-1" />
                   <span className="hidden sm:inline">Exporter</span>
@@ -410,9 +403,7 @@ export default function Dashboard() {
                       <li key={i}>• {ingredient}</li>
                     ))}
                   </ul>
-                  <div className="text-xs text-muted-foreground mt-2">
-                    Générée depuis ton menu hebdomadaire
-                  </div>
+                  <div className="text-xs text-muted-foreground mt-2">Générée depuis ton menu hebdomadaire</div>
                 </>
               ) : (
                 <p className="text-xs md:text-sm text-muted-foreground">
@@ -427,10 +418,12 @@ export default function Dashboard() {
               <div className="text-primary-foreground/90 text-xs md:text-sm mb-3">
                 Montre tes menus planifiés en 3 minutes — inspire un ami et gagne +5 crédits.
               </div>
-              <Button 
-                variant="secondary" 
+              <Button
+                variant="secondary"
                 className="w-full text-xs md:text-sm"
-                onClick={() => toast({ title: "Partage en développement", description: "Fonctionnalité bientôt disponible." })}
+                onClick={() =>
+                  toast({ title: "Partage en développement", description: "Fonctionnalité bientôt disponible." })
+                }
               >
                 <Share2 className="h-4 w-4 mr-2" />
                 Partager un aperçu
@@ -441,11 +434,9 @@ export default function Dashboard() {
             <Card className="rounded-2xl border shadow-sm p-4 md:p-5">
               <div className="text-sm md:text-base font-semibold mb-2">Invite & gagne</div>
               <div className="text-xs md:text-sm text-muted-foreground mb-2">
-                Invite 3 amis → 1 mois offert. 5 amis → swaps illimités 30 jours.
+                Invite 5 amis → 1 mois offert. Et des avantages exclusifs au-delà.
               </div>
-              <div className="text-xs font-mono bg-muted border rounded-xl p-2 break-all mb-3">
-                {referralUrl}
-              </div>
+              <div className="text-xs font-mono bg-muted border rounded-xl p-2 break-all mb-3">{referralUrl}</div>
               <Button variant="outline" size="sm" className="w-full text-xs md:text-sm" onClick={handleCopyLink}>
                 <Copy className="h-3.5 w-3.5 mr-1" />
                 Copier le lien
@@ -459,14 +450,19 @@ export default function Dashboard() {
                 Gagne des points en validant des repas, en gardant ta série, et en invitant des amis.
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant={zenLevel === "Bronze" ? "default" : "outline"} className="text-xs">Bronze</Badge>
-                <Badge variant={zenLevel === "Silver" ? "default" : "outline"} className="text-xs">Silver</Badge>
-                <Badge variant={zenLevel === "Gold" ? "default" : "outline"} className="text-xs">Gold</Badge>
+                <Badge variant={zenLevel === "Bronze" ? "default" : "outline"} className="text-xs">
+                  Bronze
+                </Badge>
+                <Badge variant={zenLevel === "Silver" ? "default" : "outline"} className="text-xs">
+                  Silver
+                </Badge>
+                <Badge variant={zenLevel === "Gold" ? "default" : "outline"} className="text-xs">
+                  Gold
+                </Badge>
               </div>
             </Card>
           </aside>
         </section>
-
       </main>
 
       <AppFooter />
