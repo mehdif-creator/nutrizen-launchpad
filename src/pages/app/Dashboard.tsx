@@ -104,12 +104,13 @@ export default function Dashboard() {
       if (error) throw error;
 
       if (data.success) {
-        const fallbackInfo = data.usedFallback ? ` avec ${data.usedFallback}` : '';
+        const fallbackMsg = data.usedFallback 
+          ? `Certains critères ont été assouplis (niveau ${data.usedFallback}) pour garantir 7 repas. Tes exclusions sont respectées.`
+          : 'Voici 7 nouveaux repas personnalisés pour toi.';
+        
         toast({
           title: "✅ Semaine régénérée !",
-          description: data.usedFallback 
-            ? `Menu généré${fallbackInfo} (allergies respectées).`
-            : "Voici 7 nouveaux repas personnalisés pour toi."
+          description: fallbackMsg
         });
         // Realtime will auto-update the UI
       } else {
@@ -181,7 +182,7 @@ export default function Dashboard() {
         <section className="px-4 sm:px-6 lg:px-10 py-8">
           {usedFallback && (
             <div className="mb-4 p-4 bg-primary/10 border border-primary/20 rounded-xl text-sm">
-              ℹ️ Menu généré avec {usedFallback} (filtres assouplis). Tes allergies et exclusions sont respectées.
+              ℹ️ <strong>Menu adapté ({usedFallback})</strong> : Certains critères ont été assouplis pour garantir 7 repas variés. Tes exclusions alimentaires sont respectées.
             </div>
           )}
           <div className="flex items-center justify-between mb-6">

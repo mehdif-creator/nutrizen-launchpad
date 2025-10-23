@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
-import { subscribeToUserMenu } from '@/lib/realtime';
 import { queryClient } from '@/lib/queryClient';
 
 export interface WeeklyMenuDay {
@@ -44,6 +43,8 @@ export function getCurrentWeekStart(): string {
 
 async function fetchWeeklyMenu(userId: string): Promise<WeeklyMenu | null> {
   const weekStart = getCurrentWeekStart();
+  
+  console.log('[useWeeklyMenu] Fetching menu for user:', userId, 'week_start:', weekStart);
 
   const { data, error } = await supabase
     .from('user_weekly_menus')
@@ -58,12 +59,18 @@ async function fetchWeeklyMenu(userId: string): Promise<WeeklyMenu | null> {
   }
 
   if (!data) {
-    console.warn('[useWeeklyMenu] No menu found for current week');
+    console.warn('[useWeeklyMenu] No menu found for current week:', weekStart);
     return null;
   }
 
   // Type cast payload to extract days
   const payload = data.payload as { days?: WeeklyMenuDay[] } | null;
+
+  console.log('[useWeeklyMenu] Menu data received:', {
+    menu_id: data.menu_id,
+    day_count: payload?.days?.length,
+    used_fallback: data.used_fallback
+  });
 
   return {
     menu_id: data.menu_id,
@@ -82,21 +89,40 @@ export function useWeeklyMenu(userId: string | undefined) {
     queryFn: () => fetchWeeklyMenu(userId!),
     enabled: !!userId,
     staleTime: 5 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   // Subscribe to realtime updates
   useEffect(() => {
     if (!userId) return;
 
-    console.log('[useWeeklyMenu] Setting up realtime subscription');
+    console.log('[useWeeklyMenu] Setting up realtime subscription for user:', userId);
     
-    const unsubscribe = subscribeToUserMenu(userId, (payload) => {
-      console.log('[useWeeklyMenu] Received update, invalidating cache');
-      // Invalidate and refetch
-      queryClient.invalidateQueries({ queryKey: ['weeklyMenu', userId] });
-    });
+    const channel = supabase
+      .channel('user_weekly_menus_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_weekly_menus',
+          filter: `user_id=eq.${userId}`
+        },
+        (payload) => {
+          console.log('[useWeeklyMenu] Received realtime update:', payload.eventType);
+          // Invalidate and refetch
+          queryClient.invalidateQueries({ queryKey: ['weeklyMenu', userId] });
+        }
+      )
+      .subscribe((status) => {
+        console.log('[useWeeklyMenu] Realtime subscription status:', status);
+      });
 
-    return unsubscribe;
+    return () => {
+      console.log('[useWeeklyMenu] Cleaning up realtime subscription');
+      supabase.removeChannel(channel);
+    };
   }, [userId]);
 
   return {
