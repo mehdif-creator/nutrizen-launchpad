@@ -33,6 +33,10 @@ verify_jwt = false
 [functions.submit-lead]
 verify_jwt = false
 
+[functions.submit-lead.rate_limit]
+limit = 5
+period = "1h"
+
 [functions.handle-referral]
 verify_jwt = true
 

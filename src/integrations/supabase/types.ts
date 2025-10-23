@@ -1124,6 +1124,36 @@ export type Database = {
           lipides_g_100g: number | null
           proteines_g_100g: number | null
         }
+        Insert: {
+          alim_code?: string | null
+          alim_grp_code?: number | null
+          alim_nom_eng?: string | null
+          alim_nom_fr?: string | null
+          alim_nom_index_fr?: string | null
+          alim_ssgrp_code?: number | null
+          alim_ssssgrp_code?: number | null
+          energie_kcal_100g?: never
+          fibres_alimentaires_g_100g?: never
+          glucides_g_100g?: never
+          id?: number | null
+          lipides_g_100g?: never
+          proteines_g_100g?: never
+        }
+        Update: {
+          alim_code?: string | null
+          alim_grp_code?: number | null
+          alim_nom_eng?: string | null
+          alim_nom_fr?: string | null
+          alim_nom_index_fr?: string | null
+          alim_ssgrp_code?: number | null
+          alim_ssssgrp_code?: number | null
+          energie_kcal_100g?: never
+          fibres_alimentaires_g_100g?: never
+          glucides_g_100g?: never
+          id?: number | null
+          lipides_g_100g?: never
+          proteines_g_100g?: never
+        }
         Relationships: []
       }
       ciqual_summary: {

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -81,8 +82,19 @@ serve(async (req) => {
     const formData = await req.formData();
     const image = formData.get('image');
     
-    if (!image) {
-      throw new Error('No image provided');
+    if (!image || !(image instanceof File)) {
+      throw new Error('No valid image provided');
+    }
+    
+    // Validate file size (max 10MB)
+    if (image.size > 10 * 1024 * 1024) {
+      throw new Error('Image file too large (max 10MB)');
+    }
+    
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(image.type)) {
+      throw new Error('Invalid image type. Allowed: JPEG, PNG, WebP');
     }
 
     console.log('Image received, forwarding to n8n webhook...');

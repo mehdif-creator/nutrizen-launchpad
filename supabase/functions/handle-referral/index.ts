@@ -1,10 +1,17 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schema
+const HandleReferralSchema = z.object({
+  referralCode: z.string().trim().min(1).max(50, { message: "Referral code too long" }),
+  newUserId: z.string().uuid({ message: "Invalid newUserId format" }),
+}).strict();
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -25,11 +32,10 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    const { referralCode, newUserId } = await req.json();
-
-    if (!referralCode || !newUserId) {
-      throw new Error("Missing referralCode or newUserId");
-    }
+    // Parse and validate input
+    const body = await req.json();
+    const validatedInput = HandleReferralSchema.parse(body);
+    const { referralCode, newUserId } = validatedInput;
 
     logStep("Processing referral", { referralCode, newUserId });
 
@@ -121,6 +127,19 @@ serve(async (req) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
+    
+    // Handle validation errors
+    if (error instanceof z.ZodError) {
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          message: 'Validation error',
+          details: error.errors
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 400,

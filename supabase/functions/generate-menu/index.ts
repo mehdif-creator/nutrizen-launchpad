@@ -1,10 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schema
+const GenerateMenuSchema = z.object({
+  week_start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+}).strict();
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -31,6 +37,10 @@ serve(async (req) => {
     }
 
     console.log(`[generate-menu] Processing request for user: ${user.id}`);
+
+    // Parse and validate input
+    const body = await req.json().catch(() => ({}));
+    const validatedInput = GenerateMenuSchema.parse(body);
 
     // Get user preferences
     const { data: preferences, error: prefError } = await supabaseClient
