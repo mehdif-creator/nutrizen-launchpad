@@ -5,7 +5,7 @@ export const AppFooter = () => {
   return (
     <footer className="border-t bg-muted/30 py-8 mt-auto">
       <div className="container">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 md:gap-8">
           <div>
             <div className="flex items-center mb-4">
               <img 

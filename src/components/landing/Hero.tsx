@@ -50,16 +50,14 @@ export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
 
             {/* CTAs */}
             <div className="space-y-3">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button
-                  onClick={onCtaClick}
-                  size="lg"
-                  className="bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] shadow-glow transition-tech text-lg px-8"
-                >
-                  Commencer mon essai gratuit 7 jours – sans engagement.
-                </Button>
-              </div>
-              <p className="text-sm text-muted-foreground pl-1">
+              <Button
+                onClick={onCtaClick}
+                size="lg"
+                className="w-full sm:w-auto bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] shadow-glow transition-tech text-base md:text-lg px-6 md:px-8 py-4"
+              >
+                Commencer mon essai gratuit 7 jours
+              </Button>
+              <p className="text-xs md:text-sm text-muted-foreground">
                 <strong>Essai gratuit 7 jours</strong> · Aucun engagement · Aucune carte bancaire requise
               </p>
             </div>
@@ -76,17 +74,17 @@ export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
                 <span className="text-muted-foreground">· +2 400 avis</span>
               </div>
 
-              <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-4 text-xs md:text-sm text-muted-foreground">
                 <div className="flex items-center gap-1.5">
-                  <Check className="w-4 h-4 text-primary" />
+                  <Check className="w-4 h-4 text-primary flex-shrink-0" />
                   <span>Annulable en 3 clics</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Check className="w-4 h-4 text-primary" />
+                  <Check className="w-4 h-4 text-primary flex-shrink-0" />
                   <span>Garantie temps-gagné 30j</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Check className="w-4 h-4 text-primary" />
+                  <Check className="w-4 h-4 text-primary flex-shrink-0" />
                   <span>Validé par diététicien(ne)</span>
                 </div>
               </div>
