@@ -55,6 +55,48 @@ export default function Dashboard() {
     return [];
   }, [days]);
 
+  // Fetch ingredients for shopping list
+  const [shoppingList, setShoppingList] = useState<string[]>([]);
+  
+  useMemo(() => {
+    const fetchIngredients = async () => {
+      if (!weekMeals.length) {
+        setShoppingList([]);
+        return;
+      }
+
+      const recipeIds = weekMeals.map(meal => meal.id);
+      const { data, error } = await supabase
+        .from('recipes')
+        .select('ingredients')
+        .in('id', recipeIds);
+
+      if (error) {
+        console.error('Error fetching ingredients:', error);
+        return;
+      }
+
+      const allIngredients: string[] = [];
+      data?.forEach((recipe) => {
+        if (recipe.ingredients && Array.isArray(recipe.ingredients)) {
+          recipe.ingredients.forEach((ing: any) => {
+            if (typeof ing === 'string') {
+              allIngredients.push(ing);
+            } else if (ing.name) {
+              allIngredients.push(ing.name);
+            } else if (ing.ingredient) {
+              allIngredients.push(ing.ingredient);
+            }
+          });
+        }
+      });
+
+      setShoppingList(allIngredients);
+    };
+
+    fetchIngredients();
+  }, [weekMeals]);
+
   // KPI calculations (always use 0 as fallback)
   const minutesSaved = stats.temps_gagne;
   const chargeMentalDrop = stats.charge_mentale_pct;
@@ -297,11 +339,11 @@ export default function Dashboard() {
                   Exporter
                 </Button>
               </div>
-              {weekMeals.length > 0 ? (
+              {shoppingList.length > 0 ? (
                 <>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    {weekMeals.slice(0, 7).map((meal, i) => (
-                      <li key={i}>• {meal.title}</li>
+                  <ul className="text-sm text-muted-foreground space-y-1 max-h-64 overflow-y-auto">
+                    {shoppingList.map((ingredient, i) => (
+                      <li key={i}>• {ingredient}</li>
                     ))}
                   </ul>
                   <div className="text-xs text-muted-foreground mt-2">
