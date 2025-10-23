@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
-  Clock, Sparkles, Flame, Users, TrendingUp, 
+  Clock, Sparkles, Flame, Users, 
   ShoppingCart, Share2, Copy, Award, Brain, Target
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -13,20 +13,11 @@ import { StatCard } from '@/components/app/StatCard';
 import { Progress } from '@/components/app/Progress';
 import { MealCard } from '@/components/app/MealCard';
 import { Badge } from '@/components/ui/badge';
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Navigate, useNavigate } from 'react-router-dom';
-
-// Fake meals catalog for demo
-const mealsCatalog = [
-  { id: 1, title: "Poulet au curry rapide", time: 15, kcal: 520 },
-  { id: 2, title: "Bowl thon & riz vinaigré", time: 10, kcal: 480 },
-  { id: 3, title: "Omelette feta & épinards", time: 8, kcal: 390 },
-  { id: 4, title: "Salade lentilles & saumon", time: 18, kcal: 540 },
-  { id: 5, title: "Pâtes complètes pesto & poulet", time: 12, kcal: 610 },
-  { id: 6, title: "Wok express boeuf & brocoli", time: 12, kcal: 560 },
-  { id: 7, title: "Tacos healthy haricots noirs", time: 14, kcal: 510 },
-];
+import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { useWeeklyMenu } from '@/hooks/useWeeklyMenu';
 
 const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -35,18 +26,11 @@ export default function Dashboard() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Real stats from database
-  const [stats, setStats] = useState({
-    temps_gagne: 0,
-    charge_mentale_pct: 0,
-    serie_en_cours_set_count: 0,
-    credits_zen: 10,
-    references_count: 0,
-    objectif_hebdos_valide: 0
-  });
-  const [weeklyMenu, setWeeklyMenu] = useState<any>(null);
+  // Use custom hooks for data fetching with realtime
+  const { stats, isLoading: statsLoading } = useDashboardStats(user?.id);
+  const { menu, days, hasMenu, isLoading: menuLoading } = useWeeklyMenu(user?.id);
+
   const [fridgeInput, setFridgeInput] = useState("");
-  const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [showFallbackBanner, setShowFallbackBanner] = useState(false);
 
@@ -57,106 +41,32 @@ export default function Dashboard() {
     return <Navigate to="/admin" replace />;
   }
 
-  // Build week meals from database or fallback
+  // Build week meals from database
   const weekMeals = useMemo(() => {
-    if (weeklyMenu?.payload?.days && weeklyMenu.payload.days.length > 0) {
-      return weeklyMenu.payload.days.map((day: any) => ({
+    if (days && days.length > 0) {
+      return days.map((day: any) => ({
         id: day.recipe_id,
         title: day.title,
-        time: day.prep_min,
-        kcal: day.calories,
+        time: day.prep_min || 0,
+        kcal: day.calories || 0,
         imageUrl: day.image_url
       }));
     }
     return [];
-  }, [weeklyMenu]);
+  }, [days]);
 
-  // KPI calculations
-  const minutesSaved = stats.temps_gagne || 0;
-  const chargeMentalDrop = stats.charge_mentale_pct || 0;
-  const streak = stats.serie_en_cours_set_count || 0;
-  const credits = stats.credits_zen || 10;
-  const refCount = stats.references_count || 0;
-  const validated = stats.objectif_hebdos_valide || 0;
-  const zenPoints = minutesSaved / 10; // Calculate zen points from saved time
+  // KPI calculations (always use 0 as fallback)
+  const minutesSaved = stats.temps_gagne;
+  const chargeMentalDrop = stats.charge_mentale_pct;
+  const streak = stats.serie_en_cours_set_count;
+  const credits = stats.credits_zen;
+  const refCount = stats.references_count;
+  const validated = stats.objectif_hebdos_valide;
+  const zenPoints = Math.floor(minutesSaved / 10);
   const zenLevel = zenPoints < 20 ? "Bronze" : zenPoints < 40 ? "Silver" : "Gold";
   const referralUrl = "https://mynutrizen.fr/i/" + (user?.id.slice(0, 8) || "user");
   
-  // Load user stats and weekly menu
-  useEffect(() => {
-    if (!user) return;
-
-    const loadData = async () => {
-      try {
-        // Load stats
-        const { data: statsData } = await supabase
-          .from('user_dashboard_stats')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-
-        if (statsData) {
-          setStats({
-            temps_gagne: statsData.temps_gagne || 0,
-            charge_mentale_pct: statsData.charge_mentale_pct || 0,
-            serie_en_cours_set_count: statsData.serie_en_cours_set_count || 0,
-            credits_zen: statsData.credits_zen || 10,
-            references_count: statsData.references_count || 0,
-            objectif_hebdos_valide: statsData.objectif_hebdos_valide || 0
-          });
-        }
-
-        // Get current week start
-        const now = new Date();
-        const dayOfWeek = now.getDay();
-        const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-        const weekStart = new Date(now);
-        weekStart.setDate(now.getDate() + diff);
-        weekStart.setHours(0, 0, 0, 0);
-        const weekStartStr = weekStart.toISOString().split('T')[0];
-
-        // Load weekly menu
-        const { data: menuData } = await supabase
-          .from('user_weekly_menus')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('week_start', weekStartStr)
-          .maybeSingle();
-
-        setWeeklyMenu(menuData);
-      } catch (error) {
-        console.error('Error loading data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-    refreshSubscription();
-
-    // Subscribe to realtime updates for weekly menu
-    const channel = supabase
-      .channel('user-weekly-menu')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_weekly_menus',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            setWeeklyMenu(payload.new);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user]);
+  const loading = statsLoading || menuLoading;
 
   const handleSwap = async (index: number) => {
     // TODO: Implement swap with use-swap edge function
@@ -178,6 +88,8 @@ export default function Dashboard() {
     if (!user || generating) return;
     
     setGenerating(true);
+    setShowFallbackBanner(false);
+    
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
@@ -200,6 +112,7 @@ export default function Dashboard() {
             ? "Menu généré avec filtres assouplis (allergies respectées)."
             : "Voici 7 nouveaux repas personnalisés pour toi."
         });
+        // Realtime will auto-update the UI
       } else {
         toast({
           title: "⚠️ Génération impossible",
@@ -345,7 +258,11 @@ export default function Dashboard() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold">Semaine en cours</h2>
             </div>
-            {weekMeals.length === 0 ? (
+            {loading ? (
+              <div className="col-span-full text-center py-12">
+                <p className="text-muted-foreground">Chargement...</p>
+              </div>
+            ) : weekMeals.length === 0 ? (
               <div className="col-span-full text-center py-12">
                 <p className="text-muted-foreground mb-4">
                   Aucun menu généré pour cette semaine.
@@ -358,7 +275,7 @@ export default function Dashboard() {
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {weekMeals.map((meal, i) => (
                 <MealCard
-                  key={i}
+                  key={`${meal.id}-${i}`}
                   day={weekdays[i]}
                   title={meal.title}
                   time={meal.time}
