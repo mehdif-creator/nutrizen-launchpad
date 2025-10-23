@@ -7,7 +7,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Redaction utilities
+const redactId = (id: string): string => id ? id.substring(0, 8) + '***' : 'null';
+const redactEmail = (email: string): string => email ? email.split('@')[0] + '@***' : 'null';
+
 const logStep = (step: string, details?: any) => {
+  // Redact sensitive fields before logging
+  if (details) {
+    if (details.userId) details.userId = redactId(details.userId);
+    if (details.email) details.email = redactEmail(details.email);
+    if (details.customerId) details.customerId = redactId(details.customerId);
+    if (details.subscriptionId) details.subscriptionId = redactId(details.subscriptionId);
+  }
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
 };

@@ -12,6 +12,10 @@ const GenerateMenuSchema = z.object({
   week_start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 }).strict();
 
+// Redaction utilities for sensitive data logging
+const redactId = (id: string): string => id ? id.substring(0, 8) + '***' : 'null';
+const redactEmail = (email: string): string => email ? email.split('@')[0] + '@***' : 'null';
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -36,7 +40,7 @@ serve(async (req) => {
       throw new Error("Invalid token");
     }
 
-    console.log(`[generate-menu] Processing request for user: ${user.id}`);
+    console.log(`[generate-menu] Processing request for user: ${redactId(user.id)}`);
 
     // Deduct 7 credits for week regeneration
     const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
