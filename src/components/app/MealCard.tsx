@@ -6,7 +6,7 @@ interface MealCardProps {
   title: string;
   time: number;
   kcal: number;
-  imageUrl?: string;
+  imageUrl?: string | null;
   onValidate?: () => void;
   onSwap?: () => void;
   onViewRecipe?: () => void;
@@ -26,14 +26,22 @@ export function MealCard({
 }: MealCardProps) {
   return (
     <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden group hover:shadow-lg transition-all">
-      <div 
-        className="h-32 bg-gradient-to-br from-primary/20 to-accent/20 relative overflow-hidden"
-        style={imageUrl ? { backgroundImage: `url(${imageUrl})`, backgroundSize: 'cover' } : {}}
-      >
-        {!imageUrl && (
-          <div className="absolute inset-0 flex items-center justify-center text-4xl opacity-30">
-            🍽️
-          </div>
+      <div className="h-32 bg-muted relative overflow-hidden">
+        {imageUrl ? (
+          <img 
+            src={imageUrl} 
+            alt={title}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/img/hero-default.png';
+            }}
+          />
+        ) : (
+          <img 
+            src="/img/hero-default.png"
+            alt={title}
+            className="w-full h-full object-cover opacity-50"
+          />
         )}
       </div>
       <div className="p-4 space-y-2">

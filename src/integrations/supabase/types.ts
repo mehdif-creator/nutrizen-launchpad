@@ -330,6 +330,7 @@ export type Database = {
           aliments_eviter: string[] | null
           allergies: string[] | null
           allergies_proches: string[] | null
+          appliances_owned: string[] | null
           apport_proteines_g_kg: number | null
           autres_adultes: number | null
           autres_allergies: string | null
@@ -384,6 +385,7 @@ export type Database = {
           aliments_eviter?: string[] | null
           allergies?: string[] | null
           allergies_proches?: string[] | null
+          appliances_owned?: string[] | null
           apport_proteines_g_kg?: number | null
           autres_adultes?: number | null
           autres_allergies?: string | null
@@ -438,6 +440,7 @@ export type Database = {
           aliments_eviter?: string[] | null
           allergies?: string[] | null
           allergies_proches?: string[] | null
+          appliances_owned?: string[] | null
           apport_proteines_g_kg?: number | null
           autres_adultes?: number | null
           autres_allergies?: string | null
@@ -601,6 +604,7 @@ export type Database = {
         Row: {
           ai_keywords: string[] | null
           allergens: string[] | null
+          appliances: string[] | null
           badges: string[] | null
           batch_cooking_friendly: boolean | null
           budget_per_serving: number | null
@@ -620,9 +624,11 @@ export type Database = {
           fibers_g: number | null
           goal_tags: string[] | null
           id: string
+          image_path: string | null
           image_url: string | null
           ingredient_keywords: string[] | null
           ingredients: Json | null
+          ingredients_text: string | null
           instructions: Json | null
           keywords_legacy: string | null
           language: string | null
@@ -649,6 +655,7 @@ export type Database = {
         Insert: {
           ai_keywords?: string[] | null
           allergens?: string[] | null
+          appliances?: string[] | null
           badges?: string[] | null
           batch_cooking_friendly?: boolean | null
           budget_per_serving?: number | null
@@ -668,9 +675,11 @@ export type Database = {
           fibers_g?: number | null
           goal_tags?: string[] | null
           id?: string
+          image_path?: string | null
           image_url?: string | null
           ingredient_keywords?: string[] | null
           ingredients?: Json | null
+          ingredients_text?: string | null
           instructions?: Json | null
           keywords_legacy?: string | null
           language?: string | null
@@ -697,6 +706,7 @@ export type Database = {
         Update: {
           ai_keywords?: string[] | null
           allergens?: string[] | null
+          appliances?: string[] | null
           badges?: string[] | null
           batch_cooking_friendly?: boolean | null
           budget_per_serving?: number | null
@@ -716,9 +726,11 @@ export type Database = {
           fibers_g?: number | null
           goal_tags?: string[] | null
           id?: string
+          image_path?: string | null
           image_url?: string | null
           ingredient_keywords?: string[] | null
           ingredients?: Json | null
+          ingredients_text?: string | null
           instructions?: Json | null
           keywords_legacy?: string | null
           language?: string | null

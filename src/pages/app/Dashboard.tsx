@@ -64,7 +64,8 @@ export default function Dashboard() {
         id: day.recipe_id,
         title: day.title,
         time: day.prep_min,
-        kcal: day.calories
+        kcal: day.calories,
+        imageUrl: day.image_url
       }));
     }
     return [];
@@ -362,9 +363,10 @@ export default function Dashboard() {
                   title={meal.title}
                   time={meal.time}
                   kcal={meal.kcal}
+                  imageUrl={meal.imageUrl}
                   onValidate={handleValidateMeal}
                   onSwap={() => handleSwap(i)}
-                  onViewRecipe={() => navigate('/app/meal-plan')}
+                  onViewRecipe={() => navigate(`/app/recipes/${meal.id}`)}
                   swapsRemaining={credits}
                 />
               ))}

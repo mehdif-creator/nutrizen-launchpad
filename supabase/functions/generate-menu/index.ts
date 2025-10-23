@@ -30,6 +30,8 @@ serve(async (req) => {
       throw new Error("Invalid token");
     }
 
+    console.log(`[generate-menu] Processing request for user: ${user.id}`);
+
     // Get user preferences
     const { data: preferences, error: prefError } = await supabaseClient
       .from("preferences")
@@ -41,24 +43,29 @@ serve(async (req) => {
       console.error("Error fetching preferences:", prefError);
     }
 
+    console.log("[generate-menu] User preferences:", preferences ? "Found" : "Not found");
+
+    // Helper function to check if ingredient text contains excluded items
+    const buildExclusionCheck = (excludedIngredients: string[]) => {
+      if (!excludedIngredients || excludedIngredients.length === 0) return null;
+      
+      // Build a query that checks ingredients_text for any excluded ingredient
+      return excludedIngredients.map(ing => `ingredients_text.not.ilike.%${ing}%`).join(',');
+    };
+
     // Helper function to build query with filters
     const buildRecipeQuery = (
-      relaxedTime = false,
-      ignoreDiet = false,
-      useGenericPool = false
+      fallbackLevel = 0
     ) => {
       let query = supabaseClient
         .from("recipes")
-        .select("id, title, prep_time_min, total_time_min, calories_kcal, proteins_g, carbs_g, fats_g, cuisine_type, meal_type, diet_type, allergens, difficulty_level")
+        .select("id, title, prep_time_min, total_time_min, calories_kcal, proteins_g, carbs_g, fats_g, cuisine_type, meal_type, diet_type, allergens, difficulty_level, appliances, image_url, image_path, ingredients_text")
         .eq("published", true);
 
-      if (useGenericPool) {
-        // Generic safe pool: quick, common recipes
-        query = query.or("meal_type.eq.lunch,meal_type.eq.dinner");
-      }
+      console.log(`[generate-menu] Building query for fallback level: ${fallbackLevel}`);
 
       if (preferences) {
-        // ALWAYS enforce allergens/exclusions
+        // ALWAYS enforce allergens/exclusions at every fallback level
         if (preferences.allergies && Array.isArray(preferences.allergies) && preferences.allergies.length > 0) {
           const allergenMap: Record<string, string> = {
             "Gluten": "gluten",
@@ -72,37 +79,148 @@ serve(async (req) => {
           };
           const userAllergens = preferences.allergies.map((a: string) => allergenMap[a] || a.toLowerCase());
           query = query.not("allergens", "cs", `{${userAllergens.join(",")}}`);
+          console.log(`[generate-menu] Enforcing allergen exclusions: ${userAllergens.join(", ")}`);
         }
 
-        // Filter by prep time (relax if needed)
-        if (preferences.temps_preparation && !useGenericPool) {
-          let maxPrepTime = 60;
-          if (preferences.temps_preparation === "<10 min") {
-            maxPrepTime = relaxedTime ? 20 : 10;
-          } else if (preferences.temps_preparation === "10-20 min") {
-            maxPrepTime = relaxedTime ? 30 : 20;
-          } else if (preferences.temps_preparation === "20-40 min") {
-            maxPrepTime = relaxedTime ? 50 : 40;
+        // ALWAYS enforce excluded ingredients (if ingredients_text available)
+        if (preferences.aliments_eviter && Array.isArray(preferences.aliments_eviter) && preferences.aliments_eviter.length > 0) {
+          // For each excluded ingredient, filter out recipes containing it
+          preferences.aliments_eviter.forEach((ing: string) => {
+            query = query.not("ingredients_text", "ilike", `%${ing}%`);
+          });
+          console.log(`[generate-menu] Enforcing ingredient exclusions: ${preferences.aliments_eviter.join(", ")}`);
+        }
+
+        // ALWAYS enforce appliance constraints
+        if (preferences.appliances_owned && Array.isArray(preferences.appliances_owned)) {
+          const ownedAppliances = preferences.appliances_owned;
+          
+          // If user doesn't own airfryer, exclude airfryer recipes
+          if (!ownedAppliances.includes('airfryer')) {
+            query = query.not("appliances", "cs", "{airfryer}");
+            console.log(`[generate-menu] Excluding airfryer recipes (not owned)`);
           }
-          query = query.lte("prep_time_min", maxPrepTime);
         }
 
-        // Filter by diet type (can be ignored in fallback)
-        if (!ignoreDiet && preferences.type_alimentation && preferences.type_alimentation !== "Omnivore") {
-          query = query.eq("diet_type", preferences.type_alimentation.toLowerCase());
-        }
-
-        // Filter by difficulty level
-        if (preferences.niveau_cuisine && !useGenericPool) {
-          const difficultyMap: Record<string, string> = {
-            "Débutant": "beginner",
-            "Intermédiaire": "intermediate",
-            "Expert": "expert"
-          };
-          const difficulty = difficultyMap[preferences.niveau_cuisine];
-          if (difficulty) {
-            query = query.eq("difficulty_level", difficulty);
+        // F0: Strict filters
+        if (fallbackLevel === 0) {
+          // Filter by prep time
+          if (preferences.temps_preparation) {
+            let maxPrepTime = 60;
+            if (preferences.temps_preparation === "<10 min") maxPrepTime = 10;
+            else if (preferences.temps_preparation === "10-20 min") maxPrepTime = 20;
+            else if (preferences.temps_preparation === "20-40 min") maxPrepTime = 40;
+            query = query.lte("prep_time_min", maxPrepTime);
+            console.log(`[generate-menu] Max prep time: ${maxPrepTime} min`);
           }
+
+          // Filter by total time
+          if (preferences.temps_preparation) {
+            let maxTotalTime = 90;
+            if (preferences.temps_preparation === "<10 min") maxTotalTime = 15;
+            else if (preferences.temps_preparation === "10-20 min") maxTotalTime = 30;
+            else if (preferences.temps_preparation === "20-40 min") maxTotalTime = 60;
+            query = query.lte("total_time_min", maxTotalTime);
+            console.log(`[generate-menu] Max total time: ${maxTotalTime} min`);
+          }
+
+          // Filter by calories if range provided
+          if (preferences.objectif_calorique) {
+            const calorieMap: Record<string, [number, number]> = {
+              "1200-1500 kcal": [300, 500],
+              "1500-1800 kcal": [375, 600],
+              "1800-2100 kcal": [450, 700],
+              "2100+ kcal": [525, 900]
+            };
+            const [minCal, maxCal] = calorieMap[preferences.objectif_calorique] || [0, 10000];
+            query = query.gte("calories_kcal", minCal).lte("calories_kcal", maxCal);
+            console.log(`[generate-menu] Calorie range: ${minCal}-${maxCal} kcal`);
+          }
+
+          // Filter by minimum proteins
+          if (preferences.apport_proteines_g_kg && preferences.poids_actuel_kg) {
+            const minProteins = Math.round((preferences.apport_proteines_g_kg * preferences.poids_actuel_kg) / 3);
+            query = query.gte("proteins_g", minProteins);
+            console.log(`[generate-menu] Min proteins: ${minProteins}g per meal`);
+          }
+
+          // Filter by diet type
+          if (preferences.type_alimentation && preferences.type_alimentation !== "Omnivore") {
+            query = query.eq("diet_type", preferences.type_alimentation.toLowerCase());
+            console.log(`[generate-menu] Diet type: ${preferences.type_alimentation}`);
+          }
+
+          // Filter by cuisine preference
+          if (preferences.cuisine_preferee && Array.isArray(preferences.cuisine_preferee) && preferences.cuisine_preferee.length > 0) {
+            query = query.in("cuisine_type", preferences.cuisine_preferee);
+            console.log(`[generate-menu] Preferred cuisines: ${preferences.cuisine_preferee.join(", ")}`);
+          }
+
+          // Filter by difficulty level
+          if (preferences.niveau_cuisine) {
+            const difficultyMap: Record<string, string> = {
+              "Débutant": "beginner",
+              "Intermédiaire": "intermediate",
+              "Expert": "expert"
+            };
+            const difficulty = difficultyMap[preferences.niveau_cuisine];
+            if (difficulty) {
+              query = query.eq("difficulty_level", difficulty);
+              console.log(`[generate-menu] Difficulty: ${difficulty}`);
+            }
+          }
+        }
+        
+        // F1: Widen time constraints (+10 prep, +15 total)
+        else if (fallbackLevel === 1) {
+          if (preferences.temps_preparation) {
+            let maxPrepTime = 60;
+            if (preferences.temps_preparation === "<10 min") maxPrepTime = 20;
+            else if (preferences.temps_preparation === "10-20 min") maxPrepTime = 30;
+            else if (preferences.temps_preparation === "20-40 min") maxPrepTime = 50;
+            query = query.lte("prep_time_min", maxPrepTime);
+            console.log(`[generate-menu] F1: Relaxed prep time to ${maxPrepTime} min`);
+          }
+
+          if (preferences.temps_preparation) {
+            let maxTotalTime = 90;
+            if (preferences.temps_preparation === "<10 min") maxTotalTime = 30;
+            else if (preferences.temps_preparation === "10-20 min") maxTotalTime = 45;
+            else if (preferences.temps_preparation === "20-40 min") maxTotalTime = 75;
+            query = query.lte("total_time_min", maxTotalTime);
+            console.log(`[generate-menu] F1: Relaxed total time to ${maxTotalTime} min`);
+          }
+
+          // Keep other filters from F0
+          if (preferences.type_alimentation && preferences.type_alimentation !== "Omnivore") {
+            query = query.eq("diet_type", preferences.type_alimentation.toLowerCase());
+          }
+        }
+        
+        // F2: Ignore diet tags but keep all other filters
+        else if (fallbackLevel === 2) {
+          console.log(`[generate-menu] F2: Ignoring diet type filter`);
+          // Time filters relaxed like F1
+          if (preferences.temps_preparation) {
+            let maxPrepTime = 60;
+            if (preferences.temps_preparation === "<10 min") maxPrepTime = 20;
+            else if (preferences.temps_preparation === "10-20 min") maxPrepTime = 30;
+            else if (preferences.temps_preparation === "20-40 min") maxPrepTime = 50;
+            query = query.lte("prep_time_min", maxPrepTime);
+          }
+        }
+        
+        // F3: Ignore cuisines and courses, use generic pool
+        else if (fallbackLevel === 3) {
+          console.log(`[generate-menu] F3: Using generic safe pool`);
+          // Generic safe pool with common meal types
+          query = query.or("meal_type.eq.lunch,meal_type.eq.dinner,meal_type.eq.breakfast");
+        }
+        
+        // F4: Last resort - just apply mandatory filters
+        else if (fallbackLevel === 4) {
+          console.log(`[generate-menu] F4: Last resort - mandatory filters only`);
+          // Only allergens, exclusions, and appliances enforced (already applied above)
         }
       }
 
@@ -114,45 +232,38 @@ serve(async (req) => {
     let usedFallback = false;
     let fallbackLevel = 0;
 
-    // F0: Strict filters
-    const { data: strictRecipes } = await buildRecipeQuery(false, false, false);
-    if (strictRecipes && strictRecipes.length >= 7) {
-      recipes = strictRecipes;
-    } else {
-      console.log("F0 yielded", strictRecipes?.length || 0, "recipes. Trying F1...");
-      usedFallback = true;
-      fallbackLevel = 1;
+    // Try each fallback level until we get at least 7 recipes
+    for (let level = 0; level <= 4; level++) {
+      const { data: levelRecipes, error: recipeError } = await buildRecipeQuery(level);
+      
+      if (recipeError) {
+        console.error(`[generate-menu] Error at F${level}:`, recipeError);
+        continue;
+      }
 
-      // F1: Relax time constraints
-      const { data: relaxedTimeRecipes } = await buildRecipeQuery(true, false, false);
-      if (relaxedTimeRecipes && relaxedTimeRecipes.length >= 7) {
-        recipes = relaxedTimeRecipes;
-      } else {
-        console.log("F1 yielded", relaxedTimeRecipes?.length || 0, "recipes. Trying F2...");
-        fallbackLevel = 2;
+      console.log(`[generate-menu] F${level} yielded ${levelRecipes?.length || 0} recipes`);
 
-        // F2: Ignore diet tags but keep allergens
-        const { data: ignoreDietRecipes } = await buildRecipeQuery(true, true, false);
-        if (ignoreDietRecipes && ignoreDietRecipes.length >= 7) {
-          recipes = ignoreDietRecipes;
-        } else {
-          console.log("F2 yielded", ignoreDietRecipes?.length || 0, "recipes. Trying F3...");
-          fallbackLevel = 3;
-
-          // F3: Generic safe pool with allergens respected
-          const { data: genericRecipes } = await buildRecipeQuery(false, true, true);
-          recipes = genericRecipes || [];
-        }
+      if (levelRecipes && levelRecipes.length >= 7) {
+        recipes = levelRecipes;
+        fallbackLevel = level;
+        usedFallback = level > 0;
+        break;
+      }
+      
+      // If we have some recipes but not enough, save them and continue
+      if (levelRecipes && levelRecipes.length > recipes.length) {
+        recipes = levelRecipes;
+        fallbackLevel = level;
+        usedFallback = level > 0;
       }
     }
 
-    const { error: recipeError } = { error: null };
-
     if (!recipes || recipes.length === 0) {
+      console.error("[generate-menu] No recipes found after all fallback attempts");
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: "Aucune recette trouvée. Contactez le support.",
+          message: "Aucune recette trouvée correspondant à tes critères. Contacte le support.",
           usedFallback: false
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
@@ -163,24 +274,28 @@ serve(async (req) => {
     const shuffled = [...recipes].sort(() => Math.random() - 0.5);
     const selectedRecipes = shuffled.slice(0, Math.min(7, recipes.length));
 
-    // Fill remaining days if less than 7 recipes available
+    // Fill remaining days if less than 7 recipes available (allow repeats)
     while (selectedRecipes.length < 7) {
-      selectedRecipes.push(shuffled[selectedRecipes.length % shuffled.length]);
+      const nextIndex = selectedRecipes.length % shuffled.length;
+      selectedRecipes.push(shuffled[nextIndex]);
     }
 
+    console.log(`[generate-menu] Selected ${selectedRecipes.length} recipes for the week`);
+
     // Build weekly menu
-    const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
     const days = selectedRecipes.map((recipe, index) => ({
       day: weekdays[index],
       recipe_id: recipe.id,
       title: recipe.title,
+      image_url: recipe.image_url || recipe.image_path || null,
       prep_min: recipe.prep_time_min || 0,
       total_min: recipe.total_time_min || 0,
-      calories: recipe.calories_kcal || 0,
+      calories: Math.round(recipe.calories_kcal || 0),
       macros: {
-        proteins_g: recipe.proteins_g || 0,
-        carbs_g: recipe.carbs_g || 0,
-        fats_g: recipe.fats_g || 0
+        proteins_g: Math.round(recipe.proteins_g || 0),
+        carbs_g: Math.round(recipe.carbs_g || 0),
+        fats_g: Math.round(recipe.fats_g || 0)
       }
     }));
 
@@ -192,6 +307,8 @@ serve(async (req) => {
     weekStart.setDate(now.getDate() + diff);
     weekStart.setHours(0, 0, 0, 0);
     const weekStartStr = weekStart.toISOString().split('T')[0];
+
+    console.log(`[generate-menu] Upserting menu for week starting: ${weekStartStr}`);
 
     // Upsert weekly menu
     const { data: menu, error: menuError } = await supabaseClient
@@ -207,9 +324,11 @@ serve(async (req) => {
       .single();
 
     if (menuError) {
-      console.error("Error upserting menu:", menuError);
+      console.error("[generate-menu] Error upserting menu:", menuError);
       throw new Error("Failed to save menu");
     }
+
+    console.log(`[generate-menu] Menu saved successfully. Menu ID: ${menu.menu_id}`);
 
     return new Response(
       JSON.stringify({ 
@@ -224,7 +343,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("Error in generate-menu function:", error);
+    console.error("[generate-menu] Error:", error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
       JSON.stringify({ error: errorMessage }),
