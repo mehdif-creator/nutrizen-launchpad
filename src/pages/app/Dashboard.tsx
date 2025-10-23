@@ -29,10 +29,10 @@ export default function Dashboard() {
   // Use custom hooks for data fetching with realtime
   const { stats, isLoading: statsLoading } = useDashboardStats(user?.id);
   const { menu, days, hasMenu, isLoading: menuLoading } = useWeeklyMenu(user?.id);
+  const usedFallback = menu?.used_fallback;
 
   const [fridgeInput, setFridgeInput] = useState("");
   const [generating, setGenerating] = useState(false);
-  const [showFallbackBanner, setShowFallbackBanner] = useState(false);
 
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'toi';
   
@@ -88,7 +88,6 @@ export default function Dashboard() {
     if (!user || generating) return;
     
     setGenerating(true);
-    setShowFallbackBanner(false);
     
     try {
       const { data: session } = await supabase.auth.getSession();
@@ -105,11 +104,11 @@ export default function Dashboard() {
       if (error) throw error;
 
       if (data.success) {
-        setShowFallbackBanner(data.usedFallback || false);
+        const fallbackInfo = data.usedFallback ? ` avec ${data.usedFallback}` : '';
         toast({
           title: "✅ Semaine régénérée !",
           description: data.usedFallback 
-            ? "Menu généré avec filtres assouplis (allergies respectées)."
+            ? `Menu généré${fallbackInfo} (allergies respectées).`
             : "Voici 7 nouveaux repas personnalisés pour toi."
         });
         // Realtime will auto-update the UI
@@ -180,9 +179,9 @@ export default function Dashboard() {
       <main className="flex-1">
         {/* Hero Section */}
         <section className="px-4 sm:px-6 lg:px-10 py-8">
-          {showFallbackBanner && (
+          {usedFallback && (
             <div className="mb-4 p-4 bg-primary/10 border border-primary/20 rounded-xl text-sm">
-              ℹ️ Menu généré avec filtres assouplis pour garantir 7 repas. Tes allergies et exclusions sont respectées.
+              ℹ️ Menu généré avec {usedFallback} (filtres assouplis). Tes allergies et exclusions sont respectées.
             </div>
           )}
           <div className="flex items-center justify-between mb-6">

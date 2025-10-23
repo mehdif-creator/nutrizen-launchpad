@@ -1085,6 +1085,7 @@ export type Database = {
           menu_id: string
           payload: Json
           updated_at: string | null
+          used_fallback: string | null
           user_id: string
           week_start: string
         }
@@ -1093,6 +1094,7 @@ export type Database = {
           menu_id?: string
           payload?: Json
           updated_at?: string | null
+          used_fallback?: string | null
           user_id: string
           week_start: string
         }
@@ -1101,6 +1103,7 @@ export type Database = {
           menu_id?: string
           payload?: Json
           updated_at?: string | null
+          used_fallback?: string | null
           user_id?: string
           week_start?: string
         }

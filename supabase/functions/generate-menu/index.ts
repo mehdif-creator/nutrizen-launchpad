@@ -72,7 +72,7 @@ serve(async (req) => {
         .select("id, title, prep_time_min, total_time_min, calories_kcal, proteins_g, carbs_g, fats_g, cuisine_type, meal_type, diet_type, allergens, difficulty_level, appliances, image_url, image_path, ingredients_text")
         .eq("published", true);
 
-      console.log(`[generate-menu] Building query for fallback level: ${fallbackLevel}`);
+      console.log(`[generate-menu] Building query for fallback level: F${fallbackLevel}`);
 
       if (preferences) {
         // ALWAYS enforce allergens/exclusions at every fallback level
@@ -220,17 +220,17 @@ serve(async (req) => {
           }
         }
         
-        // F3: Ignore cuisines and courses, use generic pool
+        // F3: Ignore cuisines, courses, and meal types
         else if (fallbackLevel === 3) {
-          console.log(`[generate-menu] F3: Using generic safe pool`);
-          // Generic safe pool with common meal types
-          query = query.or("meal_type.eq.lunch,meal_type.eq.dinner,meal_type.eq.breakfast");
+          console.log(`[generate-menu] F3: Ignoring cuisine, course, and meal type filters`);
+          // No additional filters - just exclusions and appliances
         }
         
-        // F4: Last resort - just apply mandatory filters
+        // F4: Last resort - absolutely minimal filters
         else if (fallbackLevel === 4) {
-          console.log(`[generate-menu] F4: Last resort - mandatory filters only`);
+          console.log(`[generate-menu] F4: Last resort - published recipes only with mandatory exclusions`);
           // Only allergens, exclusions, and appliances enforced (already applied above)
+          // This will match any published recipe that doesn't violate exclusions
         }
       }
 
@@ -239,11 +239,13 @@ serve(async (req) => {
 
     // Fallback ladder strategy
     let recipes: any[] = [];
-    let usedFallback = false;
+    let usedFallback: string | null = null;
     let fallbackLevel = 0;
 
     // Try each fallback level until we get at least 7 recipes
     for (let level = 0; level <= 4; level++) {
+      console.log(`[generate-menu] Attempting fallback level F${level}...`);
+      
       const { data: levelRecipes, error: recipeError } = await buildRecipeQuery(level);
       
       if (recipeError) {
@@ -251,30 +253,35 @@ serve(async (req) => {
         continue;
       }
 
-      console.log(`[generate-menu] F${level} yielded ${levelRecipes?.length || 0} recipes`);
+      const recipeCount = levelRecipes?.length || 0;
+      console.log(`[generate-menu] F${level} yielded ${recipeCount} recipes`);
 
-      if (levelRecipes && levelRecipes.length >= 7) {
+      if (levelRecipes && recipeCount >= 7) {
         recipes = levelRecipes;
         fallbackLevel = level;
-        usedFallback = level > 0;
+        usedFallback = level > 0 ? `F${level}` : null;
+        console.log(`[generate-menu] SUCCESS: Using F${level} with ${recipeCount} candidates`);
         break;
       }
       
       // If we have some recipes but not enough, save them and continue
-      if (levelRecipes && levelRecipes.length > recipes.length) {
+      if (levelRecipes && recipeCount > recipes.length) {
         recipes = levelRecipes;
         fallbackLevel = level;
-        usedFallback = level > 0;
+        usedFallback = `F${level}`;
+        console.log(`[generate-menu] F${level} has ${recipeCount} recipes, continuing to next level...`);
       }
     }
 
     if (!recipes || recipes.length === 0) {
-      console.error("[generate-menu] No recipes found after all fallback attempts");
+      console.error("[generate-menu] CRITICAL: No recipes found after all fallback attempts (F0-F4)");
+      console.error("[generate-menu] Total published recipes in DB:", await supabaseClient.from("recipes").select("id", { count: "exact", head: true }));
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: "Aucune recette trouvée correspondant à tes critères. Contacte le support.",
-          usedFallback: false
+          message: "Aucune recette disponible dans la base de données. Contacte le support.",
+          usedFallback: null,
+          error: "NO_RECIPES_IN_DB"
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
@@ -320,13 +327,14 @@ serve(async (req) => {
 
     console.log(`[generate-menu] Upserting menu for week starting: ${weekStartStr}`);
 
-    // Upsert weekly menu
+    // Upsert weekly menu with fallback tracking
     const { data: menu, error: menuError } = await supabaseClient
       .from("user_weekly_menus")
       .upsert({
         user_id: user.id,
         week_start: weekStartStr,
-        payload: { days }
+        payload: { days },
+        used_fallback: usedFallback
       }, {
         onConflict: "user_id,week_start"
       })
@@ -340,14 +348,16 @@ serve(async (req) => {
 
     console.log(`[generate-menu] Menu saved successfully. Menu ID: ${menu.menu_id}`);
 
+    console.log(`[generate-menu] ✅ SUCCESS: Generated menu ${menu.menu_id} with ${usedFallback || 'strict filters'}`);
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         days, 
         menu_id: menu.menu_id,
         week_start: weekStartStr,
-        usedFallback,
-        fallbackLevel
+        usedFallback: usedFallback,
+        fallbackLevel: fallbackLevel
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

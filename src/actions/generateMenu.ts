@@ -71,14 +71,14 @@ export async function generateMenuWithToast() {
   
   return {
     ...result,
-    toastTitle: result.success 
-      ? '✅ Semaine régénérée !' 
-      : '⚠️ Génération impossible',
-    toastDescription: result.success
-      ? (result.usedFallback 
-          ? 'Menu généré avec filtres assouplis (allergies respectées).'
-          : 'Voici 7 nouveaux repas personnalisés pour toi.')
-      : (result.message || 'Impossible de générer un menu. Réessaie plus tard.'),
-    toastVariant: result.success ? 'default' : 'destructive',
+      toastTitle: result.success 
+        ? '✅ Semaine régénérée !' 
+        : '⚠️ Génération impossible',
+      toastDescription: result.success
+        ? (result.usedFallback 
+            ? `Menu généré avec ${result.usedFallback} (allergies respectées).`
+            : 'Voici 7 nouveaux repas personnalisés pour toi.')
+        : (result.message || 'Impossible de générer un menu. Réessaie plus tard.'),
+      toastVariant: result.success ? 'default' : ('destructive' as const),
   };
 }

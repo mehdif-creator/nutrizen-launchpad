@@ -26,6 +26,7 @@ export interface WeeklyMenu {
   days: WeeklyMenuDay[];
   created_at: string;
   updated_at: string;
+  used_fallback?: string | null;
 }
 
 /**
@@ -71,6 +72,7 @@ async function fetchWeeklyMenu(userId: string): Promise<WeeklyMenu | null> {
     days: payload?.days || [],
     created_at: data.created_at,
     updated_at: data.updated_at,
+    used_fallback: data.used_fallback,
   };
 }
 
