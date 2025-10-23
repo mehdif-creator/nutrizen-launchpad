@@ -22,7 +22,7 @@ export const Urgency = ({ onCtaClick }: UrgencyProps) => {
           <Button
             onClick={onCtaClick}
             size="lg"
-            className="bg-primary hover:bg-primary/90 text-white text-lg px-8 py-6 rounded-xl transition-all hover:scale-105"
+            className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 rounded-xl transition-all hover:scale-105"
           >
             Je commence maintenant mon essai gratuit 7 jours
           </Button>

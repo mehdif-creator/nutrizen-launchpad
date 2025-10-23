@@ -48,16 +48,10 @@ export const Footer = () => {
                 className="h-12 w-auto"
               />
             </div>
-            <p className="text-sm text-muted-foreground mb-6">
+            <p className="text-sm text-muted-foreground">
               Menus adaptés à tes objectifs en 30 secondes.<br />
               Sans passer des heures à réfléchir, planifier et calculer.
             </p>
-            <a 
-              href="/auth/signup"
-              className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-r from-primary to-accent text-white font-medium hover:scale-[1.02] transition-tech text-sm"
-            >
-              Commencer mon plan gratuit
-            </a>
           </div>
 
           {/* Links - 2 columns layout */}

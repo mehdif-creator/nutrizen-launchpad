@@ -20,8 +20,10 @@ export const RecipeGallery = () => {
     return null;
   }
 
-  // Duplicate recipes for infinite scroll effect
-  const duplicatedRecipes = [...recipes, ...recipes];
+  // Split recipes into two different sets and duplicate each for infinite scroll
+  const midPoint = Math.ceil(recipes.length / 2);
+  const firstRowRecipes = [...recipes.slice(0, midPoint), ...recipes.slice(0, midPoint)];
+  const secondRowRecipes = [...recipes.slice(midPoint), ...recipes.slice(midPoint)];
 
   return (
     <section className="py-12 md:py-16 bg-gradient-to-b from-background to-[#FFF8F2] overflow-hidden">
@@ -39,7 +41,7 @@ export const RecipeGallery = () => {
           {/* First row - scrolling left */}
           <div className="mb-4 overflow-hidden">
             <div className="flex gap-4 animate-scroll-left">
-              {duplicatedRecipes.slice(0, Math.ceil(duplicatedRecipes.length / 2)).map((recipe, index) => (
+              {firstRowRecipes.map((recipe, index) => (
                 <div
                   key={`row1-${recipe.id}-${index}`}
                   className="flex-shrink-0 w-[200px] md:w-[250px] group relative overflow-hidden rounded-xl bg-muted aspect-[4/3]"
@@ -62,7 +64,7 @@ export const RecipeGallery = () => {
           {/* Second row - scrolling right */}
           <div className="overflow-hidden">
             <div className="flex gap-4 animate-scroll-right">
-              {duplicatedRecipes.slice(Math.ceil(duplicatedRecipes.length / 2)).map((recipe, index) => (
+              {secondRowRecipes.map((recipe, index) => (
                 <div
                   key={`row2-${recipe.id}-${index}`}
                   className="flex-shrink-0 w-[200px] md:w-[250px] group relative overflow-hidden rounded-xl bg-muted aspect-[4/3]"
