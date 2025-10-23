@@ -92,11 +92,11 @@ serve(async (req) => {
           console.log(`[generate-menu] Enforcing allergen exclusions: ${userAllergens.join(", ")}`);
         }
 
-        // ALWAYS enforce excluded ingredients (only if ingredients_text is not null)
+        // ALWAYS enforce excluded ingredients
         if (preferences.aliments_eviter && Array.isArray(preferences.aliments_eviter) && preferences.aliments_eviter.length > 0) {
-          // For each excluded ingredient, filter out recipes containing it (skip if ingredients_text is null)
+          // For each excluded ingredient, filter out recipes containing it
           preferences.aliments_eviter.forEach((ing: string) => {
-            query = query.or(`ingredients_text.is.null,not.ingredients_text.ilike.%${ing}%`);
+            query = query.not("ingredients_text", "ilike", `%${ing}%`);
           });
           console.log(`[generate-menu] Enforcing ingredient exclusions: ${preferences.aliments_eviter.join(", ")}`);
         }
