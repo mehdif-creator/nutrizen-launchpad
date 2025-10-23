@@ -10,7 +10,9 @@ export function securityHeadersPlugin(): Plugin {
     name: 'security-headers',
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        // Content Security Policy
+        const isDev = process.env.NODE_ENV !== 'production';
+        
+        // Content Security Policy - allow iframe in development
         res.setHeader(
           'Content-Security-Policy',
           [
@@ -20,18 +22,20 @@ export function securityHeadersPlugin(): Plugin {
             "img-src 'self' https://*.supabase.co data: blob:",
             "style-src 'self' 'unsafe-inline'",
             "font-src 'self' data:",
-            "frame-ancestors 'none'",
+            isDev ? "frame-ancestors *" : "frame-ancestors 'none'",
             "base-uri 'self'",
             "form-action 'self'",
-            "upgrade-insecure-requests",
-          ].join('; ')
+            isDev ? "" : "upgrade-insecure-requests",
+          ].filter(Boolean).join('; ')
         );
 
-        // HSTS
-        res.setHeader(
-          'Strict-Transport-Security',
-          'max-age=63072000; includeSubDomains; preload'
-        );
+        // HSTS - only in production
+        if (!isDev) {
+          res.setHeader(
+            'Strict-Transport-Security',
+            'max-age=63072000; includeSubDomains; preload'
+          );
+        }
 
         // Prevent MIME sniffing
         res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -45,13 +49,15 @@ export function securityHeadersPlugin(): Plugin {
           'geolocation=(), camera=(), microphone=(), payment=()'
         );
 
-        // Cross-Origin Policies
-        res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-        res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
-        res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+        // Cross-Origin Policies - relaxed in development
+        if (!isDev) {
+          res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+          res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+          res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+        }
 
-        // X-Frame-Options (legacy support)
-        res.setHeader('X-Frame-Options', 'DENY');
+        // X-Frame-Options - allow in development for Lovable preview
+        res.setHeader('X-Frame-Options', isDev ? 'ALLOWALL' : 'DENY');
 
         // Remove X-Powered-By header
         res.removeHeader('X-Powered-By');
