@@ -3,10 +3,9 @@ import { AppFooter } from '@/components/app/AppFooter';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { 
   Clock, Sparkles, Flame, Users, 
-  ShoppingCart, Share2, Copy, Award, Brain, Target
+  ShoppingCart, Share2, Copy, Award, Brain
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { StatCard } from '@/components/app/StatCard';
@@ -29,9 +28,42 @@ export default function Dashboard() {
   // Use custom hooks for data fetching with realtime
   const { stats, isLoading: statsLoading } = useDashboardStats(user?.id);
   const { menu, days, hasMenu, isLoading: menuLoading } = useWeeklyMenu(user?.id);
-  const usedFallback = menu?.used_fallback;
+  
+  // Fetch swap credits from swaps table
+  const [swapCredits, setSwapCredits] = useState(10);
+  useEffect(() => {
+    const fetchSwaps = async () => {
+      if (!user?.id) return;
+      
+      const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
+      const { data, error } = await supabase
+        .from('swaps')
+        .select('quota, used')
+        .eq('user_id', user.id)
+        .eq('month', currentMonth)
+        .maybeSingle();
+      
+      if (data) {
+        setSwapCredits(data.quota - data.used);
+      }
+    };
+    
+    fetchSwaps();
+    
+    // Subscribe to swaps changes
+    const channel = supabase
+      .channel('swaps-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'swaps', filter: `user_id=eq.${user?.id}` },
+        () => fetchSwaps()
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
-  const [fridgeInput, setFridgeInput] = useState("");
   const [generating, setGenerating] = useState(false);
 
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'toi';
@@ -77,15 +109,34 @@ export default function Dashboard() {
       }
 
       const allIngredients: string[] = [];
+      const ingredientSet = new Set<string>();
+      
       data?.forEach((recipe) => {
         if (recipe.ingredients && Array.isArray(recipe.ingredients)) {
           recipe.ingredients.forEach((ing: any) => {
+            let ingredientName = '';
+            
             if (typeof ing === 'string') {
-              allIngredients.push(ing);
+              ingredientName = ing;
             } else if (ing.name) {
-              allIngredients.push(ing.name);
+              ingredientName = ing.name;
             } else if (ing.ingredient) {
-              allIngredients.push(ing.ingredient);
+              ingredientName = ing.ingredient;
+            }
+            
+            // Clean ingredient name: remove quantities and measurements
+            if (ingredientName) {
+              // Remove common quantity patterns (numbers, units, etc.)
+              ingredientName = ingredientName
+                .replace(/^\d+(\.\d+)?\s*(g|kg|ml|cl|l|cuillère|c\.|càc|càs|pincée|brin|feuilles?|tranches?|morceaux?|gouttes?|sachet|boîte|paquet|tasse|verre)\s+(de|d'|à)\s*/gi, '')
+                .replace(/^\d+(\.\d+)?\s*(g|kg|ml|cl|l|cuillère|c\.|càc|càs|pincée|brin|feuilles?|tranches?|morceaux?|gouttes?|sachet|boîte|paquet|tasse|verre)\s+/gi, '')
+                .replace(/^\d+\s+/g, '')
+                .trim();
+              
+              if (ingredientName && !ingredientSet.has(ingredientName.toLowerCase())) {
+                ingredientSet.add(ingredientName.toLowerCase());
+                allIngredients.push(ingredientName);
+              }
             }
           });
         }
@@ -101,7 +152,6 @@ export default function Dashboard() {
   const minutesSaved = stats.temps_gagne;
   const chargeMentalDrop = stats.charge_mentale_pct;
   const streak = stats.serie_en_cours_set_count;
-  const credits = stats.credits_zen;
   const refCount = stats.references_count;
   const validated = stats.objectif_hebdos_valide;
   const zenPoints = Math.floor(minutesSaved / 10);
@@ -111,11 +161,56 @@ export default function Dashboard() {
   const loading = statsLoading || menuLoading;
 
   const handleSwap = async (index: number) => {
-    // TODO: Implement swap with use-swap edge function
-    toast({
-      title: "Swap en cours...",
-      description: "Fonctionnalité bientôt disponible"
-    });
+    if (!user || !menu) return;
+    
+    if (swapCredits <= 0) {
+      toast({
+        title: "Plus de crédits",
+        description: "Tu as utilisé tous tes swaps ce mois-ci.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        throw new Error("No session");
+      }
+
+      const { data, error } = await supabase.functions.invoke('use-swap', {
+        headers: {
+          Authorization: `Bearer ${session.session.access_token}`,
+        },
+        body: {
+          meal_plan_id: menu.menu_id,
+          day: index
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast({
+          title: "Recette changée !",
+          description: `Il te reste ${data.swapsRemaining} swaps.`
+        });
+        // Realtime will auto-update
+      } else {
+        toast({
+          title: "Erreur",
+          description: data.message || "Impossible de changer la recette.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error swapping:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de changer la recette.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleValidateMeal = async () => {
@@ -185,31 +280,6 @@ export default function Dashboard() {
     }
   };
 
-  const handleAddRef = async () => {
-    // TODO: Implement referral system
-    toast({
-      title: "Référence en cours...",
-      description: "Fonctionnalité bientôt disponible"
-    });
-  };
-
-  const handleGenerateFromFridge = () => {
-    if (!fridgeInput.trim()) {
-      toast({
-        title: "Champ vide",
-        description: "Entre les ingrédients de ton frigo.",
-        variant: "destructive"
-      });
-      return;
-    }
-    toast({
-      title: "Génération en cours...",
-      description: "Fonctionnalité bientôt disponible"
-    });
-    setFridgeInput("");
-    navigate("/app/inspi-frigo");
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
       <AppHeader />
@@ -217,11 +287,6 @@ export default function Dashboard() {
       <main className="flex-1">
         {/* Hero Section */}
         <section className="px-4 sm:px-6 lg:px-10 py-8">
-          {usedFallback && (
-            <div className="mb-4 p-4 bg-primary/10 border border-primary/20 rounded-xl text-sm">
-              ℹ️ <strong>Menu adapté ({usedFallback})</strong> : Certains critères ont été assouplis pour garantir 7 repas variés. Tes exclusions alimentaires sont respectées.
-            </div>
-          )}
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold mb-1">
@@ -236,8 +301,8 @@ export default function Dashboard() {
                 <Award className="h-3.5 w-3.5 mr-1" />
                 {zenLevel} · {zenPoints} pts
               </Badge>
-              <Button onClick={handleRegenWeek} size="sm">
-                Régénérer la semaine
+              <Button onClick={handleRegenWeek} size="sm" disabled={generating}>
+                {generating ? "Génération..." : "Régénérer la semaine (7 crédits)"}
               </Button>
             </div>
           </div>
@@ -265,8 +330,8 @@ export default function Dashboard() {
           />
           <StatCard 
             label="Crédits Zen" 
-            value={`${credits}/10`}
-            sub={`${10 - credits} swaps utilisés`}
+            value={`${swapCredits}/10`}
+            sub={`${10 - swapCredits} swaps utilisés`}
             icon={<Sparkles className="h-5 w-5" />}
           />
           <StatCard 
@@ -321,7 +386,7 @@ export default function Dashboard() {
                   onValidate={handleValidateMeal}
                   onSwap={() => handleSwap(i)}
                   onViewRecipe={() => navigate(`/app/recipes/${meal.id}`)}
-                  swapsRemaining={credits}
+                  swapsRemaining={swapCredits}
                 />
               ))}
               </div>
@@ -382,16 +447,10 @@ export default function Dashboard() {
               <div className="text-xs font-mono bg-muted border rounded-xl p-2 break-all mb-3">
                 {referralUrl}
               </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="flex-1" onClick={handleCopyLink}>
-                  <Copy className="h-3.5 w-3.5 mr-1" />
-                  Copier
-                </Button>
-                <Button size="sm" className="flex-1" onClick={handleAddRef}>
-                  <Users className="h-3.5 w-3.5 mr-1" />
-                  J'ai invité 1 ami
-                </Button>
-              </div>
+              <Button variant="outline" size="sm" className="w-full" onClick={handleCopyLink}>
+                <Copy className="h-3.5 w-3.5 mr-1" />
+                Copier le lien
+              </Button>
             </Card>
 
             {/* Badges */}
@@ -409,33 +468,6 @@ export default function Dashboard() {
           </aside>
         </section>
 
-        {/* Coach IA */}
-        <section className="px-4 sm:px-6 lg:px-10 mb-10">
-          <Card className="rounded-2xl border shadow-sm p-5 flex flex-col md:flex-row gap-4 items-start md:items-center">
-            <div className="flex-1">
-              <div className="font-semibold mb-1 flex items-center gap-2">
-                <Target className="h-5 w-5 text-primary" />
-                Coach IA — InspiFrigo
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Dis-moi ce qu'il y a dans ton frigo, je te propose un repas en 30 secondes. Gagne +1 crédit si tu le valides.
-              </div>
-            </div>
-            <div className="flex items-center gap-2 w-full md:w-auto">
-              <Input 
-                placeholder="ex: courgette, thon, yaourt" 
-                className="flex-1 md:w-72"
-                value={fridgeInput}
-                onChange={(e) => setFridgeInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleGenerateFromFridge()}
-              />
-              <Button onClick={handleGenerateFromFridge}>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Générer
-              </Button>
-            </div>
-          </Card>
-        </section>
       </main>
 
       <AppFooter />
