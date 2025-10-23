@@ -104,13 +104,8 @@ export default function Dashboard() {
       if (error) throw error;
 
       if (data.success) {
-        const fallbackMsg = data.usedFallback 
-          ? `Certains critères ont été assouplis (niveau ${data.usedFallback}) pour garantir 7 repas. Tes exclusions sont respectées.`
-          : 'Voici 7 nouveaux repas personnalisés pour toi.';
-        
         toast({
-          title: "✅ Semaine régénérée !",
-          description: fallbackMsg
+          title: "Menus générés avec succès",
         });
         // Realtime will auto-update the UI
       } else {

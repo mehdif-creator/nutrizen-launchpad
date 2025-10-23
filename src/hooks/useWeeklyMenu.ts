@@ -29,15 +29,15 @@ export interface WeeklyMenu {
 }
 
 /**
- * Get current week start (Monday)
+ * Get current week start (Monday) in UTC to match backend
  */
 export function getCurrentWeekStart(): string {
   const now = new Date();
-  const dayOfWeek = now.getDay();
+  const dayOfWeek = now.getUTCDay();
   const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Adjust to Monday
   const weekStart = new Date(now);
-  weekStart.setDate(now.getDate() + diff);
-  weekStart.setHours(0, 0, 0, 0);
+  weekStart.setUTCDate(now.getUTCDate() + diff);
+  weekStart.setUTCHours(0, 0, 0, 0);
   return weekStart.toISOString().split('T')[0];
 }
 
