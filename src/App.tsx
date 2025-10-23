@@ -1,9 +1,4 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 // Pages
@@ -49,16 +44,8 @@ import Mum from "./pages/Mum";
 import Pro from "./pages/Pro";
 import PostCheckout from "./pages/PostCheckout";
 
-const queryClient = new QueryClient();
-
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
+  <Routes>
             <Route path="/" element={<Index />} />
             
             {/* Auth */}
@@ -100,12 +87,8 @@ const App = () => (
             <Route path="/pro" element={<Pro />} />
             <Route path="/post-checkout" element={<PostCheckout />} />
             
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+    <Route path="*" element={<NotFound />} />
+  </Routes>
 );
 
 export default App;
