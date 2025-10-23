@@ -93,6 +93,13 @@ export type Database = {
             foreignKeyName: "ciqual_compositions_alim_code_fkey"
             columns: ["alim_code"]
             isOneToOne: false
+            referencedRelation: "ciqual_full"
+            referencedColumns: ["alim_code"]
+          },
+          {
+            foreignKeyName: "ciqual_compositions_alim_code_fkey"
+            columns: ["alim_code"]
+            isOneToOne: false
             referencedRelation: "ciqual_summary"
             referencedColumns: ["alim_code"]
           },
@@ -594,7 +601,9 @@ export type Database = {
         Row: {
           ai_keywords: string[] | null
           allergens: string[] | null
+          badges: string[] | null
           batch_cooking_friendly: boolean | null
+          budget_per_serving: number | null
           calorie_target: string | null
           calories: number | null
           calories_kcal: number | null
@@ -615,7 +624,7 @@ export type Database = {
           ingredient_keywords: string[] | null
           ingredients: Json | null
           instructions: Json | null
-          keywords: string | null
+          keywords_legacy: string | null
           language: string | null
           macros_calculated: boolean | null
           macros_indicatives: Json | null
@@ -634,12 +643,15 @@ export type Database = {
           spice_level: string | null
           sugar_level: string | null
           title: string
+          total_time_min: number | null
           updated_at: string | null
         }
         Insert: {
           ai_keywords?: string[] | null
           allergens?: string[] | null
+          badges?: string[] | null
           batch_cooking_friendly?: boolean | null
+          budget_per_serving?: number | null
           calorie_target?: string | null
           calories?: number | null
           calories_kcal?: number | null
@@ -660,7 +672,7 @@ export type Database = {
           ingredient_keywords?: string[] | null
           ingredients?: Json | null
           instructions?: Json | null
-          keywords?: string | null
+          keywords_legacy?: string | null
           language?: string | null
           macros_calculated?: boolean | null
           macros_indicatives?: Json | null
@@ -679,12 +691,15 @@ export type Database = {
           spice_level?: string | null
           sugar_level?: string | null
           title: string
+          total_time_min?: number | null
           updated_at?: string | null
         }
         Update: {
           ai_keywords?: string[] | null
           allergens?: string[] | null
+          badges?: string[] | null
           batch_cooking_friendly?: boolean | null
+          budget_per_serving?: number | null
           calorie_target?: string | null
           calories?: number | null
           calories_kcal?: number | null
@@ -705,7 +720,7 @@ export type Database = {
           ingredient_keywords?: string[] | null
           ingredients?: Json | null
           instructions?: Json | null
-          keywords?: string | null
+          keywords_legacy?: string | null
           language?: string | null
           macros_calculated?: boolean | null
           macros_indicatives?: Json | null
@@ -724,6 +739,7 @@ export type Database = {
           spice_level?: string | null
           sugar_level?: string | null
           title?: string
+          total_time_min?: number | null
           updated_at?: string | null
         }
         Relationships: []
@@ -928,6 +944,39 @@ export type Database = {
           },
         ]
       }
+      user_dashboard_stats: {
+        Row: {
+          charge_mentale_pct: number
+          created_at: string | null
+          credits_zen: number
+          objectif_hebdos_valide: number
+          references_count: number
+          serie_en_cours_set_count: number
+          temps_gagne: number
+          user_id: string
+        }
+        Insert: {
+          charge_mentale_pct?: number
+          created_at?: string | null
+          credits_zen?: number
+          objectif_hebdos_valide?: number
+          references_count?: number
+          serie_en_cours_set_count?: number
+          temps_gagne?: number
+          user_id: string
+        }
+        Update: {
+          charge_mentale_pct?: number
+          created_at?: string | null
+          credits_zen?: number
+          objectif_hebdos_valide?: number
+          references_count?: number
+          serie_en_cours_set_count?: number
+          temps_gagne?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_points: {
         Row: {
           created_at: string | null
@@ -985,8 +1034,53 @@ export type Database = {
         }
         Relationships: []
       }
+      user_weekly_menus: {
+        Row: {
+          created_at: string | null
+          menu_id: string
+          payload: Json
+          updated_at: string | null
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string | null
+          menu_id?: string
+          payload?: Json
+          updated_at?: string | null
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string | null
+          menu_id?: string
+          payload?: Json
+          updated_at?: string | null
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
+      ciqual_full: {
+        Row: {
+          alim_code: string | null
+          alim_grp_code: number | null
+          alim_nom_eng: string | null
+          alim_nom_fr: string | null
+          alim_nom_index_fr: string | null
+          alim_ssgrp_code: number | null
+          alim_ssssgrp_code: number | null
+          energie_kcal_100g: number | null
+          fibres_alimentaires_g_100g: number | null
+          glucides_g_100g: number | null
+          id: number | null
+          lipides_g_100g: number | null
+          proteines_g_100g: number | null
+        }
+        Relationships: []
+      }
       ciqual_summary: {
         Row: {
           alim_code: string | null
@@ -1049,7 +1143,7 @@ export type Database = {
             Args: { p_recipe_id: string }
             Returns: {
               error: true
-            } & "Could not choose the best candidate function between: public.refresh_one_recipe(p_recipe_id => int8), public.refresh_one_recipe(p_recipe_id => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"[]
+            } & "Could not choose the best candidate function between: public.refresh_one_recipe(p_recipe_id => int8), public.refresh_one_recipe(p_recipe_id => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
           }
         | {
             Args: { p_recipe_id: number }

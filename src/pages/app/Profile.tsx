@@ -224,8 +224,28 @@ export default function Profile() {
 
       toast({
         title: '✅ Tes préférences ont bien été enregistrées !',
-        description: 'Tes recommandations seront personnalisées.',
+        description: 'Ton menu se régénère avec tes nouvelles préférences...',
       });
+
+      // Trigger menu regeneration after saving preferences
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        if (session.session) {
+          await supabase.functions.invoke('generate-menu', {
+            headers: {
+              Authorization: `Bearer ${session.session.access_token}`,
+            },
+          });
+          
+          toast({
+            title: '🎉 Menu mis à jour !',
+            description: 'Ton menu hebdomadaire a été régénéré.',
+          });
+        }
+      } catch (menuError) {
+        console.error('Error regenerating menu:', menuError);
+        // Don't show error to user, preferences are saved
+      }
     } catch (error) {
       console.error('Error saving preferences:', error);
       toast({

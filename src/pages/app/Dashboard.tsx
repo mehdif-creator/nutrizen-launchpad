@@ -35,14 +35,19 @@ export default function Dashboard() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const [credits, setCredits] = useState(10);
-  const [streak, setStreak] = useState(3);
-  const [zenPoints, setZenPoints] = useState(12);
-  const [refCount, setRefCount] = useState(2);
-  const [weekOffset, setWeekOffset] = useState(0);
-  const [validated, setValidated] = useState(0);
+  // Real stats from database
+  const [stats, setStats] = useState({
+    temps_gagne: 0,
+    charge_mentale_pct: 0,
+    serie_en_cours_set_count: 0,
+    credits_zen: 10,
+    references_count: 0,
+    objectif_hebdos_valide: 0
+  });
+  const [weeklyMenu, setWeeklyMenu] = useState<any>(null);
   const [fridgeInput, setFridgeInput] = useState("");
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
 
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'toi';
   
@@ -51,59 +56,162 @@ export default function Dashboard() {
     return <Navigate to="/admin" replace />;
   }
 
-  // Build week meals
+  // Build week meals from database or fallback
   const weekMeals = useMemo(() => {
-    const shuffled = [...mealsCatalog].sort(() => Math.random() - 0.5);
-    return Array.from({ length: 7 }, (_, i) => shuffled[i % shuffled.length]);
-  }, [weekOffset]);
+    if (weeklyMenu?.payload?.days && weeklyMenu.payload.days.length > 0) {
+      return weeklyMenu.payload.days.map((day: any) => ({
+        id: day.recipe_id,
+        title: day.title,
+        time: day.prep_min,
+        kcal: day.calories
+      }));
+    }
+    return [];
+  }, [weeklyMenu]);
 
   // KPI calculations
-  const minutesSaved = useMemo(() => {
-    return weekMeals.length * 35; // 35 min saved per meal
-  }, [weekMeals]);
-
-  const chargeMentalDrop = 60;
-  const swapsUsed = 10 - credits;
+  const minutesSaved = stats.temps_gagne || 0;
+  const chargeMentalDrop = stats.charge_mentale_pct || 0;
+  const streak = stats.serie_en_cours_set_count || 0;
+  const credits = stats.credits_zen || 10;
+  const refCount = stats.references_count || 0;
+  const validated = stats.objectif_hebdos_valide || 0;
+  const zenPoints = minutesSaved / 10; // Calculate zen points from saved time
   const zenLevel = zenPoints < 20 ? "Bronze" : zenPoints < 40 ? "Silver" : "Gold";
   const referralUrl = "https://mynutrizen.fr/i/" + (user?.id.slice(0, 8) || "user");
   
+  // Load user stats and weekly menu
   useEffect(() => {
-    refreshSubscription();
-    setLoading(false);
-  }, []);
+    if (!user) return;
 
-  const handleSwap = (index: number) => {
-    if (credits <= 0) {
+    const loadData = async () => {
+      try {
+        // Load stats
+        const { data: statsData } = await supabase
+          .from('user_dashboard_stats')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (statsData) {
+          setStats({
+            temps_gagne: statsData.temps_gagne || 0,
+            charge_mentale_pct: statsData.charge_mentale_pct || 0,
+            serie_en_cours_set_count: statsData.serie_en_cours_set_count || 0,
+            credits_zen: statsData.credits_zen || 10,
+            references_count: statsData.references_count || 0,
+            objectif_hebdos_valide: statsData.objectif_hebdos_valide || 0
+          });
+        }
+
+        // Get current week start
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() + diff);
+        weekStart.setHours(0, 0, 0, 0);
+        const weekStartStr = weekStart.toISOString().split('T')[0];
+
+        // Load weekly menu
+        const { data: menuData } = await supabase
+          .from('user_weekly_menus')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('week_start', weekStartStr)
+          .maybeSingle();
+
+        setWeeklyMenu(menuData);
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+    refreshSubscription();
+
+    // Subscribe to realtime updates for weekly menu
+    const channel = supabase
+      .channel('user-weekly-menu')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_weekly_menus',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            setWeeklyMenu(payload.new);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  const handleSwap = async (index: number) => {
+    // TODO: Implement swap with use-swap edge function
+    toast({
+      title: "Swap en cours...",
+      description: "Fonctionnalité bientôt disponible"
+    });
+  };
+
+  const handleValidateMeal = async () => {
+    // TODO: Implement meal validation
+    toast({
+      title: "Validation en cours...",
+      description: "Fonctionnalité bientôt disponible"
+    });
+  };
+
+  const handleRegenWeek = async () => {
+    if (!user || generating) return;
+    
+    setGenerating(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        throw new Error("No session");
+      }
+
+      const { data, error } = await supabase.functions.invoke('generate-menu', {
+        headers: {
+          Authorization: `Bearer ${session.session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast({
+          title: "✅ Semaine régénérée !",
+          description: "Voici 7 nouveaux repas personnalisés pour toi."
+        });
+      } else {
+        toast({
+          title: "⚠️ Génération partielle",
+          description: data.message || "Certains repas n'ont pas pu être générés.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error regenerating week:', error);
       toast({
-        title: "Crédits épuisés",
-        description: "Tu as utilisé tous tes swaps ce mois-ci.",
+        title: "Erreur",
+        description: "Impossible de générer la semaine. Réessaie plus tard.",
         variant: "destructive"
       });
-      return;
+    } finally {
+      setGenerating(false);
     }
-    setCredits(c => c - 1);
-    setZenPoints(p => p + 1);
-    toast({
-      title: "Swap effectué !",
-      description: "Ton repas a été remplacé. +1 point Zen"
-    });
-  };
-
-  const handleValidateMeal = () => {
-    setValidated(v => Math.min(5, v + 1));
-    setZenPoints(p => p + 2);
-    toast({
-      title: "Repas validé !",
-      description: "+2 points Zen. Continue comme ça !"
-    });
-  };
-
-  const handleRegenWeek = () => {
-    setWeekOffset(w => w + 1);
-    toast({
-      title: "Semaine régénérée !",
-      description: "Voici 7 nouveaux repas pour toi."
-    });
   };
 
   const handleCopyLink = async () => {
@@ -122,11 +230,11 @@ export default function Dashboard() {
     }
   };
 
-  const handleAddRef = () => {
-    setRefCount(c => c + 1);
+  const handleAddRef = async () => {
+    // TODO: Implement referral system
     toast({
-      title: "Référence ajoutée !",
-      description: "+5 points Zen pour ta contribution."
+      title: "Référence en cours...",
+      description: "Fonctionnalité bientôt disponible"
     });
   };
 
@@ -139,10 +247,9 @@ export default function Dashboard() {
       });
       return;
     }
-    setCredits(c => c + 1);
     toast({
-      title: "Recette générée !",
-      description: `Pour: ${fridgeInput}. +1 crédit bonus !`
+      title: "Génération en cours...",
+      description: "Fonctionnalité bientôt disponible"
     });
     setFridgeInput("");
     navigate("/app/inspi-frigo");
@@ -199,7 +306,7 @@ export default function Dashboard() {
           <StatCard 
             label="Crédits Zen" 
             value={`${credits}/10`}
-            sub={`${swapsUsed} swaps utilisés`}
+            sub={`${10 - credits} swaps utilisés`}
             icon={<Sparkles className="h-5 w-5" />}
           />
           <StatCard 
