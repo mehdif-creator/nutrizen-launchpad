@@ -1,5 +1,5 @@
-import { useRecipesGallery } from '@/hooks/useRecipesGallery';
-import { Spinner } from '@/components/common/Spinner';
+import { useRecipesGallery } from "@/hooks/useRecipesGallery";
+import { Spinner } from "@/components/common/Spinner";
 
 export const RecipeGallery = () => {
   const { data: recipes, isLoading } = useRecipesGallery();
@@ -47,9 +47,9 @@ export const RecipeGallery = () => {
                   className="flex-shrink-0 w-[200px] md:w-[250px] group relative overflow-hidden rounded-xl bg-muted aspect-[4/3]"
                 >
                   <img
-                    src={recipe.image_url || '/img/recipe-default.jpg'}
+                    src={recipe.image_url || "/img/recipe-default.jpg"}
                     alt={recipe.title}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     loading="lazy"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -70,9 +70,9 @@ export const RecipeGallery = () => {
                   className="flex-shrink-0 w-[200px] md:w-[250px] group relative overflow-hidden rounded-xl bg-muted aspect-[4/3]"
                 >
                   <img
-                    src={recipe.image_url || '/img/recipe-default.jpg'}
+                    src={recipe.image_url || "/img/recipe-default.jpg"}
                     alt={recipe.title}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     loading="lazy"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
