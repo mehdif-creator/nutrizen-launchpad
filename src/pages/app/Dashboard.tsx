@@ -199,7 +199,7 @@ export default function Dashboard() {
       } else {
         toast({
           title: "Erreur",
-          description: data.message || "Impossible de changer la recette.",
+          description: data.error || "Impossible de changer la recette.",
           variant: "destructive"
         });
       }
@@ -240,15 +240,15 @@ export default function Dashboard() {
 
       if (error) throw error;
 
-      if (data.success) {
+      if (data?.success) {
         toast({
           title: "Menus générés avec succès",
         });
         // Realtime will auto-update the UI
       } else {
         toast({
-          title: "⚠️ Génération impossible",
-          description: data.message || "Impossible de générer un menu.",
+          title: "Génération impossible",
+          description: data?.message || "Impossible de générer un menu.",
           variant: "destructive"
         });
       }

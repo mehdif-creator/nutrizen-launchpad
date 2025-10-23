@@ -38,6 +38,26 @@ serve(async (req) => {
 
     console.log(`[generate-menu] Processing request for user: ${user.id}`);
 
+    // Deduct 7 credits for week regeneration
+    const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
+    const { data: creditData, error: creditError } = await supabaseClient.rpc('deduct_week_regeneration_credits', {
+      p_user_id: user.id,
+      p_month: currentMonth,
+    });
+
+    if (creditError) {
+      console.error('[generate-menu] Error deducting credits:', creditError);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          message: creditError.message || 'Crédits insuffisants pour régénérer la semaine.'
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`[generate-menu] Credits deducted: ${creditData.credits_deducted}, remaining: ${creditData.remaining}`);
+
     // Parse and validate input
     const body = await req.json().catch(() => ({}));
     const validatedInput = GenerateMenuSchema.parse(body);

@@ -1198,6 +1198,10 @@ export type Database = {
         }[]
       }
       calculate_user_level: { Args: { points: number }; Returns: string }
+      deduct_week_regeneration_credits: {
+        Args: { p_month: string; p_user_id: string }
+        Returns: Json
+      }
       generate_referral_code: { Args: { user_id: string }; Returns: string }
       get_recipe_macros: {
         Args: { recipe_id_input: number }
