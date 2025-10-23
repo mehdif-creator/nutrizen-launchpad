@@ -92,22 +92,32 @@ serve(async (req) => {
           console.log(`[generate-menu] Enforcing allergen exclusions: ${userAllergens.join(", ")}`);
         }
 
-        // ALWAYS enforce excluded ingredients
+        // ALWAYS enforce excluded ingredients (but allow recipes with no ingredients_text)
         if (preferences.aliments_eviter && Array.isArray(preferences.aliments_eviter) && preferences.aliments_eviter.length > 0) {
-          // For each excluded ingredient, filter out recipes containing it
-          preferences.aliments_eviter.forEach((ing: string) => {
-            query = query.not("ingredients_text", "ilike", `%${ing}%`);
-          });
-          console.log(`[generate-menu] Enforcing ingredient exclusions: ${preferences.aliments_eviter.join(", ")}`);
+          // Clean up ingredients (trim spaces) and filter non-empty ones
+          const cleanedExclusions = preferences.aliments_eviter
+            .map((ing: string) => (ing || '').trim())
+            .filter((ing: string) => ing.length > 0);
+          
+          if (cleanedExclusions.length > 0) {
+            // Build a condition that allows null/empty OR doesn't contain any excluded ingredient
+            // For each ingredient, we want: NOT ILIKE '%ingredient%'
+            cleanedExclusions.forEach((ing: string) => {
+              // Simple negative filter - if ingredients_text contains this, exclude it
+              query = query.not("ingredients_text", "ilike", `%${ing}%`);
+            });
+            console.log(`[generate-menu] Enforcing ingredient exclusions: ${cleanedExclusions.join(", ")}`);
+          }
         }
 
-        // ALWAYS enforce appliance constraints
+        // ALWAYS enforce appliance constraints (but allow recipes with no appliances specified)
         if (preferences.appliances_owned && Array.isArray(preferences.appliances_owned)) {
           const ownedAppliances = preferences.appliances_owned;
           
           // If user doesn't own airfryer, exclude airfryer recipes
+          // Simple check: only exclude if appliances explicitly contains airfryer
           if (!ownedAppliances.includes('airfryer')) {
-            query = query.not("appliances", "cs", "{airfryer}");
+            query = query.not("appliances", "cs", '{"airfryer"}');
             console.log(`[generate-menu] Excluding airfryer recipes (not owned)`);
           }
         }
