@@ -13,7 +13,7 @@ import { StatCard } from '@/components/app/StatCard';
 import { Progress } from '@/components/app/Progress';
 import { MealCard } from '@/components/app/MealCard';
 import { Badge } from '@/components/ui/badge';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
@@ -58,7 +58,7 @@ export default function Dashboard() {
   // Fetch ingredients for shopping list
   const [shoppingList, setShoppingList] = useState<string[]>([]);
   
-  useMemo(() => {
+  useEffect(() => {
     const fetchIngredients = async () => {
       if (!weekMeals.length) {
         setShoppingList([]);
