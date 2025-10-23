@@ -6,14 +6,14 @@ export const ValueStack = () => {
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Ce que tu obtiens</h2>
           <p className="text-lg text-muted-foreground">La valeur réelle de ton abonnement</p>
         </div>
-        
+
         <div className="bg-card rounded-2xl shadow-lg border-2 border-primary/20 p-8 md:p-12">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b-2 border-border">
                   <th className="py-4 pr-4 text-left text-lg font-bold">Avantage</th>
-                  <th className="py-4 text-right text-lg font-bold">Valeur perçue</th>
+                  <th className="py-4 text-right text-lg font-bold">Valeur</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -48,7 +48,7 @@ export const ValueStack = () => {
               </tbody>
             </table>
           </div>
-          
+
           <div className="mt-8 pt-8 border-t-2 border-border">
             <div className="text-center">
               <p className="text-lg text-muted-foreground mb-2">Ton prix NutriZen</p>

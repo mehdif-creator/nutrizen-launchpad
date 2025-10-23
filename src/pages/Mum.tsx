@@ -120,7 +120,7 @@ export default function Mum() {
                       <td className="py-4 text-right text-accent font-semibold">40 €</td>
                     </tr>
                     <tr className="border-t-2 border-accent/50">
-                      <td className="py-4 pr-4 text-left font-bold text-lg">Total valeur perçue</td>
+                      <td className="py-4 pr-4 text-left font-bold text-lg">Total valeur</td>
                       <td className="py-4 text-right text-accent font-bold text-xl">≈ 200 €</td>
                     </tr>
                   </tbody>
