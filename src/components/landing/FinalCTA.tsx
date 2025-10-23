@@ -13,11 +13,11 @@ export const FinalCTA = ({ onCtaClick }: FinalCTAProps) => {
             Dans 7 jours, tu peux déjà avoir une semaine claire dans ton assiette.
           </h2>
           
-          <div className="space-y-3">
+          <div className="space-y-3 flex flex-col items-center">
             <Button
               onClick={onCtaClick}
               size="lg"
-              className="bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] shadow-glow transition-tech text-lg px-12"
+              className="bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] shadow-glow transition-tech text-lg px-12 w-full sm:w-auto"
             >
               Commencer ma semaine gratuite
             </Button>
