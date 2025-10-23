@@ -977,6 +977,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_gamification: {
+        Row: {
+          badges_count: number
+          created_at: string
+          last_activity_date: string | null
+          level: number
+          points: number
+          streak_days: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          badges_count?: number
+          created_at?: string
+          last_activity_date?: string | null
+          level?: number
+          points?: number
+          streak_days?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          badges_count?: number
+          created_at?: string
+          last_activity_date?: string | null
+          level?: number
+          points?: number
+          streak_days?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_points: {
         Row: {
           created_at: string | null

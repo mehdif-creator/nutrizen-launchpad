@@ -41,76 +41,119 @@ serve(async (req) => {
       console.error("Error fetching preferences:", prefError);
     }
 
-    // Build recipe filters based on preferences
-    let query = supabaseClient
-      .from("recipes")
-      .select("id, title, prep_time_min, total_time_min, calories_kcal, proteins_g, carbs_g, fats_g, cuisine_type, meal_type, diet_type, allergens, difficulty_level")
-      .eq("published", true);
+    // Helper function to build query with filters
+    const buildRecipeQuery = (
+      relaxedTime = false,
+      ignoreDiet = false,
+      useGenericPool = false
+    ) => {
+      let query = supabaseClient
+        .from("recipes")
+        .select("id, title, prep_time_min, total_time_min, calories_kcal, proteins_g, carbs_g, fats_g, cuisine_type, meal_type, diet_type, allergens, difficulty_level")
+        .eq("published", true);
 
-    if (preferences) {
-      // Filter by prep time
-      if (preferences.temps_preparation === "<10 min") {
-        query = query.lte("prep_time_min", 10);
-      } else if (preferences.temps_preparation === "10-20 min") {
-        query = query.lte("prep_time_min", 20);
-      } else if (preferences.temps_preparation === "20-40 min") {
-        query = query.lte("prep_time_min", 40);
+      if (useGenericPool) {
+        // Generic safe pool: quick, common recipes
+        query = query.or("meal_type.eq.lunch,meal_type.eq.dinner");
       }
 
-      // Filter by diet type
-      if (preferences.type_alimentation && preferences.type_alimentation !== "Omnivore") {
-        query = query.eq("diet_type", preferences.type_alimentation.toLowerCase());
-      }
+      if (preferences) {
+        // ALWAYS enforce allergens/exclusions
+        if (preferences.allergies && Array.isArray(preferences.allergies) && preferences.allergies.length > 0) {
+          const allergenMap: Record<string, string> = {
+            "Gluten": "gluten",
+            "Lactose": "lactose",
+            "Fruits à coque": "nuts",
+            "Arachide": "peanuts",
+            "Œufs": "eggs",
+            "Fruits de mer": "shellfish",
+            "Soja": "soy",
+            "Sésame": "sesame"
+          };
+          const userAllergens = preferences.allergies.map((a: string) => allergenMap[a] || a.toLowerCase());
+          query = query.not("allergens", "cs", `{${userAllergens.join(",")}}`);
+        }
 
-      // Filter by difficulty level
-      if (preferences.niveau_cuisine) {
-        const difficultyMap: Record<string, string> = {
-          "Débutant": "beginner",
-          "Intermédiaire": "intermediate",
-          "Expert": "expert"
-        };
-        const difficulty = difficultyMap[preferences.niveau_cuisine];
-        if (difficulty) {
-          query = query.eq("difficulty_level", difficulty);
+        // Filter by prep time (relax if needed)
+        if (preferences.temps_preparation && !useGenericPool) {
+          let maxPrepTime = 60;
+          if (preferences.temps_preparation === "<10 min") {
+            maxPrepTime = relaxedTime ? 20 : 10;
+          } else if (preferences.temps_preparation === "10-20 min") {
+            maxPrepTime = relaxedTime ? 30 : 20;
+          } else if (preferences.temps_preparation === "20-40 min") {
+            maxPrepTime = relaxedTime ? 50 : 40;
+          }
+          query = query.lte("prep_time_min", maxPrepTime);
+        }
+
+        // Filter by diet type (can be ignored in fallback)
+        if (!ignoreDiet && preferences.type_alimentation && preferences.type_alimentation !== "Omnivore") {
+          query = query.eq("diet_type", preferences.type_alimentation.toLowerCase());
+        }
+
+        // Filter by difficulty level
+        if (preferences.niveau_cuisine && !useGenericPool) {
+          const difficultyMap: Record<string, string> = {
+            "Débutant": "beginner",
+            "Intermédiaire": "intermediate",
+            "Expert": "expert"
+          };
+          const difficulty = difficultyMap[preferences.niveau_cuisine];
+          if (difficulty) {
+            query = query.eq("difficulty_level", difficulty);
+          }
         }
       }
 
-      // Exclude allergens
-      if (preferences.allergies && Array.isArray(preferences.allergies) && preferences.allergies.length > 0) {
-        // For each allergen, we need to ensure the recipe doesn't contain it
-        // This is a PostgreSQL array query - recipes where allergens array doesn't overlap with user's allergies
-        const allergenMap: Record<string, string> = {
-          "Gluten": "gluten",
-          "Lactose": "lactose",
-          "Fruits à coque": "nuts",
-          "Arachide": "peanuts",
-          "Œufs": "eggs",
-          "Fruits de mer": "shellfish",
-          "Soja": "soy",
-          "Sésame": "sesame"
-        };
-        const userAllergens = preferences.allergies.map((a: string) => allergenMap[a] || a.toLowerCase());
-        // Use not filter to exclude recipes with these allergens
-        query = query.not("allergens", "cs", `{${userAllergens.join(",")}}`);
+      return query.limit(100);
+    };
+
+    // Fallback ladder strategy
+    let recipes: any[] = [];
+    let usedFallback = false;
+    let fallbackLevel = 0;
+
+    // F0: Strict filters
+    const { data: strictRecipes } = await buildRecipeQuery(false, false, false);
+    if (strictRecipes && strictRecipes.length >= 7) {
+      recipes = strictRecipes;
+    } else {
+      console.log("F0 yielded", strictRecipes?.length || 0, "recipes. Trying F1...");
+      usedFallback = true;
+      fallbackLevel = 1;
+
+      // F1: Relax time constraints
+      const { data: relaxedTimeRecipes } = await buildRecipeQuery(true, false, false);
+      if (relaxedTimeRecipes && relaxedTimeRecipes.length >= 7) {
+        recipes = relaxedTimeRecipes;
+      } else {
+        console.log("F1 yielded", relaxedTimeRecipes?.length || 0, "recipes. Trying F2...");
+        fallbackLevel = 2;
+
+        // F2: Ignore diet tags but keep allergens
+        const { data: ignoreDietRecipes } = await buildRecipeQuery(true, true, false);
+        if (ignoreDietRecipes && ignoreDietRecipes.length >= 7) {
+          recipes = ignoreDietRecipes;
+        } else {
+          console.log("F2 yielded", ignoreDietRecipes?.length || 0, "recipes. Trying F3...");
+          fallbackLevel = 3;
+
+          // F3: Generic safe pool with allergens respected
+          const { data: genericRecipes } = await buildRecipeQuery(false, true, true);
+          recipes = genericRecipes || [];
+        }
       }
     }
 
-    // Limit to 50 recipes
-    query = query.limit(50);
-
-    const { data: recipes, error: recipeError } = await query;
-
-    if (recipeError) {
-      console.error("Error fetching recipes:", recipeError);
-      throw new Error("Failed to fetch recipes");
-    }
+    const { error: recipeError } = { error: null };
 
     if (!recipes || recipes.length === 0) {
-      // Return empty menu if no recipes found
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: "No recipes found matching your preferences. Try adjusting your filters." 
+          message: "Aucune recette trouvée. Contactez le support.",
+          usedFallback: false
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
@@ -173,7 +216,9 @@ serve(async (req) => {
         success: true, 
         days, 
         menu_id: menu.menu_id,
-        week_start: weekStartStr
+        week_start: weekStartStr,
+        usedFallback,
+        fallbackLevel
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

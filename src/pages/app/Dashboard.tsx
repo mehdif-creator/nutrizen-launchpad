@@ -48,6 +48,7 @@ export default function Dashboard() {
   const [fridgeInput, setFridgeInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [showFallbackBanner, setShowFallbackBanner] = useState(false);
 
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'toi';
   
@@ -191,14 +192,17 @@ export default function Dashboard() {
       if (error) throw error;
 
       if (data.success) {
+        setShowFallbackBanner(data.usedFallback || false);
         toast({
           title: "✅ Semaine régénérée !",
-          description: "Voici 7 nouveaux repas personnalisés pour toi."
+          description: data.usedFallback 
+            ? "Menu généré avec filtres assouplis (allergies respectées)."
+            : "Voici 7 nouveaux repas personnalisés pour toi."
         });
       } else {
         toast({
-          title: "⚠️ Génération partielle",
-          description: data.message || "Certains repas n'ont pas pu être générés.",
+          title: "⚠️ Génération impossible",
+          description: data.message || "Impossible de générer un menu.",
           variant: "destructive"
         });
       }
@@ -262,6 +266,11 @@ export default function Dashboard() {
       <main className="flex-1">
         {/* Hero Section */}
         <section className="px-4 sm:px-6 lg:px-10 py-8">
+          {showFallbackBanner && (
+            <div className="mb-4 p-4 bg-primary/10 border border-primary/20 rounded-xl text-sm">
+              ℹ️ Menu généré avec filtres assouplis pour garantir 7 repas. Tes allergies et exclusions sont respectées.
+            </div>
+          )}
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold mb-1">
@@ -335,8 +344,18 @@ export default function Dashboard() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold">Semaine en cours</h2>
             </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {weekMeals.map((meal, i) => (
+            {weekMeals.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <p className="text-muted-foreground mb-4">
+                  Aucun menu généré pour cette semaine.
+                </p>
+                <Button onClick={handleRegenWeek} disabled={generating}>
+                  {generating ? "Génération..." : "Générer ma semaine"}
+                </Button>
+              </div>
+            ) : (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {weekMeals.map((meal, i) => (
                 <MealCard
                   key={i}
                   day={weekdays[i]}
@@ -349,7 +368,8 @@ export default function Dashboard() {
                   swapsRemaining={credits}
                 />
               ))}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Right: Sidebar */}
