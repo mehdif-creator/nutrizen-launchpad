@@ -385,18 +385,22 @@ export default function Dashboard() {
                   Exporter
                 </Button>
               </div>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Blanc de poulet (600 g)</li>
-                <li>• Riz complet (500 g)</li>
-                <li>• Poivron, oignon, épinards</li>
-                <li>• Oeufs (6)</li>
-                <li>• Yaourt grec (2)</li>
-                <li>• Saumon (2 filets)</li>
-                <li>• Haricots noirs (1 boîte)</li>
-              </ul>
-              <div className="text-xs text-muted-foreground mt-2">
-                Triée par rayon · Évite les achats impulsifs
-              </div>
+              {weekMeals.length > 0 ? (
+                <>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    {weekMeals.slice(0, 7).map((meal, i) => (
+                      <li key={i}>• {meal.title}</li>
+                    ))}
+                  </ul>
+                  <div className="text-xs text-muted-foreground mt-2">
+                    Générée depuis ton menu hebdomadaire
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Génère ton menu hebdomadaire pour voir ta liste de courses.
+                </p>
+              )}
             </Card>
 
             {/* Partage Social */}

@@ -82,11 +82,11 @@ serve(async (req) => {
           console.log(`[generate-menu] Enforcing allergen exclusions: ${userAllergens.join(", ")}`);
         }
 
-        // ALWAYS enforce excluded ingredients (if ingredients_text available)
+        // ALWAYS enforce excluded ingredients (only if ingredients_text is not null)
         if (preferences.aliments_eviter && Array.isArray(preferences.aliments_eviter) && preferences.aliments_eviter.length > 0) {
-          // For each excluded ingredient, filter out recipes containing it
+          // For each excluded ingredient, filter out recipes containing it (skip if ingredients_text is null)
           preferences.aliments_eviter.forEach((ing: string) => {
-            query = query.not("ingredients_text", "ilike", `%${ing}%`);
+            query = query.or(`ingredients_text.is.null,not.ingredients_text.ilike.%${ing}%`);
           });
           console.log(`[generate-menu] Enforcing ingredient exclusions: ${preferences.aliments_eviter.join(", ")}`);
         }
@@ -144,9 +144,9 @@ serve(async (req) => {
             console.log(`[generate-menu] Min proteins: ${minProteins}g per meal`);
           }
 
-          // Filter by diet type
-          if (preferences.type_alimentation && preferences.type_alimentation !== "Omnivore") {
-            query = query.eq("diet_type", preferences.type_alimentation.toLowerCase());
+          // Filter by diet type (allow null diet_type for omnivores)
+          if (preferences.type_alimentation && preferences.type_alimentation !== "Omnivore" && preferences.type_alimentation.toLowerCase() !== "omnivore") {
+            query = query.or(`diet_type.eq.${preferences.type_alimentation.toLowerCase()},diet_type.is.null`);
             console.log(`[generate-menu] Diet type: ${preferences.type_alimentation}`);
           }
 
@@ -191,9 +191,9 @@ serve(async (req) => {
             console.log(`[generate-menu] F1: Relaxed total time to ${maxTotalTime} min`);
           }
 
-          // Keep other filters from F0
-          if (preferences.type_alimentation && preferences.type_alimentation !== "Omnivore") {
-            query = query.eq("diet_type", preferences.type_alimentation.toLowerCase());
+          // Keep other filters from F0 (allow null diet_type)
+          if (preferences.type_alimentation && preferences.type_alimentation !== "Omnivore" && preferences.type_alimentation.toLowerCase() !== "omnivore") {
+            query = query.or(`diet_type.eq.${preferences.type_alimentation.toLowerCase()},diet_type.is.null`);
           }
         }
         
