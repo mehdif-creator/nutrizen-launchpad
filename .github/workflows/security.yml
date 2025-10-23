@@ -1,0 +1,190 @@
+name: Security Checks
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  dependency-audit:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run npm audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
+      
+      - name: Generate audit report
+        run: npm audit --json > audit-report.json
+        continue-on-error: true
+      
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-report
+          path: audit-report.json
+          retention-days: 30
+
+  secret-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Gitleaks scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  build-guard:
+    name: Service Role Key Guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build application
+        run: npm run build
+      
+      - name: Check for service role key in bundle
+        run: |
+          echo "Checking for service role key in client bundle..."
+          
+          # Check for SUPABASE_SERVICE_ROLE_KEY variable reference
+          if grep -r "SUPABASE_SERVICE_ROLE_KEY" dist/ 2>/dev/null; then
+            echo "❌ CRITICAL: Service role key reference found in client bundle!"
+            exit 1
+          fi
+          
+          # Check for actual key pattern (starts with "eyJ" like JWT)
+          # Exclude legitimate anon key by checking for supabase.co domain
+          if grep -rE "eyJ[A-Za-z0-9_-]{100,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+" dist/ | grep -v "supabase\.co"; then
+            echo "❌ WARNING: Potential service role key found in bundle!"
+            exit 1
+          fi
+          
+          echo "✓ No service role key found in client bundle"
+      
+      - name: Check for other secrets
+        run: |
+          echo "Checking for other secrets..."
+          
+          # Check for common secret patterns
+          if grep -rE "(stripe_.*key|sk_live|pk_live|api[_-]?key|secret[_-]?key)" dist/ 2>/dev/null; then
+            echo "⚠️ WARNING: Potential secrets found in bundle"
+            grep -rE "(stripe_.*key|sk_live|pk_live|api[_-]?key|secret[_-]?key)" dist/
+            # Don't fail, but warn
+          fi
+          
+          echo "✓ Secret check complete"
+
+  typescript-check:
+    name: TypeScript Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Type check
+        run: npm run typecheck || npx tsc --noEmit
+
+  lint:
+    name: ESLint Security Rules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run ESLint
+        run: npm run lint
+        continue-on-error: true
+
+  # Optional: OWASP ZAP baseline scan (non-blocking)
+  # Requires deployment to preview URL
+  # zap-scan:
+  #   name: OWASP ZAP Baseline Scan
+  #   runs-on: ubuntu-latest
+  #   if: github.event_name == 'pull_request'
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     
+  #     - name: ZAP Scan
+  #       uses: zaproxy/action-baseline@v0.10.0
+  #       with:
+  #         target: 'https://preview-url.lovable.app'
+  #         rules_file_name: '.zap/rules.tsv'
+  #         cmd_options: '-a'
+  #         fail_action: false
+  #     
+  #     - name: Upload ZAP report
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: zap-report
+  #         path: report_html.html
+  #         retention-days: 30
+
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [dependency-audit, secret-scan, build-guard, typescript-check, lint]
+    if: always()
+    steps:
+      - name: Check job results
+        run: |
+          echo "## Security Check Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency Audit | ${{ needs.dependency-audit.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Secret Scan | ${{ needs.secret-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Guard | ${{ needs.build-guard.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| TypeScript Check | ${{ needs.typescript-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| ESLint | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.secret-scan.result }}" == "failure" ] || [ "${{ needs.build-guard.result }}" == "failure" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "❌ **CRITICAL SECURITY ISSUES DETECTED**" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
