@@ -30,6 +30,42 @@ serve(async (req) => {
     
     logStep("Session ID received", { sessionId });
 
+    // Initialize Supabase Admin client
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+
+    // SECURITY: Check if session has already been processed (prevent replay attacks)
+    logStep("Checking if session was already processed");
+    const { data: existingSession, error: checkError } = await supabaseAdmin
+      .from('processed_checkout_sessions')
+      .select('user_id, processed_at')
+      .eq('session_id', sessionId)
+      .maybeSingle();
+
+    if (checkError) {
+      logStep("ERROR checking processed sessions", { error: checkError.message });
+      throw new Error("Database error checking session status");
+    }
+
+    if (existingSession) {
+      logStep("Session already processed, redirecting to login", { 
+        processedAt: existingSession.processed_at 
+      });
+      const appBaseUrl = Deno.env.get("APP_BASE_URL") || "https://app.mynutrizen.fr";
+      const loginUrl = `${appBaseUrl}/auth/login?message=session_already_used`;
+      
+      return new Response(null, {
+        status: 302,
+        headers: {
+          ...corsHeaders,
+          "Location": loginUrl,
+        },
+      });
+    }
+
     // Initialize Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
       apiVersion: "2025-08-27.basil" 
@@ -39,19 +75,28 @@ serve(async (req) => {
     logStep("Retrieving checkout session from Stripe");
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     
+    // SECURITY: Verify payment was completed
+    if (session.payment_status !== 'paid') {
+      logStep("ERROR: Payment not completed", { status: session.payment_status });
+      throw new Error("Payment not completed");
+    }
+
+    // SECURITY: Check session age (only accept sessions from last 24 hours)
+    const sessionCreated = new Date(session.created * 1000);
+    const now = new Date();
+    const hoursSinceCreation = (now.getTime() - sessionCreated.getTime()) / (1000 * 60 * 60);
+    
+    if (hoursSinceCreation > 24) {
+      logStep("ERROR: Session too old", { hoursSinceCreation });
+      throw new Error("Checkout session expired");
+    }
+
     if (!session.customer_details?.email) {
       throw new Error("No email found in checkout session");
     }
     
     const email = session.customer_details.email;
     logStep("Email retrieved from session", { email: email.substring(0, 3) + "***" });
-
-    // Initialize Supabase Admin client
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
 
     // Generate signup link WITHOUT sending email (creates user automatically)
     logStep("Generating signup link (no email send)");
@@ -88,10 +133,36 @@ serve(async (req) => {
     }
 
     const actionLink = linkData.properties.action_link;
+    const userId = linkData.user?.id;
+    
     logStep("Magic link generated successfully", { 
       hasLink: !!actionLink,
+      userId: userId ? userId.substring(0, 8) + "***" : "unknown",
       linkPrefix: actionLink.substring(0, 50) + "..."
     });
+
+    // SECURITY: Record this session as processed (prevent replay attacks)
+    if (userId) {
+      logStep("Recording processed session");
+      const { error: insertError } = await supabaseAdmin
+        .from('processed_checkout_sessions')
+        .insert({
+          session_id: sessionId,
+          user_id: userId,
+          payment_status: session.payment_status,
+        });
+
+      if (insertError) {
+        logStep("WARNING: Failed to record processed session", { 
+          error: insertError.message 
+        });
+        // Continue anyway - user creation succeeded
+      } else {
+        logStep("Session recorded successfully");
+      }
+    } else {
+      logStep("WARNING: No user_id returned from generateLink");
+    }
 
     // Redirect user to the magic link (creates session automatically)
     logStep("Redirecting to action link");

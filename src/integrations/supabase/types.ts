@@ -499,6 +499,33 @@ export type Database = {
           },
         ]
       }
+      processed_checkout_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          payment_status: string
+          processed_at: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          payment_status: string
+          processed_at?: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          payment_status?: string
+          processed_at?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1198,6 +1225,7 @@ export type Database = {
         }[]
       }
       calculate_user_level: { Args: { points: number }; Returns: string }
+      cleanup_old_checkout_sessions: { Args: never; Returns: undefined }
       deduct_week_regeneration_credits: {
         Args: { p_month: string; p_user_id: string }
         Returns: Json
