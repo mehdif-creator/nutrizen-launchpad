@@ -129,7 +129,7 @@ serve(async (req) => {
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
     const existingUser = existingUsers?.users?.find(u => u.email === email);
     
-    let userId;
+    let userId: string;
     let linkData;
     let linkError;
     
@@ -158,6 +158,9 @@ serve(async (req) => {
         email,
         email_confirm: true, // Auto-confirm email since they paid
         password: generateSecurePassword(),
+        user_metadata: {
+          full_name: '',
+        }
       });
       
       if (createError) {
@@ -172,24 +175,137 @@ serve(async (req) => {
       userId = newUser.user.id;
       logStep("User created successfully", { userId: userId.substring(0, 8) + "***" });
       
-      // Initialize user data (profiles, dashboard_stats, gamification, points)
-      logStep("Initializing user data");
+      // Initialize user data manually (bypass triggers)
+      logStep("Initializing user data manually");
       try {
-        const { error: initError } = await supabaseAdmin.functions.invoke('init-user-rows', {
-          body: { user_id: userId },
-        });
+        // Insert profile
+        const { error: profileError } = await supabaseAdmin
+          .from('profiles')
+          .insert({ id: userId, email, full_name: '' });
         
-        if (initError) {
-          logStep("WARNING: Failed to initialize user data", { error: initError.message });
-          // Continue anyway - user was created
-        } else {
-          logStep("User data initialized successfully");
+        if (profileError && !profileError.message.includes('duplicate')) {
+          logStep("WARNING: Profile creation failed", { error: profileError.message });
         }
+        
+        // Insert preferences with defaults
+        const { error: prefError } = await supabaseAdmin
+          .from('preferences')
+          .insert({
+            user_id: userId,
+            objectifs: ['equilibre'],
+            budget: 'moyen',
+            temps: 'rapide',
+            personnes: 1
+          });
+        
+        if (prefError && !prefError.message.includes('duplicate')) {
+          logStep("WARNING: Preferences creation failed", { error: prefError.message });
+        }
+        
+        // Insert subscription (trial)
+        const { error: subError } = await supabaseAdmin
+          .from('subscriptions')
+          .insert({
+            user_id: userId,
+            status: 'trialing',
+            plan: null,
+            trial_start: new Date().toISOString(),
+            trial_end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+          });
+        
+        if (subError && !subError.message.includes('duplicate')) {
+          logStep("WARNING: Subscription creation failed", { error: subError.message });
+        }
+        
+        // Insert user role
+        const { error: roleError } = await supabaseAdmin
+          .from('user_roles')
+          .insert({ user_id: userId, role: 'user' });
+        
+        if (roleError && !roleError.message.includes('duplicate')) {
+          logStep("WARNING: User role creation failed", { error: roleError.message });
+        }
+        
+        // Insert dashboard stats
+        const { error: statsError } = await supabaseAdmin
+          .from('user_dashboard_stats')
+          .insert({
+            user_id: userId,
+            temps_gagne: 0,
+            charge_mentale_pct: 0,
+            serie_en_cours_set_count: 0,
+            credits_zen: 10,
+            references_count: 0,
+            objectif_hebdos_valide: 0
+          });
+        
+        if (statsError && !statsError.message.includes('duplicate')) {
+          logStep("WARNING: Dashboard stats creation failed", { error: statsError.message });
+        }
+        
+        // Insert gamification
+        const { error: gamifError } = await supabaseAdmin
+          .from('user_gamification')
+          .insert({
+            user_id: userId,
+            points: 0,
+            level: 1,
+            streak_days: 0,
+            badges_count: 0
+          });
+        
+        if (gamifError && !gamifError.message.includes('duplicate')) {
+          logStep("WARNING: Gamification creation failed", { error: gamifError.message });
+        }
+        
+        // Insert user points
+        const { error: pointsError } = await supabaseAdmin
+          .from('user_points')
+          .insert({
+            user_id: userId,
+            total_points: 0,
+            current_level: 'Bronze',
+            login_streak: 0,
+            meals_completed: 0,
+            meals_generated: 0,
+            referrals: 0
+          });
+        
+        if (pointsError && !pointsError.message.includes('duplicate')) {
+          logStep("WARNING: User points creation failed", { error: pointsError.message });
+        }
+        
+        // Create referral code
+        try {
+          const { data: code, error: codeError } = await supabaseAdmin.rpc('generate_referral_code', {
+            user_id: userId
+          });
+          
+          if (!codeError && code) {
+            const { error: refError } = await supabaseAdmin
+              .from('referrals')
+              .insert({
+                referrer_id: userId,
+                referral_code: code,
+                status: 'pending'
+              });
+            
+            if (refError && !refError.message.includes('duplicate')) {
+              logStep("WARNING: Referral creation failed", { error: refError.message });
+            }
+          }
+        } catch (refError) {
+          logStep("WARNING: Referral code generation failed", { 
+            error: refError instanceof Error ? refError.message : String(refError) 
+          });
+        }
+        
+        logStep("User data initialized successfully");
       } catch (initError) {
         logStep("WARNING: Exception during user init", { 
           error: initError instanceof Error ? initError.message : String(initError) 
         });
-        // Continue anyway
+        // Continue anyway - user was created
       }
       
       // Generate magic link for login
