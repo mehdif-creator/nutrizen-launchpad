@@ -45,12 +45,29 @@ export interface SecurityConfig {
 // CONSTANTS
 // =============================================================================
 
-export const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*', // Restrict in production
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-request-id',
-  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-  'Access-Control-Max-Age': '86400',
-};
+const ALLOWED_ORIGINS = [
+  'https://mynutrizen.fr',
+  'https://app.mynutrizen.fr',
+  'https://www.mynutrizen.fr',
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
+
+/**
+ * Get CORS headers with strict origin validation
+ */
+export function getCorsHeaders(origin: string | null): Record<string, string> {
+  const isAllowed = origin && ALLOWED_ORIGINS.includes(origin);
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-request-id',
+    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+    'Access-Control-Max-Age': '86400',
+  };
+}
+
+// Legacy export for backwards compatibility - use getCorsHeaders() instead
+export const CORS_HEADERS = getCorsHeaders(null);
 
 const DEFAULT_RATE_LIMIT = {
   maxTokens: 60,
@@ -301,9 +318,12 @@ export async function withSecurity<T = unknown>(
   const logger = new Logger(requestId, endpoint);
 
   // CORS preflight
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
-      headers: CORS_HEADERS,
+      headers: corsHeaders,
       status: 204,
     });
   }
@@ -369,7 +389,7 @@ export async function withSecurity<T = unknown>(
           {
             status: 429,
             headers: {
-              ...CORS_HEADERS,
+              ...corsHeaders,
               'Content-Type': 'application/json',
               'Retry-After': String(retryAfter),
               'X-RateLimit-Remaining': '0',
@@ -396,7 +416,7 @@ export async function withSecurity<T = unknown>(
       {
         status: 200,
         headers: {
-          ...CORS_HEADERS,
+          ...corsHeaders,
           'Content-Type': 'application/json',
           'X-Request-Id': requestId,
         },
@@ -404,6 +424,9 @@ export async function withSecurity<T = unknown>(
     );
 
   } catch (error) {
+    const origin = req.headers.get('origin');
+    const corsHeaders = getCorsHeaders(origin);
+    
     if (error instanceof SecurityError) {
       logger.warn('Security error', { code: error.code, message: error.message });
       return new Response(
@@ -417,7 +440,7 @@ export async function withSecurity<T = unknown>(
         {
           status: error.status,
           headers: {
-            ...CORS_HEADERS,
+            ...corsHeaders,
             'Content-Type': 'application/json',
             'X-Request-Id': requestId,
           },
@@ -438,7 +461,7 @@ export async function withSecurity<T = unknown>(
       {
         status: 500,
         headers: {
-          ...CORS_HEADERS,
+          ...corsHeaders,
           'Content-Type': 'application/json',
           'X-Request-Id': requestId,
         },
