@@ -12,6 +12,32 @@ const logStep = (step: string, details?: any) => {
   console.log(`[POST-CHECKOUT-LOGIN] ${step}${detailsStr}`);
 };
 
+// Generate a secure password that meets Supabase's password policy
+// Requirements: lowercase, uppercase, digits, and special characters
+const generateSecurePassword = (): string => {
+  const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+  const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const digits = '0123456789';
+  const special = '!@#$%^&*()_+-=[]{}';
+  
+  // Ensure at least one character from each required category
+  const password = [
+    lowercase[Math.floor(Math.random() * lowercase.length)],
+    uppercase[Math.floor(Math.random() * uppercase.length)],
+    digits[Math.floor(Math.random() * digits.length)],
+    special[Math.floor(Math.random() * special.length)],
+  ];
+  
+  // Fill the rest with random characters from all categories
+  const allChars = lowercase + uppercase + digits + special;
+  for (let i = password.length; i < 32; i++) {
+    password.push(allChars[Math.floor(Math.random() * allChars.length)]);
+  }
+  
+  // Shuffle the password to randomize character positions
+  return password.sort(() => Math.random() - 0.5).join('');
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -106,7 +132,7 @@ serve(async (req) => {
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'signup',
       email,
-      password: crypto.randomUUID(), // Random password since user won't use it
+      password: generateSecurePassword(), // Secure password that meets policy requirements
       options: {
         redirectTo,
       }
