@@ -51,7 +51,7 @@ export const CommunityTestimonials = () => {
     <section className="py-16 bg-[#FFF8F2]">
       <div className="container">
         <div className="text-center mb-12 animate-fade-in">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-[#D64027]">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-[#000000]">
             Rejoignez une communauté de milliers d'utilisateurs comblés
           </h2>
         </div>
@@ -66,7 +66,7 @@ export const CommunityTestimonials = () => {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex gap-1">
                   {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-[#D64027] text-[#D64027]" />
+                    <Star key={i} className="w-4 h-4 fill-[#D64027] text-[#000000]" />
                   ))}
                 </div>
                 <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded-full">
@@ -90,7 +90,7 @@ export const CommunityTestimonials = () => {
             <div className="flex flex-col items-start">
               <div className="flex gap-0.5">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-[#D64027] text-[#D64027]" />
+                  <Star key={i} className="w-4 h-4 fill-[#D64027] text-[#000000]" />
                 ))}
               </div>
               <span className="text-xs text-muted-foreground">4 111 avis</span>
