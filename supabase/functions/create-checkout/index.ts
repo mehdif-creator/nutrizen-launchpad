@@ -43,6 +43,7 @@ serve(async (req) => {
     }
 
     const origin = req.headers.get("origin") || "http://localhost:3000";
+    const supabaseProjectRef = Deno.env.get("SUPABASE_URL")?.match(/https:\/\/([^.]+)/)?.[1] || "";
     
     // Determine plan name from priceId
     let planName = 'standard';
@@ -54,7 +55,12 @@ serve(async (req) => {
     const url = new URL(req.url);
     const referralCode = url.searchParams.get('referral_code');
     
-    logStep("Creating checkout session", { priceId, email, plan: planName, referralCode });
+    // Use post-checkout-login edge function for auto-login after payment
+    const successUrl = supabaseProjectRef 
+      ? `https://${supabaseProjectRef}.supabase.co/functions/v1/post-checkout-login?session_id={CHECKOUT_SESSION_ID}`
+      : `${origin}/post-checkout?session_id={CHECKOUT_SESSION_ID}`;
+    
+    logStep("Creating checkout session", { priceId, email, plan: planName, referralCode, successUrl });
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : email,
@@ -72,7 +78,7 @@ serve(async (req) => {
         plan: planName,
         referral_code: referralCode || '',
       },
-      success_url: `${origin}/post-checkout?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: successUrl,
       cancel_url: `${origin}/?canceled=true`,
     });
 

@@ -10,6 +10,7 @@ import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 import Verify from "./pages/auth/Verify";
 import Reset from "./pages/auth/Reset";
+import Callback from "./pages/auth/Callback";
 
 // App
 import Dashboard from "./pages/app/Dashboard";
@@ -53,6 +54,7 @@ const App = () => (
             <Route path="/auth/signup" element={<Signup />} />
             <Route path="/auth/verify" element={<Verify />} />
             <Route path="/auth/reset" element={<Reset />} />
+            <Route path="/auth/callback" element={<Callback />} />
             
             {/* App (Protected) */}
           <Route path="/app" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
