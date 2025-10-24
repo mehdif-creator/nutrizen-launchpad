@@ -124,21 +124,23 @@ serve(async (req) => {
     const email = session.customer_details.email;
     logStep("Email retrieved from session", { email: email.substring(0, 3) + "***" });
 
-    // Generate signup link WITHOUT sending email (creates user automatically)
-    logStep("Generating signup link (no email send)");
-    const appBaseUrl = Deno.env.get("APP_BASE_URL") || "https://app.mynutrizen.fr";
-    const redirectTo = `${appBaseUrl}/auth/callback?from_checkout=true`;
-    
     // Check if user already exists
+    logStep("Checking if user exists");
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
     const existingUser = existingUsers?.users?.find(u => u.email === email);
     
+    let userId;
     let linkData;
     let linkError;
     
+    const appBaseUrl = Deno.env.get("APP_BASE_URL") || "https://app.mynutrizen.fr";
+    const redirectTo = `${appBaseUrl}/auth/callback?from_checkout=true`;
+    
     if (existingUser) {
-      // User exists, generate magic link for login instead
+      // User exists, generate magic link for login
       logStep("User already exists, generating magic link for login");
+      userId = existingUser.id;
+      
       const result = await supabaseAdmin.auth.admin.generateLink({
         type: 'magiclink',
         email,
@@ -149,12 +151,52 @@ serve(async (req) => {
       linkData = result.data;
       linkError = result.error;
     } else {
-      // New user, generate signup link
-      logStep("New user, generating signup link");
-      const result = await supabaseAdmin.auth.admin.generateLink({
-        type: 'signup',
+      // New user - Create user directly via Admin API (bypasses public signup restrictions)
+      logStep("Creating new user via Admin API");
+      
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email,
-        password: generateSecurePassword(), // Secure password that meets policy requirements
+        email_confirm: true, // Auto-confirm email since they paid
+        password: generateSecurePassword(),
+      });
+      
+      if (createError) {
+        logStep("ERROR creating user", { error: createError.message });
+        throw new Error(`Failed to create user: ${createError.message}`);
+      }
+      
+      if (!newUser.user) {
+        throw new Error("User creation did not return user object");
+      }
+      
+      userId = newUser.user.id;
+      logStep("User created successfully", { userId: userId.substring(0, 8) + "***" });
+      
+      // Initialize user data (profiles, dashboard_stats, gamification, points)
+      logStep("Initializing user data");
+      try {
+        const { error: initError } = await supabaseAdmin.functions.invoke('init-user-rows', {
+          body: { user_id: userId },
+        });
+        
+        if (initError) {
+          logStep("WARNING: Failed to initialize user data", { error: initError.message });
+          // Continue anyway - user was created
+        } else {
+          logStep("User data initialized successfully");
+        }
+      } catch (initError) {
+        logStep("WARNING: Exception during user init", { 
+          error: initError instanceof Error ? initError.message : String(initError) 
+        });
+        // Continue anyway
+      }
+      
+      // Generate magic link for login
+      logStep("Generating magic link for new user");
+      const result = await supabaseAdmin.auth.admin.generateLink({
+        type: 'magiclink',
+        email,
         options: {
           redirectTo,
         }
@@ -184,13 +226,11 @@ serve(async (req) => {
     }
 
     const actionLink = linkData.properties.action_link;
-    const userId = linkData.user?.id || existingUser?.id;
     
     logStep("Magic link generated successfully", { 
       hasLink: !!actionLink,
       userId: userId ? userId.substring(0, 8) + "***" : "unknown",
-      linkPrefix: actionLink.substring(0, 50) + "...",
-      isExistingUser: !!existingUser
+      linkPrefix: actionLink.substring(0, 50) + "..."
     });
 
     // SECURITY: Record this session as processed (prevent replay attacks)
