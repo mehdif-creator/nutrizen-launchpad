@@ -104,34 +104,47 @@ serve(async (req) => {
       // Create a random password for the user
       const randomPassword = crypto.randomUUID();
 
-      // Create user in Supabase Auth - email_confirm: true to skip default email
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email: customerEmail,
-        password: randomPassword,
-        email_confirm: true, // Skip default confirmation email - we'll send magic link
-        user_metadata: {
-          stripe_customer_id: customerId,
-        },
-      });
+      // Check if user already exists
+      let userId: string | null = null;
+      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+      const existingUser = existingUsers.users.find(u => u.email === customerEmail);
+      
+      if (existingUser) {
+        logStep("User already exists", { email: redactEmail(customerEmail), userId: redactId(existingUser.id) });
+        userId = existingUser.id;
+        // Update existing subscription
+        await updateSubscriptionRecord(supabaseAdmin, userId, customerId, subscriptionId, session, stripe);
+      } else {
+        // Create user in Supabase Auth - email_confirm: true to skip default email
+        logStep("Creating new user", { email: redactEmail(customerEmail) });
+        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+          email: customerEmail,
+          password: randomPassword,
+          email_confirm: true, // Skip default confirmation email - we'll send magic link
+          user_metadata: {
+            stripe_customer_id: customerId,
+          },
+        });
 
-      if (authError) {
-        if (authError.message.includes("already registered")) {
-          logStep("User already exists", { email: redactEmail(customerEmail) });
-          // Update existing subscription
-          const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers();
-          const user = existingUser.users.find(u => u.email === customerEmail);
-          
-          if (user) {
-            await updateSubscriptionRecord(supabaseAdmin, user.id, customerId, subscriptionId, session, stripe);
-          }
-        } else {
+        if (authError) {
+          logStep("ERROR creating user", { error: authError.message });
           throw authError;
         }
-      } else if (authData.user) {
-        logStep("User created successfully", { userId: redactId(authData.user.id) });
-        await updateSubscriptionRecord(supabaseAdmin, authData.user.id, customerId, subscriptionId, session, stripe);
         
-        // Generate and send magic link for login
+        if (!authData.user) {
+          throw new Error("User creation failed - no user data returned");
+        }
+        
+        userId = authData.user.id;
+        logStep("User created successfully", { userId: redactId(userId) });
+        
+        // Create subscription record
+        await updateSubscriptionRecord(supabaseAdmin, userId, customerId, subscriptionId, session, stripe);
+      }
+      
+      // Always send magic link (whether new user or existing)
+      if (userId) {
+        
         const appBaseUrl = Deno.env.get("APP_BASE_URL") || "https://mynutrizen.fr";
         logStep("Generating magic link", { email: redactEmail(customerEmail), redirectTo: `${appBaseUrl}/app` });
         
@@ -145,14 +158,12 @@ serve(async (req) => {
         
         if (linkError) {
           logStep("ERROR generating magic link", { error: linkError.message });
-        } else {
-          logStep("Magic link generated successfully", { 
-            hasActionLink: !!linkData.properties?.action_link 
-          });
+        } else if (linkData.properties?.action_link) {
+          logStep("Magic link generated successfully");
           
           // Send email via n8n webhook
           const n8nWebhookBase = Deno.env.get("N8N_WEBHOOK_BASE");
-          if (n8nWebhookBase && linkData.properties?.action_link) {
+          if (n8nWebhookBase) {
             try {
               const emailResponse = await fetch(`${n8nWebhookBase}/welcome-email`, {
                 method: "POST",
@@ -167,47 +178,52 @@ serve(async (req) => {
               if (emailResponse.ok) {
                 logStep("Welcome email sent successfully");
               } else {
-                logStep("Failed to send welcome email", { status: emailResponse.status });
+                const errorText = await emailResponse.text();
+                logStep("Failed to send welcome email", { status: emailResponse.status, error: errorText });
               }
             } catch (emailError) {
-              logStep("Error sending welcome email", { error: emailError });
+              logStep("Error sending welcome email", { error: String(emailError) });
             }
+          } else {
+            logStep("WARNING: N8N_WEBHOOK_BASE not configured - email not sent");
           }
+        } else {
+          logStep("ERROR: No action link in magic link response");
         }
+      }
         
-        // Handle referral if present
-        if (referralCode) {
-          logStep("Processing referral", { 
-            referralCode: '[REDACTED]', 
-            newUserId: redactId(authData.user.id) 
-          });
+      // Handle referral if present
+      if (referralCode && userId) {
+        logStep("Processing referral", { 
+          referralCode: '[REDACTED]', 
+          newUserId: redactId(userId) 
+        });
           
-          try {
-            // Call handle-referral function
-            const referralResponse = await fetch(
-              `${Deno.env.get("SUPABASE_URL")}/functions/v1/handle-referral`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-                },
-                body: JSON.stringify({
-                  referralCode,
-                  newUserId: authData.user.id,
-                }),
-              }
-            );
-            
-            if (referralResponse.ok) {
-              logStep("Referral processed successfully");
-            } else {
-              logStep("Referral processing failed", { status: referralResponse.status });
+        try {
+          // Call handle-referral function
+          const referralResponse = await fetch(
+            `${Deno.env.get("SUPABASE_URL")}/functions/v1/handle-referral`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+              },
+              body: JSON.stringify({
+                referralCode,
+                newUserId: userId,
+              }),
             }
-          } catch (referralError) {
-            logStep("Referral processing error", { error: referralError });
-            // Don't fail the whole process if referral fails
+          );
+          
+          if (referralResponse.ok) {
+            logStep("Referral processed successfully");
+          } else {
+            logStep("Referral processing failed", { status: referralResponse.status });
           }
+        } catch (referralError) {
+          logStep("Referral processing error", { error: String(referralError) });
+          // Don't fail the whole process if referral fails
         }
       }
     }
