@@ -30,7 +30,7 @@ serve(async (req) => {
   }
 
   try {
-    logStep("Webhook received");
+    logStep("Webhook received", { method: req.method, hasSignature: !!req.headers.get("stripe-signature") });
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
@@ -38,6 +38,7 @@ serve(async (req) => {
 
     const signature = req.headers.get("stripe-signature");
     if (!signature) {
+      logStep("ERROR: No stripe signature found in headers");
       throw new Error("No stripe signature found");
     }
 
@@ -45,10 +46,19 @@ serve(async (req) => {
     const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
     
     if (!webhookSecret) {
+      logStep("ERROR: STRIPE_WEBHOOK_SECRET not configured in env");
       throw new Error("STRIPE_WEBHOOK_SECRET not configured");
     }
     
-    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    logStep("Constructing Stripe event from webhook");
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+      logStep("Stripe event constructed successfully", { eventId: event.id });
+    } catch (err) {
+      logStep("ERROR: Failed to construct Stripe event", { error: String(err) });
+      throw err;
+    }
 
     logStep("Event type", { type: event.type, eventId: event.id });
 
@@ -95,9 +105,10 @@ serve(async (req) => {
         throw new Error("No customer email found");
       }
 
-      logStep("Creating user account", { 
+      logStep("Processing checkout for customer", { 
         email: redactEmail(customerEmail), 
         customerId: redactId(customerId),
+        subscriptionId: redactId(subscriptionId),
         referralCode: referralCode ? '[REDACTED]' : null 
       });
 
@@ -106,40 +117,69 @@ serve(async (req) => {
 
       // Check if user already exists
       let userId: string | null = null;
-      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+      logStep("Checking for existing user");
+      const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+      
+      if (listError) {
+        logStep("ERROR listing users", { error: listError.message });
+        throw listError;
+      }
+      
       const existingUser = existingUsers.users.find(u => u.email === customerEmail);
       
       if (existingUser) {
         logStep("User already exists", { email: redactEmail(customerEmail), userId: redactId(existingUser.id) });
         userId = existingUser.id;
         // Update existing subscription
+        logStep("Updating subscription for existing user");
         await updateSubscriptionRecord(supabaseAdmin, userId, customerId, subscriptionId, session, stripe);
       } else {
         // Create user in Supabase Auth - email_confirm: true to skip default email
-        logStep("Creating new user", { email: redactEmail(customerEmail) });
-        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-          email: customerEmail,
-          password: randomPassword,
-          email_confirm: true, // Skip default confirmation email - we'll send magic link
-          user_metadata: {
-            stripe_customer_id: customerId,
-          },
-        });
+        logStep("Creating new user in Supabase Auth", { email: redactEmail(customerEmail) });
+        
+        try {
+          const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+            email: customerEmail,
+            password: randomPassword,
+            email_confirm: true, // Skip default confirmation email - we'll send magic link
+            user_metadata: {
+              stripe_customer_id: customerId,
+              created_via_stripe: true,
+            },
+          });
 
-        if (authError) {
-          logStep("ERROR creating user", { error: authError.message });
-          throw authError;
+          if (authError) {
+            logStep("ERROR creating user in Supabase Auth", { 
+              error: authError.message,
+              code: authError.status,
+              details: JSON.stringify(authError)
+            });
+            throw authError;
+          }
+          
+          if (!authData.user) {
+            logStep("ERROR: User creation returned no user data");
+            throw new Error("User creation failed - no user data returned");
+          }
+          
+          userId = authData.user.id;
+          logStep("User created successfully in Supabase Auth", { userId: redactId(userId) });
+          
+          // Small delay to let triggers complete
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Create subscription record
+          logStep("Creating subscription record");
+          await updateSubscriptionRecord(supabaseAdmin, userId, customerId, subscriptionId, session, stripe);
+          
+        } catch (createError) {
+          logStep("CRITICAL ERROR during user creation", {
+            error: String(createError),
+            email: redactEmail(customerEmail),
+            customerId: redactId(customerId)
+          });
+          throw createError;
         }
-        
-        if (!authData.user) {
-          throw new Error("User creation failed - no user data returned");
-        }
-        
-        userId = authData.user.id;
-        logStep("User created successfully", { userId: redactId(userId) });
-        
-        // Create subscription record
-        await updateSubscriptionRecord(supabaseAdmin, userId, customerId, subscriptionId, session, stripe);
       }
       
       // Always send magic link (whether new user or existing)
