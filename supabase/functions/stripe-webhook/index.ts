@@ -308,8 +308,22 @@ async function updateSubscriptionRecord(
   let status = 'trialing';
   let trialEnd = null;
   let currentPeriodEnd = null;
+  let trialStart = null;
+
+  // Safe timestamp conversion helper
+  const safeTimestamp = (unixTime: number | null | undefined): string | null => {
+    if (!unixTime || typeof unixTime !== 'number') return null;
+    try {
+      const date = new Date(unixTime * 1000);
+      if (isNaN(date.getTime())) return null;
+      return date.toISOString();
+    } catch {
+      return null;
+    }
+  };
 
   if (subscriptionId) {
+    logStep("Retrieving subscription from Stripe", { subscriptionId: redactId(subscriptionId) });
     subscription = await stripe.subscriptions.retrieve(subscriptionId);
     status = subscription.status;
     const priceId = subscription.items.data[0]?.price.id;
@@ -318,32 +332,56 @@ async function updateSubscriptionRecord(
     if (priceId === 'price_1SIWDPEl2hJeGlFp14plp0D5') plan = 'essentiel';
     else if (priceId === 'price_1SIWFyEl2hJeGlFp8pQyEMQC') plan = 'equilibre';
     else if (priceId === 'price_1SIWGdEl2hJeGlFp1e1pekfL') plan = 'premium';
+    else plan = priceId; // Use price ID as fallback
 
-    if (subscription.trial_end) {
-      trialEnd = new Date(subscription.trial_end * 1000).toISOString();
-    }
-    currentPeriodEnd = new Date(subscription.current_period_end * 1000).toISOString();
+    logStep("Subscription details", { 
+      status, 
+      plan, 
+      hasTrialEnd: !!subscription.trial_end,
+      hasPeriodEnd: !!subscription.current_period_end 
+    });
+
+    trialEnd = safeTimestamp(subscription.trial_end);
+    currentPeriodEnd = safeTimestamp(subscription.current_period_end);
+    trialStart = safeTimestamp(subscription.trial_start);
   }
+
+  // Use session created time or current time as trial_start
+  if (!trialStart && session?.created) {
+    trialStart = safeTimestamp(session.created);
+  }
+  if (!trialStart) {
+    trialStart = new Date().toISOString();
+  }
+
+  const upsertData = {
+    user_id: userId,
+    stripe_customer_id: customerId,
+    stripe_subscription_id: subscriptionId,
+    status,
+    plan,
+    trial_start: trialStart,
+    trial_end: trialEnd,
+    current_period_end: currentPeriodEnd,
+    updated_at: new Date().toISOString(),
+  };
+
+  logStep("Upserting subscription", { userId: redactId(userId), status, plan });
 
   const { error: subError } = await supabaseAdmin
     .from('subscriptions')
-    .upsert({
-      user_id: userId,
-      stripe_customer_id: customerId,
-      stripe_subscription_id: subscriptionId,
-      status,
-      plan,
-      trial_start: session?.created ? new Date(session.created * 1000).toISOString() : null,
-      trial_end: trialEnd,
-      current_period_end: currentPeriodEnd,
-      updated_at: new Date().toISOString(),
-    }, {
+    .upsert(upsertData, {
       onConflict: 'user_id'
     });
 
   if (subError) {
+    logStep("ERROR upserting subscription", { 
+      error: subError.message, 
+      code: subError.code,
+      details: JSON.stringify(subError)
+    });
     throw subError;
   }
 
-  logStep("Subscription record updated", { userId: redactId(userId), plan, status });
+  logStep("Subscription record updated successfully", { userId: redactId(userId), plan, status });
 }
