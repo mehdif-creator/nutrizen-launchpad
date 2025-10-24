@@ -256,6 +256,33 @@ export type Database = {
         }
         Relationships: []
       }
+      login_tokens: {
+        Row: {
+          created_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          session_id: string | null
+          token: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          expires_at: string
+          id?: string
+          session_id?: string | null
+          token: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          session_id?: string | null
+          token?: string
+        }
+        Relationships: []
+      }
       meal_plans: {
         Row: {
           created_at: string | null
@@ -1249,6 +1276,7 @@ export type Database = {
         }[]
       }
       calculate_user_level: { Args: { points: number }; Returns: string }
+      cleanup_expired_tokens: { Args: never; Returns: undefined }
       cleanup_old_checkout_sessions: { Args: never; Returns: undefined }
       deduct_week_regeneration_credits: {
         Args: { p_month: string; p_user_id: string }

@@ -100,6 +100,7 @@ serve(async (req) => {
       
       // Get referral code from session metadata if it exists
       const referralCode = session.metadata?.referral_code;
+      const fromCheckout = session.metadata?.from_checkout === 'true';
 
       if (!customerEmail) {
         throw new Error("No customer email found");
@@ -109,7 +110,8 @@ serve(async (req) => {
         email: redactEmail(customerEmail), 
         customerId: redactId(customerId),
         subscriptionId: redactId(subscriptionId),
-        referralCode: referralCode ? '[REDACTED]' : null 
+        referralCode: referralCode ? '[REDACTED]' : null,
+        fromCheckout 
       });
 
       // Create a random password for the user
@@ -182,53 +184,31 @@ serve(async (req) => {
         }
       }
       
-      // Always send magic link (whether new user or existing)
-      if (userId) {
-        
+      // Create one-time login token for immediate access
+      if (userId && session.id) {
         const appBaseUrl = Deno.env.get("APP_BASE_URL") || "https://mynutrizen.fr";
-        logStep("Generating magic link", { email: redactEmail(customerEmail), redirectTo: `${appBaseUrl}/app` });
         
-        const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-          type: 'magiclink',
-          email: customerEmail,
-          options: {
-            redirectTo: `${appBaseUrl}/app`,
-          },
+        // Generate secure one-time token tied to checkout session
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+        
+        logStep("Creating one-time login token", { 
+          email: redactEmail(customerEmail),
+          sessionId: session.id.substring(0, 8) + "***"
         });
         
-        if (linkError) {
-          logStep("ERROR generating magic link", { error: linkError.message });
-        } else if (linkData.properties?.action_link) {
-          logStep("Magic link generated successfully");
-          
-          // Send email via n8n webhook
-          const n8nWebhookBase = Deno.env.get("N8N_WEBHOOK_BASE");
-          if (n8nWebhookBase) {
-            try {
-              const emailResponse = await fetch(`${n8nWebhookBase}/welcome-email`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  email: customerEmail,
-                  magicLink: linkData.properties.action_link,
-                  name: customerEmail.split('@')[0],
-                }),
-              });
-              
-              if (emailResponse.ok) {
-                logStep("Welcome email sent successfully");
-              } else {
-                const errorText = await emailResponse.text();
-                logStep("Failed to send welcome email", { status: emailResponse.status, error: errorText });
-              }
-            } catch (emailError) {
-              logStep("Error sending welcome email", { error: String(emailError) });
-            }
-          } else {
-            logStep("WARNING: N8N_WEBHOOK_BASE not configured - email not sent");
-          }
+        const { error: tokenError } = await supabaseAdmin
+          .from('login_tokens')
+          .insert({
+            email: customerEmail,
+            token: crypto.randomUUID(),
+            session_id: session.id,
+            expires_at: expiresAt.toISOString(),
+          });
+        
+        if (tokenError) {
+          logStep("ERROR creating login token", { error: tokenError.message });
         } else {
-          logStep("ERROR: No action link in magic link response");
+          logStep("One-time login token created - user will be auto-logged in via success_url");
         }
       }
         
