@@ -2,8 +2,10 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
+// SECURITY: Strict CORS - only allow requests from Stripe
+// Stripe webhooks don't send Origin header, so we don't validate CORS here
+// Signature verification provides security instead
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
 };
 
@@ -48,13 +50,36 @@ serve(async (req) => {
     
     const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
 
-    logStep("Event type", { type: event.type });
+    logStep("Event type", { type: event.type, eventId: event.id });
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { persistSession: false } }
     );
+
+    // SECURITY: Idempotency check - prevent duplicate processing
+    const { data: existingEvent } = await supabaseAdmin
+      .from('stripe_events')
+      .select('id')
+      .eq('event_id', event.id)
+      .maybeSingle();
+
+    if (existingEvent) {
+      logStep("Event already processed, skipping", { eventId: event.id });
+      return new Response(JSON.stringify({ received: true, skipped: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // Record event as processed
+    await supabaseAdmin
+      .from('stripe_events')
+      .insert({
+        event_id: event.id,
+        event_type: event.type,
+      });
 
     // Handle checkout.session.completed - Create user account
     if (event.type === "checkout.session.completed") {
