@@ -53,14 +53,15 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    // Generate magic link WITHOUT sending email
-    logStep("Generating magic link (no email send)");
+    // Generate signup link WITHOUT sending email (creates user automatically)
+    logStep("Generating signup link (no email send)");
     const appBaseUrl = Deno.env.get("APP_BASE_URL") || "https://app.mynutrizen.fr";
     const redirectTo = `${appBaseUrl}/auth/callback?from_checkout=true`;
     
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'magiclink',
+      type: 'signup',
       email,
+      password: crypto.randomUUID(), // Random password since user won't use it
       options: {
         redirectTo,
       }
