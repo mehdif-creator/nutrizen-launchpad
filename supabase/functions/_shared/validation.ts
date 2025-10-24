@@ -140,6 +140,17 @@ export const HandleReferralRequestSchema = z.object({
 export type HandleReferralRequest = z.infer<typeof HandleReferralRequestSchema>;
 
 // =============================================================================
+// CHECKOUT SESSION SCHEMAS
+// =============================================================================
+
+export const SessionIdSchema = z.string()
+  .min(20, 'Session ID too short')
+  .max(200, 'Session ID too long')
+  .regex(/^cs_[a-zA-Z0-9_]+$/, 'Invalid Stripe session ID format');
+
+export type SessionId = z.infer<typeof SessionIdSchema>;
+
+// =============================================================================
 // PAGINATION SCHEMAS
 // =============================================================================
 

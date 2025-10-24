@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { SessionIdSchema } from "../_shared/validation.ts";
 
 // SECURITY: Strict CORS - only needed for fallback redirects
 const ALLOWED_ORIGINS = [
@@ -60,15 +61,18 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    // Get session_id from URL query parameters
+    // Get and validate session_id from URL query parameters
     const url = new URL(req.url);
-    const sessionId = url.searchParams.get('session_id');
+    const rawSessionId = url.searchParams.get('session_id');
     
-    if (!sessionId) {
+    if (!rawSessionId) {
       throw new Error("session_id parameter is required");
     }
     
-    logStep("Session ID received", { sessionId });
+    // SECURITY: Validate session_id format before using it
+    const sessionId = SessionIdSchema.parse(rawSessionId);
+    
+    logStep("Session ID received and validated", { sessionId });
 
     // Initialize Supabase Admin client
     const supabaseAdmin = createClient(
@@ -400,9 +404,24 @@ serve(async (req) => {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
     
-    // Redirect to post-checkout page with error
+    // SECURITY: Map errors to generic messages (prevent information disclosure)
+    let userMessage = "An error occurred during checkout processing. Please contact support.";
+    
+    if (errorMessage.includes("session_id parameter is required")) {
+      userMessage = "Invalid checkout session. Please try again.";
+    } else if (errorMessage.includes("Payment not completed")) {
+      userMessage = "Payment verification failed. Please contact support.";
+    } else if (errorMessage.includes("session_already_used")) {
+      userMessage = "This checkout session has already been processed.";
+    } else if (errorMessage.includes("Checkout session expired")) {
+      userMessage = "Checkout session has expired. Please start a new checkout.";
+    } else if (errorMessage.includes("Invalid Stripe session ID format")) {
+      userMessage = "Invalid checkout session format.";
+    }
+    
+    // Redirect to post-checkout page with generic error
     const appBaseUrl = Deno.env.get("APP_BASE_URL") || "https://app.mynutrizen.fr";
-    const errorUrl = `${appBaseUrl}/post-checkout?error=${encodeURIComponent(errorMessage)}`;
+    const errorUrl = `${appBaseUrl}/post-checkout?error=${encodeURIComponent(userMessage)}`;
     
     return new Response(null, {
       status: 302,
