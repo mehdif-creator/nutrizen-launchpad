@@ -53,7 +53,7 @@ serve(async (req) => {
     logStep("Constructing Stripe event from webhook");
     let event;
     try {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+      event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
       logStep("Stripe event constructed successfully", { eventId: event.id });
     } catch (err) {
       logStep("ERROR: Failed to construct Stripe event", { error: String(err) });
