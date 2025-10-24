@@ -50,7 +50,7 @@ serve(async (req) => {
       type: 'magiclink',
       email: email,
       options: {
-        redirectTo: `${Deno.env.get("APP_BASE_URL") || "https://mynutrizen.fr"}/app`,
+        redirectTo: `${Deno.env.get("APP_BASE_URL") || "https://mynutrizen.fr"}/app/profile`,
       },
     });
 

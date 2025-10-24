@@ -6,6 +6,8 @@ import { Toaster as ShadcnToaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
+import { LanguageProvider } from '@/contexts/LanguageContext';
 
 interface AppProvidersProps {
   children: React.ReactNode;
@@ -22,15 +24,19 @@ export function AppProviders({ children }: AppProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <AuthProvider>
-          <TooltipProvider>
-            {children}
-            <ShadcnToaster />
-            <Toaster />
-            {/* Only show React Query devtools in development */}
-            {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
-          </TooltipProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <LanguageProvider>
+            <AuthProvider>
+              <TooltipProvider>
+                {children}
+                <ShadcnToaster />
+                <Toaster />
+                {/* Only show React Query devtools in development */}
+                {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
+              </TooltipProvider>
+            </AuthProvider>
+          </LanguageProvider>
+        </ThemeProvider>
       </BrowserRouter>
     </QueryClientProvider>
   );

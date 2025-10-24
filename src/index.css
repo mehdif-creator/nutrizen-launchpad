@@ -7,7 +7,8 @@ All colors MUST be HSL.
 */
 
 @layer base {
-  :root {
+  :root,
+  .light {
     /* Brand Colors */
     --primary: 156 62% 36%;
     --primary-foreground: 0 0% 100%;
@@ -65,6 +66,59 @@ All colors MUST be HSL.
     /* Transitions */
     --transition-tech: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    /* Brand Colors - Adapted for dark mode */
+    --primary: 156 62% 45%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 156 62% 55%;
+    
+    --accent: 24 95% 60%;
+    --accent-foreground: 0 0% 100%;
+    --accent-glow: 24 95% 70%;
+
+    --background: 230 20% 10%;
+    --foreground: 0 0% 95%;
+
+    --card: 230 18% 14%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 230 18% 14%;
+    --popover-foreground: 0 0% 95%;
+
+    --secondary: 156 30% 20%;
+    --secondary-foreground: 156 62% 80%;
+
+    --muted: 230 18% 18%;
+    --muted-foreground: 230 10% 65%;
+
+    --border: 230 15% 25%;
+    --input: 230 15% 25%;
+    --ring: 156 62% 45%;
+
+    /* Feedback Colors */
+    --success: 156 62% 45%;
+    --success-foreground: 0 0% 100%;
+    
+    --warning: 40 95% 60%;
+    --warning-foreground: 0 0% 100%;
+    
+    --error: 0 75% 55%;
+    --error-foreground: 0 0% 100%;
+
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Gradients - Dark mode versions */
+    --gradient-primary: linear-gradient(135deg, hsl(156 62% 45%), hsl(24 95% 60%));
+    --gradient-subtle: linear-gradient(180deg, hsl(230 20% 10%), hsl(156 30% 15%));
+    --gradient-hero: linear-gradient(135deg, hsl(156 62% 45% / 0.1), hsl(24 95% 60% / 0.1));
+    
+    /* Shadows - Dark mode versions */
+    --shadow-glow: 0 0 28px hsl(156 62% 45% / 0.3);
+    --shadow-card: 0 8px 28px hsl(0 0% 0% / 0.4);
+    --shadow-hover: 0 12px 40px hsl(0 0% 0% / 0.5);
   }
 }
 
