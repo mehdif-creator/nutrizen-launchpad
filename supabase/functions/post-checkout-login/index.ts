@@ -129,14 +129,39 @@ serve(async (req) => {
     const appBaseUrl = Deno.env.get("APP_BASE_URL") || "https://app.mynutrizen.fr";
     const redirectTo = `${appBaseUrl}/auth/callback?from_checkout=true`;
     
-    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'signup',
-      email,
-      password: generateSecurePassword(), // Secure password that meets policy requirements
-      options: {
-        redirectTo,
-      }
-    });
+    // Check if user already exists
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+    const existingUser = existingUsers?.users?.find(u => u.email === email);
+    
+    let linkData;
+    let linkError;
+    
+    if (existingUser) {
+      // User exists, generate magic link for login instead
+      logStep("User already exists, generating magic link for login");
+      const result = await supabaseAdmin.auth.admin.generateLink({
+        type: 'magiclink',
+        email,
+        options: {
+          redirectTo,
+        }
+      });
+      linkData = result.data;
+      linkError = result.error;
+    } else {
+      // New user, generate signup link
+      logStep("New user, generating signup link");
+      const result = await supabaseAdmin.auth.admin.generateLink({
+        type: 'signup',
+        email,
+        password: generateSecurePassword(), // Secure password that meets policy requirements
+        options: {
+          redirectTo,
+        }
+      });
+      linkData = result.data;
+      linkError = result.error;
+    }
 
     if (linkError) {
       logStep("ERROR generating link", { error: linkError.message });
@@ -159,12 +184,13 @@ serve(async (req) => {
     }
 
     const actionLink = linkData.properties.action_link;
-    const userId = linkData.user?.id;
+    const userId = linkData.user?.id || existingUser?.id;
     
     logStep("Magic link generated successfully", { 
       hasLink: !!actionLink,
       userId: userId ? userId.substring(0, 8) + "***" : "unknown",
-      linkPrefix: actionLink.substring(0, 50) + "..."
+      linkPrefix: actionLink.substring(0, 50) + "...",
+      isExistingUser: !!existingUser
     });
 
     // SECURITY: Record this session as processed (prevent replay attacks)
@@ -182,12 +208,12 @@ serve(async (req) => {
         logStep("WARNING: Failed to record processed session", { 
           error: insertError.message 
         });
-        // Continue anyway - user creation succeeded
+        // Continue anyway - user creation/login succeeded
       } else {
         logStep("Session recorded successfully");
       }
     } else {
-      logStep("WARNING: No user_id returned from generateLink");
+      logStep("WARNING: No user_id available");
     }
 
     // Redirect user to the magic link (creates session automatically)

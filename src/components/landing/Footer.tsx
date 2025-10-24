@@ -45,7 +45,7 @@ export const Footer = () => {
               <img 
                 src={new URL('@/assets/nutrizen-main-logo.png', import.meta.url).href}
                 alt="NutriZen Logo" 
-                className="h-12 w-auto"
+                className="h-16 w-auto"
               />
             </div>
             <p className="text-sm text-muted-foreground">
