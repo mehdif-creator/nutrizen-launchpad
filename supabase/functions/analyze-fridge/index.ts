@@ -115,7 +115,7 @@ serve(async (req) => {
     console.log('Image received, forwarding to n8n webhook...');
 
     // Use the new webhook URL directly
-    const webhookUrl = 'https://n8n.srv1005117.hstgr.cloud/webhook/analyse-frigo';
+    const webhookUrl = 'https://n8n.srv1005117.hstgr.cloud/webhook-test/analyse-frigo';
 
     // Forward to n8n webhook
     const n8nFormData = new FormData();
