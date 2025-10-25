@@ -1,6 +1,31 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
+// HMAC signature validation
+async function generateHmac(data: string, secret: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(data));
+  return Array.from(new Uint8Array(signature))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function validateHmacSignature(
+  data: string,
+  signature: string,
+  secret: string
+): Promise<boolean> {
+  const expectedSignature = await generateHmac(data, secret);
+  return signature === expectedSignature;
+}
+
 // SECURITY: Strict CORS allow-list
 const ALLOWED_ORIGINS = [
   'https://mynutrizen.fr',
@@ -65,6 +90,21 @@ serve(async (req) => {
 
     const body = await req.json();
 
+    // HMAC signature validation
+    const signature = req.headers.get('x-signature');
+    const hmacSecret = Deno.env.get('HMAC_SECRET');
+    
+    if (hmacSecret && signature) {
+      const isValid = await validateHmacSignature(JSON.stringify(body), signature, hmacSecret);
+      if (!isValid) {
+        console.warn('Invalid HMAC signature detected');
+        return new Response(JSON.stringify({ error: 'Invalid request signature' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 403,
+        });
+      }
+    }
+
     // Validate and sanitize input
     const validatedData = leadSchema.parse(body);
     const { email, source, timestamp } = validatedData;
@@ -98,11 +138,17 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
+    // Log full error details server-side
     console.error('Error in submit-lead:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    
+    // Return generic error message to client
+    const userMessage = error instanceof z.ZodError 
+      ? error.errors[0]?.message || 'Invalid form data'
+      : 'Unable to submit form. Please try again.';
+    
+    return new Response(JSON.stringify({ error: userMessage }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
+      status: error instanceof z.ZodError ? 400 : 500,
     });
   }
 });

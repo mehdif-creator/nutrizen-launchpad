@@ -115,7 +115,12 @@ serve(async (req) => {
 
     console.log('Image received, forwarding to n8n webhook...');
 
-    const webhookUrl = 'https://n8n.srv1005117.hstgr.cloud/webhook-test/Nutrizen-analyse-repas';
+    // Use webhook URL from environment variable
+    const webhookUrl = Deno.env.get('N8N_ANALYZE_MEAL_WEBHOOK');
+    if (!webhookUrl) {
+      console.error('N8N_ANALYZE_MEAL_WEBHOOK not configured');
+      throw new Error('Webhook configuration missing');
+    }
 
     // Forward to n8n webhook with 60 second timeout
     const n8nFormData = new FormData();
@@ -204,12 +209,18 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    // Log full error details server-side
     console.error('Error in analyze-meal function:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    // Return generic error message to client
+    const userMessage = error instanceof Error && 
+      (error.message.includes('Image') || error.message.includes('subscription') || error.message.includes('Trial') || error.message.includes('configuration'))
+      ? error.message 
+      : 'Unable to process meal analysis. Please try again.';
     
     return new Response(
       JSON.stringify({ 
-        error: errorMessage,
+        error: userMessage,
         status: 'error'
       }),
       {
