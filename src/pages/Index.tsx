@@ -15,6 +15,7 @@ import { LeadMagnet } from '@/components/landing/LeadMagnet';
 import { FinalCTA } from '@/components/landing/FinalCTA';
 import { Footer } from '@/components/landing/Footer';
 import { MobileStickyCTA } from '@/components/landing/MobileStickyCTA';
+import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { useNavigate } from 'react-router-dom';
 import { useReferralTracking } from '@/hooks/useReferralTracking';
 
@@ -54,6 +55,7 @@ const Index = () => {
       <FinalCTA onCtaClick={handleCtaClick} />
       <Footer />
       <MobileStickyCTA onCtaClick={handleCtaClick} />
+      <ScrollToTop />
     </div>
   );
 };

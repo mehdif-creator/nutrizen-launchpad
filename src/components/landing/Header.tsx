@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface HeaderProps {
   onCtaClick: () => void;
@@ -9,6 +10,7 @@ interface HeaderProps {
 
 export const Header = ({ onCtaClick }: HeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { t } = useLanguage();
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -36,43 +38,43 @@ export const Header = ({ onCtaClick }: HeaderProps) => {
             onClick={() => scrollToSection('avantages')}
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-tech"
           >
-            Avantages
+            {t('header.advantages')}
           </button>
           <button
             onClick={() => scrollToSection('comment')}
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-tech"
           >
-            Fonctionnement
+            {t('header.howItWorks')}
           </button>
           <button
             onClick={() => scrollToSection('exemples')}
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-tech"
           >
-            Exemples
+            {t('header.examples')}
           </button>
           <button
             onClick={() => scrollToSection('tarifs')}
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-tech"
           >
-            Tarifs
+            {t('header.pricing')}
           </button>
           <button
             onClick={() => scrollToSection('faq')}
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-tech"
           >
-            FAQ
+            {t('header.faq')}
           </button>
           <Link
             to="/blog"
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-tech"
           >
-            Blog
+            {t('header.blog')}
           </Link>
           <Link
             to="/auth/login"
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-tech"
           >
-            Se connecter
+            {t('header.login')}
           </Link>
         </nav>
 
@@ -83,7 +85,7 @@ export const Header = ({ onCtaClick }: HeaderProps) => {
             size="sm"
             className="bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] transition-tech shadow-glow"
           >
-            Commencer gratuitement
+            {t('header.cta')}
           </Button>
         </div>
 
@@ -104,49 +106,49 @@ export const Header = ({ onCtaClick }: HeaderProps) => {
               onClick={() => scrollToSection('avantages')}
               className="text-left text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              Avantages
+              {t('header.advantages')}
             </button>
             <button
               onClick={() => scrollToSection('comment')}
               className="text-left text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              Fonctionnement
+              {t('header.howItWorks')}
             </button>
             <button
               onClick={() => scrollToSection('exemples')}
               className="text-left text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              Exemples
+              {t('header.examples')}
             </button>
             <button
               onClick={() => scrollToSection('tarifs')}
               className="text-left text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              Tarifs
+              {t('header.pricing')}
             </button>
             <button
               onClick={() => scrollToSection('faq')}
               className="text-left text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              FAQ
+              {t('header.faq')}
             </button>
             <Link
               to="/blog"
               className="text-left text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              Blog
+              {t('header.blog')}
             </Link>
             <Link
               to="/auth/login"
               className="text-left text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              Se connecter
+              {t('header.login')}
             </Link>
             <Button
               onClick={onCtaClick}
               className="w-full bg-gradient-to-r from-primary to-accent text-white"
             >
-              Commencer gratuitement
+              {t('header.cta')}
             </Button>
           </nav>
         </div>

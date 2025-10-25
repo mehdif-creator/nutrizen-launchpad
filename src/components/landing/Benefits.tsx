@@ -1,26 +1,30 @@
 import { Clock, Coins, Brain } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { useLanguage } from '@/contexts/LanguageContext';
+
 export const Benefits = () => {
+  const { t } = useLanguage();
+  
   const benefits = [{
     icon: Clock,
-    title: 'Gagne 5h par semaine',
-    result: 'Plus de temps pour toi',
-    description: 'Fini les 30 min quotidiennes à te demander "qu\'est-ce qu\'on mange ?". Tout est planifié automatiquement.'
+    title: t('benefits.1.title'),
+    result: t('benefits.1.result'),
+    description: t('benefits.1.description')
   }, {
     icon: Coins,
-    title: 'Économise jusqu\'à 30%',
-    result: 'Liste de courses optimisée',
-    description: 'Ton plan génère une liste précise par rayon. Exit les achats impulsifs et le gaspillage.'
+    title: t('benefits.2.title'),
+    result: t('benefits.2.result'),
+    description: t('benefits.2.description')
   }, {
     icon: Brain,
-    title: 'Zéro charge mentale',
-    result: 'Menus équilibrés automatiques',
-    description: 'Ton plan adapté à tes objectifs (perte, maintien, prise). Tout est calculé et prêt en 1 clic.'
+    title: t('benefits.3.title'),
+    result: t('benefits.3.result'),
+    description: t('benefits.3.description')
   }];
   return <section id="avantages" className="py-16 bg-muted/30">
       <div className="container">
         <div className="text-center mb-12 animate-fade-in">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Pourquoi choisir myNutriZen ?</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">{t('benefits.title')}</h2>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">

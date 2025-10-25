@@ -1,25 +1,28 @@
 import { Card } from '@/components/ui/card';
 import { Target, Sparkles, ShoppingCart, ChefHat } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const HowItWorks = () => {
+  const { t } = useLanguage();
+  
   const steps = [
     {
       icon: Target,
       number: '1',
-      title: 'Réponds à 3 questions en 60 s',
-      description: 'Profils, goûts, objectifs — on crée ton plan.'
+      title: t('howItWorks.step1.title'),
+      description: t('howItWorks.step1.description')
     },
     {
       icon: Sparkles,
       number: '2',
-      title: 'Reçois ton plan repas généré automatiquement',
-      description: 'Chaque jour un menu complet adapté à ton rythme.'
+      title: t('howItWorks.step2.title'),
+      description: t('howItWorks.step2.description')
     },
     {
       icon: ShoppingCart,
       number: '3',
-      title: 'Swap libre & profite',
-      description: 'Un plat ne te plaît pas ? Change-le en un clic. Gain de temps. Zéro stress.'
+      title: t('howItWorks.step3.title'),
+      description: t('howItWorks.step3.description')
     }
   ];
 
@@ -28,10 +31,10 @@ export const HowItWorks = () => {
       <div className="container">
         <div className="text-center mb-12 animate-fade-in">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Comment ça marche ?
+            {t('howItWorks.title')}
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            3 étapes simples pour simplifier tes repas
+            {t('howItWorks.subtitle')}
           </p>
         </div>
 

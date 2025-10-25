@@ -48,10 +48,10 @@ const testimonials = [
 
 export const CommunityTestimonials = () => {
   return (
-    <section className="py-16 bg-[#FFF8F2]">
+    <section className="py-16 bg-secondary/30">
       <div className="container">
         <div className="text-center mb-12 animate-fade-in">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-[#000000]">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Rejoignez une communauté de milliers d'utilisateurs comblés
           </h2>
         </div>
@@ -60,13 +60,13 @@ export const CommunityTestimonials = () => {
           {testimonials.map((testimonial, index) => (
             <Card
               key={testimonial.name}
-              className="p-6 bg-white border-none shadow-card hover:shadow-glow transition-shadow animate-slide-up"
+              className="p-6 border-border shadow-card hover:shadow-glow transition-shadow animate-slide-up"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex gap-1">
                   {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-[#D64027] text-[#000000]" />
+                    <Star key={i} className="w-4 h-4 fill-accent text-accent" />
                   ))}
                 </div>
                 <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded-full">
@@ -84,13 +84,13 @@ export const CommunityTestimonials = () => {
           ))}
         </div>
 
-        <Card className="max-w-md mx-auto p-6 bg-white border-none shadow-card text-center">
+        <Card className="max-w-md mx-auto p-6 border-border shadow-card text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <span className="text-4xl font-bold text-[#D64027]">4,8</span>
+            <span className="text-4xl font-bold text-accent">4,8</span>
             <div className="flex flex-col items-start">
               <div className="flex gap-0.5">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-[#D64027] text-[#000000]" />
+                  <Star key={i} className="w-4 h-4 fill-accent text-accent" />
                 ))}
               </div>
               <span className="text-xs text-muted-foreground">4 111 avis</span>
