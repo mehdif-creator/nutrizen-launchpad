@@ -62,18 +62,18 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-accent/10 to-primary/10 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-accent/10 to-primary/10 dark:from-accent/5 dark:to-primary/5 p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-card p-8">
+        <div className="bg-card rounded-2xl shadow-card p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2">Connexion</h1>
+            <h1 className="text-3xl font-bold mb-2 text-foreground">Connexion</h1>
             <p className="text-muted-foreground">
               Accède à ton espace NutriZen
             </p>
           </div>
 
-          <div className="mb-6 p-4 bg-accent/10 rounded-lg">
-            <p className="text-sm text-center">
+          <div className="mb-6 p-4 bg-accent/10 dark:bg-accent/20 rounded-lg">
+            <p className="text-sm text-center text-foreground">
               <strong>Nouveau client ?</strong> Après ton paiement via Stripe, tu recevras un email avec un lien magique pour accéder à ton compte.
             </p>
           </div>
@@ -100,10 +100,10 @@ export default function Login() {
 
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
+                <span className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-muted-foreground">Ou continuer avec</span>
+                <span className="bg-card px-2 text-muted-foreground">Ou continuer avec</span>
               </div>
             </div>
 

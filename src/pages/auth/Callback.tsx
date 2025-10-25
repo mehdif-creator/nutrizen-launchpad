@@ -14,12 +14,31 @@ export default function Callback() {
       try {
         console.log('[AUTH-CALLBACK] Processing authentication callback...');
         
-        // Get the current URL with all parameters
-        const currentUrl = window.location.href;
-        console.log('[AUTH-CALLBACK] Current URL:', currentUrl);
+        // Check if we have the hash params (for implicit flow) or search params (for PKCE)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const searchParams = new URLSearchParams(window.location.search);
+        
+        // Get code from either hash or search params
+        const code = searchParams.get('code') || hashParams.get('code');
+        
+        console.log('[AUTH-CALLBACK] Auth code present:', !!code);
+        console.log('[AUTH-CALLBACK] Hash:', window.location.hash);
+        console.log('[AUTH-CALLBACK] Search:', window.location.search);
 
-        // Exchange code for session
-        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(currentUrl);
+        // If we have hash params (implicit flow from OAuth), try to get session directly
+        if (hashParams.has('access_token')) {
+          console.log('[AUTH-CALLBACK] Using implicit flow (access token in hash)');
+          const { error: sessionError } = await supabase.auth.getSession();
+          if (sessionError) {
+            console.error('[AUTH-CALLBACK] Session error:', sessionError);
+            throw sessionError;
+          }
+          navigate('/app', { replace: true });
+          return;
+        }
+
+        // Otherwise use PKCE flow
+        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(window.location.href);
         
         if (exchangeError) {
           console.error('[AUTH-CALLBACK] Exchange error:', exchangeError);
@@ -69,10 +88,10 @@ export default function Callback() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-accent/10 to-primary/10">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-accent/10 to-primary/10 dark:from-accent/5 dark:to-primary/5">
         <div className="text-center space-y-4">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-          <h2 className="text-xl font-semibold">Connexion en cours...</h2>
+          <h2 className="text-xl font-semibold text-foreground">Connexion en cours...</h2>
           <p className="text-muted-foreground">Veuillez patienter</p>
         </div>
       </div>
@@ -81,11 +100,11 @@ export default function Callback() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-accent/10 to-primary/10 p-4">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-card p-8">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-accent/10 to-primary/10 dark:from-accent/5 dark:to-primary/5 p-4">
+        <div className="w-full max-w-md bg-card rounded-2xl shadow-card p-8">
           <div className="text-center space-y-4">
             <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
-            <h2 className="text-xl font-semibold">Erreur d'authentification</h2>
+            <h2 className="text-xl font-semibold text-foreground">Erreur d'authentification</h2>
             <p className="text-muted-foreground">{error}</p>
             <div className="space-y-2">
               <Button
