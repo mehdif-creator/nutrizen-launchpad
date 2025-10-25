@@ -28,12 +28,13 @@ export const PreHeader = () => {
             {t('preheader.trial')}
           </span>
         </div>
-        <div className="hidden md:flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="sm"
             onClick={toggleTheme}
             className="h-8 w-8 p-0 text-white hover:bg-white/20"
+            aria-label="Toggle theme"
           >
             {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
           </Button>
