@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PricingProps {
   onCtaClick: () => void;
@@ -24,6 +25,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [email, setEmail] = useState('');
   const [selectedPlan, setSelectedPlan] = useState<{ priceId: string; planName: string } | null>(null);
+  const { t } = useLanguage();
 
   const plans = [
     {
@@ -132,10 +134,10 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
       <div className="container">
         <div className="text-center mb-12 animate-fade-in">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Choisis ton plan et commence dès aujourd'hui
+            {t('pricing.title')}
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
-            Des tarifs simples et transparents. Toujours annulable en 3 clics.
+            {t('pricing.subtitle')}
           </p>
 
           {/* Toggle Annual/Monthly */}
@@ -146,7 +148,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
                 !annual ? 'bg-background shadow-sm' : 'text-muted-foreground'
               }`}
             >
-              Mensuel
+              {t('pricing.monthly')}
             </button>
             <button
               onClick={() => setAnnual(true)}
@@ -154,8 +156,8 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
                 annual ? 'bg-background shadow-sm' : 'text-muted-foreground'
               }`}
             >
-              Annuel
-              <span className="ml-2 text-xs text-success">-2 mois</span>
+              {t('pricing.annual')}
+              <span className="ml-2 text-xs text-success">{t('pricing.discount')}</span>
             </button>
           </div>
         </div>
@@ -192,7 +194,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
         {/* Trial Banner */}
         <div className="mb-8 p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg border text-center">
           <p className="text-sm font-medium">
-            🔥 <strong>Essai gratuit 7 jours — sans carte bancaire</strong>
+            {t('pricing.trial')}
           </p>
         </div>
 
@@ -267,7 +269,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
         </div>
 
         <div className="mt-12 text-center text-sm text-muted-foreground">
-          <p>✅ Satisfait ou remboursé — Garantie 30 jours temps-gagné • Annulable en 3 clics</p>
+          <p>{t('pricing.note')}</p>
         </div>
       </div>
 

@@ -1,8 +1,10 @@
 import { useRecipesGallery } from "@/hooks/useRecipesGallery";
 import { Spinner } from "@/components/common/Spinner";
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const RecipeGallery = () => {
   const { data: recipes, isLoading } = useRecipesGallery();
+  const { t } = useLanguage();
 
   if (isLoading) {
     return (
@@ -30,10 +32,10 @@ export const RecipeGallery = () => {
       <div className="container px-4 md:px-6">
         <div className="text-center mb-8 md:mb-12 animate-fade-in">
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 md:mb-4">
-            Des recettes équilibrées, gourmandes et faciles
+            {t('recipes.title')}
           </h2>
           <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
-            Créées par notre équipe de nutritionnistes pour tous les goûts et budgets.
+            {t('recipes.subtitle')}
           </p>
         </div>
 

@@ -4,8 +4,11 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const FAQ = () => {
+  const { t } = useLanguage();
+  
   const leftColumnFaqs = [
     {
       question: 'Puis-je annuler à tout moment ?',
@@ -65,10 +68,10 @@ export const FAQ = () => {
       <div className="container">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Questions fréquentes
+            {t('faq.title')}
           </h2>
           <p className="text-lg text-muted-foreground">
-            Tout ce que tu dois savoir sur NutriZen
+            {t('faq.subtitle')}
           </p>
         </div>
 

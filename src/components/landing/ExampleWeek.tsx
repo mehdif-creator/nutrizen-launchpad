@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const weekDays = [
   {
@@ -107,6 +108,7 @@ const shoppingList = {
 
 export const ExampleWeek = () => {
   const [currentDay, setCurrentDay] = useState(0);
+  const { t } = useLanguage();
 
   const nextDay = () => {
     setCurrentDay((prev) => (prev + 1) % weekDays.length);
@@ -123,10 +125,10 @@ export const ExampleWeek = () => {
       <div className="container">
         <div className="text-center mb-12 animate-fade-in">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            À quoi ressemble une semaine ?
+            {t('exampleWeek.title')}
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Voici un exemple de plan hebdomadaire généré en 30 secondes
+            {t('exampleWeek.subtitle')}
           </p>
         </div>
 
@@ -171,15 +173,15 @@ export const ExampleWeek = () => {
             {/* Meals */}
             <div className="space-y-4 mb-6">
               <div className="p-4 bg-muted/50 rounded-lg">
-                <div className="text-sm font-medium text-muted-foreground mb-1">Petit-déjeuner</div>
+                <div className="text-sm font-medium text-muted-foreground mb-1">{t('exampleWeek.breakfast')}</div>
                 <div className="font-medium">{day.meals.breakfast}</div>
               </div>
               <div className="p-4 bg-muted/50 rounded-lg">
-                <div className="text-sm font-medium text-muted-foreground mb-1">Déjeuner</div>
+                <div className="text-sm font-medium text-muted-foreground mb-1">{t('exampleWeek.lunch')}</div>
                 <div className="font-medium">{day.meals.lunch}</div>
               </div>
               <div className="p-4 bg-muted/50 rounded-lg">
-                <div className="text-sm font-medium text-muted-foreground mb-1">Dîner</div>
+                <div className="text-sm font-medium text-muted-foreground mb-1">{t('exampleWeek.dinner')}</div>
                 <div className="font-medium">{day.meals.dinner}</div>
               </div>
             </div>
@@ -188,19 +190,19 @@ export const ExampleWeek = () => {
             <div className="grid grid-cols-4 gap-4 p-4 bg-primary/5 rounded-lg mb-6">
               <div className="text-center">
                 <div className="text-2xl font-bold text-primary">{day.macros.calories}</div>
-                <div className="text-xs text-muted-foreground">kcal</div>
+                <div className="text-xs text-muted-foreground">{t('exampleWeek.kcal')}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-primary">{day.macros.protein}g</div>
-                <div className="text-xs text-muted-foreground">Protéines</div>
+                <div className="text-xs text-muted-foreground">{t('exampleWeek.protein')}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-primary">{day.macros.carbs}g</div>
-                <div className="text-xs text-muted-foreground">Glucides</div>
+                <div className="text-xs text-muted-foreground">{t('exampleWeek.carbs')}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-primary">{day.macros.fat}g</div>
-                <div className="text-xs text-muted-foreground">Lipides</div>
+                <div className="text-xs text-muted-foreground">{t('exampleWeek.fat')}</div>
               </div>
             </div>
 
@@ -208,12 +210,12 @@ export const ExampleWeek = () => {
               <DialogTrigger asChild>
                 <Button className="w-full hover:scale-[1.02] transition-tech" variant="outline">
                   <ShoppingCart className="w-4 h-4 mr-2" />
-                  Voir la liste de courses
+                  {t('exampleWeek.shoppingList')}
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Liste de courses de la semaine</DialogTitle>
+                  <DialogTitle>{t('exampleWeek.shoppingListTitle')}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-6">
                   {Object.entries(shoppingList).map(([category, items]) => (
@@ -235,7 +237,7 @@ export const ExampleWeek = () => {
           </Card>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
-            💡 Macros indicatives — adaptées selon tes objectifs et ton profil
+            {t('exampleWeek.note')}
           </p>
         </div>
       </div>

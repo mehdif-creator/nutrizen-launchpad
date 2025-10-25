@@ -1,33 +1,36 @@
 import { Card } from '@/components/ui/card';
 import { PersonaKey } from '@/config/personas';
 import { Dumbbell, Zap, TrendingUp } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PersonaCardsProps {
   onPersonaChange: (persona: PersonaKey) => void;
 }
 
 export const PersonaCards = ({ onPersonaChange }: PersonaCardsProps) => {
+  const { t } = useLanguage();
+  
   const personas = [
     {
       key: 'thomas' as PersonaKey,
       icon: Dumbbell,
-      title: 'Muscu / Prise de masse',
-      description: 'Tu veux prendre du muscle sans te prendre la tête avec les macros.',
-      cta: 'C\'est moi'
+      title: t('personas.muscu.title'),
+      description: t('personas.muscu.description'),
+      cta: t('personas.muscu.cta')
     },
     {
       key: 'sarah' as PersonaKey,
       icon: Zap,
-      title: 'CrossFit / WOD',
-      description: 'Tu veux performer sans passer 3h à préparer tes repas le dimanche.',
-      cta: 'C\'est moi'
+      title: t('personas.crossfit.title'),
+      description: t('personas.crossfit.description'),
+      cta: t('personas.crossfit.cta')
     },
     {
       key: 'kevin' as PersonaKey,
       icon: TrendingUp,
-      title: 'Running / Endurance',
-      description: 'Tu veux éviter le mur au km 30 avec une nutrition claire.',
-      cta: 'C\'est moi'
+      title: t('personas.running.title'),
+      description: t('personas.running.description'),
+      cta: t('personas.running.cta')
     }
   ];
 
@@ -36,10 +39,10 @@ export const PersonaCards = ({ onPersonaChange }: PersonaCardsProps) => {
       <div className="container">
         <div className="text-center mb-12 animate-fade-in">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Est-ce pour moi ?
+            {t('personas.title')}
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Choisis ton profil pour voir comment NutriZen s'adapte à tes objectifs
+            {t('personas.subtitle')}
           </p>
         </div>
 

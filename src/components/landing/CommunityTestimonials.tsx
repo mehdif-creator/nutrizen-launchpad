@@ -1,5 +1,6 @@
 import { Star } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const testimonials = [
   {
@@ -47,12 +48,14 @@ const testimonials = [
 ];
 
 export const CommunityTestimonials = () => {
+  const { t } = useLanguage();
+  
   return (
     <section className="py-16 bg-secondary/30">
       <div className="container">
         <div className="text-center mb-12 animate-fade-in">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Rejoignez une communauté de milliers d'utilisateurs comblés
+            {t('testimonials.title')}
           </h2>
         </div>
 
@@ -93,7 +96,7 @@ export const CommunityTestimonials = () => {
                   <Star key={i} className="w-4 h-4 fill-accent text-accent" />
                 ))}
               </div>
-              <span className="text-xs text-muted-foreground">4 111 avis</span>
+              <span className="text-xs text-muted-foreground">4 111 {t('testimonials.rating')}</span>
             </div>
           </div>
         </Card>

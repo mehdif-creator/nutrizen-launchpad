@@ -1,16 +1,19 @@
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { PersonaConfig } from '@/config/personas';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PASSectionProps {
   config: PersonaConfig;
 }
 
 export const PASSection = ({ config }: PASSectionProps) => {
+  const { t } = useLanguage();
+  
   const solutions = [
-    'Menus orientés objectifs en 30 secondes',
-    'Liste de courses automatique',
-    'Swaps intelligents en 1 clic',
-    'Astuce quotidienne personnalisée'
+    t('pas.solution1'),
+    t('pas.solution2'),
+    t('pas.solution3'),
+    t('pas.solution4')
   ];
 
   return (
@@ -20,10 +23,10 @@ export const PASSection = ({ config }: PASSectionProps) => {
           {/* Pain & Agitate */}
           <div className="space-y-6 animate-fade-in">
             <div className="inline-block px-4 py-2 bg-error/10 text-error rounded-full text-sm font-medium">
-              Tu te reconnais ?
+              {t('pas.tag')}
             </div>
             <h2 className="text-3xl md:text-4xl font-bold">
-              Arrête de perdre du temps
+              {t('pas.title')}
             </h2>
             <div className="space-y-4">
               {config.pain.map((pain, index) => (
@@ -35,7 +38,7 @@ export const PASSection = ({ config }: PASSectionProps) => {
             </div>
             <div className="p-4 bg-muted rounded-lg border-l-4 border-error">
               <p className="text-sm text-muted-foreground">
-                Résultat : tu perds du temps, de l'argent, et tes objectifs stagnent.
+                {t('pas.resultNote')}
               </p>
             </div>
           </div>
@@ -43,10 +46,10 @@ export const PASSection = ({ config }: PASSectionProps) => {
           {/* Solution */}
           <div className="space-y-6 animate-slide-up">
             <div className="inline-block px-4 py-2 bg-success/10 text-success rounded-full text-sm font-medium">
-              La solution
+              {t('pas.solutionTag')}
             </div>
             <h3 className="text-2xl md:text-3xl font-bold">
-              NutriZen s'occupe de tout
+              {t('pas.solutionTitle')}
             </h3>
             <div className="space-y-4">
               {solutions.map((solution, index) => (
@@ -57,7 +60,7 @@ export const PASSection = ({ config }: PASSectionProps) => {
               ))}
             </div>
             <div className="p-6 bg-gradient-to-br from-primary/5 to-accent/5 rounded-lg border">
-              <h4 className="font-bold mb-2">Les bénéfices :</h4>
+              <h4 className="font-bold mb-2">{t('pas.benefitsTitle')}</h4>
               <ul className="space-y-2">
                 {config.benefits.map((benefit, index) => (
                   <li key={index} className="flex items-center gap-2 text-sm">

@@ -1,36 +1,39 @@
 import { Shield, Lock, CreditCard } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const Footer = () => {
+  const { t } = useLanguage();
+  
   const footerSections = [
     {
-      title: 'Ressources',
+      title: t('footer.resources'),
       links: [
-        { label: 'Blog', href: '/blog' },
-        { label: 'FAQ', href: '/#faq' },
-        { label: 'Contact', href: '/contact' }
+        { label: t('footer.blog'), href: '/blog' },
+        { label: t('footer.faq'), href: '/#faq' },
+        { label: t('footer.contact'), href: '/contact' }
       ]
     },
     {
-      title: 'Légal',
+      title: t('footer.legal'),
       links: [
-        { label: 'CGV', href: '/legal/cgv' },
-        { label: 'Confidentialité', href: '/legal/confidentialite' },
-        { label: 'Mentions légales', href: '/legal/mentions' }
+        { label: t('footer.cgv'), href: '/legal/cgv' },
+        { label: t('footer.privacy'), href: '/legal/confidentialite' },
+        { label: t('footer.mentions'), href: '/legal/mentions' }
       ]
     },
     {
-      title: 'Entreprise',
+      title: t('footer.company'),
       links: [
-        { label: 'À propos', href: '/#' },
-        { label: 'Contact', href: '/contact' }
+        { label: t('footer.about'), href: '/#' },
+        { label: t('footer.contact'), href: '/contact' }
       ]
     },
     {
-      title: 'Nos offres',
+      title: t('footer.offers'),
       links: [
-        { label: 'NutriZen Fit', href: '/fit' },
-        { label: 'NutriZen Mum', href: '/mum' },
-        { label: 'NutriZen Pro', href: '/pro' }
+        { label: t('footer.fit'), href: '/fit' },
+        { label: t('footer.mum'), href: '/mum' },
+        { label: t('footer.pro'), href: '/pro' }
       ]
     }
   ];
@@ -48,9 +51,8 @@ export const Footer = () => {
                 className="h-16 w-auto"
               />
             </div>
-            <p className="text-sm text-muted-foreground">
-              Menus adaptés à tes objectifs en 30 secondes.<br />
-              Sans passer des heures à réfléchir, planifier et calculer.
+            <p className="text-sm text-muted-foreground whitespace-pre-line">
+              {t('footer.tagline')}
             </p>
           </div>
 
@@ -93,15 +95,14 @@ export const Footer = () => {
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
-            © 2025 NutriZen. Tous droits réservés.
+            {t('footer.copyright')}
           </p>
         </div>
 
         {/* Disclaimer */}
         <div className="mt-6 p-4 bg-muted rounded-lg">
           <p className="text-xs text-muted-foreground">
-            <strong>Disclaimer :</strong> NutriZen est un assistant d'organisation de repas, pas un professionnel de santé. 
-            Les informations fournies ne constituent pas un avis médical. Consulte un médecin ou diététicien(ne) pour des conseils personnalisés.
+            <strong>Disclaimer :</strong> {t('footer.disclaimer')}
           </p>
         </div>
       </div>
