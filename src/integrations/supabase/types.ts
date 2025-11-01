@@ -1382,6 +1382,16 @@ export type Database = {
           total_proteins: number
         }[]
       }
+      get_shopping_list_from_menu: {
+        Args: {
+          p_exclude?: string[]
+          p_menu: Json
+          p_min_qty_g?: number
+          p_pantry?: string[]
+          p_round_g?: number
+        }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
