@@ -49,3 +49,12 @@ verify_jwt = true
 [functions.post-checkout-login]
 verify_jwt = false
 
+[functions.admin-reset-user]
+verify_jwt = true
+
+[functions.generate-menu]
+verify_jwt = true
+
+[functions.init-user-rows]
+verify_jwt = true
+

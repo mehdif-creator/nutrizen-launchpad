@@ -4,10 +4,11 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, UserCheck, UserX, Mail } from 'lucide-react';
+import { Search, UserCheck, UserX, Mail, RefreshCw } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { resetUserAccount } from '@/actions/adminResetUser';
 import {
   Table,
   TableBody,
@@ -31,6 +32,7 @@ export default function AdminUsers() {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [resettingUserId, setResettingUserId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -87,6 +89,39 @@ export default function AdminUsers() {
     };
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.none;
     return <Badge className={config.className}>{config.label}</Badge>;
+  };
+
+  const handleResetUser = async (user: UserData) => {
+    if (!confirm(`Êtes-vous sûr de vouloir réinitialiser le compte de ${user.email}?\n\nCela va:\n- Remettre les swaps à 0/10\n- Réinitialiser les points et gamification\n- Supprimer tous les menus\n- Prolonger le trial de 30 jours`)) {
+      return;
+    }
+
+    setResettingUserId(user.id);
+
+    try {
+      const result = await resetUserAccount(user.email, 30);
+
+      if (result.success) {
+        toast({
+          title: 'Compte réinitialisé',
+          description: `Le compte ${user.email} a été réinitialisé avec succès`,
+        });
+        
+        // Refresh users list
+        await fetchUsers();
+      } else {
+        throw new Error(result.message || 'Erreur inconnue');
+      }
+    } catch (error) {
+      console.error('Error resetting user:', error);
+      toast({
+        title: 'Erreur',
+        description: error instanceof Error ? error.message : 'Impossible de réinitialiser le compte',
+        variant: 'destructive',
+      });
+    } finally {
+      setResettingUserId(null);
+    }
   };
 
   return (
@@ -151,10 +186,19 @@ export default function AdminUsers() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleResetUser(user)}
+                          disabled={resettingUserId === user.id}
+                          title="Réinitialiser le compte"
+                        >
+                          <RefreshCw className={`h-4 w-4 ${resettingUserId === user.id ? 'animate-spin' : ''}`} />
+                        </Button>
+                        <Button size="sm" variant="outline" disabled>
                           <UserCheck className="h-4 w-4" />
                         </Button>
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" disabled>
                           <UserX className="h-4 w-4" />
                         </Button>
                       </div>
