@@ -631,6 +631,7 @@ export type Database = {
           created_at: string | null
           id: number
           ingredient_name: string
+          ingredient_name_norm: string | null
           quantity_g: number
           recipe_id: string | null
         }
@@ -639,6 +640,7 @@ export type Database = {
           created_at?: string | null
           id?: number
           ingredient_name: string
+          ingredient_name_norm?: string | null
           quantity_g: number
           recipe_id?: string | null
         }
@@ -647,6 +649,7 @@ export type Database = {
           created_at?: string | null
           id?: number
           ingredient_name?: string
+          ingredient_name_norm?: string | null
           quantity_g?: number
           recipe_id?: string | null
         }
@@ -1353,6 +1356,22 @@ export type Database = {
         Returns: Json
       }
       generate_referral_code: { Args: { user_id: string }; Returns: string }
+      get_menu_household: {
+        Args: {
+          p_country?: string
+          p_days: number
+          p_exclude_ingrs?: string[]
+          p_kcal_max?: number
+          p_kcal_min?: number
+          p_people: Json
+          p_protein_min?: number
+        }
+        Returns: Json
+      }
+      get_recipe_ingredients_household: {
+        Args: { p_people: Json; p_recipe: string; p_round_grams?: number }
+        Returns: Json
+      }
       get_recipe_macros: {
         Args: { recipe_id_input: number }
         Returns: {
@@ -1371,6 +1390,7 @@ export type Database = {
         Returns: boolean
       }
       household_portion_factor: { Args: { p_people: Json }; Returns: number }
+      normalize_str: { Args: { p: string }; Returns: string }
       refresh_one_recipe:
         | {
             Args: { p_recipe_id: number }
@@ -1389,6 +1409,7 @@ export type Database = {
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       to_num: { Args: { input_text: string }; Returns: number }
+      unaccent: { Args: { "": string }; Returns: string }
       use_swap_atomic: {
         Args: {
           p_day: number
