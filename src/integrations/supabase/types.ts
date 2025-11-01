@@ -1370,6 +1370,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      household_portion_factor: { Args: { p_people: Json }; Returns: number }
       refresh_one_recipe:
         | {
             Args: { p_recipe_id: number }
