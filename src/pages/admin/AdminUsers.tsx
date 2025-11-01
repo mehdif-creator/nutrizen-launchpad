@@ -4,11 +4,13 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, UserCheck, UserX, Mail, RefreshCw } from 'lucide-react';
+import { Search, RefreshCw, Trash2, AlertTriangle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { resetUserAccount } from '@/actions/adminResetUser';
+import { resetUserAccount, deleteUser } from '@/actions/adminActions';
+import { CreateUserDialog } from '@/components/admin/CreateUserDialog';
+import { ManageCreditsDialog } from '@/components/admin/ManageCreditsDialog';
 import {
   Table,
   TableBody,
@@ -26,6 +28,8 @@ interface UserData {
   full_name?: string;
   subscription_status?: string;
   subscription_plan?: string;
+  credits?: number;
+  trial_end?: string;
 }
 
 export default function AdminUsers() {
@@ -49,16 +53,25 @@ export default function AdminUsers() {
 
       const { data: subscriptions, error: subsError } = await supabase
         .from('subscriptions')
-        .select('user_id, status, plan');
+        .select('user_id, status, plan, trial_end');
 
       if (subsError) throw subsError;
 
+      const { data: stats, error: statsError } = await supabase
+        .from('user_dashboard_stats')
+        .select('user_id, credits_zen');
+
+      if (statsError) throw statsError;
+
       const usersWithSubs = profiles?.map(profile => {
         const sub = subscriptions?.find(s => s.user_id === profile.id);
+        const userStats = stats?.find(s => s.user_id === profile.id);
         return {
           ...profile,
           subscription_status: sub?.status || 'none',
           subscription_plan: sub?.plan || null,
+          trial_end: sub?.trial_end || null,
+          credits: userStats?.credits_zen || 0,
         };
       }) || [];
 
@@ -107,7 +120,6 @@ export default function AdminUsers() {
           description: `Le compte ${user.email} a été réinitialisé avec succès`,
         });
         
-        // Refresh users list
         await fetchUsers();
       } else {
         throw new Error(result.message || 'Erreur inconnue');
@@ -117,6 +129,47 @@ export default function AdminUsers() {
       toast({
         title: 'Erreur',
         description: error instanceof Error ? error.message : 'Impossible de réinitialiser le compte',
+        variant: 'destructive',
+      });
+    } finally {
+      setResettingUserId(null);
+    }
+  };
+
+  const handleDeleteUser = async (user: UserData) => {
+    if (!confirm(`⚠️ ATTENTION: Êtes-vous absolument sûr de vouloir SUPPRIMER définitivement ${user.email}?\n\nCette action est IRRÉVERSIBLE et supprimera:\n- Le compte utilisateur\n- Toutes ses données\n- Ses menus et préférences\n- Son historique\n\nTapez "DELETE" pour confirmer.`)) {
+      return;
+    }
+
+    const confirmation = prompt('Tapez "DELETE" en majuscules pour confirmer la suppression:');
+    if (confirmation !== 'DELETE') {
+      toast({
+        title: 'Suppression annulée',
+        description: 'La suppression a été annulée',
+      });
+      return;
+    }
+
+    setResettingUserId(user.id);
+
+    try {
+      const result = await deleteUser(user.id);
+
+      if (result.success) {
+        toast({
+          title: 'Utilisateur supprimé',
+          description: `${user.email} a été supprimé définitivement`,
+        });
+        
+        await fetchUsers();
+      } else {
+        throw new Error(result.message || 'Erreur inconnue');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: 'Erreur',
+        description: error instanceof Error ? error.message : 'Impossible de supprimer l\'utilisateur',
         variant: 'destructive',
       });
     } finally {
@@ -150,10 +203,7 @@ export default function AdminUsers() {
                 className="pl-10"
               />
             </div>
-            <Button variant="outline">
-              <Mail className="mr-2 h-4 w-4" />
-              Envoyer un email groupé
-            </Button>
+            <CreateUserDialog onUserCreated={fetchUsers} />
           </div>
 
           {loading ? (
@@ -169,6 +219,7 @@ export default function AdminUsers() {
                   <TableHead>Inscription</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead>Plan</TableHead>
+                  <TableHead>Crédits</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -185,7 +236,16 @@ export default function AdminUsers() {
                       {user.subscription_plan || '-'}
                     </TableCell>
                     <TableCell>
+                      <span className="font-semibold">{user.credits}</span>
+                    </TableCell>
+                    <TableCell>
                       <div className="flex gap-2">
+                        <ManageCreditsDialog
+                          userId={user.id}
+                          userEmail={user.email}
+                          currentCredits={user.credits || 0}
+                          onCreditsUpdated={fetchUsers}
+                        />
                         <Button 
                           size="sm" 
                           variant="outline"
@@ -195,11 +255,15 @@ export default function AdminUsers() {
                         >
                           <RefreshCw className={`h-4 w-4 ${resettingUserId === user.id ? 'animate-spin' : ''}`} />
                         </Button>
-                        <Button size="sm" variant="outline" disabled>
-                          <UserCheck className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="outline" disabled>
-                          <UserX className="h-4 w-4" />
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleDeleteUser(user)}
+                          disabled={resettingUserId === user.id}
+                          title="Supprimer l'utilisateur"
+                          className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>

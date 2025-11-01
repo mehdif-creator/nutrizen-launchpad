@@ -52,6 +52,15 @@ verify_jwt = false
 [functions.admin-reset-user]
 verify_jwt = true
 
+[functions.admin-create-user]
+verify_jwt = true
+
+[functions.admin-manage-credits]
+verify_jwt = true
+
+[functions.admin-delete-user]
+verify_jwt = true
+
 [functions.generate-menu]
 verify_jwt = true
 
