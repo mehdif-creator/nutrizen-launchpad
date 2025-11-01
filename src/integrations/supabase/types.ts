@@ -649,6 +649,13 @@ export type Database = {
             foreignKeyName: "recipe_macro_audit_recipe_id_fkey"
             columns: ["recipe_id"]
             isOneToOne: false
+            referencedRelation: "recipe_macros_v"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "recipe_macro_audit_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
             referencedRelation: "recipes"
             referencedColumns: ["id"]
           },
@@ -854,6 +861,13 @@ export type Database = {
           total_weight_g?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "recipes_nutrition_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: true
+            referencedRelation: "recipe_macros_v"
+            referencedColumns: ["recipe_id"]
+          },
           {
             foreignKeyName: "recipes_nutrition_recipe_id_fkey"
             columns: ["recipe_id"]
@@ -1250,6 +1264,17 @@ export type Database = {
         }
         Relationships: []
       }
+      recipe_macros_v: {
+        Row: {
+          calories_kcal: number | null
+          carbs_g: number | null
+          fats_g: number | null
+          fibers_g: number | null
+          proteins_g: number | null
+          recipe_id: string | null
+        }
+        Relationships: []
+      }
       v_ri_qc: {
         Row: {
           alim_nom_fr: string | null
@@ -1315,6 +1340,7 @@ export type Database = {
           }
       refresh_recipe_macros: { Args: never; Returns: undefined }
       refresh_recipe_macros_from_ciqual: { Args: never; Returns: undefined }
+      to_num: { Args: { p_text: string }; Returns: number }
       use_swap_atomic: {
         Args: {
           p_day: number
