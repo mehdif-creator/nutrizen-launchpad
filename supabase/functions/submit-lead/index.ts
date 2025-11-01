@@ -90,19 +90,25 @@ serve(async (req) => {
 
     const body = await req.json();
 
-    // HMAC signature validation
+    // HMAC signature validation - REQUIRED for security
     const signature = req.headers.get('x-signature');
     const hmacSecret = Deno.env.get('HMAC_SECRET');
     
-    if (hmacSecret && signature) {
-      const isValid = await validateHmacSignature(JSON.stringify(body), signature, hmacSecret);
-      if (!isValid) {
-        console.warn('Invalid HMAC signature detected');
-        return new Response(JSON.stringify({ error: 'Invalid request signature' }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 403,
-        });
-      }
+    if (!signature || !hmacSecret) {
+      console.warn('Missing HMAC signature or secret');
+      return new Response(JSON.stringify({ error: 'Invalid request' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 403,
+      });
+    }
+
+    const isValid = await validateHmacSignature(JSON.stringify(body), signature, hmacSecret);
+    if (!isValid) {
+      console.warn('Invalid HMAC signature detected');
+      return new Response(JSON.stringify({ error: 'Invalid request signature' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 403,
+      });
     }
 
     // Validate and sanitize input
