@@ -1,13 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
 import { getCorsHeaders } from '../_shared/security.ts';
+import { validate, AdminResetUserSchema } from '../_shared/validation.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-interface ResetUserRequest {
-  email: string;
-  extendTrialDays?: number;
-}
 
 Deno.serve(async (req) => {
   const origin = req.headers.get('origin');
@@ -45,8 +41,9 @@ Deno.serve(async (req) => {
       throw new Error('Insufficient permissions');
     }
 
-    // Get request body
-    const { email, extendTrialDays = 30 }: ResetUserRequest = await req.json();
+    // Validate and parse request body
+    const body = await req.json();
+    const { email, extendTrialDays } = validate(AdminResetUserSchema, body);
 
     console.log(`[admin-reset-user] Resetting user: ${email}`);
 
@@ -129,7 +126,7 @@ Deno.serve(async (req) => {
 
     // Extend trial
     const newTrialEnd = new Date();
-    newTrialEnd.setDate(newTrialEnd.getDate() + extendTrialDays);
+    newTrialEnd.setDate(newTrialEnd.getDate() + (extendTrialDays ?? 30));
 
     const { error: subError } = await supabaseAdmin
       .from('subscriptions')
@@ -171,6 +168,18 @@ Deno.serve(async (req) => {
 
     console.log(`[admin-reset-user] Successfully reset user: ${email}`);
 
+    // Audit log
+    await supabaseAdmin.from('admin_audit_log').insert({
+      admin_id: user.id,
+      action: 'reset_user',
+      target_user_id: userId,
+      target_email: email,
+      request_body: { email, extendTrialDays },
+      ip_address: req.headers.get('x-forwarded-for'),
+      user_agent: req.headers.get('user-agent'),
+      success: true,
+    });
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -185,6 +194,30 @@ Deno.serve(async (req) => {
     );
   } catch (error) {
     console.error('[admin-reset-user] Error:', error);
+    
+    // Audit log failure
+    try {
+      const authHeader = req.headers.get('Authorization');
+      if (authHeader) {
+        const token = authHeader.replace('Bearer ', '');
+        const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        const { data: { user } } = await supabaseAdmin.auth.getUser(token);
+        
+        if (user) {
+          await supabaseAdmin.from('admin_audit_log').insert({
+            admin_id: user.id,
+            action: 'reset_user',
+            success: false,
+            error_message: error instanceof Error ? error.message : 'Unknown error',
+            ip_address: req.headers.get('x-forwarded-for'),
+            user_agent: req.headers.get('user-agent'),
+          });
+        }
+      }
+    } catch (auditError) {
+      console.error('[admin-reset-user] Audit log failed:', auditError);
+    }
+    
     return new Response(
       JSON.stringify({
         success: false,

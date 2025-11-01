@@ -1,15 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
 import { getCorsHeaders } from '../_shared/security.ts';
+import { validate, AdminCreateUserSchema } from '../_shared/validation.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-interface CreateUserRequest {
-  email: string;
-  password?: string;
-  full_name?: string;
-  initial_credits?: number;
-}
 
 Deno.serve(async (req) => {
   const origin = req.headers.get('origin');
@@ -46,8 +40,9 @@ Deno.serve(async (req) => {
       throw new Error('Insufficient permissions');
     }
 
-    // Get request body
-    const { email, password, full_name, initial_credits = 10 }: CreateUserRequest = await req.json();
+    // Validate and parse request body
+    const body = await req.json();
+    const { email, password, full_name, initial_credits } = validate(AdminCreateUserSchema, body);
 
     console.log(`[admin-create-user] Creating user: ${email}`);
 
@@ -155,6 +150,30 @@ Deno.serve(async (req) => {
     );
   } catch (error) {
     console.error('[admin-create-user] Error:', error);
+    
+    // Audit log failure
+    try {
+      const authHeader = req.headers.get('Authorization');
+      if (authHeader) {
+        const token = authHeader.replace('Bearer ', '');
+        const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        const { data: { user } } = await supabaseAdmin.auth.getUser(token);
+        
+        if (user) {
+          await supabaseAdmin.from('admin_audit_log').insert({
+            admin_id: user.id,
+            action: 'create_user',
+            success: false,
+            error_message: error instanceof Error ? error.message : 'Unknown error',
+            ip_address: req.headers.get('x-forwarded-for'),
+            user_agent: req.headers.get('user-agent'),
+          });
+        }
+      }
+    } catch (auditError) {
+      console.error('[admin-create-user] Audit log failed:', auditError);
+    }
+    
     return new Response(
       JSON.stringify({
         success: false,

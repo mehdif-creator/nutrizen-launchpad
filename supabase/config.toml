@@ -52,14 +52,30 @@ verify_jwt = false
 [functions.admin-reset-user]
 verify_jwt = true
 
+[functions.admin-reset-user.rate_limit]
+limit = 10
+period = "1h"
+
 [functions.admin-create-user]
 verify_jwt = true
+
+[functions.admin-create-user.rate_limit]
+limit = 10
+period = "1h"
 
 [functions.admin-manage-credits]
 verify_jwt = true
 
+[functions.admin-manage-credits.rate_limit]
+limit = 20
+period = "1h"
+
 [functions.admin-delete-user]
 verify_jwt = true
+
+[functions.admin-delete-user.rate_limit]
+limit = 5
+period = "1h"
 
 [functions.generate-menu]
 verify_jwt = true

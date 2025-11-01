@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          ip_address: string | null
+          request_body: Json | null
+          success: boolean
+          target_email: string | null
+          target_user_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          request_body?: Json | null
+          success?: boolean
+          target_email?: string | null
+          target_user_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          request_body?: Json | null
+          success?: boolean
+          target_email?: string | null
+          target_user_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           author: string | null
@@ -675,6 +717,7 @@ export type Database = {
           carbs_g: number | null
           cook_time_min: number | null
           cooking_method: string[] | null
+          country_code: string | null
           created_at: string | null
           cuisine_type: string | null
           diet_type: string | null
@@ -726,6 +769,7 @@ export type Database = {
           carbs_g?: number | null
           cook_time_min?: number | null
           cooking_method?: string[] | null
+          country_code?: string | null
           created_at?: string | null
           cuisine_type?: string | null
           diet_type?: string | null
@@ -777,6 +821,7 @@ export type Database = {
           carbs_g?: number | null
           cook_time_min?: number | null
           cooking_method?: string[] | null
+          country_code?: string | null
           created_at?: string | null
           cuisine_type?: string | null
           diet_type?: string | null
@@ -1340,7 +1385,9 @@ export type Database = {
           }
       refresh_recipe_macros: { Args: never; Returns: undefined }
       refresh_recipe_macros_from_ciqual: { Args: never; Returns: undefined }
-      to_num: { Args: { p_text: string }; Returns: number }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
+      to_num: { Args: { input_text: string }; Returns: number }
       use_swap_atomic: {
         Args: {
           p_day: number

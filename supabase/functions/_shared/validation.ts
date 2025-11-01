@@ -193,6 +193,37 @@ export const CreateCheckoutRequestSchema = z.object({
 export type CreateCheckoutRequest = z.infer<typeof CreateCheckoutRequestSchema>;
 
 // =============================================================================
+// ADMIN SCHEMAS
+// =============================================================================
+
+export const AdminCreateUserSchema = z.object({
+  email: EmailSchema,
+  password: z.string().min(8).max(72).optional(),
+  full_name: z.string().trim().max(100).optional(),
+  initial_credits: z.number().int().min(0).max(1000).default(10),
+});
+
+export const AdminManageCreditsSchema = z.object({
+  user_id: UserIdSchema,
+  credits: z.number().int().min(0).max(10000),
+  operation: z.enum(['set', 'add', 'subtract']),
+});
+
+export const AdminDeleteUserSchema = z.object({
+  user_id: UserIdSchema,
+});
+
+export const AdminResetUserSchema = z.object({
+  email: EmailSchema,
+  extendTrialDays: z.number().int().min(0).max(365).default(30),
+});
+
+export type AdminCreateUserRequest = z.infer<typeof AdminCreateUserSchema>;
+export type AdminManageCreditsRequest = z.infer<typeof AdminManageCreditsSchema>;
+export type AdminDeleteUserRequest = z.infer<typeof AdminDeleteUserSchema>;
+export type AdminResetUserRequest = z.infer<typeof AdminResetUserSchema>;
+
+// =============================================================================
 // VALIDATION HELPER
 // =============================================================================
 

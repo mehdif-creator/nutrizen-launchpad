@@ -1,14 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
 import { getCorsHeaders } from '../_shared/security.ts';
+import { validate, AdminManageCreditsSchema } from '../_shared/validation.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-interface ManageCreditsRequest {
-  user_id: string;
-  credits: number;
-  operation: 'set' | 'add' | 'subtract';
-}
 
 Deno.serve(async (req) => {
   const origin = req.headers.get('origin');
@@ -45,8 +40,9 @@ Deno.serve(async (req) => {
       throw new Error('Insufficient permissions');
     }
 
-    // Get request body
-    const { user_id, credits, operation }: ManageCreditsRequest = await req.json();
+    // Validate and parse request body
+    const body = await req.json();
+    const { user_id, credits, operation } = validate(AdminManageCreditsSchema, body);
 
     console.log(`[admin-manage-credits] ${operation} ${credits} credits for user: ${user_id}`);
 
@@ -89,6 +85,17 @@ Deno.serve(async (req) => {
 
     console.log(`[admin-manage-credits] Credits updated: ${currentStats?.credits_zen || 0} -> ${newCredits}`);
 
+    // Audit log
+    await supabaseAdmin.from('admin_audit_log').insert({
+      admin_id: user.id,
+      action: 'manage_credits',
+      target_user_id: user_id,
+      request_body: { credits, operation, previous: currentStats?.credits_zen || 0, new: newCredits },
+      ip_address: req.headers.get('x-forwarded-for'),
+      user_agent: req.headers.get('user-agent'),
+      success: true,
+    });
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -104,6 +111,30 @@ Deno.serve(async (req) => {
     );
   } catch (error) {
     console.error('[admin-manage-credits] Error:', error);
+    
+    // Audit log failure
+    try {
+      const authHeader = req.headers.get('Authorization');
+      if (authHeader) {
+        const token = authHeader.replace('Bearer ', '');
+        const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        const { data: { user } } = await supabaseAdmin.auth.getUser(token);
+        
+        if (user) {
+          await supabaseAdmin.from('admin_audit_log').insert({
+            admin_id: user.id,
+            action: 'manage_credits',
+            success: false,
+            error_message: error instanceof Error ? error.message : 'Unknown error',
+            ip_address: req.headers.get('x-forwarded-for'),
+            user_agent: req.headers.get('user-agent'),
+          });
+        }
+      }
+    } catch (auditError) {
+      console.error('[admin-manage-credits] Audit log failed:', auditError);
+    }
+    
     return new Response(
       JSON.stringify({
         success: false,
