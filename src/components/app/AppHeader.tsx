@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,13 +12,22 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Home, BookOpen, User, Settings, HelpCircle, LogOut, Shield, Camera, Menu, X } from "lucide-react";
+import { Home, BookOpen, User, Settings, HelpCircle, LogOut, Shield, Camera, Menu, X, Moon, Sun, Globe } from "lucide-react";
 import { GamificationHeader } from "./GamificationHeader";
 
 export const AppHeader = () => {
   const { user, isAdmin, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const { language, setLanguage } = useLanguage();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const languages = [
+    { code: 'fr' as const, label: 'Français', flag: '🇫🇷' },
+    { code: 'en' as const, label: 'English', flag: '🇬🇧' },
+    { code: 'es' as const, label: 'Español', flag: '🇪🇸' },
+    { code: 'de' as const, label: 'Deutsch', flag: '🇩🇪' },
+  ];
 
   const getInitials = (name?: string) => {
     if (!name) return "U";
@@ -135,8 +146,41 @@ export const AppHeader = () => {
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="hidden md:block">
+          <div className="hidden md:flex items-center gap-2">
             <GamificationHeader />
+            
+            {/* Theme Toggle */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleTheme}
+              className="h-9 w-9 p-0"
+              aria-label="Changer de thème"
+            >
+              {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+            </Button>
+            
+            {/* Language Selector */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-9 gap-1">
+                  <Globe className="h-4 w-4" />
+                  <span className="text-xs">{languages.find(l => l.code === language)?.flag}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {languages.map((lang) => (
+                  <DropdownMenuItem
+                    key={lang.code}
+                    onClick={() => setLanguage(lang.code)}
+                    className={language === lang.code ? 'bg-accent' : ''}
+                  >
+                    <span className="mr-2">{lang.flag}</span>
+                    {lang.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <DropdownMenu>
@@ -211,6 +255,41 @@ export const AppHeader = () => {
             {/* Gamification in mobile */}
             <div className="pb-3 border-b">
               <GamificationHeader />
+            </div>
+            
+            {/* Theme and Language controls in mobile */}
+            <div className="flex items-center gap-2 pb-3 border-b">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleTheme}
+                className="flex-1"
+              >
+                {theme === 'light' ? <Moon className="h-4 w-4 mr-2" /> : <Sun className="h-4 w-4 mr-2" />}
+                {theme === 'light' ? 'Mode sombre' : 'Mode clair'}
+              </Button>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex-1 gap-1">
+                    <Globe className="h-4 w-4" />
+                    <span>{languages.find(l => l.code === language)?.flag}</span>
+                    <span className="text-xs">{languages.find(l => l.code === language)?.label}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {languages.map((lang) => (
+                    <DropdownMenuItem
+                      key={lang.code}
+                      onClick={() => setLanguage(lang.code)}
+                      className={language === lang.code ? 'bg-accent' : ''}
+                    >
+                      <span className="mr-2">{lang.flag}</span>
+                      {lang.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             
             <Link
