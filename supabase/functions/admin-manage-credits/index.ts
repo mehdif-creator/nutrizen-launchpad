@@ -47,15 +47,34 @@ Deno.serve(async (req) => {
 
     console.log(`[admin-manage-credits] ${operation} ${credits} credits for user: ${user_id}`);
 
-    // Get current credits
+    // Get current credits (or create row if doesn't exist)
     const { data: currentStats, error: fetchError } = await supabaseAdmin
       .from('user_dashboard_stats')
       .select('credits_zen')
       .eq('user_id', user_id)
-      .single();
+      .maybeSingle();
 
     if (fetchError) {
       throw new Error(`Failed to fetch user stats: ${fetchError.message}`);
+    }
+
+    // If user has no stats row, create one
+    if (!currentStats) {
+      const { error: insertError } = await supabaseAdmin
+        .from('user_dashboard_stats')
+        .insert({
+          user_id: user_id,
+          credits_zen: 0,
+          temps_gagne: 0,
+          charge_mentale_pct: 0,
+          serie_en_cours_set_count: 0,
+          references_count: 0,
+          objectif_hebdos_valide: 0
+        });
+
+      if (insertError) {
+        throw new Error(`Failed to create user stats: ${insertError.message}`);
+      }
     }
 
     let newCredits: number;
