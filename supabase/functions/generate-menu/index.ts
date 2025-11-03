@@ -57,25 +57,47 @@ serve(async (req) => {
 
     console.log(`[generate-menu] Processing request for user: ${redactId(user.id)}`);
 
-    // Deduct 7 credits for week regeneration
-    const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
-    const { data: creditData, error: creditError } = await supabaseClient.rpc('deduct_week_regeneration_credits', {
-      p_user_id: user.id,
-      p_month: currentMonth,
-    });
+    // Calculate current week start (Monday)
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() + diff);
+    weekStart.setHours(0, 0, 0, 0);
+    const weekStartStr = weekStart.toISOString().split('T')[0];
 
-    if (creditError) {
-      console.error('[generate-menu] Error deducting credits:', creditError);
-      return new Response(
-        JSON.stringify({ 
-          success: false,
-          message: creditError.message || 'Crédits insuffisants pour régénérer la semaine.'
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Check if menu already exists for current week
+    const { data: existingMenu } = await supabaseClient
+      .from("user_weekly_menus")
+      .select("menu_id")
+      .eq("user_id", user.id)
+      .eq("week_start", weekStartStr)
+      .maybeSingle();
+
+    // Only deduct credits if regenerating an existing menu
+    if (existingMenu) {
+      console.log(`[generate-menu] Regenerating existing menu, deducting 7 credits`);
+      const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
+      const { data: creditData, error: creditError } = await supabaseClient.rpc('deduct_week_regeneration_credits', {
+        p_user_id: user.id,
+        p_month: currentMonth,
+      });
+
+      if (creditError) {
+        console.error('[generate-menu] Error deducting credits:', creditError);
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            message: creditError.message || 'Crédits insuffisants pour régénérer la semaine.'
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log(`[generate-menu] Credits deducted: ${creditData.credits_deducted}, remaining: ${creditData.remaining}`);
+    } else {
+      console.log(`[generate-menu] First menu of the week - FREE (no credits deducted)`);
     }
-
-    console.log(`[generate-menu] Credits deducted: ${creditData.credits_deducted}, remaining: ${creditData.remaining}`);
 
     // Parse and validate input
     const body = await req.json().catch(() => ({}));
@@ -364,15 +386,6 @@ serve(async (req) => {
         fats_g: Math.round(recipe.fats_g || 0)
       }
     }));
-
-    // Get current week start (Monday)
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Adjust to Monday
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() + diff);
-    weekStart.setHours(0, 0, 0, 0);
-    const weekStartStr = weekStart.toISOString().split('T')[0];
 
     console.log(`[generate-menu] Upserting menu for week starting: ${weekStartStr}`);
 

@@ -23,6 +23,7 @@ import AITools from "./pages/app/AITools";
 import ScanRepas from "./pages/app/ScanRepas";
 import InspiFrigo from "./pages/app/InspiFrigo";
 import RecipeDetail from "./pages/app/RecipeDetail";
+import MenuHistory from "./pages/app/MenuHistory";
 
 // Admin
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -59,6 +60,7 @@ const App = () => (
             {/* App (Protected) */}
           <Route path="/app" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/app/meal-plan" element={<ProtectedRoute><MealPlan /></ProtectedRoute>} />
+          <Route path="/app/menu-history" element={<ProtectedRoute><MenuHistory /></ProtectedRoute>} />
           <Route path="/app/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/app/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/app/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />

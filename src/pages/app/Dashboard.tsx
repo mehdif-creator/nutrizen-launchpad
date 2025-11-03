@@ -9,6 +9,7 @@ import { StatCard } from "@/components/app/StatCard";
 import { Progress } from "@/components/app/Progress";
 import { MealCard } from "@/components/app/MealCard";
 import { Badge } from "@/components/ui/badge";
+import { StreakBar } from "@/components/app/StreakBar";
 import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigate, useNavigate } from "react-router-dom";
@@ -25,40 +26,6 @@ export default function Dashboard() {
   // Use custom hooks for data fetching with realtime
   const { stats, isLoading: statsLoading } = useDashboardStats(user?.id);
   const { menu, days, hasMenu, isLoading: menuLoading } = useWeeklyMenu(user?.id);
-
-  // Fetch swap credits from swaps table
-  const [swapCredits, setSwapCredits] = useState(10);
-  useEffect(() => {
-    const fetchSwaps = async () => {
-      if (!user?.id) return;
-
-      const currentMonth = new Date().toISOString().slice(0, 7) + "-01";
-      const { data, error } = await supabase
-        .from("swaps")
-        .select("quota, used")
-        .eq("user_id", user.id)
-        .eq("month", currentMonth)
-        .maybeSingle();
-
-      if (data) {
-        setSwapCredits(data.quota - data.used);
-      }
-    };
-
-    fetchSwaps();
-
-    // Subscribe to swaps changes
-    const channel = supabase
-      .channel("swaps-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "swaps", filter: `user_id=eq.${user?.id}` }, () =>
-        fetchSwaps(),
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id]);
 
   const [generating, setGenerating] = useState(false);
 
@@ -162,10 +129,10 @@ export default function Dashboard() {
   const handleSwap = async (index: number) => {
     if (!user || !menu) return;
 
-    if (swapCredits <= 0) {
+    if (stats.credits_zen <= 0) {
       toast({
         title: "Plus de crédits",
-        description: "Tu as utilisé tous tes swaps ce mois-ci.",
+        description: "Tu as utilisé tous tes crédits ce mois-ci.",
         variant: "destructive",
       });
       return;
@@ -301,6 +268,9 @@ export default function Dashboard() {
               </Button>
             </div>
           </div>
+
+          {/* Streak Bar */}
+          <StreakBar />
         </section>
 
         {/* KPI Row */}
@@ -325,8 +295,8 @@ export default function Dashboard() {
           />
           <StatCard
             label="Crédits"
-            value={`${swapCredits}/10`}
-            sub={`${10 - swapCredits} utilisés`}
+            value={`${stats.credits_zen}`}
+            sub={`${10 - stats.credits_zen} utilisés`}
             icon={<Sparkles className="h-4 w-4 md:h-5 md:w-5" />}
           />
           <StatCard
@@ -378,7 +348,7 @@ export default function Dashboard() {
                     onValidate={handleValidateMeal}
                     onSwap={() => handleSwap(i)}
                     onViewRecipe={() => navigate(`/app/recipes/${meal.id}`)}
-                    swapsRemaining={swapCredits}
+                    swapsRemaining={stats.credits_zen}
                   />
                 ))}
               </div>
