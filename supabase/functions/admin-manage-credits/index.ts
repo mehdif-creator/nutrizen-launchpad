@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
         throw new Error('Invalid operation');
     }
 
-    // Update credits
+    // Update credits in user_dashboard_stats
     const { error: updateError } = await supabaseAdmin
       .from('user_dashboard_stats')
       .update({ credits_zen: newCredits })
@@ -101,6 +101,45 @@ Deno.serve(async (req) => {
 
     if (updateError) {
       throw new Error(`Failed to update credits: ${updateError.message}`);
+    }
+
+    // Also update swaps table for current month (used by generate-menu)
+    const currentMonth = new Date();
+    currentMonth.setDate(1);
+    currentMonth.setHours(0, 0, 0, 0);
+    const monthStr = currentMonth.toISOString().split('T')[0];
+
+    // Get or create swaps record for current month
+    const { data: swapData, error: swapFetchError } = await supabaseAdmin
+      .from('swaps')
+      .select('*')
+      .eq('user_id', user_id)
+      .eq('month', monthStr)
+      .maybeSingle();
+
+    if (swapFetchError) {
+      console.error('[admin-manage-credits] Error fetching swaps:', swapFetchError);
+    }
+
+    if (!swapData) {
+      // Create swaps record with new quota
+      await supabaseAdmin
+        .from('swaps')
+        .insert({
+          user_id: user_id,
+          month: monthStr,
+          quota: newCredits,
+          used: 0,
+        });
+      console.log(`[admin-manage-credits] Created swaps record with quota: ${newCredits}`);
+    } else {
+      // Update existing swaps quota (preserve used count)
+      await supabaseAdmin
+        .from('swaps')
+        .update({ quota: newCredits })
+        .eq('user_id', user_id)
+        .eq('month', monthStr);
+      console.log(`[admin-manage-credits] Updated swaps quota: ${swapData.quota} -> ${newCredits}, used: ${swapData.used}`);
     }
 
     console.log(`[admin-manage-credits] Credits updated: ${currentStats?.credits_zen || 0} -> ${newCredits}`);
