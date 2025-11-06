@@ -1,13 +1,18 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
 import { getCorsHeaders } from '../_shared/security.ts';
 import { validate, AdminManageCreditsSchema } from '../_shared/validation.ts';
+import { createLogger, redactId } from '../_shared/logging.ts';
+import { sanitizeDbError, unauthorizedError, validationError, PublicError } from '../_shared/errors.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 Deno.serve(async (req) => {
+  const logger = createLogger('admin-manage-credits');
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
+
+  logger.info('Request received', { method: req.method, origin });
 
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -17,37 +22,46 @@ Deno.serve(async (req) => {
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Verify admin user
+    logger.step(1, 'Authenticating user');
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('No authorization header');
+      return unauthorizedError('No authorization header', corsHeaders);
     }
 
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
     if (authError || !user) {
-      throw new Error('Unauthorized');
+      logger.error('Authentication failed', { error: authError });
+      return unauthorizedError('Invalid authentication', corsHeaders);
     }
 
-    // Check if user is admin - filter for admin role specifically
-    const { data: roles, error: roleError } = await supabaseAdmin
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .maybeSingle();
+    logger.step(2, 'User authenticated', { user_id: user.id });
 
-    if (roleError || !roles) {
-      throw new Error('Insufficient permissions');
+    // Verify admin role using secure has_role function
+    logger.step(3, 'Verifying admin role');
+    const { data: isAdmin, error: roleError } = await supabaseAdmin
+      .rpc('has_role', { _user_id: user.id, _role: 'admin' });
+
+    if (roleError || !isAdmin) {
+      logger.warn('Admin verification failed', { user_id: user.id, error: roleError });
+      return unauthorizedError('Forbidden: admin role required', corsHeaders);
     }
+
+    logger.step(4, 'Admin role verified');
 
     // Validate and parse request body
     const body = await req.json();
     const { user_id, credits, operation } = validate(AdminManageCreditsSchema, body);
 
-    console.log(`[admin-manage-credits] ${operation} ${credits} credits for user: ${user_id}`);
+    logger.info('Credit operation requested', {
+      target_user_id: redactId(user_id),
+      operation,
+      amount: credits
+    });
 
-    // Get current credits (or create row if doesn't exist)
+    // Get current credits
+    logger.step(5, 'Fetching current credits');
     const { data: currentStats, error: fetchError } = await supabaseAdmin
       .from('user_dashboard_stats')
       .select('credits_zen')
@@ -55,11 +69,12 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (fetchError) {
-      throw new Error(`Failed to fetch user stats: ${fetchError.message}`);
+      throw sanitizeDbError(fetchError, { operation: 'fetch_stats' });
     }
 
     // If user has no stats row, create one
     if (!currentStats) {
+      logger.step(6, 'Creating initial stats record');
       const { error: insertError } = await supabaseAdmin
         .from('user_dashboard_stats')
         .insert({
@@ -73,10 +88,12 @@ Deno.serve(async (req) => {
         });
 
       if (insertError) {
-        throw new Error(`Failed to create user stats: ${insertError.message}`);
+        throw sanitizeDbError(insertError, { operation: 'create_stats' });
       }
     }
 
+    // Calculate new credits based on operation
+    logger.step(7, 'Calculating new credit amount');
     let newCredits: number;
 
     switch (operation) {
@@ -90,61 +107,39 @@ Deno.serve(async (req) => {
         newCredits = Math.max(0, (currentStats?.credits_zen || 0) - credits);
         break;
       default:
-        throw new Error('Invalid operation');
+        return validationError('Invalid operation', corsHeaders);
     }
 
-    // Update credits in user_dashboard_stats
-    const { error: updateError } = await supabaseAdmin
-      .from('user_dashboard_stats')
-      .update({ credits_zen: newCredits })
-      .eq('user_id', user_id);
+    logger.info('Credit calculation complete', {
+      old_credits: currentStats?.credits_zen || 0,
+      new_credits: newCredits,
+      operation
+    });
 
-    if (updateError) {
-      throw new Error(`Failed to update credits: ${updateError.message}`);
+    // Use atomic RPC function for credit management
+    logger.step(8, 'Applying credit change atomically');
+    
+    const { data: result, error: rpcError } = await supabaseAdmin
+      .rpc('admin_set_user_credits', {
+        p_user_id: user_id,
+        p_credits: newCredits,
+        p_admin_id: user.id
+      });
+
+    if (rpcError) {
+      throw sanitizeDbError(rpcError, { 
+        operation: 'set_credits', 
+        new_credits: newCredits 
+      });
     }
 
-    // Also update swaps table for current month (used by generate-menu)
-    const currentMonth = new Date();
-    currentMonth.setDate(1);
-    currentMonth.setHours(0, 0, 0, 0);
-    const monthStr = currentMonth.toISOString().split('T')[0];
-
-    // Get or create swaps record for current month
-    const { data: swapData, error: swapFetchError } = await supabaseAdmin
-      .from('swaps')
-      .select('*')
-      .eq('user_id', user_id)
-      .eq('month', monthStr)
-      .maybeSingle();
-
-    if (swapFetchError) {
-      console.error('[admin-manage-credits] Error fetching swaps:', swapFetchError);
-    }
-
-    if (!swapData) {
-      // Create swaps record with new quota
-      await supabaseAdmin
-        .from('swaps')
-        .insert({
-          user_id: user_id,
-          month: monthStr,
-          quota: newCredits,
-          used: 0,
-        });
-      console.log(`[admin-manage-credits] Created swaps record with quota: ${newCredits}`);
-    } else {
-      // Update existing swaps quota (preserve used count)
-      await supabaseAdmin
-        .from('swaps')
-        .update({ quota: newCredits })
-        .eq('user_id', user_id)
-        .eq('month', monthStr);
-      console.log(`[admin-manage-credits] Updated swaps quota: ${swapData.quota} -> ${newCredits}, used: ${swapData.used}`);
-    }
-
-    console.log(`[admin-manage-credits] Credits updated: ${currentStats?.credits_zen || 0} -> ${newCredits}`);
+    logger.success('Credits updated atomically', {
+      old_credits: result.old_credits,
+      new_credits: result.new_credits
+    });
 
     // Audit log
+    logger.step(9, 'Writing audit log');
     await supabaseAdmin.from('admin_audit_log').insert({
       admin_id: user.id,
       action: 'manage_credits',
@@ -169,7 +164,12 @@ Deno.serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('[admin-manage-credits] Error:', error);
+    logger.error('Operation failed', { error });
+
+    // Handle public errors
+    if (error instanceof PublicError) {
+      return error.toResponse(corsHeaders);
+    }
     
     // Audit log failure
     try {
@@ -191,18 +191,15 @@ Deno.serve(async (req) => {
         }
       }
     } catch (auditError) {
-      console.error('[admin-manage-credits] Audit log failed:', auditError);
+      logger.warn('Failed to log audit', { error: auditError });
     }
     
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: error instanceof Error && error.message === 'Unauthorized' ? 401 : 500,
-      }
-    );
+    // Generic error response
+    return new PublicError({
+      code: 'INTERNAL_ERROR',
+      userMessage: 'An error occurred while processing your request. Please try again.',
+      statusCode: 500,
+      internalDetails: error
+    }).toResponse(corsHeaders);
   }
 });
