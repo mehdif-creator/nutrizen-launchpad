@@ -85,11 +85,12 @@ serve(async (req) => {
 
     console.log('[use-swap] Swap deducted successfully, now swapping recipe...')
 
-    // Get the current menu
+    // Get the current menu (with ownership validation)
     const { data: menuData, error: menuError } = await supabaseClient
       .from('user_weekly_menus')
       .select('*')
       .eq('menu_id', validatedInput.meal_plan_id)
+      .eq('user_id', user.id)
       .single()
 
     if (menuError || !menuData) {
