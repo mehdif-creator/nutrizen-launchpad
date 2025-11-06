@@ -60,91 +60,54 @@ Deno.serve(async (req) => {
       amount: credits
     });
 
-    // Get current credits
-    logger.step(5, 'Fetching current credits');
-    const { data: currentStats, error: fetchError } = await supabaseAdmin
-      .from('user_dashboard_stats')
-      .select('credits_zen')
-      .eq('user_id', user_id)
-      .maybeSingle();
-
-    if (fetchError) {
-      throw sanitizeDbError(fetchError, { operation: 'fetch_stats' });
-    }
-
-    // If user has no stats row, create one
-    if (!currentStats) {
-      logger.step(6, 'Creating initial stats record');
-      const { error: insertError } = await supabaseAdmin
-        .from('user_dashboard_stats')
-        .insert({
-          user_id: user_id,
-          credits_zen: 0,
-          temps_gagne: 0,
-          charge_mentale_pct: 0,
-          serie_en_cours_set_count: 0,
-          references_count: 0,
-          objectif_hebdos_valide: 0
-        });
-
-      if (insertError) {
-        throw sanitizeDbError(insertError, { operation: 'create_stats' });
-      }
-    }
-
-    // Calculate new credits based on operation
-    logger.step(7, 'Calculating new credit amount');
-    let newCredits: number;
-
-    switch (operation) {
-      case 'set':
-        newCredits = credits;
-        break;
-      case 'add':
-        newCredits = (currentStats?.credits_zen || 0) + credits;
-        break;
-      case 'subtract':
-        newCredits = Math.max(0, (currentStats?.credits_zen || 0) - credits);
-        break;
-      default:
-        return validationError('Invalid operation', corsHeaders);
-    }
-
-    logger.info('Credit calculation complete', {
-      old_credits: currentStats?.credits_zen || 0,
-      new_credits: newCredits,
-      operation
-    });
-
     // Use atomic RPC function for credit management
-    logger.step(8, 'Applying credit change atomically');
+    // The RPC handles all credit calculations and updates both tables atomically
+    logger.step(5, 'Applying credit change atomically', {
+      operation,
+      credits
+    });
     
     const { data: result, error: rpcError } = await supabaseAdmin
       .rpc('admin_set_user_credits', {
         p_user_id: user_id,
-        p_credits: newCredits,
-        p_admin_id: user.id
+        p_credits: credits,
+        p_operation: operation
       });
 
     if (rpcError) {
       throw sanitizeDbError(rpcError, { 
-        operation: 'set_credits', 
-        new_credits: newCredits 
+        operation: 'atomic_credit_update',
+        credits,
+        operation_type: operation
+      });
+    }
+
+    if (!result?.success) {
+      throw new PublicError({
+        code: 'INTERNAL_ERROR',
+        userMessage: 'Failed to update credits',
+        statusCode: 500,
+        internalDetails: result
       });
     }
 
     logger.success('Credits updated atomically', {
-      old_credits: result.old_credits,
-      new_credits: result.new_credits
+      operation,
+      previous_credits: result.previous_credits,
+      new_credits: result.new_credits,
+      remaining: result.remaining
     });
 
+    const newCredits = result.new_credits;
+    const previousCredits = result.previous_credits;
+
     // Audit log
-    logger.step(9, 'Writing audit log');
+    logger.step(6, 'Writing audit log');
     await supabaseAdmin.from('admin_audit_log').insert({
       admin_id: user.id,
       action: 'manage_credits',
       target_user_id: user_id,
-      request_body: { credits, operation, previous: currentStats?.credits_zen || 0, new: newCredits },
+      request_body: { credits, operation, previous: previousCredits, new: newCredits },
       ip_address: req.headers.get('x-forwarded-for'),
       user_agent: req.headers.get('user-agent'),
       success: true,
@@ -155,8 +118,9 @@ Deno.serve(async (req) => {
         success: true,
         message: `Credits ${operation}ed successfully`,
         user_id,
-        previous_credits: currentStats?.credits_zen || 0,
+        previous_credits: previousCredits,
         new_credits: newCredits,
+        remaining: result.remaining
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

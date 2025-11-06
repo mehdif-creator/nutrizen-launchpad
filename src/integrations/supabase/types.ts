@@ -630,27 +630,33 @@ export type Database = {
           ciqual_id: number | null
           created_at: string | null
           id: number
+          ingredient_line_raw: string | null
           ingredient_name: string
           ingredient_name_norm: string | null
-          quantity_g: number
+          quantity_g: number | null
+          quantity_g_num: number | null
           recipe_id: string | null
         }
         Insert: {
           ciqual_id?: number | null
           created_at?: string | null
           id?: number
+          ingredient_line_raw?: string | null
           ingredient_name: string
           ingredient_name_norm?: string | null
-          quantity_g: number
+          quantity_g?: number | null
+          quantity_g_num?: number | null
           recipe_id?: string | null
         }
         Update: {
           ciqual_id?: number | null
           created_at?: string | null
           id?: number
+          ingredient_line_raw?: string | null
           ingredient_name?: string
           ingredient_name_norm?: string | null
-          quantity_g?: number
+          quantity_g?: number | null
+          quantity_g_num?: number | null
           recipe_id?: string | null
         }
         Relationships: []
@@ -955,6 +961,63 @@ export type Database = {
           referrer_id?: string
           reward_points?: number | null
           status?: string
+        }
+        Relationships: []
+      }
+      shopping_aisles: {
+        Row: {
+          aisle: string
+          name_norm: string
+          sort_order: number
+        }
+        Insert: {
+          aisle: string
+          name_norm: string
+          sort_order?: number
+        }
+        Update: {
+          aisle?: string
+          name_norm?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      shopping_aliases: {
+        Row: {
+          canonical_norm: string
+          display_name: string | null
+          name_norm: string
+        }
+        Insert: {
+          canonical_norm: string
+          display_name?: string | null
+          name_norm: string
+        }
+        Update: {
+          canonical_norm?: string
+          display_name?: string | null
+          name_norm?: string
+        }
+        Relationships: []
+      }
+      shopping_units: {
+        Row: {
+          grams_per_unit: number
+          name_norm: string
+          unit_plural: string
+          unit_singular: string
+        }
+        Insert: {
+          grams_per_unit: number
+          name_norm: string
+          unit_plural: string
+          unit_singular: string
+        }
+        Update: {
+          grams_per_unit?: number
+          name_norm?: string
+          unit_plural?: string
+          unit_singular?: string
         }
         Relationships: []
       }
@@ -1338,6 +1401,14 @@ export type Database = {
       }
     }
     Functions: {
+      admin_set_user_credits: {
+        Args: { p_credits: number; p_operation?: string; p_user_id: string }
+        Returns: Json
+      }
+      backfill_recipe_ingredients_from_recipes: {
+        Args: { p_limit?: number }
+        Returns: number
+      }
       backfill_recipes_with_progress: {
         Args: { p_batch_size?: number; p_max_batches?: number }
         Returns: {
@@ -1349,25 +1420,41 @@ export type Database = {
         }[]
       }
       calculate_user_level: { Args: { points: number }; Returns: string }
+      canonicalize_name: { Args: { p_name_norm: string }; Returns: string }
       cleanup_expired_tokens: { Args: never; Returns: undefined }
       cleanup_old_checkout_sessions: { Args: never; Returns: undefined }
       deduct_week_regeneration_credits: {
         Args: { p_month: string; p_user_id: string }
         Returns: Json
       }
+      extract_name: { Args: { line: string }; Returns: string }
+      extract_qty_g: { Args: { line: string }; Returns: number }
       generate_referral_code: { Args: { user_id: string }; Returns: string }
-      get_menu_household: {
-        Args: {
-          p_country?: string
-          p_days: number
-          p_exclude_ingrs?: string[]
-          p_kcal_max?: number
-          p_kcal_min?: number
-          p_people: Json
-          p_protein_min?: number
-        }
-        Returns: Json
-      }
+      get_menu_household:
+        | {
+            Args: {
+              p_country?: string
+              p_days?: number
+              p_exclude_ingrs?: string[]
+              p_kcal_max?: number
+              p_kcal_min?: number
+              p_people: Json
+              p_protein_min?: number
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_country?: string
+              p_days: number
+              p_exclude_ingrs?: string[]
+              p_kcal_max?: number
+              p_kcal_min?: number
+              p_people: Json
+              p_protein_min?: number
+            }
+            Returns: Json
+          }
       get_recipe_ingredients_household: {
         Args: { p_people: Json; p_recipe: string; p_round_grams?: number }
         Returns: Json
@@ -1392,6 +1479,26 @@ export type Database = {
         }
         Returns: Json
       }
+      get_shopping_list_from_menu_enriched_flat: {
+        Args: {
+          p_exclude?: string[]
+          p_menu: Json
+          p_min_qty_g?: number
+          p_pantry?: string[]
+          p_round_g?: number
+        }
+        Returns: Json
+      }
+      get_shopping_list_from_menu_enriched_grouped: {
+        Args: {
+          p_exclude?: string[]
+          p_menu: Json
+          p_min_qty_g?: number
+          p_pantry?: string[]
+          p_round_g?: number
+        }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1403,23 +1510,26 @@ export type Database = {
       normalize_str: { Args: { p: string }; Returns: string }
       refresh_one_recipe:
         | {
-            Args: { p_recipe_id: number }
+            Args: { p_recipe_id: string }
             Returns: {
               error: true
             } & "Could not choose the best candidate function between: public.refresh_one_recipe(p_recipe_id => int8), public.refresh_one_recipe(p_recipe_id => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
           }
         | {
-            Args: { p_recipe_id: string }
+            Args: { p_recipe_id: number }
             Returns: {
               error: true
             } & "Could not choose the best candidate function between: public.refresh_one_recipe(p_recipe_id => int8), public.refresh_one_recipe(p_recipe_id => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
           }
       refresh_recipe_macros: { Args: never; Returns: undefined }
       refresh_recipe_macros_from_ciqual: { Args: never; Returns: undefined }
+      refresh_some_recipes: { Args: { batch_size?: number }; Returns: number }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       to_num: { Args: { input_text: string }; Returns: number }
+      to_number_fr: { Args: { p: string }; Returns: number }
       unaccent: { Args: { "": string }; Returns: string }
+      unaccent_safe: { Args: { p: string }; Returns: string }
       use_swap_atomic: {
         Args: {
           p_day: number
