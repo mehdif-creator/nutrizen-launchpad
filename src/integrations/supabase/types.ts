@@ -1524,11 +1524,8 @@ export type Database = {
       refresh_recipe_macros: { Args: never; Returns: undefined }
       refresh_recipe_macros_from_ciqual: { Args: never; Returns: undefined }
       refresh_some_recipes: { Args: { batch_size?: number }; Returns: number }
-      show_limit: { Args: never; Returns: number }
-      show_trgm: { Args: { "": string }; Returns: string[] }
       to_num: { Args: { input_text: string }; Returns: number }
       to_number_fr: { Args: { p: string }; Returns: number }
-      unaccent: { Args: { "": string }; Returns: string }
       unaccent_safe: { Args: { p: string }; Returns: string }
       use_swap_atomic: {
         Args: {
