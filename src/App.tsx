@@ -65,6 +65,7 @@ const App = () => (
           <Route path="/app/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/app/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
           <Route path="/app/referral" element={<ProtectedRoute><Referral /></ProtectedRoute>} />
+          <Route path="/app/gamification" element={<ProtectedRoute><Gamification /></ProtectedRoute>} />
           <Route path="/app/ai-tools" element={<ProtectedRoute><AITools /></ProtectedRoute>} />
           <Route path="/app/scan-repas" element={<ProtectedRoute><ScanRepas /></ProtectedRoute>} />
           <Route path="/app/inspi-frigo" element={<ProtectedRoute><InspiFrigo /></ProtectedRoute>} />

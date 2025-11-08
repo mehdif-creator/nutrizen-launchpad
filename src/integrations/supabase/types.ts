@@ -56,6 +56,30 @@ export type Database = {
         }
         Relationships: []
       }
+      badges: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          icon: string | null
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           author: string | null
@@ -1159,6 +1183,91 @@ export type Database = {
           },
         ]
       }
+      user_badges: {
+        Row: {
+          badge_code: string
+          granted_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_code: string
+          granted_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_code?: string
+          granted_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_badges_badge_code_fkey"
+            columns: ["badge_code"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      user_challenge_completions: {
+        Row: {
+          challenge_id: string
+          completed_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          completed_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          completed_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_challenge_completions_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_credit_lots: {
+        Row: {
+          consumed: number
+          created_at: string
+          credits: number
+          expires_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          consumed?: number
+          created_at?: string
+          credits: number
+          expires_at: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          consumed?: number
+          created_at?: string
+          credits?: number
+          expires_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_dashboard_stats: {
         Row: {
           charge_mentale_pct: number
@@ -1188,6 +1297,36 @@ export type Database = {
           references_count?: number
           serie_en_cours_set_count?: number
           temps_gagne?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_events: {
+        Row: {
+          credits_delta: number
+          event_type: Database["public"]["Enums"]["gamification_event"]
+          id: string
+          meta: Json
+          occurred_at: string
+          points_delta: number
+          user_id: string
+        }
+        Insert: {
+          credits_delta?: number
+          event_type: Database["public"]["Enums"]["gamification_event"]
+          id?: string
+          meta?: Json
+          occurred_at?: string
+          points_delta?: number
+          user_id: string
+        }
+        Update: {
+          credits_delta?: number
+          event_type?: Database["public"]["Enums"]["gamification_event"]
+          id?: string
+          meta?: Json
+          occurred_at?: string
+          points_delta?: number
           user_id?: string
         }
         Relationships: []
@@ -1264,6 +1403,66 @@ export type Database = {
         }
         Relationships: []
       }
+      user_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          referral_code: string | null
+          show_on_leaderboard: boolean
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          referral_code?: string | null
+          show_on_leaderboard?: boolean
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          referral_code?: string | null
+          show_on_leaderboard?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_referrals: {
+        Row: {
+          created_at: string
+          id: string
+          referred_email: string | null
+          referred_user_id: string | null
+          referrer_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referred_email?: string | null
+          referred_user_id?: string | null
+          referrer_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referred_email?: string | null
+          referred_user_id?: string | null
+          referrer_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -1278,6 +1477,57 @@ export type Database = {
         Update: {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_streaks: {
+        Row: {
+          current_streak_days: number
+          last_active_date: string | null
+          longest_streak_days: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          current_streak_days?: number
+          last_active_date?: string | null
+          longest_streak_days?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          current_streak_days?: number
+          last_active_date?: string | null
+          longest_streak_days?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_wallets: {
+        Row: {
+          credits_total: number
+          lifetime_credits_earned: number
+          lifetime_points: number
+          points_total: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          credits_total?: number
+          lifetime_credits_earned?: number
+          lifetime_points?: number
+          points_total?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          credits_total?: number
+          lifetime_credits_earned?: number
+          lifetime_points?: number
+          points_total?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -1308,6 +1558,36 @@ export type Database = {
           updated_at?: string | null
           used_fallback?: string | null
           user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
+      weekly_challenges: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          points_reward: number
+          title: string
+          week_start: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          points_reward?: number
+          title: string
+          week_start: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          points_reward?: number
+          title?: string
           week_start?: string
         }
         Relationships: []
@@ -1429,7 +1709,23 @@ export type Database = {
       }
       extract_name: { Args: { line: string }; Returns: string }
       extract_qty_g: { Args: { line: string }; Returns: number }
-      generate_referral_code: { Args: { user_id: string }; Returns: string }
+      fn_award_event: {
+        Args: {
+          p_credits: number
+          p_event_type: Database["public"]["Enums"]["gamification_event"]
+          p_meta?: Json
+          p_points: number
+        }
+        Returns: undefined
+      }
+      fn_cleanup_expired_credits: { Args: never; Returns: undefined }
+      fn_consume_credit: { Args: { p_count: number }; Returns: boolean }
+      fn_get_dashboard: { Args: never; Returns: Json }
+      fn_points_to_credits: { Args: { p_points: number }; Returns: boolean }
+      fn_touch_streak_today: { Args: never; Returns: undefined }
+      generate_referral_code:
+        | { Args: never; Returns: string }
+        | { Args: { user_id: string }; Returns: string }
       get_menu_household:
         | {
             Args: {
@@ -1539,6 +1835,19 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      gamification_event:
+        | "APP_OPEN"
+        | "MEAL_VALIDATED"
+        | "DAY_COMPLETED"
+        | "WEEKLY_CHALLENGE_COMPLETED"
+        | "SOCIAL_SHARE"
+        | "POINTS_REDEEMED_TO_CREDITS"
+        | "CREDITS_SPENT"
+        | "STREAK_MILESTONE"
+        | "REFERRAL_GRANTED"
+        | "REFERRAL_GOAL_REACHED"
+        | "BADGE_GRANTED"
+        | "ADMIN_ADJUST"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1667,6 +1976,20 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      gamification_event: [
+        "APP_OPEN",
+        "MEAL_VALIDATED",
+        "DAY_COMPLETED",
+        "WEEKLY_CHALLENGE_COMPLETED",
+        "SOCIAL_SHARE",
+        "POINTS_REDEEMED_TO_CREDITS",
+        "CREDITS_SPENT",
+        "STREAK_MILESTONE",
+        "REFERRAL_GRANTED",
+        "REFERRAL_GOAL_REACHED",
+        "BADGE_GRANTED",
+        "ADMIN_ADJUST",
+      ],
     },
   },
 } as const
