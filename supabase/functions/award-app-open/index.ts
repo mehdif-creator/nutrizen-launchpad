@@ -74,10 +74,18 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
+    console.error('Award app open error:', error);
+    
+    // Sanitize error - don't expose internal details
+    const message = (error as Error).message;
+    const isAuthError = message.includes('Unauthorized') || message.includes('JWT');
+    
     return new Response(
-      JSON.stringify({ error: (error as Error).message }),
+      JSON.stringify({ 
+        error: isAuthError ? 'Authentication required' : 'Failed to award app open points'
+      }),
       { 
-        status: 400,
+        status: isAuthError ? 401 : 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );

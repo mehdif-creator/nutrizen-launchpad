@@ -95,10 +95,21 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
+    console.error('Weekly challenge error:', error);
+    
+    // Sanitize error - don't expose internal details
+    const message = (error as Error).message;
+    const isAuthError = message.includes('Unauthorized') || message.includes('JWT');
+    const isNotFound = message.includes('No challenge');
+    
     return new Response(
-      JSON.stringify({ error: (error as Error).message }),
+      JSON.stringify({ 
+        error: isAuthError ? 'Authentication required' : 
+               isNotFound ? 'No challenge available for this week' :
+               'Failed to complete challenge'
+      }),
       { 
-        status: 400,
+        status: isAuthError ? 401 : isNotFound ? 404 : 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );

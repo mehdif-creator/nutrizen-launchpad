@@ -101,10 +101,18 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
+    console.error('Referral intake error:', error);
+    
+    // Sanitize error - don't expose internal details
+    const message = (error as Error).message;
+    const isInvalidCode = message.includes('Invalid referral code');
+    
     return new Response(
-      JSON.stringify({ error: (error as Error).message }),
+      JSON.stringify({ 
+        error: isInvalidCode ? 'Invalid referral code' : 'Failed to process referral'
+      }),
       { 
-        status: 400,
+        status: isInvalidCode ? 404 : 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );

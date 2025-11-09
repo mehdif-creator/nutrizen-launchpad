@@ -112,10 +112,18 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
+    console.error('Social share error:', error);
+    
+    // Sanitize error - don't expose internal details
+    const message = (error as Error).message;
+    const isAuthError = message.includes('Unauthorized') || message.includes('JWT');
+    
     return new Response(
-      JSON.stringify({ error: (error as Error).message }),
+      JSON.stringify({ 
+        error: isAuthError ? 'Authentication required' : 'Failed to record social share'
+      }),
       { 
-        status: 400,
+        status: isAuthError ? 401 : 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
