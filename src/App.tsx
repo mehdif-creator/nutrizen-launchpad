@@ -24,6 +24,7 @@ import ScanRepas from "./pages/app/ScanRepas";
 import InspiFrigo from "./pages/app/InspiFrigo";
 import RecipeDetail from "./pages/app/RecipeDetail";
 import MenuHistory from "./pages/app/MenuHistory";
+import Gamification from "./pages/app/Gamification";
 
 // Admin
 import AdminDashboard from "./pages/admin/AdminDashboard";
