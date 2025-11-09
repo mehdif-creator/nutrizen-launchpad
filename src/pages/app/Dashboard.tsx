@@ -3,7 +3,7 @@ import { AppFooter } from "@/components/app/AppFooter";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, Sparkles, Flame, Users, ShoppingCart, Share2, Copy, Award, Brain } from "lucide-react";
+import { Clock, Sparkles, Flame, Users, ShoppingCart, Share2, Copy, Brain } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { StatCard } from "@/components/app/StatCard";
 import { Progress } from "@/components/app/Progress";
@@ -120,8 +120,6 @@ export default function Dashboard() {
   const streak = stats.serie_en_cours_set_count;
   const refCount = stats.references_count;
   const validated = stats.objectif_hebdos_valide;
-  const zenPoints = Math.floor(minutesSaved / 10);
-  const zenLevel = zenPoints < 20 ? "Bronze" : zenPoints < 40 ? "Silver" : "Gold";
   const referralUrl = "https://mynutrizen.fr/i/" + (user?.id.slice(0, 8) || "user");
 
   const loading = statsLoading || menuLoading;
@@ -258,11 +256,7 @@ export default function Dashboard() {
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1">Salut, {firstName} ! 👋</h1>
               <p className="text-sm md:text-base text-muted-foreground">Voici ton tableau de bord NutriZen</p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="text-xs md:text-sm px-2 md:px-3 py-1">
-                <Award className="h-3.5 w-3.5 mr-1" />
-                {zenLevel} · {zenPoints} pts
-              </Badge>
+          <div className="flex flex-wrap items-center gap-2">
               <Button onClick={handleRegenWeek} size="sm" disabled={generating}>
                 {generating ? "Génération..." : "Régénérer la semaine (7 crédits)"}
               </Button>
@@ -413,24 +407,6 @@ export default function Dashboard() {
               </Button>
             </Card>
 
-            {/* Badges */}
-            <Card className="rounded-2xl border shadow-sm p-4 md:p-5">
-              <div className="text-sm md:text-base font-semibold mb-1">Badges</div>
-              <div className="text-xs md:text-sm text-muted-foreground mb-3">
-                Gagne des points en validant des repas, en gardant ta série, et en invitant des amis.
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant={zenLevel === "Bronze" ? "default" : "outline"} className="text-xs">
-                  Bronze
-                </Badge>
-                <Badge variant={zenLevel === "Silver" ? "default" : "outline"} className="text-xs">
-                  Silver
-                </Badge>
-                <Badge variant={zenLevel === "Gold" ? "default" : "outline"} className="text-xs">
-                  Gold
-                </Badge>
-              </div>
-            </Card>
           </aside>
         </section>
       </main>
