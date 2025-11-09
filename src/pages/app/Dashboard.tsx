@@ -3,7 +3,7 @@ import { AppFooter } from "@/components/app/AppFooter";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, Sparkles, Flame, Users, ShoppingCart, Share2, Copy, Brain } from "lucide-react";
+import { Clock, Sparkles, Flame, Users, ShoppingCart, Share2, Copy, Brain, Trophy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { StatCard } from "@/components/app/StatCard";
 import { Progress } from "@/components/app/Progress";
@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { StreakBar } from "@/components/app/StreakBar";
 import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, Link } from "react-router-dom";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useWeeklyMenu } from "@/hooks/useWeeklyMenu";
 
@@ -313,8 +313,8 @@ export default function Dashboard() {
 
         {/* Week Planner */}
         <section className="px-4 sm:px-6 lg:px-10 grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
-          {/* Left: Meals */}
-          <div className="xl:col-span-2">
+          {/* Left: Meals + Quick Links */}
+          <div className="xl:col-span-2 space-y-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg md:text-xl font-bold">Semaine en cours</h2>
             </div>
@@ -347,6 +347,66 @@ export default function Dashboard() {
                 ))}
               </div>
             )}
+
+            {/* Quick Links */}
+            <div className="mt-6">
+              <h3 className="text-base md:text-lg font-semibold mb-3">Accès rapide</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <Link
+                  to="/app/gamification"
+                  className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-primary/5 to-primary/10 p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-primary/50"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 rounded-lg p-2.5 group-hover:bg-primary/20 transition-colors">
+                      <Trophy className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">Gamification</div>
+                      <div className="text-xs text-muted-foreground">Points & badges</div>
+                    </div>
+                  </div>
+                  <div className="absolute -right-4 -bottom-4 opacity-10">
+                    <Trophy className="h-20 w-20 text-primary" />
+                  </div>
+                </Link>
+
+                <Link
+                  to="/app/referral"
+                  className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-green-500/5 to-green-500/10 p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-green-500/50"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="bg-green-500/10 rounded-lg p-2.5 group-hover:bg-green-500/20 transition-colors">
+                      <Users className="h-5 w-5 text-green-600 dark:text-green-500" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">Parrainage</div>
+                      <div className="text-xs text-muted-foreground">Invite tes amis</div>
+                    </div>
+                  </div>
+                  <div className="absolute -right-4 -bottom-4 opacity-10">
+                    <Users className="h-20 w-20 text-green-600 dark:text-green-500" />
+                  </div>
+                </Link>
+
+                <Link
+                  to="/app/menu-history"
+                  className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-orange-500/5 to-orange-500/10 p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-orange-500/50"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="bg-orange-500/10 rounded-lg p-2.5 group-hover:bg-orange-500/20 transition-colors">
+                      <Clock className="h-5 w-5 text-orange-600 dark:text-orange-500" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">Historique</div>
+                      <div className="text-xs text-muted-foreground">Menus passés</div>
+                    </div>
+                  </div>
+                  <div className="absolute -right-4 -bottom-4 opacity-10">
+                    <Clock className="h-20 w-20 text-orange-600 dark:text-orange-500" />
+                  </div>
+                </Link>
+              </div>
+            </div>
           </div>
 
           {/* Right: Sidebar */}
