@@ -1,31 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
-// HMAC signature validation
-async function generateHmac(data: string, secret: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(data));
-  return Array.from(new Uint8Array(signature))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
-async function validateHmacSignature(
-  data: string,
-  signature: string,
-  secret: string
-): Promise<boolean> {
-  const expectedSignature = await generateHmac(data, secret);
-  return signature === expectedSignature;
-}
-
 // SECURITY: Strict CORS allow-list
 const ALLOWED_ORIGINS = [
   'https://mynutrizen.fr',
@@ -79,7 +54,7 @@ serve(async (req) => {
   }
 
   try {
-    // Rate limiting
+    // Rate limiting based on IP
     const identifier = req.headers.get('CF-Connecting-IP') || req.headers.get('X-Forwarded-For') || 'anonymous';
     if (!checkRateLimit(identifier)) {
       return new Response(JSON.stringify({ error: 'Too many requests. Please try again later.' }), {
@@ -90,27 +65,6 @@ serve(async (req) => {
 
     const body = await req.json();
 
-    // HMAC signature validation - REQUIRED for security
-    const signature = req.headers.get('x-signature');
-    const hmacSecret = Deno.env.get('HMAC_SECRET');
-    
-    if (!signature || !hmacSecret) {
-      console.warn('Missing HMAC signature or secret');
-      return new Response(JSON.stringify({ error: 'Invalid request' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 403,
-      });
-    }
-
-    const isValid = await validateHmacSignature(JSON.stringify(body), signature, hmacSecret);
-    if (!isValid) {
-      console.warn('Invalid HMAC signature detected');
-      return new Response(JSON.stringify({ error: 'Invalid request signature' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 403,
-      });
-    }
-
     // Validate and sanitize input
     const validatedData = leadSchema.parse(body);
     const { email, source, timestamp } = validatedData;
@@ -118,10 +72,13 @@ serve(async (req) => {
     // Forward to n8n webhook
     const n8nWebhookBase = Deno.env.get('N8N_WEBHOOK_BASE');
     if (!n8nWebhookBase) {
-      throw new Error('N8N_WEBHOOK_BASE not configured');
+      console.error('N8N_WEBHOOK_BASE not configured');
+      throw new Error('Webhook configuration error');
     }
 
-    const webhookUrl = `${n8nWebhookBase}/webhook/leadmagnet.submit`;
+    const webhookUrl = `${n8nWebhookBase}/webhook/submit-lead`;
+    
+    console.log('Forwarding lead to n8n:', { email, source, webhookUrl });
     
     const response = await fetch(webhookUrl, {
       method: 'POST',
@@ -131,13 +88,16 @@ serve(async (req) => {
       body: JSON.stringify({
         email,
         source,
-        timestamp,
+        timestamp: timestamp || new Date().toISOString(),
       }),
     });
 
     if (!response.ok) {
+      console.error('n8n webhook failed:', response.status, response.statusText);
       throw new Error('Failed to submit lead form');
     }
+
+    console.log('Lead successfully submitted to n8n');
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

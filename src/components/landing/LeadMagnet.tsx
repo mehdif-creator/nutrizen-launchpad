@@ -4,18 +4,82 @@ import { Input } from '@/components/ui/input';
 import { Download } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { z } from 'zod';
+
+const leadSchema = z.object({
+  email: z.string().email('Email invalide'),
+});
 
 export const LeadMagnet = () => {
   const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: '✅ Guide envoyé !',
-      description: 'Vérifie ta boîte mail, ton guide arrive dans quelques instants.',
-    });
-    setEmail('');
+
+    try {
+      leadSchema.parse({ email });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez entrer un email valide",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check rate limit (max 3 submissions per hour)
+    const lastSubmissions = localStorage.getItem('lead_submissions');
+    const now = Date.now();
+    let submissions: number[] = lastSubmissions ? JSON.parse(lastSubmissions) : [];
+    
+    // Filter out submissions older than 1 hour
+    submissions = submissions.filter(time => now - time < 3600000);
+    
+    if (submissions.length >= 3) {
+      toast({
+        title: "Trop de tentatives",
+        description: "Veuillez réessayer dans une heure",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await supabase.functions.invoke('submit-lead', {
+        body: { 
+          email,
+          source: 'landing_lead_magnet',
+          timestamp: new Date().toISOString()
+        }
+      });
+
+      if (error) throw error;
+
+      // Update rate limit tracking
+      submissions.push(now);
+      localStorage.setItem('lead_submissions', JSON.stringify(submissions));
+
+      toast({
+        title: '✅ Guide envoyé !',
+        description: 'Vérifie ta boîte mail, ton guide arrive dans quelques instants.',
+      });
+
+      setEmail('');
+    } catch (error: any) {
+      console.error('Error submitting lead:', error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue. Veuillez réessayer.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -49,9 +113,10 @@ export const LeadMagnet = () => {
             
             <Button
               type="submit"
+              disabled={isSubmitting}
               className="w-full h-12 bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] shadow-glow transition-tech text-base font-medium"
             >
-              Recevoir le guide gratuit
+              {isSubmitting ? 'Envoi...' : 'Recevoir le guide gratuit'}
             </Button>
 
             <p className="text-sm text-muted-foreground text-center pt-2">
