@@ -10,7 +10,7 @@ interface LanguageContextType {
 
 const translations: Record<Language, Record<string, string>> = {
   fr: {
-    "preheader.trial": "🎉 Essai gratuit 7 jours — Aucune CB requise — Garantie temps-gagné 30j",
+    "preheader.trial": "🎉 Essai gratuit 7 jours — Garantie temps-gagné 30j",
     "signup.title": "Commencer avec NutriZen",
     "signup.subtitle": "Choisis ta formule pour créer ton compte",
     "signup.info": "Pour garantir la qualité de notre service, la création de compte se fait uniquement via Stripe.",
