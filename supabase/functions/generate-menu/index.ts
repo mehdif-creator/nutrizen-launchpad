@@ -66,38 +66,58 @@ serve(async (req) => {
     weekStart.setHours(0, 0, 0, 0);
     const weekStartStr = weekStart.toISOString().split('T')[0];
 
-    // Check if menu already exists for current week
-    const { data: existingMenu } = await supabaseClient
-      .from("user_weekly_menus")
-      .select("menu_id")
-      .eq("user_id", user.id)
-      .eq("week_start", weekStartStr)
+    // ALWAYS deduct 7 credits for menu generation (new system)
+    console.log(`[generate-menu] Generating menu - deducting 7 credits`);
+    
+    // Get current credits
+    const { data: statsData, error: statsError } = await supabaseClient
+      .from('user_dashboard_stats')
+      .select('credits_zen')
+      .eq('user_id', user.id)
       .maybeSingle();
 
-    // Only deduct credits if regenerating an existing menu
-    if (existingMenu) {
-      console.log(`[generate-menu] Regenerating existing menu, deducting 7 credits`);
-      const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
-      const { data: creditData, error: creditError } = await supabaseClient.rpc('deduct_week_regeneration_credits', {
-        p_user_id: user.id,
-        p_month: currentMonth,
-      });
-
-      if (creditError) {
-        console.error('[generate-menu] Error deducting credits:', creditError);
-        return new Response(
-          JSON.stringify({ 
-            success: false,
-            message: creditError.message || 'Crédits insuffisants pour régénérer la semaine.'
-          }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      console.log(`[generate-menu] Credits deducted: ${creditData.credits_deducted}, remaining: ${creditData.remaining}`);
-    } else {
-      console.log(`[generate-menu] First menu of the week - FREE (no credits deducted)`);
+    if (statsError) {
+      console.error('[generate-menu] Error fetching credits:', statsError);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          message: 'Erreur lors de la vérification des crédits.'
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+
+    const currentCredits = statsData?.credits_zen ?? 0;
+    
+    if (currentCredits < 7) {
+      console.log(`[generate-menu] Insufficient credits: ${currentCredits} < 7`);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          message: `Crédits insuffisants. Tu as ${currentCredits} crédits, il en faut 7 pour générer un menu.`
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Deduct 7 credits
+    const { error: deductError } = await supabaseClient
+      .from('user_dashboard_stats')
+      .update({ credits_zen: currentCredits - 7 })
+      .eq('user_id', user.id);
+
+    if (deductError) {
+      console.error('[generate-menu] Error deducting credits:', deductError);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          message: 'Erreur lors de la déduction des crédits.'
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`[generate-menu] 7 credits deducted, remaining: ${currentCredits - 7}`);
 
     // Parse and validate input
     const body = await req.json().catch(() => ({}));

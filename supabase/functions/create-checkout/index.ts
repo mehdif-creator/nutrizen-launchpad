@@ -59,11 +59,8 @@ serve(async (req) => {
     const requestOrigin = req.headers.get("origin") || "http://localhost:3000";
     const supabaseProjectRef = Deno.env.get("SUPABASE_URL")?.match(/https:\/\/([^.]+)/)?.[1] || "";
     
-    // Determine plan name from priceId
-    let planName = 'standard';
-    if (priceId === 'price_1SIWDPEl2hJeGlFp14plp0D5') planName = 'essentiel';
-    else if (priceId === 'price_1SIWFyEl2hJeGlFp8pQyEMQC') planName = 'equilibre';
-    else if (priceId === 'price_1SIWGdEl2hJeGlFp1e1pekfL') planName = 'premium';
+    // Single plan: Équilibre
+    const planName = 'equilibre';
     
     // Get referral code from query params if present
     const url = new URL(req.url);

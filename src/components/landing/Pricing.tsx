@@ -29,59 +29,26 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
 
   const plans = [
     {
-      name: 'Essentiel',
-      price: annual ? 12.49 : 14.99,
-      priceId: 'price_1SIWDPEl2hJeGlFp14plp0D5',
-      originalPrice: null,
-      meals: '30 repas / mois',
-      mealsPerDay: '≈ 1 repas/jour',
-      features: [
-        'Génération de menus hebdo',
-        'Liste de courses auto',
-        '3 swaps par mois',
-        'Recettes 20–30 min',
-        'Support par email'
-      ],
-      cta: 'Commencer gratuitement',
-      popular: false
-    },
-    {
       name: 'Équilibre',
-      price: annual ? 16.66 : 19.99,
+      price: 14.99,
       priceId: 'price_1SIWFyEl2hJeGlFp8pQyEMQC',
-      originalPrice: null,
-      meals: '60 repas / mois',
-      mealsPerDay: '≈ 2 repas/jour + 10 swaps',
-      badge: 'Meilleur choix',
-      popularLabel: '⭐ Le plus populaire (82 % des utilisateurs)',
+      originalPrice: 29.99,
+      credits: '50 crédits / mois',
+      badge: 'Offre unique',
+      popularLabel: '⭐ Notre formule tout-en-un',
       features: [
-        'Tout Essentiel',
-        '10 swaps par mois',
-        'Batch-cooking guide',
-        'Astuce quotidienne',
+        'Génération de menus hebdo (7 crédits)',
+        '50 crédits mensuels inclus',
+        'Swaps illimités (1 crédit/swap)',
+        'InspiFrigo - Idées depuis ton frigo',
+        'ScanRepas - Analyse photos repas',
+        'Liste de courses intelligente',
+        'Recettes 20–30 min',
         'Support prioritaire',
         'Accès anticipé features'
       ],
       cta: 'Commencer gratuitement',
       popular: true
-    },
-    {
-      name: 'Premium',
-      price: annual ? 24.99 : 29.99,
-      priceId: 'price_1SIWGdEl2hJeGlFp1e1pekfL',
-      originalPrice: null,
-      meals: '120 repas / mois',
-      mealsPerDay: 'Tous tes repas + swaps ∞',
-      features: [
-        'Tout Équilibre',
-        'Swaps illimités',
-        'Coaching mensuel (15 min)',
-        'Recettes exclusives',
-        'Support dédié',
-        'API access (bêta)'
-      ],
-      cta: 'Commencer gratuitement',
-      popular: false
     }
   ];
 
@@ -140,26 +107,6 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
             {t('pricing.subtitle')}
           </p>
 
-          {/* Toggle Annual/Monthly */}
-          <div className="inline-flex items-center gap-4 p-1 bg-muted rounded-full">
-            <button
-              onClick={() => setAnnual(false)}
-              className={`px-6 py-2 rounded-full text-sm font-medium transition-tech ${
-                !annual ? 'bg-background shadow-sm' : 'text-muted-foreground'
-              }`}
-            >
-              {t('pricing.monthly')}
-            </button>
-            <button
-              onClick={() => setAnnual(true)}
-              className={`px-6 py-2 rounded-full text-sm font-medium transition-tech ${
-                annual ? 'bg-background shadow-sm' : 'text-muted-foreground'
-              }`}
-            >
-              {t('pricing.annual')}
-              <span className="ml-2 text-xs text-success">{t('pricing.discount')}</span>
-            </button>
-          </div>
         </div>
 
         {/* Value Anchor */}
@@ -167,22 +114,22 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
           <div className="flex flex-col md:flex-row items-center justify-center gap-4">
             <div className="text-left">
               <p className="text-sm text-muted-foreground mb-1">Valeur réelle estimée :</p>
-              <p className="text-3xl font-bold line-through text-muted-foreground">200 €/mois</p>
+              <p className="text-3xl font-bold line-through text-muted-foreground">29,99 €/mois</p>
             </div>
             <div className="text-4xl font-bold text-accent">→</div>
             <div className="text-left">
               <p className="text-sm text-accent font-medium mb-1">Ton tarif aujourd'hui :</p>
-              <p className="text-4xl font-bold text-foreground">19,99 €<span className="text-lg">/mois</span></p>
+              <p className="text-4xl font-bold text-foreground">14,99 €<span className="text-lg">/mois</span></p>
             </div>
           </div>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm">
             <span className="flex items-center gap-1">
               <Check className="w-4 h-4 text-accent" />
-              <span>50+ recettes exclusives</span>
+              <span>50 crédits mensuels</span>
             </span>
             <span className="flex items-center gap-1">
               <Check className="w-4 h-4 text-accent" />
-              <span>Support prioritaire</span>
+              <span>Toutes les fonctionnalités</span>
             </span>
             <span className="flex items-center gap-1">
               <Check className="w-4 h-4 text-accent" />
@@ -204,13 +151,11 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
           </div>
         )}
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="max-w-2xl mx-auto">
           {plans.map((plan, index) => (
             <Card
               key={plan.name}
-              className={`p-6 relative ${
-                plan.popular ? 'border-primary shadow-lg scale-105' : ''
-              } animate-slide-up`}
+              className="p-6 md:p-8 relative border-primary shadow-xl animate-slide-up"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               {plan.popular && (
@@ -229,13 +174,17 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
 
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold">{plan.price}€</span>
+                  <h3 className="text-3xl font-bold mb-2">{plan.name}</h3>
+                  <div className="flex items-baseline gap-2 mb-2">
+                    <span className="text-5xl font-bold">{plan.price}€</span>
                     <span className="text-muted-foreground">/ mois</span>
                   </div>
-                  <p className="text-sm font-medium text-primary mt-2">{plan.meals}</p>
-                  <p className="text-xs text-muted-foreground">{plan.mealsPerDay}</p>
+                  {plan.originalPrice && (
+                    <p className="text-lg text-muted-foreground line-through mb-2">
+                      {plan.originalPrice}€ / mois
+                    </p>
+                  )}
+                  <p className="text-base font-medium text-primary mt-2">{plan.credits}</p>
                 </div>
 
                 <div className="space-y-3">

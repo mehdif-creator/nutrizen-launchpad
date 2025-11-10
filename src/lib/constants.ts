@@ -10,7 +10,7 @@ export const DEFAULT_STATS = {
   temps_gagne: 0,
   charge_mentale_pct: 0,
   serie_en_cours_set_count: 0,
-  credits_zen: 10,
+  credits_zen: 50, // New default: 50 credits per month with Équilibre plan
   references_count: 0,
   objectif_hebdos_valide: 0,
 } as const;
