@@ -1,15 +1,15 @@
-import { useState } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Check } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Check } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface PricingProps {
   onCtaClick: () => void;
@@ -23,39 +23,39 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState<string | null>(null);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [selectedPlan, setSelectedPlan] = useState<{ priceId: string; planName: string } | null>(null);
   const { t } = useLanguage();
 
   const plans = [
     {
-      name: 'Équilibre',
+      name: "Équilibre",
       price: 14.99,
-      priceId: 'price_1SIWFyEl2hJeGlFp8pQyEMQC',
+      priceId: "price_1SIWFyEl2hJeGlFp8pQyEMQC",
       originalPrice: 29.99,
-      credits: '50 crédits / mois',
-      badge: 'Offre unique',
-      popularLabel: '⭐ Notre formule tout-en-un',
+      credits: "50 crédits / mois",
+      badge: "Offre unique",
+      popularLabel: "⭐ Notre formule tout-en-un",
       features: [
-        'Génération de menus hebdo (7 crédits)',
-        '50 crédits mensuels inclus',
-        'Swaps illimités (1 crédit/swap)',
-        'InspiFrigo - Idées depuis ton frigo',
-        'ScanRepas - Analyse photos repas',
-        'Liste de courses intelligente',
-        'Recettes 20–30 min',
-        'Support prioritaire',
-        'Accès anticipé features'
+        "Génération de menus hebdo (7 crédits)",
+        "50 crédits mensuels inclus",
+        "Swaps illimités (1 crédit/swap)",
+        "InspiFrigo - Idées depuis ton frigo",
+        "ScanRepas - Analyse photos repas",
+        "Liste de courses intelligente",
+        "Recettes 20–30 min",
+        "Support prioritaire",
+        "Accès anticipé features",
       ],
-      cta: 'Commencer gratuitement',
-      popular: true
-    }
+      cta: "Commencer gratuitement",
+      popular: true,
+    },
   ];
 
   const handleSubscribe = async (priceId: string, planName: string) => {
     // If user is already logged in, proceed directly
     if (user && session) {
-      await createCheckoutSession(priceId, user.email || '');
+      await createCheckoutSession(priceId, user.email || "");
       return;
     }
 
@@ -67,7 +67,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
   const createCheckoutSession = async (priceId: string, userEmail: string) => {
     setLoading(priceId);
     try {
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
         body: { priceId, email: userEmail },
       });
 
@@ -77,11 +77,11 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
         window.location.href = data.url; // Redirect to Stripe checkout
       }
     } catch (error) {
-      console.error('Error creating checkout:', error);
+      console.error("Error creating checkout:", error);
       toast({
-        title: 'Erreur',
-        description: 'Impossible de créer la session de paiement',
-        variant: 'destructive',
+        title: "Erreur",
+        description: "Impossible de créer la session de paiement",
+        variant: "destructive",
       });
     } finally {
       setLoading(null);
@@ -92,7 +92,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPlan || !email) return;
-    
+
     await createCheckoutSession(selectedPlan.priceId, email);
   };
 
@@ -100,13 +100,8 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
     <section id="tarifs" className="py-16 bg-gradient-to-b from-background to-secondary/20">
       <div className="container">
         <div className="text-center mb-12 animate-fade-in">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            {t('pricing.title')}
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
-            {t('pricing.subtitle')}
-          </p>
-
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">{t("pricing.title")}</h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">{t("pricing.subtitle")}</p>
         </div>
 
         {/* Value Anchor */}
@@ -114,12 +109,14 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
           <div className="flex flex-col md:flex-row items-center justify-center gap-4">
             <div className="text-left">
               <p className="text-sm text-muted-foreground mb-1">Valeur réelle estimée :</p>
-              <p className="text-3xl font-bold line-through text-muted-foreground">29,99 €/mois</p>
+              <p className="text-3xl font-bold line-through text-muted-foreground">205 €/mois</p>
             </div>
             <div className="text-4xl font-bold text-accent">→</div>
             <div className="text-left">
               <p className="text-sm text-accent font-medium mb-1">Ton tarif aujourd'hui :</p>
-              <p className="text-4xl font-bold text-foreground">14,99 €<span className="text-lg">/mois</span></p>
+              <p className="text-4xl font-bold text-foreground">
+                14,99 €<span className="text-lg">/mois</span>
+              </p>
             </div>
           </div>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm">
@@ -140,9 +137,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
 
         {/* Trial Banner */}
         <div className="mb-8 p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg border text-center">
-          <p className="text-sm font-medium">
-            {t('pricing.trial')}
-          </p>
+          <p className="text-sm font-medium">{t("pricing.trial")}</p>
         </div>
 
         {pricingNote && (
@@ -161,11 +156,11 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <div className="px-4 py-1 bg-gradient-to-r from-primary to-accent text-white text-xs font-bold rounded-full shadow-glow">
-                    {plan.badge || 'RECOMMANDÉ'}
+                    {plan.badge || "RECOMMANDÉ"}
                   </div>
                 </div>
               )}
-              
+
               {plan.popularLabel && (
                 <div className="mb-4 text-center">
                   <span className="text-sm font-medium text-primary">{plan.popularLabel}</span>
@@ -180,9 +175,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
                     <span className="text-muted-foreground">/ mois</span>
                   </div>
                   {plan.originalPrice && (
-                    <p className="text-lg text-muted-foreground line-through mb-2">
-                      {plan.originalPrice}€ / mois
-                    </p>
+                    <p className="text-lg text-muted-foreground line-through mb-2">{plan.originalPrice}€ / mois</p>
                   )}
                   <p className="text-base font-medium text-primary mt-2">{plan.credits}</p>
                 </div>
@@ -200,15 +193,13 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
                   onClick={() => handleSubscribe(plan.priceId, plan.name)}
                   disabled={loading === plan.priceId}
                   className={`w-full hover:scale-[1.02] active:scale-[0.99] transition-tech ${
-                    plan.popular
-                      ? 'bg-gradient-to-r from-primary to-accent text-white shadow-glow'
-                      : ''
+                    plan.popular ? "bg-gradient-to-r from-primary to-accent text-white shadow-glow" : ""
                   }`}
-                  variant={plan.popular ? 'default' : 'outline'}
+                  variant={plan.popular ? "default" : "outline"}
                 >
-                  {loading === plan.priceId ? 'Chargement...' : plan.cta}
+                  {loading === plan.priceId ? "Chargement..." : plan.cta}
                 </Button>
-                
+
                 <p className="text-xs text-center text-muted-foreground mt-3">
                   Essai gratuit 7 jours — sans engagement
                 </p>
@@ -218,7 +209,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
         </div>
 
         <div className="mt-12 text-center text-sm text-muted-foreground">
-          <p>{t('pricing.note')}</p>
+          <p>{t("pricing.note")}</p>
         </div>
       </div>
 
@@ -227,9 +218,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Commence ton essai gratuit</DialogTitle>
-            <DialogDescription>
-              Entre ton email pour démarrer ton essai de 7 jours gratuit
-            </DialogDescription>
+            <DialogDescription>Entre ton email pour démarrer ton essai de 7 jours gratuit</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEmailSubmit} className="space-y-4">
             <div className="space-y-2">
@@ -245,7 +234,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading !== null}>
-              {loading ? 'Chargement...' : 'Continuer vers le paiement'}
+              {loading ? "Chargement..." : "Continuer vers le paiement"}
             </Button>
           </form>
         </DialogContent>
