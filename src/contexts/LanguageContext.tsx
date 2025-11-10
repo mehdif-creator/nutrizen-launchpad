@@ -136,7 +136,7 @@ const translations: Record<Language, Record<string, string>> = {
     "pricing.feature1": "50+ recettes exclusives",
     "pricing.feature2": "Support prioritaire",
     "pricing.feature3": "Garantie 30 jours",
-    "pricing.trial": "🔥 Essai gratuit 7 jours — sans carte bancaire",
+    "pricing.trial": "🔥 Essai gratuit 7 jours",
     "pricing.note": "✅ Satisfait ou remboursé — Garantie 30 jours temps-gagné • Annulable en 3 clics",
     "testimonials.title": "Rejoignez une communauté de milliers d'utilisateurs comblés",
     "testimonials.rating": "avis",
