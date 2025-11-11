@@ -1,0 +1,65 @@
+/**
+ * Mobile dropdown fixes for Select component
+ * Prevents scroll lock and freeze issues on iOS/Android
+ */
+
+/* Ensure content doesn't cause body scroll lock */
+[data-radix-select-content] {
+  /* Use dvh (dynamic viewport height) instead of vh for iOS */
+  max-height: min(60vh, 60dvh);
+  
+  /* Ensure proper z-index layering */
+  z-index: 9999;
+  
+  /* Enable smooth scrolling within dropdown */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  
+  /* Prevent iOS rubber band effect from blocking parent scroll */
+  overscroll-behavior: contain;
+}
+
+/* Backdrop should allow parent scroll */
+[data-radix-select-viewport] {
+  overscroll-behavior: auto;
+}
+
+/* Prevent global scroll lock on mobile */
+@media (max-width: 768px) {
+  body:has([data-radix-select-content]) {
+    /* Don't lock body scroll on mobile */
+    overflow: visible !important;
+    position: static !important;
+  }
+  
+  /* Make dropdown content more mobile-friendly */
+  [data-radix-select-content] {
+    max-height: min(40vh, 40dvh);
+    border-radius: 1rem 1rem 0 0;
+    
+    /* Add bottom padding for iOS safe area */
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  
+  /* Improve touch target size */
+  [data-radix-select-item] {
+    min-height: 44px;
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Android back button support */
+@media (max-width: 768px) {
+  [data-radix-select-content] {
+    /* Ensure content is dismissible with back button */
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+/* Fix for iOS viewport height bug */
+@supports (-webkit-touch-callout: none) {
+  [data-radix-select-content] {
+    max-height: 60dvh;
+  }
+}

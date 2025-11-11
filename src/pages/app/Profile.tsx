@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MobileSelect } from '@/components/ui/mobile-select';
 import { Switch } from '@/components/ui/switch';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { supabase } from '@/integrations/supabase/client';
@@ -405,32 +406,34 @@ export default function Profile() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="niveau_activite">Niveau d'activité</Label>
-                        <Select value={prefs.niveau_activite} onValueChange={(v) => setPrefs({...prefs, niveau_activite: v})}>
-                          <SelectTrigger id="niveau_activite">
-                            <SelectValue placeholder="Sélectionne..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="sedentaire">Sédentaire</SelectItem>
-                            <SelectItem value="leger">Léger</SelectItem>
-                            <SelectItem value="modere">Modéré</SelectItem>
-                            <SelectItem value="actif">Actif</SelectItem>
-                            <SelectItem value="sportif">Sportif</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <MobileSelect
+                          id="niveau_activite"
+                          value={prefs.niveau_activite}
+                          onValueChange={(v) => setPrefs({...prefs, niveau_activite: v})}
+                          placeholder="Sélectionne..."
+                          options={[
+                            { value: 'sedentaire', label: 'Sédentaire' },
+                            { value: 'leger', label: 'Léger' },
+                            { value: 'modere', label: 'Modéré' },
+                            { value: 'actif', label: 'Actif' },
+                            { value: 'sportif', label: 'Sportif' },
+                          ]}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="metier">Métier</Label>
-                        <Select value={prefs.metier} onValueChange={(v) => setPrefs({...prefs, metier: v})}>
-                          <SelectTrigger id="metier">
-                            <SelectValue placeholder="Sélectionne..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="assis">Assis</SelectItem>
-                            <SelectItem value="debout">Debout</SelectItem>
-                            <SelectItem value="physique">Physique</SelectItem>
-                            <SelectItem value="autre">Autre</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <MobileSelect
+                          id="metier"
+                          value={prefs.metier}
+                          onValueChange={(v) => setPrefs({...prefs, metier: v})}
+                          placeholder="Sélectionne..."
+                          options={[
+                            { value: 'assis', label: 'Assis' },
+                            { value: 'debout', label: 'Debout' },
+                            { value: 'physique', label: 'Physique' },
+                            { value: 'autre', label: 'Autre' },
+                          ]}
+                        />
                       </div>
                     </div>
                   </CardContent>

@@ -46,6 +46,7 @@ import Fit from "./pages/Fit";
 import Mum from "./pages/Mum";
 import Pro from "./pages/Pro";
 import PostCheckout from "./pages/PostCheckout";
+import PostCheckoutProfile from "./pages/PostCheckoutProfile";
 
 const App = () => (
   <Routes>
@@ -92,6 +93,7 @@ const App = () => (
             <Route path="/mum" element={<Mum />} />
             <Route path="/pro" element={<Pro />} />
             <Route path="/post-checkout" element={<PostCheckout />} />
+            <Route path="/post-checkout-profile" element={<ProtectedRoute><PostCheckoutProfile /></ProtectedRoute>} />
             
     <Route path="*" element={<NotFound />} />
   </Routes>

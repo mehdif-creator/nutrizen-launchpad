@@ -20,9 +20,9 @@ export default function PostCheckout() {
   const error = searchParams.get('error');
 
   useEffect(() => {
-    // If user is already authenticated, redirect to app
+    // If user is already authenticated, redirect to profile completion
     if (!authLoading && user) {
-      navigate('/app', { replace: true });
+      navigate('/post-checkout-profile', { replace: true });
       return;
     }
 
