@@ -742,6 +742,7 @@ export type Database = {
           allergens: string[] | null
           appliances: string[] | null
           badges: string[] | null
+          base_servings: number
           batch_cooking_friendly: boolean | null
           budget_per_serving: number | null
           calorie_target: string | null
@@ -794,6 +795,7 @@ export type Database = {
           allergens?: string[] | null
           appliances?: string[] | null
           badges?: string[] | null
+          base_servings?: number
           batch_cooking_friendly?: boolean | null
           budget_per_serving?: number | null
           calorie_target?: string | null
@@ -846,6 +848,7 @@ export type Database = {
           allergens?: string[] | null
           appliances?: string[] | null
           badges?: string[] | null
+          base_servings?: number
           batch_cooking_friendly?: boolean | null
           budget_per_serving?: number | null
           calorie_target?: string | null
@@ -1409,7 +1412,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
-          referral_code: string | null
+          referral_code: string
           show_on_leaderboard: boolean
           updated_at: string
         }
@@ -1418,7 +1421,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id: string
-          referral_code?: string | null
+          referral_code: string
           show_on_leaderboard?: boolean
           updated_at?: string
         }
@@ -1427,7 +1430,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
-          referral_code?: string | null
+          referral_code?: string
           show_on_leaderboard?: boolean
           updated_at?: string
         }
@@ -1532,9 +1535,65 @@ export type Database = {
         }
         Relationships: []
       }
+      user_weekly_menu_items: {
+        Row: {
+          created_at: string
+          day_of_week: number | null
+          id: string
+          meal_slot: string | null
+          recipe_id: string
+          scale_factor: number | null
+          target_servings: number
+          weekly_menu_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week?: number | null
+          id?: string
+          meal_slot?: string | null
+          recipe_id: string
+          scale_factor?: number | null
+          target_servings?: number
+          weekly_menu_id: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number | null
+          id?: string
+          meal_slot?: string | null
+          recipe_id?: string
+          scale_factor?: number | null
+          target_servings?: number
+          weekly_menu_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_weekly_menu_items_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_macros_v"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "user_weekly_menu_items_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_weekly_menu_items_weekly_menu_id_fkey"
+            columns: ["weekly_menu_id"]
+            isOneToOne: false
+            referencedRelation: "user_weekly_menus"
+            referencedColumns: ["menu_id"]
+          },
+        ]
+      }
       user_weekly_menus: {
         Row: {
           created_at: string | null
+          id: string | null
           menu_id: string
           payload: Json
           updated_at: string | null
@@ -1544,6 +1603,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          id?: string | null
           menu_id?: string
           payload?: Json
           updated_at?: string | null
@@ -1553,6 +1613,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          id?: string | null
           menu_id?: string
           payload?: Json
           updated_at?: string | null
@@ -1726,6 +1787,14 @@ export type Database = {
       generate_referral_code:
         | { Args: never; Returns: string }
         | { Args: { user_id: string }; Returns: string }
+      generate_week_menu: {
+        Args: { p_user: string; p_week_start: string }
+        Returns: Json
+      }
+      get_active_referrals_count: {
+        Args: { p_user_id: string }
+        Returns: number
+      }
       get_menu_household:
         | {
             Args: {
@@ -1793,6 +1862,10 @@ export type Database = {
           p_pantry?: string[]
           p_round_g?: number
         }
+        Returns: Json
+      }
+      handle_referral_signup: {
+        Args: { p_new_user_id: string; p_referral_code: string }
         Returns: Json
       }
       has_role: {

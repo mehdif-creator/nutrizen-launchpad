@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useReferralTracking } from "@/hooks/useReferralTracking";
 
 // Pages
 import Index from "./pages/Index";
@@ -48,8 +49,12 @@ import Pro from "./pages/Pro";
 import PostCheckout from "./pages/PostCheckout";
 import PostCheckoutProfile from "./pages/PostCheckoutProfile";
 
-const App = () => (
-  <Routes>
+const App = () => {
+  // Track referral codes from URL
+  useReferralTracking();
+
+  return (
+    <Routes>
             <Route path="/" element={<Index />} />
             
             {/* Auth */}
@@ -67,7 +72,7 @@ const App = () => (
           <Route path="/app/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/app/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
           <Route path="/app/referral" element={<ProtectedRoute><Referral /></ProtectedRoute>} />
-          <Route path="/app/gamification" element={<ProtectedRoute><Gamification /></ProtectedRoute>} />
+            <Route path="/app/gamification" element={<ProtectedRoute><Gamification /></ProtectedRoute>} />
           <Route path="/app/ai-tools" element={<ProtectedRoute><AITools /></ProtectedRoute>} />
           <Route path="/app/scan-repas" element={<ProtectedRoute><ScanRepas /></ProtectedRoute>} />
           <Route path="/app/inspi-frigo" element={<ProtectedRoute><InspiFrigo /></ProtectedRoute>} />
@@ -97,6 +102,7 @@ const App = () => (
             
     <Route path="*" element={<NotFound />} />
   </Routes>
-);
+  );
+};
 
 export default App;

@@ -55,6 +55,9 @@ period = "1h"
 [functions.handle-referral]
 verify_jwt = true
 
+[functions.track-referral]
+verify_jwt = true
+
 [functions.suggest-substitution]
 verify_jwt = true
 
