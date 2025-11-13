@@ -30,6 +30,7 @@ import Gamification from "./pages/app/Gamification";
 // Admin
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AdminOnboarding from "./pages/admin/AdminOnboarding";
 
 // Blog
 import BlogIndex from "./pages/blog/BlogIndex";
@@ -81,6 +82,7 @@ const App = () => {
             {/* Admin (Protected + Admin Only) */}
         <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute requireAdmin><AdminUsers /></ProtectedRoute>} />
+        <Route path="/admin/onboarding" element={<ProtectedRoute requireAdmin><AdminOnboarding /></ProtectedRoute>} />
             
             {/* Blog */}
             <Route path="/blog" element={<BlogIndex />} />

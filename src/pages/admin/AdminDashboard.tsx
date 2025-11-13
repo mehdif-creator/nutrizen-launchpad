@@ -357,6 +357,12 @@ export default function AdminDashboard() {
                   Gérer les utilisateurs
                 </Button>
               </Link>
+              <Link to="/admin/onboarding">
+                <Button variant="outline" className="w-full justify-start">
+                  <Activity className="mr-2 h-4 w-4" />
+                  Statistiques d'onboarding
+                </Button>
+              </Link>
               <Link to="/admin/tickets">
                 <Button variant="outline" className="w-full justify-start">
                   <Ticket className="mr-2 h-4 w-4" />
