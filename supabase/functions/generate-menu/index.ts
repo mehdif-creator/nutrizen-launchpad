@@ -136,6 +136,21 @@ serve(async (req) => {
 
     console.log("[generate-menu] User preferences:", preferences ? "Found" : "Not found");
 
+    // Validate age if present
+    if (preferences?.age) {
+      const age = preferences.age;
+      if (age < 18 || age > 99) {
+        console.error(`[generate-menu] Invalid age: ${age}`);
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            message: 'Âge invalide. L\'âge doit être entre 18 et 99 ans.'
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     // Helper function to check if ingredient text contains excluded items
     const buildExclusionCheck = (excludedIngredients: string[]) => {
       if (!excludedIngredients || excludedIngredients.length === 0) return null;

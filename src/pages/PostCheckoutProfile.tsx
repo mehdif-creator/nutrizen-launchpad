@@ -174,8 +174,8 @@ export default function PostCheckoutProfile() {
                 <Input
                   id="age"
                   type="number"
-                  min="1"
-                  max="120"
+                  min="18"
+                  max="99"
                   required
                   value={formData.age}
                   onChange={(e) => setFormData({...formData, age: e.target.value})}
