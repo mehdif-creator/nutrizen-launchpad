@@ -1412,6 +1412,8 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          onboarding_completed: boolean | null
+          onboarding_step: number | null
           referral_code: string
           show_on_leaderboard: boolean
           updated_at: string
@@ -1421,6 +1423,8 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id: string
+          onboarding_completed?: boolean | null
+          onboarding_step?: number | null
           referral_code: string
           show_on_leaderboard?: boolean
           updated_at?: string
@@ -1430,6 +1434,8 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          onboarding_completed?: boolean | null
+          onboarding_step?: number | null
           referral_code?: string
           show_on_leaderboard?: boolean
           updated_at?: string

@@ -11,6 +11,7 @@ interface MealCardProps {
   onSwap?: () => void;
   onViewRecipe?: () => void;
   swapsRemaining?: number;
+  'data-onboarding-target'?: string;
 }
 
 export function MealCard({
@@ -22,10 +23,14 @@ export function MealCard({
   onValidate,
   onSwap,
   onViewRecipe,
-  swapsRemaining = 0
+  swapsRemaining = 0,
+  'data-onboarding-target': dataOnboardingTarget
 }: MealCardProps) {
   return (
-    <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden group hover:shadow-lg transition-all">
+    <div 
+      className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden group hover:shadow-lg transition-all"
+      data-onboarding-target={dataOnboardingTarget}
+    >
       <div className="h-32 bg-muted relative overflow-hidden">
         {imageUrl ? (
           <img 

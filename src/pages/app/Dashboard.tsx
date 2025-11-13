@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Navigate, useNavigate, Link } from "react-router-dom";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useWeeklyMenu } from "@/hooks/useWeeklyMenu";
+import { OnboardingCoach } from "@/components/app/OnboardingCoach";
 
 const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -247,6 +248,9 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
       <AppHeader />
+      
+      {/* Onboarding Coach */}
+      <OnboardingCoach userId={user?.id} />
 
       <main className="flex-1">
         {/* Hero Section */}
@@ -256,7 +260,7 @@ export default function Dashboard() {
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1">Salut, {firstName} ! 👋</h1>
               <p className="text-sm md:text-base text-muted-foreground">Voici ton tableau de bord NutriZen</p>
             </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2" data-onboarding-target="generate-menu">
               <Button onClick={handleRegenWeek} size="sm" disabled={generating}>
                 {generating ? "Génération..." : "Régénérer la semaine (7 crédits)"}
               </Button>
@@ -403,6 +407,7 @@ export default function Dashboard() {
                     onSwap={() => handleSwap(i)}
                     onViewRecipe={() => navigate(`/app/recipes/${meal.id}`)}
                     swapsRemaining={stats.credits_zen}
+                    data-onboarding-target={i === 0 ? "meal-card" : undefined}
                   />
                 ))}
               </div>
