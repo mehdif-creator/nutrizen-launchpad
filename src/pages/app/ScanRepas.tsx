@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Camera, Upload, Loader2, Brain } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { InsufficientCreditsModal } from '@/components/app/InsufficientCreditsModal';
 
 interface FoodItem {
   name: string;
@@ -57,6 +58,11 @@ export default function ScanRepas() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [creditsModalOpen, setCreditsModalOpen] = useState(false);
+  const [creditsError, setCreditsError] = useState<{
+    currentBalance: number;
+    required: number;
+  } | null>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -107,6 +113,12 @@ export default function ScanRepas() {
           analyse_nutritionnelle: data.analyse_nutritionnelle,
         });
         toast.success('Analyse terminée avec succès !');
+      } else if (data?.error_code === 'INSUFFICIENT_CREDITS') {
+        setCreditsError({
+          currentBalance: data.current_balance || 0,
+          required: data.required || 1,
+        });
+        setCreditsModalOpen(true);
       } else if (data?.error) {
         throw new Error(data.error);
       } else {

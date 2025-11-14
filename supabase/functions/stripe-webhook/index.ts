@@ -91,13 +91,60 @@ serve(async (req) => {
         event_type: event.type,
       });
 
-    // Handle checkout.session.completed - Create user account
+    // Handle checkout.session.completed - Create user account OR credit purchase
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
       const customerEmail = session.customer_email || session.customer_details?.email;
       const customerId = session.customer as string;
       const subscriptionId = session.subscription as string;
       
+      // Check if this is a credit pack purchase
+      const isCreditPurchase = session.metadata?.product_type === 'zen_credits';
+      const creditsAmount = session.metadata?.credits_amount ? parseInt(session.metadata.credits_amount) : null;
+      const supabaseUserId = session.metadata?.supabase_user_id;
+      
+      if (isCreditPurchase && creditsAmount && supabaseUserId) {
+        // Handle credit pack purchase
+        logStep("Processing credit pack purchase", {
+          userId: redactId(supabaseUserId),
+          credits: creditsAmount,
+          sessionId: session.id.substring(0, 8) + "***"
+        });
+        
+        try {
+          const { data: creditsResult, error: creditsError } = await supabaseAdmin.rpc('add_credits_from_purchase', {
+            p_user_id: supabaseUserId,
+            p_credits: creditsAmount,
+            p_stripe_metadata: {
+              stripe_event_id: event.id,
+              stripe_session_id: session.id,
+              stripe_customer_id: customerId,
+              amount_paid: session.amount_total,
+              currency: session.currency
+            }
+          });
+          
+          if (creditsError) {
+            logStep("ERROR adding credits", { error: creditsError.message });
+            throw creditsError;
+          }
+          
+          logStep("Credits added successfully", { 
+            newBalance: creditsResult.new_balance,
+            creditsAdded: creditsResult.credits_added
+          });
+          
+          return new Response(JSON.stringify({ received: true, credits_added: true }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        } catch (error) {
+          logStep("CRITICAL ERROR processing credit purchase", { error: String(error) });
+          throw error;
+        }
+      }
+      
+      // Original subscription handling logic follows
       // Get referral code from session metadata if it exists
       const referralCode = session.metadata?.referral_code;
       const fromCheckout = session.metadata?.from_checkout === 'true';

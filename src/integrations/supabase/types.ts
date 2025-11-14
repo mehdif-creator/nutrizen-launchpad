@@ -1748,6 +1748,10 @@ export type Database = {
       }
     }
     Functions: {
+      add_credits_from_purchase: {
+        Args: { p_credits: number; p_stripe_metadata?: Json; p_user_id: string }
+        Returns: Json
+      }
       admin_set_user_credits: {
         Args: { p_credits: number; p_operation?: string; p_user_id: string }
         Returns: Json
@@ -1768,6 +1772,10 @@ export type Database = {
       }
       calculate_user_level: { Args: { points: number }; Returns: string }
       canonicalize_name: { Args: { p_name_norm: string }; Returns: string }
+      check_and_consume_credits: {
+        Args: { p_cost?: number; p_feature: string; p_user_id: string }
+        Returns: Json
+      }
       cleanup_expired_tokens: { Args: never; Returns: undefined }
       cleanup_old_checkout_sessions: { Args: never; Returns: undefined }
       deduct_week_regeneration_credits: {
