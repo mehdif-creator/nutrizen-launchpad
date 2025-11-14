@@ -57,41 +57,48 @@ serve(async (req) => {
 
     console.log('User authenticated:', user.id);
 
-    // Check subscription status
+    // Check and consume credits BEFORE running analysis
+    console.log('[analyze-fridge] Checking credits for user:', user.id)
+    const { data: creditsCheck, error: creditsError } = await supabaseClient.rpc('check_and_consume_credits', {
+      p_user_id: user.id,
+      p_feature: 'inspifrigo',
+      p_cost: 1
+    })
+
+    if (creditsError) {
+      console.error('[analyze-fridge] Credits check error:', creditsError)
+      return new Response(
+        JSON.stringify({ error: 'Erreur lors de la vérification des crédits' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!creditsCheck.success) {
+      console.log('[analyze-fridge] Insufficient credits:', creditsCheck)
+      return new Response(
+        JSON.stringify({ 
+          error_code: creditsCheck.error_code,
+          error: creditsCheck.message || 'Crédits insuffisants',
+          current_balance: creditsCheck.current_balance,
+          required: creditsCheck.required
+        }),
+        { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    console.log('[analyze-fridge] Credits consumed, proceeding with analysis')
+
+    // Check subscription status (legacy check, kept for backwards compatibility)
     const { data: subscription, error: subError } = await supabaseClient
       .from('subscriptions')
       .select('status, trial_end')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (subError || !subscription) {
-      console.error('Subscription check error:', subError);
-      return new Response(
-        JSON.stringify({ error: 'No active subscription found' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Subscription check is now optional - credits are the primary gate
+    if (subError) {
+      console.warn('Subscription check warning:', subError);
     }
-
-    // Validate subscription is active or trialing
-    if (subscription.status !== 'active' && subscription.status !== 'trialing') {
-      return new Response(
-        JSON.stringify({ error: 'Active subscription required' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Check if trial has expired
-    if (subscription.status === 'trialing' && subscription.trial_end) {
-      const trialEnd = new Date(subscription.trial_end);
-      if (trialEnd < new Date()) {
-        return new Response(
-          JSON.stringify({ error: 'Trial expired' }),
-          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    }
-
-    console.log('Subscription validated for user:', user.id);
 
     // Get the form data from the request
     const formData = await req.formData();

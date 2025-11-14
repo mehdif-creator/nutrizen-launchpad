@@ -61,29 +61,42 @@ serve(async (req) => {
     const body = await req.json()
     const validatedInput = UseSwapSchema.parse(body)
 
-    // Get current month
-    const currentMonth = new Date().toISOString().slice(0, 7) + '-01'
-
-    // Call atomic function to use swap
-    const { data: swapData, error: swapError } = await supabaseClient.rpc('use_swap_atomic', {
+    // Check and consume credits BEFORE executing swap
+    console.log('[use-swap] Checking credits for user:', user.id)
+    const { data: creditsCheck, error: creditsError } = await supabaseClient.rpc('check_and_consume_credits', {
       p_user_id: user.id,
-      p_month: currentMonth,
-      p_meal_plan_id: validatedInput.meal_plan_id,
-      p_day: validatedInput.day,
+      p_feature: 'swap',
+      p_cost: 1
     })
 
-    if (swapError) {
-      console.error('Error using swap:', swapError)
+    if (creditsError) {
+      console.error('[use-swap] Credits check error:', creditsError)
       return new Response(
         JSON.stringify({ 
           success: false,
-          error: swapError.message || 'Quota épuisé ou invalide' 
+          error: 'Erreur lors de la vérification des crédits' 
         }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log('[use-swap] Swap deducted successfully, now swapping recipe...')
+    if (!creditsCheck.success) {
+      console.log('[use-swap] Insufficient credits:', creditsCheck)
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error_code: creditsCheck.error_code,
+          error: creditsCheck.message || 'Crédits insuffisants',
+          current_balance: creditsCheck.current_balance,
+          required: creditsCheck.required
+        }),
+        { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    console.log('[use-swap] Credits consumed successfully, proceeding with swap')
+
+    console.log('[use-swap] Credits consumed, now swapping recipe...')
 
     // Get the current menu (with ownership validation)
     const { data: menuData, error: menuError } = await supabaseClient
@@ -200,7 +213,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        swapsRemaining: swapData.remaining,
+        creditsRemaining: creditsCheck.new_balance,
         newRecipe: {
           id: randomRecipe.id,
           title: randomRecipe.title

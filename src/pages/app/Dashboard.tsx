@@ -10,6 +10,8 @@ import { Progress } from "@/components/app/Progress";
 import { MealCard } from "@/components/app/MealCard";
 import { Badge } from "@/components/ui/badge";
 import { StreakBar } from "@/components/app/StreakBar";
+import { ZenCreditsDisplay } from "@/components/app/ZenCreditsDisplay";
+import { InsufficientCreditsModal } from "@/components/app/InsufficientCreditsModal";
 import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigate, useNavigate, Link } from "react-router-dom";
@@ -29,6 +31,12 @@ export default function Dashboard() {
   const { menu, days, hasMenu, isLoading: menuLoading } = useWeeklyMenu(user?.id);
 
   const [generating, setGenerating] = useState(false);
+  const [creditsModalOpen, setCreditsModalOpen] = useState(false);
+  const [creditsError, setCreditsError] = useState<{
+    currentBalance: number;
+    required: number;
+    feature: string;
+  } | null>(null);
 
   const firstName = user?.user_metadata?.full_name?.split(" ")[0] || "toi";
 
@@ -128,15 +136,6 @@ export default function Dashboard() {
   const handleSwap = async (index: number) => {
     if (!user || !menu) return;
 
-    if (stats.credits_zen <= 0) {
-      toast({
-        title: "Plus de crédits",
-        description: "Tu as utilisé tous tes crédits ce mois-ci.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
@@ -158,9 +157,17 @@ export default function Dashboard() {
       if (data.success) {
         toast({
           title: "Recette changée !",
-          description: `Il te reste ${data.swapsRemaining} swaps.`,
+          description: `Il te reste ${data.creditsRemaining} Crédits Zen.`,
         });
         // Realtime will auto-update
+      } else if (data.error_code === 'INSUFFICIENT_CREDITS') {
+        // Show credits modal
+        setCreditsError({
+          currentBalance: data.current_balance || 0,
+          required: data.required || 1,
+          feature: 'swap',
+        });
+        setCreditsModalOpen(true);
       } else {
         toast({
           title: "Erreur",
@@ -172,7 +179,7 @@ export default function Dashboard() {
       console.error("Error swapping:", error);
       toast({
         title: "Erreur",
-        description: "Impossible de changer la recette.",
+        description: "Une erreur est survenue lors du swap.",
         variant: "destructive",
       });
     }

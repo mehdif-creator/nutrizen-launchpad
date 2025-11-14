@@ -93,6 +93,38 @@ serve(async (req) => {
     }
 
     console.log('Authentication and subscription validated for user:', user.id);
+
+    // Check and consume credits BEFORE running analysis
+    console.log('[analyze-meal] Checking credits for user:', user.id)
+    const { data: creditsCheck, error: creditsError } = await supabaseClient.rpc('check_and_consume_credits', {
+      p_user_id: user.id,
+      p_feature: 'scanrepas',
+      p_cost: 1
+    })
+
+    if (creditsError) {
+      console.error('[analyze-meal] Credits check error:', creditsError)
+      return new Response(
+        JSON.stringify({ error: 'Erreur lors de la vérification des crédits', status: 'error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!creditsCheck.success) {
+      console.log('[analyze-meal] Insufficient credits:', creditsCheck)
+      return new Response(
+        JSON.stringify({ 
+          error_code: creditsCheck.error_code,
+          error: creditsCheck.message || 'Crédits insuffisants',
+          current_balance: creditsCheck.current_balance,
+          required: creditsCheck.required,
+          status: 'error'
+        }),
+        { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    console.log('[analyze-meal] Credits consumed, proceeding with analysis')
     
     // Get the form data from the request
     const formData = await req.formData();
