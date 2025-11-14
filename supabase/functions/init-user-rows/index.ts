@@ -100,6 +100,8 @@ serve(async (req) => {
         display_name: null,
         avatar_url: null,
         show_on_leaderboard: true,
+        onboarding_step: 0,
+        onboarding_completed: false,
       }, {
         onConflict: 'id'
       });
