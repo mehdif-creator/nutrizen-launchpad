@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
 import { t } from '@/i18n/translations';
+import { initializeNewUser } from '@/actions/initUser';
 
 /**
  * Post-checkout profile completion page
@@ -57,6 +58,9 @@ export default function PostCheckoutProfile() {
     setLoading(true);
 
     try {
+      // Initialize user rows (including onboarding state)
+      await initializeNewUser(user.id);
+      
       // Save preferences
       const { error: prefsError } = await supabase
         .from('preferences')
