@@ -369,23 +369,16 @@ export default function AdminDashboard() {
                   Gérer les tickets
                 </Button>
               </Link>
-              <Link to="/admin/billing">
-                <Button variant="outline" className="w-full justify-start">
-                  <DollarSign className="mr-2 h-4 w-4" />
-                  Facturation
-                </Button>
-              </Link>
             </div>
           </Card>
 
           <Card className="p-6">
             <h2 className="text-xl font-bold mb-4">Configuration</h2>
             <div className="space-y-3">
-              <Link to="/admin/feature-flags">
-                <Button variant="outline" className="w-full justify-start">
-                  Feature Flags
-                </Button>
-              </Link>
+              <Button variant="outline" className="w-full justify-start" disabled>
+                <DollarSign className="mr-2 h-4 w-4" />
+                Facturation (à venir)
+              </Button>
             </div>
           </Card>
         </div>
