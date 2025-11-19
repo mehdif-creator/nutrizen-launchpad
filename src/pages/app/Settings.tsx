@@ -3,9 +3,10 @@ import { AppFooter } from '@/components/app/AppFooter';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Download, Trash2 } from 'lucide-react';
+import { ExternalLink, Download, Trash2, HelpCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +21,7 @@ import {
 
 export default function Settings() {
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleStripePortal = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -107,14 +109,31 @@ export default function Settings() {
             <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t space-y-2 md:space-y-3">
               <Button onClick={handleStripePortal} className="w-full text-sm md:text-base">
                 <ExternalLink className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Gérer mon abonnement (Stripe)</span>
-                <span className="sm:hidden">Gérer (Stripe)</span>
+                Gérer mon abonnement
               </Button>
-              <Button variant="outline" className="w-full text-sm md:text-base">
-                <Download className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Télécharger mes factures</span>
-                <span className="sm:hidden">Factures</span>
+              <p className="text-xs text-muted-foreground">
+                Depuis le portail Stripe, tu peux mettre à jour ton moyen de paiement, consulter 
+                tes factures et annuler ton abonnement en toute autonomie.
+              </p>
+            </div>
+          </Card>
+
+          {/* Help & Support */}
+          <Card className="p-4 md:p-6 mb-4 md:mb-6">
+            <h2 className="text-lg md:text-xl font-semibold mb-4">Aide & Support</h2>
+            <div className="space-y-3">
+              <Button 
+                onClick={() => navigate('/app/support')} 
+                variant="outline" 
+                className="w-full text-sm md:text-base"
+              >
+                <HelpCircle className="mr-2 h-4 w-4" />
+                FAQ & Questions fréquentes
               </Button>
+              <p className="text-xs text-muted-foreground">
+                Retrouve les réponses aux questions les plus courantes sur l'utilisation de NutriZen, 
+                les crédits, le parrainage et la facturation.
+              </p>
             </div>
           </Card>
 

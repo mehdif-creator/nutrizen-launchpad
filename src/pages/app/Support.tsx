@@ -1,218 +1,220 @@
-import { useState } from 'react';
 import { AppHeader } from '@/components/app/AppHeader';
 import { AppFooter } from '@/components/app/AppFooter';
 import { Card } from '@/components/ui/card';
+import { 
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { Mail, MessageCircle, Book, CreditCard, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Clock } from 'lucide-react';
-import { z } from 'zod';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { toParisISO } from '@/lib/date-utils';
-
-const ticketSchema = z.object({
-  subject: z.string()
-    .trim()
-    .min(5, 'Le sujet doit contenir au moins 5 caractères')
-    .max(200, 'Le sujet ne peut pas dépasser 200 caractères'),
-  message: z.string()
-    .trim()
-    .min(20, 'Le message doit contenir au moins 20 caractères')
-    .max(5000, 'Le message ne peut pas dépasser 5000 caractères'),
-});
 
 export default function Support() {
-  const { toast } = useToast();
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!user) {
-      toast({
-        title: 'Erreur',
-        description: 'Tu dois être connecté pour créer un ticket.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Validate input
-    const validation = ticketSchema.safeParse({ subject, message });
-    if (!validation.success) {
-      toast({
-        title: 'Erreur de validation',
-        description: validation.error.errors[0].message,
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // Check rate limit: 5 tickets per 24 hours
-      const { count, error: countError } = await supabase
-        .from('support_tickets')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .gte('created_at', toParisISO(new Date(Date.now() - 24 * 60 * 60 * 1000)));
-
-      if (countError) throw countError;
-
-      if (count && count >= 5) {
-        toast({
-          title: 'Limite atteinte',
-          description: 'Tu peux créer maximum 5 tickets par jour. Notre équipe traitera tes demandes existantes bientôt.',
-          variant: 'destructive',
-        });
-        setLoading(false);
-        return;
-      }
-
-      // Insert ticket
-      const { error: insertError } = await supabase
-        .from('support_tickets')
-        .insert({
-          user_id: user.id,
-          subject: validation.data.subject,
-          messages: [
-            {
-              from: 'user',
-              text: validation.data.message,
-              timestamp: toParisISO(),
-            },
-          ],
-          status: 'open',
-        });
-
-      if (insertError) throw insertError;
-
-      toast({
-        title: '✅ Ticket créé',
-        description: 'Notre équipe te répondra sous 24h ouvrées.',
-      });
-
-      setSubject('');
-      setMessage('');
-    } catch (error) {
-      console.error('Error creating ticket:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de créer le ticket. Réessaye plus tard.',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col">
       <AppHeader />
-
-      <main className="flex-1 container py-8">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">Centre d'aide</h1>
-          <p className="text-muted-foreground mb-8">
-            Nous sommes là pour t'aider
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <Card className="p-4 text-center">
-              <Clock className="h-8 w-8 text-primary mx-auto mb-2" />
-              <h3 className="font-semibold mb-1">Réponse rapide</h3>
-              <p className="text-sm text-muted-foreground">Sous 24h ouvrées</p>
-            </Card>
-            <Card className="p-4 text-center">
-              <div className="text-3xl mb-2">📧</div>
-              <h3 className="font-semibold mb-1">Email</h3>
-              <p className="text-sm text-muted-foreground">support@nutrizen.fr</p>
-            </Card>
-            <Card className="p-4 text-center">
-              <div className="text-3xl mb-2">💬</div>
-              <h3 className="font-semibold mb-1">Chat</h3>
-              <p className="text-sm text-muted-foreground">Lun-Ven 9h-18h</p>
-            </Card>
+      
+      <main className="flex-1 container py-4 md:py-8 px-4">
+        <div className="max-w-3xl mx-auto">
+          <div className="mb-6 md:mb-8">
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">Aide & Questions fréquentes</h1>
+            <p className="text-sm md:text-base text-muted-foreground">
+              Trouve rapidement des réponses à tes questions sur NutriZen
+            </p>
           </div>
 
-          {/* FAQ */}
-          <Card className="p-6 mb-8">
-            <h2 className="text-2xl font-bold mb-4">Questions fréquentes</h2>
-            <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="item-1">
-                <AccordionTrigger>Comment annuler mon abonnement ?</AccordionTrigger>
-                <AccordionContent>
-                  Tu peux annuler ton abonnement à tout moment depuis tes paramètres
-                  en cliquant sur "Gérer mon abonnement". L'annulation est effective
-                  immédiatement mais tu garderas l'accès jusqu'à la fin de ta période payée.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-2">
-                <AccordionTrigger>Comment fonctionnent les swaps ?</AccordionTrigger>
-                <AccordionContent>
-                  Les swaps te permettent de remplacer un repas par un autre de ton choix.
-                  Chaque plan inclut un quota mensuel de swaps qui se renouvelle chaque mois.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-3">
-                <AccordionTrigger>Puis-je changer de plan ?</AccordionTrigger>
-                <AccordionContent>
-                  Oui, tu peux upgrader ou downgrader ton plan à tout moment depuis
-                  le portail Stripe. Les changements sont proratisés automatiquement.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-4">
-                <AccordionTrigger>Mes données sont-elles sécurisées ?</AccordionTrigger>
-                <AccordionContent>
-                  Absolument. Nous utilisons le chiffrement SSL et sommes conformes RGPD.
-                  Tes données ne sont jamais partagées avec des tiers.
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+          {/* Contact Card */}
+          <Card className="p-4 md:p-6 mb-6 md:mb-8 bg-gradient-to-br from-primary/5 to-accent/5">
+            <div className="flex items-start gap-3 md:gap-4">
+              <div className="p-2 rounded-full bg-primary/10">
+                <MessageCircle className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-lg md:text-xl font-semibold mb-1 md:mb-2">Besoin d'aide ?</h2>
+                <p className="text-xs md:text-sm text-muted-foreground mb-3 md:mb-4">
+                  Notre équipe est là pour t'accompagner. N'hésite pas à nous contacter !
+                </p>
+                <Button 
+                  variant="outline" 
+                  className="w-full sm:w-auto text-sm"
+                  onClick={() => window.location.href = 'mailto:support@mynutrizen.fr'}
+                >
+                  <Mail className="mr-2 h-4 w-4" />
+                  support@mynutrizen.fr
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Délai de réponse : sous 24h en semaine
+                </p>
+              </div>
+            </div>
           </Card>
 
-          {/* Contact Form */}
-          <Card className="p-6">
-            <h2 className="text-2xl font-bold mb-4">Ouvrir un ticket</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="subject">Sujet</Label>
-                <Input
-                  id="subject"
-                  placeholder="Ex: Problème avec mon menu"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  required
-                />
+          {/* FAQ Sections */}
+          <div className="space-y-6 md:space-y-8">
+            {/* Bien démarrer */}
+            <section>
+              <div className="flex items-center gap-2 mb-3 md:mb-4">
+                <Book className="h-5 w-5 text-primary" />
+                <h2 className="text-lg md:text-xl font-semibold">Bien démarrer avec NutriZen</h2>
               </div>
+              <Card className="p-4 md:p-6">
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="item-1">
+                    <AccordionTrigger className="text-sm md:text-base text-left">
+                      Comment remplir mon profil ?
+                    </AccordionTrigger>
+                    <AccordionContent className="text-xs md:text-sm text-muted-foreground">
+                      Va dans la section "Profil" et complète tes préférences alimentaires, allergies, 
+                      nombre de personnes dans ton foyer, et objectifs. Plus ton profil est complet, 
+                      plus tes menus seront personnalisés !
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-2">
+                    <AccordionTrigger className="text-sm md:text-base text-left">
+                      Comment générer mon premier menu hebdomadaire ?
+                    </AccordionTrigger>
+                    <AccordionContent className="text-xs md:text-sm text-muted-foreground">
+                      Clique sur "Générer un nouveau menu" depuis le tableau de bord. Notre IA crée 
+                      automatiquement un menu complet pour la semaine, adapté à ta famille et tes 
+                      préférences. Tu peux ensuite l'ajuster avec les swaps si besoin.
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-3">
+                    <AccordionTrigger className="text-sm md:text-base text-left">
+                      Comment utiliser les swaps ?
+                    </AccordionTrigger>
+                    <AccordionContent className="text-xs md:text-sm text-muted-foreground">
+                      Sur chaque recette de ton menu, clique sur "Swap" pour la remplacer par une 
+                      alternative qui te plaît davantage. Chaque swap coûte 1 crédit. Tu as des 
+                      crédits inclus avec ton abonnement !
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </Card>
+            </section>
 
-              <div className="space-y-2">
-                <Label htmlFor="message">Message</Label>
-                <Textarea
-                  id="message"
-                  placeholder="Décris ton problème en détail..."
-                  rows={6}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  required
-                />
+            {/* Crédits Zen & Gamification */}
+            <section>
+              <div className="flex items-center gap-2 mb-3 md:mb-4">
+                <Sparkles className="h-5 w-5 text-primary" />
+                <h2 className="text-lg md:text-xl font-semibold">Crédits Zen & Gamification</h2>
               </div>
+              <Card className="p-4 md:p-6">
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="item-4">
+                    <AccordionTrigger className="text-sm md:text-base text-left">
+                      Quelle est la différence entre les types de crédits ?
+                    </AccordionTrigger>
+                    <AccordionContent className="text-xs md:text-sm text-muted-foreground">
+                      <ul className="list-disc pl-4 space-y-1">
+                        <li><strong>Crédits d'abonnement</strong> : Inclus chaque mois avec ton abonnement, 
+                        ils se renouvellent automatiquement.</li>
+                        <li><strong>Crédits Zen (achetés)</strong> : Achetés en packs (ex: 15 crédits pour 4,99€), 
+                        ils ne périment JAMAIS et restent sur ton compte.</li>
+                      </ul>
+                      <p className="mt-2">Lors de l'utilisation, les crédits d'abonnement sont consommés en premier.</p>
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-5">
+                    <AccordionTrigger className="text-sm md:text-base text-left">
+                      Comment gagner des points et des badges ?
+                    </AccordionTrigger>
+                    <AccordionContent className="text-xs md:text-sm text-muted-foreground">
+                      Tu gagnes des points en utilisant l'application :
+                      <ul className="list-disc pl-4 space-y-1 mt-2">
+                        <li>Connexion quotidienne : +5 points</li>
+                        <li>Profil complété : +20 points</li>
+                        <li>Menu généré : +10 points</li>
+                        <li>Repas validé : +2 points</li>
+                        <li>Utilisation de fonctionnalités (swap, InspiFrigo, etc.) : +1-2 points</li>
+                      </ul>
+                      <p className="mt-2">Les badges se débloquent automatiquement selon tes actions !</p>
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-6">
+                    <AccordionTrigger className="text-sm md:text-base text-left">
+                      Comment fonctionne le parrainage ?
+                    </AccordionTrigger>
+                    <AccordionContent className="text-xs md:text-sm text-muted-foreground">
+                      Partage ton lien de parrainage unique avec tes amis. Pour chaque ami qui s'abonne :
+                      <ul className="list-disc pl-4 space-y-1 mt-2">
+                        <li>Ton ami reçoit +10 Crédits Zen de bienvenue</li>
+                        <li>Tu reçois +20 Crédits Zen bonus</li>
+                        <li>Tous les 5 filleuls abonnés, tu gagnes <strong>1 mois gratuit</strong> d'abonnement !</li>
+                      </ul>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </Card>
+            </section>
 
-              <Button type="submit" disabled={loading} className="w-full">
-                {loading ? 'Envoi...' : 'Envoyer le ticket'}
-              </Button>
-            </form>
+            {/* Facturation & Abonnement */}
+            <section>
+              <div className="flex items-center gap-2 mb-3 md:mb-4">
+                <CreditCard className="h-5 w-5 text-primary" />
+                <h2 className="text-lg md:text-xl font-semibold">Facturation & Abonnement</h2>
+              </div>
+              <Card className="p-4 md:p-6">
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="item-7">
+                    <AccordionTrigger className="text-sm md:text-base text-left">
+                      Comment voir ou modifier mon abonnement ?
+                    </AccordionTrigger>
+                    <AccordionContent className="text-xs md:text-sm text-muted-foreground">
+                      Va dans "Paramètres" puis clique sur "Gérer mon abonnement". Tu seras redirigé 
+                      vers le portail Stripe où tu peux modifier ton moyen de paiement, voir tes 
+                      factures et gérer ton abonnement en toute autonomie.
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-8">
+                    <AccordionTrigger className="text-sm md:text-base text-left">
+                      Comment annuler mon abonnement ?
+                    </AccordionTrigger>
+                    <AccordionContent className="text-xs md:text-sm text-muted-foreground">
+                      Tu peux annuler à tout moment depuis "Paramètres" → "Gérer mon abonnement". 
+                      Ton abonnement reste actif jusqu'à la fin de la période payée. Tes Crédits Zen 
+                      achetés restent disponibles même après annulation.
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-9">
+                    <AccordionTrigger className="text-sm md:text-base text-left">
+                      Où trouver mes factures ?
+                    </AccordionTrigger>
+                    <AccordionContent className="text-xs md:text-sm text-muted-foreground">
+                      Toutes tes factures sont accessibles dans le portail de gestion d'abonnement 
+                      (Paramètres → Gérer mon abonnement). Tu peux les télécharger au format PDF.
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-10">
+                    <AccordionTrigger className="text-sm md:text-base text-left">
+                      Comment utiliser mes mois gratuits gagnés par parrainage ?
+                    </AccordionTrigger>
+                    <AccordionContent className="text-xs md:text-sm text-muted-foreground">
+                      Tes mois gratuits s'appliquent automatiquement lors de tes prochains 
+                      renouvellements d'abonnement. Tu verras le décompte dans ton tableau de bord 
+                      gamification. Aucune action de ta part n'est nécessaire !
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </Card>
+            </section>
+          </div>
+
+          {/* Additional Help */}
+          <Card className="mt-6 md:mt-8 p-4 md:p-6 bg-muted/30">
+            <h3 className="text-base md:text-lg font-semibold mb-2">Tu ne trouves pas la réponse ?</h3>
+            <p className="text-xs md:text-sm text-muted-foreground mb-4">
+              Notre équipe est là pour t'aider. Envoie-nous un email avec le maximum de détails 
+              sur ta question, et nous te répondrons dans les plus brefs délais.
+            </p>
+            <Button 
+              className="w-full sm:w-auto text-sm"
+              onClick={() => window.location.href = 'mailto:support@mynutrizen.fr'}
+            >
+              <Mail className="mr-2 h-4 w-4" />
+              Contacter le support
+            </Button>
           </Card>
         </div>
       </main>

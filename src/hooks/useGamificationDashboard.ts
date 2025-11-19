@@ -11,6 +11,8 @@ export interface DashboardData {
     credits_total: number;
     lifetime_points: number;
     lifetime_credits_earned: number;
+    free_months_earned: number;
+    free_months_used: number;
     updated_at: string;
   };
   streak: {
