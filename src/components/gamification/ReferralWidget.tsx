@@ -9,9 +9,11 @@ import { Progress } from '@/components/ui/progress';
 interface ReferralWidgetProps {
   referralCode: string;
   activeReferrals: number;
+  freeMonthsEarned?: number;
+  freeMonthsUsed?: number;
 }
 
-export function ReferralWidget({ referralCode, activeReferrals }: ReferralWidgetProps) {
+export function ReferralWidget({ referralCode, activeReferrals, freeMonthsEarned = 0, freeMonthsUsed = 0 }: ReferralWidgetProps) {
   const [copied, setCopied] = useState(false);
   
   const referralUrl = `${window.location.origin}?ref=${referralCode}`;
@@ -80,12 +82,29 @@ export function ReferralWidget({ referralCode, activeReferrals }: ReferralWidget
           )}
         </div>
 
+        {/* Free months earned */}
+        {freeMonthsEarned > 0 && (
+          <div className="p-3 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg border border-primary/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-primary">Mois gratuits gagnés</p>
+                <p className="text-xs text-muted-foreground">
+                  {freeMonthsEarned - freeMonthsUsed} disponible{freeMonthsEarned - freeMonthsUsed > 1 ? 's' : ''} 
+                  {freeMonthsUsed > 0 && ` (${freeMonthsUsed} utilisé${freeMonthsUsed > 1 ? 's' : ''})`}
+                </p>
+              </div>
+              <div className="text-2xl font-bold text-primary">{freeMonthsEarned - freeMonthsUsed}</div>
+            </div>
+          </div>
+        )}
+
         {/* Rewards info */}
         <div className="p-3 bg-card rounded-lg border text-sm space-y-1">
           <p className="font-semibold">Récompenses:</p>
           <ul className="text-xs text-muted-foreground space-y-0.5">
-            <li>• 1 parrainage validé = <span className="text-primary">+10 crédits</span></li>
-            <li>• 5 parrainages actifs = <span className="text-primary">+1 mois gratuit</span></li>
+            <li>• Inscription du filleul = <span className="text-primary">+10 crédits</span> pour lui</li>
+            <li>• Abonnement du filleul = <span className="text-primary">+20 crédits</span> pour toi</li>
+            <li>• 5 filleuls abonnés = <span className="text-primary">+1 mois gratuit</span></li>
           </ul>
         </div>
       </div>

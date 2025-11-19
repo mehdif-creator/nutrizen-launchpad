@@ -264,15 +264,15 @@ serve(async (req) => {
         }
       }
         
-      // Handle referral if present
+      // Handle referral rewards for subscription
       if (referralCode && userId) {
-        logStep("Processing referral", { 
+        logStep("Processing referral signup and subscription reward", { 
           referralCode: '[REDACTED]', 
           newUserId: redactId(userId) 
         });
           
         try {
-          // Call handle-referral function
+          // Call handle-referral function for signup tracking
           const referralResponse = await fetch(
             `${Deno.env.get("SUPABASE_URL")}/functions/v1/handle-referral`,
             {
@@ -289,13 +289,22 @@ serve(async (req) => {
           );
           
           if (referralResponse.ok) {
-            logStep("Referral processed successfully");
+            logStep("Referral signup tracked successfully");
+          }
+          
+          // Award subscription rewards via RPC
+          const { error: rewardError } = await supabaseAdmin.rpc('handle_referred_user_subscribed', {
+            p_referred_user_id: userId,
+            p_referral_code: referralCode,
+          });
+          
+          if (rewardError) {
+            logStep("Referral subscription reward failed", { error: rewardError.message });
           } else {
-            logStep("Referral processing failed", { status: referralResponse.status });
+            logStep("Referral subscription reward processed successfully");
           }
         } catch (referralError) {
           logStep("Referral processing error", { error: String(referralError) });
-          // Don't fail the whole process if referral fails
         }
       }
     }

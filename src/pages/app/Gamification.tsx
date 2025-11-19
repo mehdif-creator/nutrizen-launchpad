@@ -106,6 +106,8 @@ export default function Gamification() {
             <ReferralWidget
               referralCode={dashboard.profile.referral_code}
               activeReferrals={dashboard.activeReferrals}
+              freeMonthsEarned={dashboard.wallet.free_months_earned}
+              freeMonthsUsed={dashboard.wallet.free_months_used}
             />
           </div>
         </motion.div>

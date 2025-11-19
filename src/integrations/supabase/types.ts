@@ -1556,6 +1556,8 @@ export type Database = {
       user_wallets: {
         Row: {
           credits_total: number
+          free_months_earned: number
+          free_months_used: number
           lifetime_credits: number
           lifetime_credits_earned: number
           lifetime_points: number
@@ -1566,6 +1568,8 @@ export type Database = {
         }
         Insert: {
           credits_total?: number
+          free_months_earned?: number
+          free_months_used?: number
           lifetime_credits?: number
           lifetime_credits_earned?: number
           lifetime_points?: number
@@ -1576,6 +1580,8 @@ export type Database = {
         }
         Update: {
           credits_total?: number
+          free_months_earned?: number
+          free_months_used?: number
           lifetime_credits?: number
           lifetime_credits_earned?: number
           lifetime_points?: number
@@ -1947,6 +1953,10 @@ export type Database = {
       get_user_household_info: { Args: { p_user_id: string }; Returns: Json }
       handle_referral_signup: {
         Args: { p_new_user_id: string; p_referral_code: string }
+        Returns: Json
+      }
+      handle_referred_user_subscribed: {
+        Args: { p_user_id: string }
         Returns: Json
       }
       has_role: {
