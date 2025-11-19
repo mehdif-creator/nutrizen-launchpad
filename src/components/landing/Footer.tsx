@@ -25,7 +25,8 @@ export const Footer = () => {
       title: t('footer.company'),
       links: [
         { label: t('footer.about'), href: '/#' },
-        { label: t('footer.contact'), href: '/contact' }
+        { label: t('footer.contact'), href: '/contact' },
+        { label: 'Programme d\'affiliation', href: '/affiliate' }
       ]
     },
     {

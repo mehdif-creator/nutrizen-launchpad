@@ -264,7 +264,10 @@ serve(async (req) => {
         }
       }
         
-      // Handle referral rewards for subscription
+      // Handle referral and affiliate codes
+      const refCode = session.metadata?.referral_code;
+      const affCode = session.metadata?.affiliate_code;
+      
       if (referralCode && userId) {
         logStep("Processing referral signup and subscription reward", { 
           referralCode: '[REDACTED]', 
@@ -272,7 +275,6 @@ serve(async (req) => {
         });
           
         try {
-          // Call handle-referral function for signup tracking
           const referralResponse = await fetch(
             `${Deno.env.get("SUPABASE_URL")}/functions/v1/handle-referral`,
             {
@@ -292,7 +294,6 @@ serve(async (req) => {
             logStep("Referral signup tracked successfully");
           }
           
-          // Award subscription rewards via RPC
           const { error: rewardError } = await supabaseAdmin.rpc('handle_referred_user_subscribed', {
             p_referred_user_id: userId,
             p_referral_code: referralCode,
@@ -305,6 +306,42 @@ serve(async (req) => {
           }
         } catch (referralError) {
           logStep("Referral processing error", { error: String(referralError) });
+        }
+      }
+      
+      // Handle affiliate tracking
+      if (affCode && userId && subscriptionId) {
+        logStep("Processing affiliate conversion", { affiliateCode: redactId(affCode) });
+        try {
+          // Find affiliate user by code
+          const { data: affiliateProfile } = await supabaseAdmin
+            .from('user_profiles')
+            .select('id')
+            .eq('affiliate_code', affCode)
+            .eq('is_affiliate', true)
+            .single();
+          
+          if (affiliateProfile) {
+            // Get subscription details to calculate commission
+            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+            const amountRecurring = subscription.items.data[0].price.unit_amount || 0;
+            
+            // Create affiliate conversion record
+            await supabaseAdmin
+              .from('affiliate_conversions')
+              .insert({
+                affiliate_user_id: affiliateProfile.id,
+                referred_user_id: userId,
+                stripe_subscription_id: subscriptionId,
+                commission_rate: 0.04,
+                amount_recurring: amountRecurring / 100, // Convert cents to euros
+                status: 'active',
+              });
+            
+            logStep("Affiliate conversion tracked successfully");
+          }
+        } catch (affError) {
+          logStep("Affiliate tracking error", { error: String(affError) });
         }
       }
     }

@@ -65,6 +65,7 @@ serve(async (req) => {
     // Get referral code from query params if present
     const url = new URL(req.url);
     const referralCode = url.searchParams.get('referral_code');
+    const affiliateCode = url.searchParams.get('affiliate_code');
     
     // Use post-checkout-login edge function for auto-login after payment
     const appBaseUrl = Deno.env.get("APP_BASE_URL") || "https://mynutrizen.fr";
@@ -72,7 +73,7 @@ serve(async (req) => {
       ? `https://${supabaseProjectRef}.supabase.co/functions/v1/post-checkout-login?session_id={CHECKOUT_SESSION_ID}`
       : `${appBaseUrl}/auth/callback?from_checkout=true`;
     
-    logStep("Creating checkout session", { priceId, email, plan: planName, referralCode, successUrl });
+    logStep("Creating checkout session", { priceId, email, plan: planName, referralCode, affiliateCode, successUrl });
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : email,
@@ -89,6 +90,7 @@ serve(async (req) => {
       metadata: {
         plan: planName,
         referral_code: referralCode || '',
+        affiliate_code: affiliateCode || '',
         from_checkout: 'true',
       },
       success_url: successUrl,
