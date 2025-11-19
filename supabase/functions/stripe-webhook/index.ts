@@ -99,7 +99,7 @@ serve(async (req) => {
       const subscriptionId = session.subscription as string;
       
       // Check if this is a credit pack purchase
-      const isCreditPurchase = session.metadata?.product_type === 'zen_credits';
+      const isCreditPurchase = session.metadata?.product_role === 'zen_credits_pack' || session.metadata?.credits_type === 'lifetime';
       const creditsAmount = session.metadata?.credits_amount ? parseInt(session.metadata.credits_amount) : null;
       const supabaseUserId = session.metadata?.supabase_user_id;
       
@@ -114,13 +114,17 @@ serve(async (req) => {
         try {
           const { data: creditsResult, error: creditsError } = await supabaseAdmin.rpc('add_credits_from_purchase', {
             p_user_id: supabaseUserId,
-            p_credits: creditsAmount,
-            p_stripe_metadata: {
+            p_amount: creditsAmount,
+            p_credit_type: 'lifetime',
+            p_metadata: {
               stripe_event_id: event.id,
               stripe_session_id: session.id,
               stripe_customer_id: customerId,
+              stripe_payment_intent: session.payment_intent,
               amount_paid: session.amount_total,
-              currency: session.currency
+              currency: session.currency,
+              product_id: 'prod_TS7tSGWcVfrv4S',
+              purchased_at: new Date().toISOString()
             }
           });
           
@@ -130,8 +134,9 @@ serve(async (req) => {
           }
           
           logStep("Credits added successfully", { 
-            newBalance: creditsResult.new_balance,
-            creditsAdded: creditsResult.credits_added
+            subscriptionBalance: creditsResult.subscription_balance,
+            lifetimeBalance: creditsResult.lifetime_balance,
+            totalBalance: creditsResult.total_balance
           });
           
           return new Response(JSON.stringify({ received: true, credits_added: true }), {

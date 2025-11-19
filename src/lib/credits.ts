@@ -6,6 +6,8 @@ export interface CreditsCheckResult {
   message?: string;
   current_balance?: number;
   new_balance?: number;
+  subscription_balance?: number;
+  lifetime_balance?: number;
   required?: number;
   consumed?: number;
 }
@@ -58,28 +60,39 @@ export async function checkAndConsumeCredits(
 }
 
 /**
- * Get current credits balance for a user
+ * Get current credits balance for a user (both subscription and lifetime)
  * @param userId - User ID
- * @returns Current credits balance or null
+ * @returns Object with subscription, lifetime and total credits or null
  */
-export async function getCreditsBalance(userId: string): Promise<number | null> {
+export async function getCreditsBalance(userId: string): Promise<{
+  subscription: number;
+  lifetime: number;
+  total: number;
+} | null> {
   try {
     const { data, error } = await supabase
       .from('user_wallets')
-      .select('credits_total')
+      .select('subscription_credits, lifetime_credits')
       .eq('user_id', userId)
       .single();
 
     if (error) {
       if (error.code === 'PGRST116') {
         // No wallet yet, return 0
-        return 0;
+        return { subscription: 0, lifetime: 0, total: 0 };
       }
       console.error('Error fetching credits balance:', error);
       return null;
     }
 
-    return data?.credits_total ?? 0;
+    const subscription = data?.subscription_credits ?? 0;
+    const lifetime = data?.lifetime_credits ?? 0;
+    
+    return {
+      subscription,
+      lifetime,
+      total: subscription + lifetime,
+    };
   } catch (error) {
     console.error('Error in getCreditsBalance:', error);
     return null;

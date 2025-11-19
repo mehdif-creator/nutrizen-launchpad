@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Sparkles, ShoppingCart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 interface InsufficientCreditsModalProps {
   open: boolean;
@@ -34,9 +35,32 @@ export function InsufficientCreditsModal({
 }: InsufficientCreditsModalProps) {
   const navigate = useNavigate();
 
-  const handleBuyCredits = () => {
+  const handleBuyCredits = async () => {
     onOpenChange(false);
-    navigate('/app/pricing');
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        navigate('/login');
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-credits-checkout', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      navigate('/app/dashboard?scroll_to=credits');
+    }
   };
 
   return (

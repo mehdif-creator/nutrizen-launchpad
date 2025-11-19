@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { StreakBar } from "@/components/app/StreakBar";
 import { ZenCreditsDisplay } from "@/components/app/ZenCreditsDisplay";
 import { InsufficientCreditsModal } from "@/components/app/InsufficientCreditsModal";
+import { BuyCreditsSection } from "@/components/app/BuyCreditsSection";
 import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigate, useNavigate, Link } from "react-router-dom";
@@ -39,6 +40,26 @@ export default function Dashboard() {
   } | null>(null);
 
   const firstName = user?.user_metadata?.full_name?.split(" ")[0] || "toi";
+
+  useEffect(() => {
+    // Check for successful credit purchase
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('credits_purchased') === 'true') {
+      toast({
+        title: "Bravo 🎉",
+        description: "Tu viens d'ajouter 15 Crédits Zen non expirants à ton compte !",
+      });
+      window.history.replaceState({}, '', '/app/dashboard');
+    }
+
+    // Scroll to credits section if requested
+    if (urlParams.get('scroll_to') === 'credits') {
+      setTimeout(() => {
+        document.getElementById('credits')?.scrollIntoView({ behavior: 'smooth' });
+      }, 500);
+      window.history.replaceState({}, '', '/app/dashboard');
+    }
+  }, [toast]);
 
   // Redirect admin to admin dashboard
   if (isAdmin) {
@@ -423,6 +444,12 @@ export default function Dashboard() {
 
           {/* Right: Sidebar */}
           <aside className="space-y-4 md:space-y-6">
+            {/* Credits Display & Purchase */}
+            <div className="space-y-4" id="credits">
+              <ZenCreditsDisplay userId={user?.id} showBuyButton={false} size="md" />
+              <BuyCreditsSection />
+            </div>
+
             {/* Liste de courses */}
             <Card className="rounded-2xl border shadow-sm p-4 md:p-5">
               <div className="flex items-center justify-between mb-3">
