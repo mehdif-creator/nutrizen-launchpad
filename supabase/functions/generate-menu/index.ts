@@ -119,6 +119,23 @@ serve(async (req) => {
 
     console.log(`[generate-menu] 7 credits deducted, remaining: ${currentCredits - 7}`);
 
+    // Get user's household info for portion calculations
+    const { data: profileData, error: profileError } = await supabaseClient
+      .from("user_profiles")
+      .select("household_adults, household_children")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError) {
+      console.warn("[generate-menu] Could not fetch household info, using defaults:", profileError);
+    }
+
+    const householdAdults = profileData?.household_adults ?? 1;
+    const householdChildren = profileData?.household_children ?? 0;
+    const effectiveHouseholdSize = householdAdults + householdChildren * 0.7;
+
+    console.log(`[generate-menu] Household size: ${householdAdults} adults + ${householdChildren} children = ${effectiveHouseholdSize.toFixed(1)} effective portions`);
+
     // Parse and validate input
     const body = await req.json().catch(() => ({}));
     const validatedInput = GenerateMenuSchema.parse(body);
@@ -405,32 +422,47 @@ serve(async (req) => {
 
     console.log(`[generate-menu] Selected ${selectedRecipes.length} recipes for the week`);
 
-    // Build weekly menu
+    // Build weekly menu with portion factors
     const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
-    const days = selectedRecipes.map((recipe, index) => ({
-      day: weekdays[index],
-      recipe_id: recipe.id,
-      title: recipe.title,
-      image_url: recipe.image_url || recipe.image_path || null,
-      prep_min: recipe.prep_time_min || 0,
-      total_min: recipe.total_time_min || 0,
-      calories: Math.round(recipe.calories_kcal || 0),
-      macros: {
-        proteins_g: Math.round(recipe.proteins_g || 0),
-        carbs_g: Math.round(recipe.carbs_g || 0),
-        fats_g: Math.round(recipe.fats_g || 0)
-      }
-    }));
+    const days = selectedRecipes.map((recipe, index) => {
+      const baseServings = recipe.base_servings || recipe.servings || 2; // Default to 2 if not set
+      const portionFactor = effectiveHouseholdSize / baseServings;
+      
+      return {
+        day: weekdays[index],
+        recipe_id: recipe.id,
+        title: recipe.title,
+        image_url: recipe.image_url || recipe.image_path || null,
+        prep_min: recipe.prep_time_min || 0,
+        total_min: recipe.total_time_min || 0,
+        calories: Math.round((recipe.calories_kcal || 0) * portionFactor),
+        macros: {
+          proteins_g: Math.round((recipe.proteins_g || 0) * portionFactor),
+          carbs_g: Math.round((recipe.carbs_g || 0) * portionFactor),
+          fats_g: Math.round((recipe.fats_g || 0) * portionFactor)
+        },
+        portion_factor: portionFactor,
+        target_servings: effectiveHouseholdSize,
+        base_servings: baseServings
+      };
+    });
 
     console.log(`[generate-menu] Upserting menu for week starting: ${weekStartStr}`);
 
-    // Upsert weekly menu with fallback tracking
+    // Upsert weekly menu with fallback tracking and household info
     const { data: menu, error: menuError } = await supabaseClient
       .from("user_weekly_menus")
       .upsert({
         user_id: user.id,
         week_start: weekStartStr,
-        payload: { days },
+        payload: { 
+          days,
+          household: {
+            adults: householdAdults,
+            children: householdChildren,
+            effective_size: effectiveHouseholdSize
+          }
+        },
         used_fallback: usedFallback
       }, {
         onConflict: "user_id,week_start"
