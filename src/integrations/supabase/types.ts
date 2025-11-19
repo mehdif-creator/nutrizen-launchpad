@@ -304,6 +304,39 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_transactions: {
+        Row: {
+          created_at: string
+          credit_type: string
+          delta: number
+          feature: string | null
+          id: string
+          metadata: Json | null
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credit_type: string
+          delta: number
+          feature?: string | null
+          id?: string
+          metadata?: Json | null
+          reason: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credit_type?: string
+          delta?: number
+          feature?: string | null
+          id?: string
+          metadata?: Json | null
+          reason?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       feature_flags: {
         Row: {
           description: string | null
@@ -1517,25 +1550,31 @@ export type Database = {
       user_wallets: {
         Row: {
           credits_total: number
+          lifetime_credits: number
           lifetime_credits_earned: number
           lifetime_points: number
           points_total: number
+          subscription_credits: number
           updated_at: string
           user_id: string
         }
         Insert: {
           credits_total?: number
+          lifetime_credits?: number
           lifetime_credits_earned?: number
           lifetime_points?: number
           points_total?: number
+          subscription_credits?: number
           updated_at?: string
           user_id: string
         }
         Update: {
           credits_total?: number
+          lifetime_credits?: number
           lifetime_credits_earned?: number
           lifetime_points?: number
           points_total?: number
+          subscription_credits?: number
           updated_at?: string
           user_id?: string
         }
@@ -1748,10 +1787,24 @@ export type Database = {
       }
     }
     Functions: {
-      add_credits_from_purchase: {
-        Args: { p_credits: number; p_stripe_metadata?: Json; p_user_id: string }
-        Returns: Json
-      }
+      add_credits_from_purchase:
+        | {
+            Args: {
+              p_amount: number
+              p_credit_type?: string
+              p_metadata?: Json
+              p_user_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_credits: number
+              p_stripe_metadata?: Json
+              p_user_id: string
+            }
+            Returns: Json
+          }
       admin_set_user_credits: {
         Args: { p_credits: number; p_operation?: string; p_user_id: string }
         Returns: Json
