@@ -1988,6 +1988,7 @@ export type Database = {
         Args: { p_date?: string; p_user_id: string }
         Returns: Json
       }
+      get_dashboard_stats: { Args: { p_user_id: string }; Returns: Json }
       get_menu_household:
         | {
             Args: {
@@ -2094,6 +2095,10 @@ export type Database = {
       to_num: { Args: { input_text: string }; Returns: number }
       to_number_fr: { Args: { p: string }; Returns: number }
       unaccent_safe: { Args: { p: string }; Returns: string }
+      update_user_streak_and_stats: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
       use_swap_atomic: {
         Args: {
           p_day: number

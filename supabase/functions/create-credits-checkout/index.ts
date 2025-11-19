@@ -59,13 +59,18 @@ serve(async (req) => {
     }
 
     // Create checkout session for Zen Credits pack
-    // Product: "Crédits Zen x15" - prod_TS7tSGWcVfrv4S
+    // Product: "Crédits Zen x15" - 4.99€
+    // IMPORTANT: Replace with your actual Stripe price ID from dashboard
+    const zenCreditsPriceId = Deno.env.get("ZEN_CREDITS_PRICE_ID") || "price_1QVN8jEl2hJeGlFpJXYqvZx7";
+    
+    logStep("Using Zen Credits price ID", { priceId: zenCreditsPriceId });
+    
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: [
         {
-          price: "price_1SIWCHIDcb01YPK1r9L5jTgR", // Default price for prod_TS7tSGWcVfrv4S
+          price: zenCreditsPriceId,
           quantity: 1,
         },
       ],

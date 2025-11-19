@@ -17,7 +17,7 @@ const DEFAULT_STATS: DashboardStats = {
   temps_gagne: 0,
   charge_mentale_pct: 0,
   serie_en_cours_set_count: 0,
-  credits_zen: 50, // New default: 50 credits per month
+  credits_zen: 0, // Will be synced from user_wallets
   references_count: 0,
   objectif_hebdos_valide: 0,
 };
@@ -45,7 +45,7 @@ async function fetchDashboardStats(userId: string): Promise<DashboardStats> {
     temps_gagne: data.temps_gagne ?? 0,
     charge_mentale_pct: data.charge_mentale_pct ?? 0,
     serie_en_cours_set_count: data.serie_en_cours_set_count ?? 0,
-    credits_zen: data.credits_zen ?? 50,
+    credits_zen: data.credits_zen ?? 0,
     references_count: data.references_count ?? 0,
     objectif_hebdos_valide: data.objectif_hebdos_valide ?? 0,
   };

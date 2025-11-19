@@ -24,10 +24,22 @@ export function BuyCreditsSection() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Checkout error:', error);
+        // More specific error message
+        if (error.message?.includes('price')) {
+          toast.error('Configuration Stripe en cours. Contacte le support si le problème persiste.');
+        } else {
+          toast.error('Erreur lors de la création de la session de paiement');
+        }
+        return;
+      }
 
       if (data?.url) {
-        window.open(data.url, '_blank');
+        // Redirect in same tab for better UX
+        window.location.href = data.url;
+      } else {
+        toast.error('URL de paiement non reçue');
       }
     } catch (error) {
       console.error('Error creating checkout:', error);
