@@ -129,7 +129,7 @@ export default function Fit() {
                 </table>
               </div>
               <p className="text-center text-2xl font-bold">
-                Ton tarif : <span className="text-primary">19,99 €/mois</span>{" "}
+                Ton tarif : <span className="text-primary">14,99 €/mois</span>{" "}
                 <span className="text-base font-normal text-muted-foreground">(Essai gratuit 7 jours)</span>
               </p>
             </div>
@@ -216,7 +216,7 @@ export default function Fit() {
               <h2 className="text-3xl font-bold mb-4 text-destructive">Offre limitée</h2>
               <p className="text-lg mb-4">
                 Seuls les <strong>50 premiers inscrits Fit</strong> bénéficient de la{" "}
-                <strong>valeur complète de 200 €</strong> au tarif de 19,99 €/mois. L'offre pourrait évoluer après cette
+                <strong>valeur complète de 200 €</strong> au tarif de 14,99 €/mois. L'offre pourrait évoluer après cette
                 limite.
               </p>
               <p className="text-lg font-semibold mb-6">
