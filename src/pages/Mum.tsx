@@ -127,7 +127,7 @@ export default function Mum() {
                 </table>
               </div>
               <p className="text-center text-2xl font-bold">
-                Ton tarif : <span className="text-accent">19,99 €/mois</span>{" "}
+                Ton tarif : <span className="text-accent">14,99 €/mois</span>{" "}
                 <span className="text-base font-normal text-muted-foreground">(Essai gratuit 7 jours)</span>
               </p>
             </div>
@@ -214,7 +214,7 @@ export default function Mum() {
               <h2 className="text-3xl font-bold mb-4 text-destructive">Offre limitée</h2>
               <p className="text-lg mb-4">
                 Seuls les <strong>75 premières mamans inscrites</strong> bénéficient de la{" "}
-                <strong>valeur complète de 200 €</strong> au tarif de 19,99 €/mois. L'offre pourrait évoluer après cette
+                <strong>valeur complète de 200 €</strong> au tarif de 14,99 €/mois. L'offre pourrait évoluer après cette
                 limite.
               </p>
               <p className="text-lg font-semibold mb-6">
