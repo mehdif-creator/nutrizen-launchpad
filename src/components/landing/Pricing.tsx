@@ -32,6 +32,8 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
       name: "Équilibre",
       price: 14.99,
       priceId: "price_1SIWFyEl2hJeGlFp8pQyEMQC",
+      annualPrice: 125.90,
+      annualPriceId: "price_annual_equilibre_temp", // TODO: Remplacer par le vrai price ID Stripe
       originalPrice: 29.99,
       credits: "50 crédits / mois",
       badge: "Offre unique",
@@ -102,6 +104,33 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
         <div className="text-center mb-12 animate-fade-in">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">{t("pricing.title")}</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">{t("pricing.subtitle")}</p>
+          
+          {/* Toggle Mensuel / Annuel */}
+          <div className="flex items-center justify-center gap-4 mb-8">
+            <button
+              onClick={() => setAnnual(false)}
+              className={`px-6 py-2 rounded-full font-medium transition-all ${
+                !annual
+                  ? "bg-primary text-white shadow-lg"
+                  : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+              }`}
+            >
+              Mensuel
+            </button>
+            <button
+              onClick={() => setAnnual(true)}
+              className={`px-6 py-2 rounded-full font-medium transition-all relative ${
+                annual
+                  ? "bg-primary text-white shadow-lg"
+                  : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+              }`}
+            >
+              Annuel
+              <span className="absolute -top-2 -right-2 bg-accent text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                -30%
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Value Anchor */}
@@ -109,14 +138,29 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
           <div className="flex flex-col md:flex-row items-center justify-center gap-4">
             <div className="text-left">
               <p className="text-sm text-muted-foreground mb-1">Valeur réelle estimée :</p>
-              <p className="text-3xl font-bold line-through text-muted-foreground">205 €/mois</p>
+              <p className="text-3xl font-bold line-through text-muted-foreground">
+                {annual ? "205 €/mois (2 460 €/an)" : "205 €/mois"}
+              </p>
             </div>
             <div className="text-4xl font-bold text-accent">→</div>
             <div className="text-left">
               <p className="text-sm text-accent font-medium mb-1">Ton tarif aujourd'hui :</p>
               <p className="text-4xl font-bold text-foreground">
-                14,99 €<span className="text-lg">/mois</span>
+                {annual ? (
+                  <>
+                    125,90 €<span className="text-lg">/an</span>
+                  </>
+                ) : (
+                  <>
+                    14,99 €<span className="text-lg">/mois</span>
+                  </>
+                )}
               </p>
+              {annual && (
+                <p className="text-sm text-accent font-medium mt-1">
+                  Soit 10,49 €/mois · Économise 30%
+                </p>
+              )}
             </div>
           </div>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm">
@@ -171,11 +215,31 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
                 <div>
                   <h3 className="text-3xl font-bold mb-2">{plan.name}</h3>
                   <div className="flex items-baseline gap-2 mb-2">
-                    <span className="text-5xl font-bold">{plan.price}€</span>
-                    <span className="text-muted-foreground">/ mois</span>
+                    {annual ? (
+                      <>
+                        <span className="text-5xl font-bold">{plan.annualPrice}€</span>
+                        <span className="text-muted-foreground">/ an</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-5xl font-bold">{plan.price}€</span>
+                        <span className="text-muted-foreground">/ mois</span>
+                      </>
+                    )}
                   </div>
-                  {plan.originalPrice && (
-                    <p className="text-lg text-muted-foreground line-through mb-2">{plan.originalPrice}€ / mois</p>
+                  {annual ? (
+                    <div className="space-y-1">
+                      <p className="text-base font-medium text-accent">
+                        Soit {(plan.annualPrice / 12).toFixed(2)}€/mois
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Économie de {((plan.price * 12 - plan.annualPrice).toFixed(2))}€ par an
+                      </p>
+                    </div>
+                  ) : (
+                    plan.originalPrice && (
+                      <p className="text-lg text-muted-foreground line-through mb-2">{plan.originalPrice}€ / mois</p>
+                    )
                   )}
                   <p className="text-base font-medium text-primary mt-2">{plan.credits}</p>
                 </div>
@@ -190,14 +254,14 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
                 </div>
 
                 <Button
-                  onClick={() => handleSubscribe(plan.priceId, plan.name)}
-                  disabled={loading === plan.priceId}
+                  onClick={() => handleSubscribe(annual ? plan.annualPriceId : plan.priceId, plan.name)}
+                  disabled={loading === (annual ? plan.annualPriceId : plan.priceId)}
                   className={`w-full hover:scale-[1.02] active:scale-[0.99] transition-tech ${
                     plan.popular ? "bg-gradient-to-r from-primary to-accent text-white shadow-glow" : ""
                   }`}
                   variant={plan.popular ? "default" : "outline"}
                 >
-                  {loading === plan.priceId ? "Chargement..." : plan.cta}
+                  {loading === (annual ? plan.annualPriceId : plan.priceId) ? "Chargement..." : plan.cta}
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground mt-3">
