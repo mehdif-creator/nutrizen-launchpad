@@ -25,12 +25,15 @@ export const useOnboarding = (userId: string | undefined) => {
     completed: false,
     loading: true,
   });
+  const [hasFetched, setHasFetched] = useState(false);
   const { toast } = useToast();
 
-  // Fetch onboarding state from Supabase
+  // Fetch onboarding state from Supabase - only once
   useEffect(() => {
-    if (!userId) {
-      setState({ currentStep: 0, completed: false, loading: false });
+    if (!userId || hasFetched) {
+      if (!userId) {
+        setState({ currentStep: 0, completed: false, loading: false });
+      }
       return;
     }
 
@@ -44,19 +47,23 @@ export const useOnboarding = (userId: string | undefined) => {
 
         if (error) throw error;
 
+        const isCompleted = data?.onboarding_completed === true || data?.onboarding_step >= 4;
+        
         setState({
           currentStep: data?.onboarding_step || 0,
-          completed: data?.onboarding_completed || false,
+          completed: isCompleted,
           loading: false,
         });
+        setHasFetched(true);
       } catch (error) {
         console.error('Error fetching onboarding state:', error);
         setState({ currentStep: 0, completed: false, loading: false });
+        setHasFetched(true);
       }
     };
 
     fetchOnboardingState();
-  }, [userId]);
+  }, [userId, hasFetched]);
 
   // Update onboarding step in Supabase
   const updateStep = async (step: number) => {

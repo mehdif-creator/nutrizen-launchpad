@@ -2,11 +2,21 @@ import { AppHeader } from '@/components/app/AppHeader';
 import { AppFooter } from '@/components/app/AppFooter';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Download, Mail } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ShoppingCart, Download, Mail, Clock, Flame, ChefHat } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useWeeklyMenu } from '@/hooks/useWeeklyMenu';
+import { Spinner } from '@/components/common/Spinner';
+import { useNavigate } from 'react-router-dom';
+
+const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
 export default function MealPlan() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { days, isLoading, hasMenu } = useWeeklyMenu(user?.id);
 
   const handleExportList = () => {
     toast({
@@ -15,6 +25,41 @@ export default function MealPlan() {
     });
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <AppHeader />
+        <main className="flex-1 container py-8 px-4">
+          <div className="flex items-center justify-center py-12">
+            <Spinner />
+          </div>
+        </main>
+        <AppFooter />
+      </div>
+    );
+  }
+
+  if (!hasMenu) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <AppHeader />
+        <main className="flex-1 container py-8 px-4">
+          <div className="text-center py-12">
+            <ChefHat className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h2 className="text-2xl font-bold mb-2">Aucun menu disponible</h2>
+            <p className="text-muted-foreground mb-6">
+              Tu n'as pas encore de menu pour cette semaine.
+            </p>
+            <Button onClick={() => navigate('/app')}>
+              Retour au tableau de bord
+            </Button>
+          </div>
+        </main>
+        <AppFooter />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <AppHeader />
@@ -22,9 +67,9 @@ export default function MealPlan() {
       <main className="flex-1 container py-4 md:py-8 px-4">
         <div className="mb-6 md:mb-8">
           <div className="mb-4">
-            <h1 className="text-2xl md:text-3xl font-bold mb-2">Ton menu de la semaine</h1>
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">Tes recettes de la semaine</h1>
             <p className="text-sm md:text-base text-muted-foreground">
-              Détails de tes repas du 20 au 26 janvier 2025
+              {days.length} recettes personnalisées pour cette semaine
             </p>
           </div>
           
@@ -42,37 +87,75 @@ export default function MealPlan() {
           </div>
         </div>
 
-        {/* Weekly Table */}
-        <Card className="overflow-hidden mb-6 md:mb-8">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-muted">
-                <tr>
-                  <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-semibold">Jour</th>
-                  <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-semibold hidden sm:table-cell">Petit-déj</th>
-                  <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-semibold">Déjeuner</th>
-                  <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-semibold">Dîner</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'].map((day, i) => (
-                  <tr key={i} className="hover:bg-muted/50">
-                    <td className="px-3 md:px-6 py-3 md:py-4 font-medium text-sm md:text-base">{day.slice(0, 3)}<span className="hidden sm:inline">{day.slice(3)}</span></td>
-                    <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-muted-foreground hidden sm:table-cell">
-                      Porridge aux fruits
-                    </td>
-                    <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-muted-foreground">
-                      Poulet au curry & riz
-                    </td>
-                    <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-muted-foreground">
-                      Salade grecque
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+        {/* Recipes Grid */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6 md:mb-8">
+          {days.map((recipe, index) => (
+            <Card 
+              key={`${recipe.recipe_id}-${index}`}
+              className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
+              onClick={() => navigate(`/app/recipes/${recipe.recipe_id}`)}
+            >
+              <div className="h-48 bg-muted relative overflow-hidden">
+                {recipe.image_url ? (
+                  <img 
+                    src={recipe.image_url} 
+                    alt={recipe.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/img/hero-default.png';
+                    }}
+                  />
+                ) : (
+                  <img 
+                    src="/img/hero-default.png"
+                    alt={recipe.title}
+                    className="w-full h-full object-cover opacity-50"
+                  />
+                )}
+                <div className="absolute top-2 left-2">
+                  <Badge variant="secondary" className="text-xs font-medium">
+                    {weekdays[index]}
+                  </Badge>
+                </div>
+              </div>
+              <div className="p-4 space-y-3">
+                <h3 className="font-semibold text-lg leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+                  {recipe.title}
+                </h3>
+                
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3.5 w-3.5" />
+                    {recipe.prep_min + recipe.total_min} min
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Flame className="h-3.5 w-3.5" />
+                    {Math.round(recipe.calories)} kcal
+                  </span>
+                </div>
+
+                {/* Macros */}
+                {recipe.macros && (
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    <Badge variant="outline" className="text-xs">
+                      P: {Math.round(recipe.macros.proteins_g)}g
+                    </Badge>
+                    {recipe.macros.carbs_g && (
+                      <Badge variant="outline" className="text-xs">
+                        G: {Math.round(recipe.macros.carbs_g)}g
+                      </Badge>
+                    )}
+                    {recipe.macros.fats_g && (
+                      <Badge variant="outline" className="text-xs">
+                        L: {Math.round(recipe.macros.fats_g)}g
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </div>
+            </Card>
+          ))}
+        </div>
 
         {/* Shopping List */}
         <Card className="p-4 md:p-6">
@@ -89,30 +172,46 @@ export default function MealPlan() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
             <div>
-              <h3 className="font-semibold mb-2 md:mb-3 text-sm md:text-base text-primary">🥬 Légumes & Fruits</h3>
-              <ul className="space-y-1.5 md:space-y-2 text-xs md:text-sm text-muted-foreground">
-                <li>• Tomates (6)</li>
-                <li>• Concombres (2)</li>
-                <li>• Bananes (1 kg)</li>
-                <li>• Pommes (4)</li>
+              <h3 className="font-semibold mb-3 text-sm md:text-base">🥦 Fruits & Légumes</h3>
+              <ul className="space-y-2 text-xs md:text-sm text-muted-foreground">
+                <li className="flex items-center gap-2">
+                  <div className="w-1 h-1 rounded-full bg-primary" />
+                  Tomates (4)
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-1 h-1 rounded-full bg-primary" />
+                  Oignons (2)
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-1 h-1 rounded-full bg-primary" />
+                  Carottes (6)
+                </li>
               </ul>
             </div>
-
             <div>
-              <h3 className="font-semibold mb-2 md:mb-3 text-sm md:text-base text-accent">🍖 Viandes & Poissons</h3>
-              <ul className="space-y-1.5 md:space-y-2 text-xs md:text-sm text-muted-foreground">
-                <li>• Poulet (800g)</li>
-                <li>• Saumon (400g)</li>
-                <li>• Œufs (12)</li>
+              <h3 className="font-semibold mb-3 text-sm md:text-base">🥩 Protéines</h3>
+              <ul className="space-y-2 text-xs md:text-sm text-muted-foreground">
+                <li className="flex items-center gap-2">
+                  <div className="w-1 h-1 rounded-full bg-primary" />
+                  Poulet (600g)
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-1 h-1 rounded-full bg-primary" />
+                  Œufs (12)
+                </li>
               </ul>
             </div>
-
             <div>
-              <h3 className="font-semibold mb-2 md:mb-3 text-sm md:text-base text-green-600">🌾 Féculents</h3>
-              <ul className="space-y-1.5 md:space-y-2 text-xs md:text-sm text-muted-foreground">
-                <li>• Riz basmati (500g)</li>
-                <li>• Pâtes (500g)</li>
-                <li>• Pain complet</li>
+              <h3 className="font-semibold mb-3 text-sm md:text-base">🍚 Féculents</h3>
+              <ul className="space-y-2 text-xs md:text-sm text-muted-foreground">
+                <li className="flex items-center gap-2">
+                  <div className="w-1 h-1 rounded-full bg-primary" />
+                  Riz basmati (500g)
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-1 h-1 rounded-full bg-primary" />
+                  Pâtes (400g)
+                </li>
               </ul>
             </div>
           </div>
