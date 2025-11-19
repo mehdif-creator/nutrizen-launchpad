@@ -29,7 +29,14 @@ export default function Dashboard() {
 
   // Use custom hooks for data fetching with realtime
   const { stats, isLoading: statsLoading } = useDashboardStats(user?.id);
-  const { menu, days, hasMenu, isLoading: menuLoading } = useWeeklyMenu(user?.id);
+  const { 
+    menu, 
+    days, 
+    hasMenu, 
+    isLoading: menuLoading,
+    householdAdults,
+    householdChildren 
+  } = useWeeklyMenu(user?.id);
 
   const [generating, setGenerating] = useState(false);
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
@@ -435,6 +442,8 @@ export default function Dashboard() {
                     onSwap={() => handleSwap(i)}
                     onViewRecipe={() => navigate(`/app/recipes/${meal.id}`)}
                     swapsRemaining={stats.credits_zen}
+                    householdAdults={householdAdults}
+                    householdChildren={householdChildren}
                     data-onboarding-target={i === 0 ? "meal-card" : undefined}
                   />
                 ))}

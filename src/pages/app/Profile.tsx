@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toParisTime } from '@/lib/date-utils';
 import { User, Target, Utensils, AlertTriangle, Leaf, Scale, Users, Heart, Save } from 'lucide-react';
+import { HouseholdSizeSection } from '@/components/app/HouseholdSizeSection';
 
 export default function Profile() {
   const { toast } = useToast();
@@ -1003,6 +1004,11 @@ export default function Profile() {
                       <Button type="button" variant="outline" size="sm" onClick={() => addTextField('allergies_proches')}>
                         + Ajouter une allergie
                       </Button>
+                    </div>
+
+                    {/* NEW: Household Size Component */}
+                    <div className="pt-6 border-t">
+                      <HouseholdSizeSection userId={user?.id || ''} />
                     </div>
                   </CardContent>
                 </AccordionContent>

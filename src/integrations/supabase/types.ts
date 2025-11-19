@@ -1444,6 +1444,8 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           display_name: string | null
+          household_adults: number
+          household_children: number
           id: string
           onboarding_completed: boolean | null
           onboarding_step: number | null
@@ -1455,6 +1457,8 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          household_adults?: number
+          household_children?: number
           id: string
           onboarding_completed?: boolean | null
           onboarding_step?: number | null
@@ -1466,6 +1470,8 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          household_adults?: number
+          household_children?: number
           id?: string
           onboarding_completed?: boolean | null
           onboarding_step?: number | null
@@ -1586,6 +1592,7 @@ export type Database = {
           day_of_week: number | null
           id: string
           meal_slot: string | null
+          portion_factor: number
           recipe_id: string
           scale_factor: number | null
           target_servings: number
@@ -1596,6 +1603,7 @@ export type Database = {
           day_of_week?: number | null
           id?: string
           meal_slot?: string | null
+          portion_factor?: number
           recipe_id: string
           scale_factor?: number | null
           target_servings?: number
@@ -1606,6 +1614,7 @@ export type Database = {
           day_of_week?: number | null
           id?: string
           meal_slot?: string | null
+          portion_factor?: number
           recipe_id?: string
           scale_factor?: number | null
           target_servings?: number
@@ -1823,6 +1832,10 @@ export type Database = {
           warnings: number
         }[]
       }
+      calculate_effective_household_size: {
+        Args: { p_adults: number; p_children: number }
+        Returns: number
+      }
       calculate_user_level: { Args: { points: number }; Returns: string }
       canonicalize_name: { Args: { p_name_norm: string }; Returns: string }
       check_and_consume_credits: {
@@ -1931,6 +1944,7 @@ export type Database = {
         }
         Returns: Json
       }
+      get_user_household_info: { Args: { p_user_id: string }; Returns: Json }
       handle_referral_signup: {
         Args: { p_new_user_id: string; p_referral_code: string }
         Returns: Json

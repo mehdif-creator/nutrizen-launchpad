@@ -26,6 +26,11 @@ export interface WeeklyMenu {
   created_at: string;
   updated_at: string;
   used_fallback?: string | null;
+  household?: {
+    adults: number;
+    children: number;
+    effective_size: number;
+  };
 }
 
 /**
@@ -63,13 +68,21 @@ async function fetchWeeklyMenu(userId: string): Promise<WeeklyMenu | null> {
     return null;
   }
 
-  // Type cast payload to extract days
-  const payload = data.payload as { days?: WeeklyMenuDay[] } | null;
+  // Type cast payload to extract days and household
+  const payload = data.payload as { 
+    days?: WeeklyMenuDay[];
+    household?: {
+      adults: number;
+      children: number;
+      effective_size: number;
+    };
+  } | null;
 
   console.log('[useWeeklyMenu] Menu data received:', {
     menu_id: data.menu_id,
     day_count: payload?.days?.length,
-    used_fallback: data.used_fallback
+    used_fallback: data.used_fallback,
+    household: payload?.household
   });
 
   return {
@@ -80,6 +93,7 @@ async function fetchWeeklyMenu(userId: string): Promise<WeeklyMenu | null> {
     created_at: data.created_at,
     updated_at: data.updated_at,
     used_fallback: data.used_fallback,
+    household: payload?.household,
   };
 }
 
@@ -129,6 +143,8 @@ export function useWeeklyMenu(userId: string | undefined) {
     ...query,
     menu: query.data,
     days: query.data?.days || [],
+    householdAdults: query.data?.household?.adults ?? 1,
+    householdChildren: query.data?.household?.children ?? 0,
     hasMenu: !!query.data && query.data.days.length > 0,
   };
 }
