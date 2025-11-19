@@ -39,6 +39,24 @@ export default function Dashboard() {
     householdChildren 
   } = useWeeklyMenu(user?.id);
 
+  // Update streak on mount
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    const updateStreak = async () => {
+      try {
+        await supabase.rpc('update_user_streak_and_stats', {
+          p_user_id: user.id
+        });
+        // Stats will auto-refresh via realtime subscription
+      } catch (error) {
+        console.error('[Dashboard] Error updating streak:', error);
+      }
+    };
+
+    updateStreak();
+  }, [user?.id]);
+
   const [generating, setGenerating] = useState(false);
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
   const [creditsError, setCreditsError] = useState<{
