@@ -56,6 +56,75 @@ export type Database = {
         }
         Relationships: []
       }
+      affiliate_conversions: {
+        Row: {
+          affiliate_user_id: string
+          amount_recurring: number
+          commission_rate: number
+          created_at: string
+          id: string
+          referred_user_id: string
+          status: string
+          stripe_subscription_id: string
+          updated_at: string
+        }
+        Insert: {
+          affiliate_user_id: string
+          amount_recurring: number
+          commission_rate?: number
+          created_at?: string
+          id?: string
+          referred_user_id: string
+          status?: string
+          stripe_subscription_id: string
+          updated_at?: string
+        }
+        Update: {
+          affiliate_user_id?: string
+          amount_recurring?: number
+          commission_rate?: number
+          created_at?: string
+          id?: string
+          referred_user_id?: string
+          status?: string
+          stripe_subscription_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      affiliate_payouts: {
+        Row: {
+          affiliate_user_id: string
+          amount: number
+          created_at: string
+          id: string
+          metadata: Json | null
+          period_end: string | null
+          period_start: string | null
+          status: string
+        }
+        Insert: {
+          affiliate_user_id: string
+          amount: number
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+        }
+        Update: {
+          affiliate_user_id?: string
+          amount?: number
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       badges: {
         Row: {
           code: string
@@ -1304,6 +1373,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_daily_recipes: {
+        Row: {
+          created_at: string
+          date: string
+          dinner_recipe_id: string | null
+          id: string
+          lunch_recipe_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          dinner_recipe_id?: string | null
+          id?: string
+          lunch_recipe_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          dinner_recipe_id?: string | null
+          id?: string
+          lunch_recipe_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_dashboard_stats: {
         Row: {
           charge_mentale_pct: number
@@ -1441,12 +1537,14 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          affiliate_code: string | null
           avatar_url: string | null
           created_at: string
           display_name: string | null
           household_adults: number
           household_children: number
           id: string
+          is_affiliate: boolean
           onboarding_completed: boolean | null
           onboarding_step: number | null
           referral_code: string
@@ -1454,12 +1552,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          affiliate_code?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
           household_adults?: number
           household_children?: number
           id: string
+          is_affiliate?: boolean
           onboarding_completed?: boolean | null
           onboarding_step?: number | null
           referral_code: string
@@ -1467,12 +1567,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          affiliate_code?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
           household_adults?: number
           household_children?: number
           id?: string
+          is_affiliate?: boolean
           onboarding_completed?: boolean | null
           onboarding_step?: number | null
           referral_code?: string
@@ -1870,6 +1972,7 @@ export type Database = {
       fn_get_dashboard: { Args: never; Returns: Json }
       fn_points_to_credits: { Args: { p_points: number }; Returns: boolean }
       fn_touch_streak_today: { Args: never; Returns: undefined }
+      generate_affiliate_code: { Args: never; Returns: string }
       generate_referral_code:
         | { Args: never; Returns: string }
         | { Args: { user_id: string }; Returns: string }
@@ -1880,6 +1983,10 @@ export type Database = {
       get_active_referrals_count: {
         Args: { p_user_id: string }
         Returns: number
+      }
+      get_daily_recipe_suggestions: {
+        Args: { p_date?: string; p_user_id: string }
+        Returns: Json
       }
       get_menu_household:
         | {

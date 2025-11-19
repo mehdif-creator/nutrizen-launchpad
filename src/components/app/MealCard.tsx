@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Clock, Flame, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { RecipeMacrosBadge } from '@/components/app/RecipeMacrosBadge';
 
 interface MealCardProps {
   day: string;
@@ -14,6 +15,10 @@ interface MealCardProps {
   swapsRemaining?: number;
   householdAdults?: number;
   householdChildren?: number;
+  proteins?: number;
+  carbs?: number;
+  fats?: number;
+  servings?: number;
   'data-onboarding-target'?: string;
 }
 
@@ -29,6 +34,10 @@ export function MealCard({
   swapsRemaining = 0,
   householdAdults = 1,
   householdChildren = 0,
+  proteins,
+  carbs,
+  fats,
+  servings = 1,
   'data-onboarding-target': dataOnboardingTarget
 }: MealCardProps) {
   const effectiveSize = (householdAdults + householdChildren * 0.7).toFixed(1);
@@ -82,6 +91,15 @@ export function MealCard({
             {kcal} kcal
           </span>
         </div>
+        
+        {/* Macros badge */}
+        <RecipeMacrosBadge 
+          calories={kcal * servings}
+          proteins={proteins}
+          carbs={carbs}
+          fats={fats}
+          servings={servings}
+        />
         <div className="flex items-center gap-2 pt-2">
           <Button 
             onClick={onValidate}

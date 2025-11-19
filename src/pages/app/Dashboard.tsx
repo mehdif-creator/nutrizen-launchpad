@@ -19,6 +19,7 @@ import { Navigate, useNavigate, Link } from "react-router-dom";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useWeeklyMenu } from "@/hooks/useWeeklyMenu";
 import { OnboardingCoach } from "@/components/app/OnboardingCoach";
+import { DailyRecipesWidget } from "@/components/app/DailyRecipesWidget";
 
 const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -81,6 +82,10 @@ export default function Dashboard() {
         title: day.title,
         time: day.prep_min || 0,
         kcal: day.calories || 0,
+        proteins: day.proteins_g,
+        carbs: day.carbs_g,
+        fats: day.fats_g,
+        servings: day.servings || 1,
         imageUrl: day.image_url,
       }));
     }
@@ -414,6 +419,9 @@ export default function Dashboard() {
         <section className="px-4 sm:px-6 lg:px-10 grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
           {/* Left: Meals + Quick Links */}
           <div className="xl:col-span-2 space-y-6">
+            {/* Daily Recipes Widget */}
+            <DailyRecipesWidget />
+            
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg md:text-xl font-bold">Semaine en cours</h2>
             </div>
@@ -431,7 +439,7 @@ export default function Dashboard() {
             ) : (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {weekMeals.map((meal, i) => (
-                  <MealCard
+                <MealCard
                     key={`${meal.id}-${i}`}
                     day={weekdays[i]}
                     title={meal.title}
@@ -444,6 +452,10 @@ export default function Dashboard() {
                     swapsRemaining={stats.credits_zen}
                     householdAdults={householdAdults}
                     householdChildren={householdChildren}
+                    proteins={meal.proteins}
+                    carbs={meal.carbs}
+                    fats={meal.fats}
+                    servings={meal.servings || 1}
                     data-onboarding-target={i === 0 ? "meal-card" : undefined}
                   />
                 ))}

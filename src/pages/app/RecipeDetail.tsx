@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { Clock, Users, Flame, ChefHat, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { RecipeMacrosBadge } from '@/components/app/RecipeMacrosBadge';
 
 interface Recipe {
   id: string;
@@ -194,24 +195,39 @@ export default function RecipeDetail() {
           {/* Macros */}
           {(recipe.proteins_g || recipe.carbs_g || recipe.fats_g) && (
             <Card className="p-6 mb-8">
-              <h2 className="text-xl font-semibold mb-4">Valeurs nutritionnelles</h2>
-              <div className="grid grid-cols-3 gap-4">
-                {recipe.proteins_g && (
-                  <div>
-                    <div className="text-sm text-muted-foreground">Protéines</div>
-                    <div className="text-2xl font-semibold text-primary">{Math.round(recipe.proteins_g)}g</div>
+              <h2 className="text-xl font-semibold mb-4">Valeurs nutritionnelles (pour 1 portion)</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {recipe.calories_kcal && recipe.servings && (
+                  <div className="text-center p-4 bg-primary/5 rounded-lg">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <Flame className="h-4 w-4 text-primary" />
+                      <div className="text-sm text-muted-foreground">Calories</div>
+                    </div>
+                    <div className="text-2xl font-bold text-primary">
+                      {Math.round(recipe.calories_kcal / recipe.servings)}
+                    </div>
+                    <div className="text-xs text-muted-foreground">kcal</div>
                   </div>
                 )}
-                {recipe.carbs_g && (
-                  <div>
-                    <div className="text-sm text-muted-foreground">Glucides</div>
-                    <div className="text-2xl font-semibold">{Math.round(recipe.carbs_g)}g</div>
+                {recipe.proteins_g && recipe.servings && (
+                  <div className="text-center p-4 bg-muted/30 rounded-lg">
+                    <div className="text-sm text-muted-foreground mb-2">Protéines</div>
+                    <div className="text-2xl font-semibold">{Math.round(recipe.proteins_g / recipe.servings)}</div>
+                    <div className="text-xs text-muted-foreground">g</div>
                   </div>
                 )}
-                {recipe.fats_g && (
-                  <div>
-                    <div className="text-sm text-muted-foreground">Lipides</div>
-                    <div className="text-2xl font-semibold">{Math.round(recipe.fats_g)}g</div>
+                {recipe.carbs_g && recipe.servings && (
+                  <div className="text-center p-4 bg-muted/30 rounded-lg">
+                    <div className="text-sm text-muted-foreground mb-2">Glucides</div>
+                    <div className="text-2xl font-semibold">{Math.round(recipe.carbs_g / recipe.servings)}</div>
+                    <div className="text-xs text-muted-foreground">g</div>
+                  </div>
+                )}
+                {recipe.fats_g && recipe.servings && (
+                  <div className="text-center p-4 bg-muted/30 rounded-lg">
+                    <div className="text-sm text-muted-foreground mb-2">Lipides</div>
+                    <div className="text-2xl font-semibold">{Math.round(recipe.fats_g / recipe.servings)}</div>
+                    <div className="text-xs text-muted-foreground">g</div>
                   </div>
                 )}
               </div>

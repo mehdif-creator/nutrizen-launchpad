@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useReferralTracking } from "@/hooks/useReferralTracking";
+import { useAffiliateTracking } from "@/hooks/useAffiliateTracking";
 
 // Pages
 import Index from "./pages/Index";
@@ -31,6 +32,7 @@ import Gamification from "./pages/app/Gamification";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminOnboarding from "./pages/admin/AdminOnboarding";
+import AdminTickets from "./pages/admin/AdminTickets";
 
 // Blog
 import BlogIndex from "./pages/blog/BlogIndex";
@@ -47,12 +49,15 @@ import Contact from "./pages/Contact";
 import Fit from "./pages/Fit";
 import Mum from "./pages/Mum";
 import Pro from "./pages/Pro";
+import Affiliate from "./pages/Affiliate";
 import PostCheckout from "./pages/PostCheckout";
 import PostCheckoutProfile from "./pages/PostCheckoutProfile";
 
 const App = () => {
   // Track referral codes from URL
   useReferralTracking();
+  // Track affiliate codes from URL
+  useAffiliateTracking();
 
   return (
     <Routes>
@@ -83,6 +88,7 @@ const App = () => {
         <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute requireAdmin><AdminUsers /></ProtectedRoute>} />
         <Route path="/admin/onboarding" element={<ProtectedRoute requireAdmin><AdminOnboarding /></ProtectedRoute>} />
+        <Route path="/admin/tickets" element={<ProtectedRoute requireAdmin><AdminTickets /></ProtectedRoute>} />
             
             {/* Blog */}
             <Route path="/blog" element={<BlogIndex />} />
@@ -99,8 +105,8 @@ const App = () => {
             <Route path="/fit" element={<Fit />} />
             <Route path="/mum" element={<Mum />} />
             <Route path="/pro" element={<Pro />} />
+            <Route path="/affiliate" element={<Affiliate />} />
             <Route path="/post-checkout" element={<PostCheckout />} />
-            <Route path="/post-checkout-profile" element={<ProtectedRoute><PostCheckoutProfile /></ProtectedRoute>} />
             
     <Route path="*" element={<NotFound />} />
   </Routes>
