@@ -1736,6 +1736,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_weekly_menu_items_menu"
+            columns: ["weekly_menu_id"]
+            isOneToOne: false
+            referencedRelation: "user_weekly_menus"
+            referencedColumns: ["menu_id"]
+          },
+          {
             foreignKeyName: "user_weekly_menu_items_recipe_id_fkey"
             columns: ["recipe_id"]
             isOneToOne: false
