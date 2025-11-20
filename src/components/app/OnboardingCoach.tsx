@@ -97,6 +97,9 @@ export const OnboardingCoach = ({ userId }: OnboardingCoachProps) => {
       // Small delay to let the page render first
       const timer = setTimeout(() => setIsOpen(true), 500);
       return () => clearTimeout(timer);
+    } else {
+      // Close modal when onboarding is completed or shouldn't show
+      setIsOpen(false);
     }
   }, [shouldShow, currentStep]);
 

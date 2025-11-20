@@ -2059,6 +2059,10 @@ export type Database = {
         Returns: Json
       }
       get_user_household_info: { Args: { p_user_id: string }; Returns: Json }
+      get_weekly_recipes_by_day: {
+        Args: { p_user_id: string; p_week_start?: string }
+        Returns: Json
+      }
       handle_referral_signup: {
         Args: { p_new_user_id: string; p_referral_code: string }
         Returns: Json
