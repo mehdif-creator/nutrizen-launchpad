@@ -24,6 +24,10 @@ verify_jwt = true
 [functions.referral-intake]
 verify_jwt = false
 
+[functions.referral-intake.rate_limit]
+limit = 20
+period = "1h"
+
 [functions.analyze-food-photo]
 verify_jwt = true
 
@@ -36,6 +40,10 @@ verify_jwt = true
 [functions.stripe-webhook]
 verify_jwt = false
 
+[functions.stripe-webhook.rate_limit]
+limit = 100
+period = "1h"
+
 [functions.check-subscription]
 verify_jwt = true
 
@@ -47,6 +55,10 @@ verify_jwt = true
 
 [functions.submit-contact]
 verify_jwt = false
+
+[functions.submit-contact.rate_limit]
+limit = 10
+period = "1h"
 
 [functions.submit-lead]
 verify_jwt = false
@@ -69,6 +81,10 @@ verify_jwt = true
 
 [functions.post-checkout-login]
 verify_jwt = false
+
+[functions.post-checkout-login.rate_limit]
+limit = 10
+period = "1h"
 
 [functions.admin-reset-user]
 verify_jwt = true
