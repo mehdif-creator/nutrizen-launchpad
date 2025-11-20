@@ -477,6 +477,48 @@ serve(async (req) => {
 
     console.log(`[generate-menu] Menu saved successfully. Menu ID: ${menu.menu_id}`);
 
+    // ========================================
+    // POPULATE user_weekly_menu_items table
+    // This enables the shopping list generation function
+    // ========================================
+    
+    // First, delete any existing items for this menu (in case of regeneration)
+    const { error: deleteError } = await supabaseClient
+      .from("user_weekly_menu_items")
+      .delete()
+      .eq("weekly_menu_id", menu.menu_id);
+
+    if (deleteError) {
+      console.error("[generate-menu] Error deleting old menu items:", deleteError);
+      // Continue anyway - this is not critical
+    } else {
+      console.log(`[generate-menu] Cleared existing menu items for menu ${menu.menu_id}`);
+    }
+
+    // Insert one row per day into user_weekly_menu_items
+    // day_of_week: 1=Monday, 2=Tuesday, ..., 7=Sunday
+    // meal_slot: 'dinner' (main meal of the day)
+    const menuItems = days.map((day, index) => ({
+      weekly_menu_id: menu.menu_id,
+      recipe_id: day.recipe_id,
+      day_of_week: index + 1, // 1-7 for Mon-Sun
+      meal_slot: 'dinner',
+      target_servings: day.target_servings || effectiveHouseholdSize,
+      scale_factor: day.portion_factor,
+      portion_factor: day.portion_factor
+    }));
+
+    const { error: itemsError } = await supabaseClient
+      .from("user_weekly_menu_items")
+      .insert(menuItems);
+
+    if (itemsError) {
+      console.error("[generate-menu] Error inserting menu items:", itemsError);
+      // Continue anyway - the menu was saved successfully
+    } else {
+      console.log(`[generate-menu] Inserted ${menuItems.length} menu items for shopping list generation`);
+    }
+
     console.log(`[generate-menu] ✅ SUCCESS: Generated menu ${menu.menu_id} with ${usedFallback || 'strict filters'}`);
 
     return new Response(
