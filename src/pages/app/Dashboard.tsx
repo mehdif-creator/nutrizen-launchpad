@@ -19,7 +19,6 @@ import { Navigate, useNavigate, Link } from "react-router-dom";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useWeeklyMenu } from "@/hooks/useWeeklyMenu";
 import { OnboardingCoach } from "@/components/app/OnboardingCoach";
-import { DailyRecipesWidget } from "@/components/app/DailyRecipesWidget";
 import { useWeeklyRecipesByDay } from "@/hooks/useWeeklyRecipesByDay";
 import { DayCardWithRecipes } from "@/components/app/DayCardWithRecipes";
 import { useShoppingList } from "@/hooks/useShoppingList";
@@ -407,9 +406,6 @@ export default function Dashboard() {
         <section className="px-4 sm:px-6 lg:px-10 grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
           {/* Left: Meals + Quick Links */}
           <div className="xl:col-span-2 space-y-6">
-            {/* Daily Recipes Widget */}
-            <DailyRecipesWidget />
-            
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg md:text-xl font-bold">Semaine en cours</h2>
             </div>
