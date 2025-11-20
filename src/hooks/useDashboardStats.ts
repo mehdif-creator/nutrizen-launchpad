@@ -60,7 +60,7 @@ export function useDashboardStats(userId: string | undefined) {
     placeholderData: DEFAULT_STATS, // Show defaults immediately
   });
 
-  // Subscribe to realtime updates
+  // Subscribe to realtime updates for dashboard stats AND wallets
   useEffect(() => {
     if (!userId) return;
 
@@ -69,7 +69,27 @@ export function useDashboardStats(userId: string | undefined) {
       queryClient.invalidateQueries({ queryKey: ['dashboardStats', userId] });
     });
 
-    return unsubscribe;
+    // Also subscribe to user_wallets changes for credit updates
+    const walletSubscription = supabase
+      .channel(`user-wallet-${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_wallets',
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['dashboardStats', userId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      unsubscribe();
+      walletSubscription.unsubscribe();
+    };
   }, [userId]);
 
   return {
