@@ -22,6 +22,7 @@ import { OnboardingCoach } from "@/components/app/OnboardingCoach";
 import { DailyRecipesWidget } from "@/components/app/DailyRecipesWidget";
 import { useWeeklyRecipesByDay } from "@/hooks/useWeeklyRecipesByDay";
 import { DayCardWithRecipes } from "@/components/app/DayCardWithRecipes";
+import { useShoppingList } from "@/hooks/useShoppingList";
 
 const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -115,69 +116,8 @@ export default function Dashboard() {
     return [];
   }, [days]);
 
-  // Fetch ingredients for shopping list
-  const [shoppingList, setShoppingList] = useState<string[]>([]);
-
-  useEffect(() => {
-    const fetchIngredients = async () => {
-      if (!weekMeals.length) {
-        setShoppingList([]);
-        return;
-      }
-
-      const recipeIds = weekMeals.map((meal) => meal.id);
-      const { data, error } = await supabase.from("recipes").select("ingredients").in("id", recipeIds);
-
-      if (error) {
-        console.error("Error fetching ingredients:", error);
-        return;
-      }
-
-      const allIngredients: string[] = [];
-      const ingredientSet = new Set<string>();
-
-      data?.forEach((recipe) => {
-        if (recipe.ingredients && Array.isArray(recipe.ingredients)) {
-          recipe.ingredients.forEach((ing: any) => {
-            let ingredientName = "";
-
-            if (typeof ing === "string") {
-              ingredientName = ing;
-            } else if (ing.name) {
-              ingredientName = ing.name;
-            } else if (ing.ingredient) {
-              ingredientName = ing.ingredient;
-            }
-
-            // Clean ingredient name: remove quantities and measurements
-            if (ingredientName) {
-              // Remove common quantity patterns (numbers, units, etc.)
-              ingredientName = ingredientName
-                .replace(
-                  /^\d+(\.\d+)?\s*(g|kg|ml|cl|l|cuillère|c\.|càc|càs|pincée|brin|feuilles?|tranches?|morceaux?|gouttes?|sachet|boîte|paquet|tasse|verre)\s+(de|d'|à)\s*/gi,
-                  "",
-                )
-                .replace(
-                  /^\d+(\.\d+)?\s*(g|kg|ml|cl|l|cuillère|c\.|càc|càs|pincée|brin|feuilles?|tranches?|morceaux?|gouttes?|sachet|boîte|paquet|tasse|verre)\s+/gi,
-                  "",
-                )
-                .replace(/^\d+\s+/g, "")
-                .trim();
-
-              if (ingredientName && !ingredientSet.has(ingredientName.toLowerCase())) {
-                ingredientSet.add(ingredientName.toLowerCase());
-                allIngredients.push(ingredientName);
-              }
-            }
-          });
-        }
-      });
-
-      setShoppingList(allIngredients);
-    };
-
-    fetchIngredients();
-  }, [weekMeals]);
+  // Fetch normalized shopping list
+  const { items: shoppingList, isLoading: shoppingListLoading } = useShoppingList(user?.id);
 
   // KPI calculations (always use 0 as fallback)
   const minutesSaved = stats.temps_gagne;
@@ -545,11 +485,15 @@ export default function Dashboard() {
                   <span className="hidden sm:inline">Exporter</span>
                 </Button>
               </div>
-              {shoppingList.length > 0 ? (
+              {shoppingListLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
+                </div>
+              ) : shoppingList.length > 0 ? (
                 <>
                   <ul className="text-xs md:text-sm text-muted-foreground space-y-1 max-h-48 md:max-h-64 overflow-y-auto">
-                    {shoppingList.map((ingredient, i) => (
-                      <li key={i}>• {ingredient}</li>
+                    {shoppingList.map((item, i) => (
+                      <li key={i}>• {item.formatted_display}</li>
                     ))}
                   </ul>
                   <div className="text-xs text-muted-foreground mt-2">Générée depuis ton menu hebdomadaire</div>

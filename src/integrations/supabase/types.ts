@@ -753,34 +753,40 @@ export type Database = {
       }
       recipe_ingredients: {
         Row: {
+          canonical_unit: string | null
           ciqual_id: number | null
           created_at: string | null
           id: number
           ingredient_line_raw: string | null
           ingredient_name: string
           ingredient_name_norm: string | null
+          normalized_quantity: number | null
           quantity_g: number | null
           quantity_g_num: number | null
           recipe_id: string | null
         }
         Insert: {
+          canonical_unit?: string | null
           ciqual_id?: number | null
           created_at?: string | null
           id?: number
           ingredient_line_raw?: string | null
           ingredient_name: string
           ingredient_name_norm?: string | null
+          normalized_quantity?: number | null
           quantity_g?: number | null
           quantity_g_num?: number | null
           recipe_id?: string | null
         }
         Update: {
+          canonical_unit?: string | null
           ciqual_id?: number | null
           created_at?: string | null
           id?: number
           ingredient_line_raw?: string | null
           ingredient_name?: string
           ingredient_name_norm?: string | null
+          normalized_quantity?: number | null
           quantity_g?: number | null
           quantity_g_num?: number | null
           recipe_id?: string | null
@@ -1878,6 +1884,36 @@ export type Database = {
         }
         Relationships: []
       }
+      recipe_ingredients_normalized: {
+        Row: {
+          id: number | null
+          ingredient_line_raw: string | null
+          ingredient_name: string | null
+          normalized_name: string | null
+          quantity: number | null
+          recipe_id: string | null
+          unit: string | null
+        }
+        Insert: {
+          id?: number | null
+          ingredient_line_raw?: string | null
+          ingredient_name?: string | null
+          normalized_name?: never
+          quantity?: never
+          recipe_id?: string | null
+          unit?: never
+        }
+        Update: {
+          id?: number | null
+          ingredient_line_raw?: string | null
+          ingredient_name?: string | null
+          normalized_name?: never
+          quantity?: never
+          recipe_id?: string | null
+          unit?: never
+        }
+        Relationships: []
+      }
       recipe_macros_v: {
         Row: {
           calories_kcal: number | null
@@ -2058,6 +2094,24 @@ export type Database = {
         }
         Returns: Json
       }
+      get_shopping_list_from_weekly_menu: {
+        Args: { p_user_id: string; p_week_start?: string }
+        Returns: {
+          formatted_display: string
+          ingredient_name: string
+          total_quantity: number
+          unit: string
+        }[]
+      }
+      get_shopping_list_normalized: {
+        Args: { p_user_id: string; p_week_start?: string }
+        Returns: {
+          formatted_display: string
+          ingredient_name: string
+          total_quantity: number
+          unit: string
+        }[]
+      }
       get_user_household_info: { Args: { p_user_id: string }; Returns: Json }
       get_weekly_recipes_by_day: {
         Args: { p_user_id: string; p_week_start?: string }
@@ -2080,6 +2134,16 @@ export type Database = {
       }
       household_portion_factor: { Args: { p_people: Json }; Returns: number }
       normalize_str: { Args: { p: string }; Returns: string }
+      normalize_unit: { Args: { raw_unit: string }; Returns: string }
+      parse_ingredient_line: {
+        Args: { raw_line: string }
+        Returns: {
+          canonical_unit: string
+          ingredient_name: string
+          quantity: number
+        }[]
+      }
+      parse_quantity_text: { Args: { raw_text: string }; Returns: number }
       refresh_one_recipe:
         | {
             Args: { p_recipe_id: string }
