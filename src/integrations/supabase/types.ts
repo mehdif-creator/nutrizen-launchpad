@@ -2133,6 +2133,15 @@ export type Database = {
         Returns: boolean
       }
       household_portion_factor: { Args: { p_people: Json }; Returns: number }
+      normalize_fraction: { Args: { p_text: string }; Returns: number }
+      normalize_ingredient_line: {
+        Args: { p_line: string }
+        Returns: {
+          canonical_unit: string
+          ingredient_name: string
+          quantity: number
+        }[]
+      }
       normalize_str: { Args: { p: string }; Returns: string }
       normalize_unit: { Args: { raw_unit: string }; Returns: string }
       parse_ingredient_line: {
