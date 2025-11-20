@@ -20,6 +20,8 @@ import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useWeeklyMenu } from "@/hooks/useWeeklyMenu";
 import { OnboardingCoach } from "@/components/app/OnboardingCoach";
 import { DailyRecipesWidget } from "@/components/app/DailyRecipesWidget";
+import { useWeeklyRecipesByDay } from "@/hooks/useWeeklyRecipesByDay";
+import { DayCardWithRecipes } from "@/components/app/DayCardWithRecipes";
 
 const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -38,6 +40,9 @@ export default function Dashboard() {
     householdAdults,
     householdChildren 
   } = useWeeklyMenu(user?.id);
+  
+  // Get weekly recipes grouped by day (lunch + dinner)
+  const { days: weeklyDays, isLoading: weeklyDaysLoading, hasDays } = useWeeklyRecipesByDay(user?.id);
 
   // Update streak on mount
   useEffect(() => {
@@ -184,8 +189,8 @@ export default function Dashboard() {
 
   const loading = statsLoading || menuLoading;
 
-  const handleSwap = async (index: number) => {
-    if (!user || !menu) return;
+  const handleSwap = async (recipeId: string, mealType: 'lunch' | 'dinner') => {
+    if (!user?.id || !menu) return;
 
     try {
       const { data: session } = await supabase.auth.getSession();
@@ -193,13 +198,24 @@ export default function Dashboard() {
         throw new Error("No session");
       }
 
+      // Check if user has enough credits first
+      if (stats.credits_zen <= 0) {
+        setCreditsError({
+          currentBalance: stats.credits_zen,
+          required: 1,
+          feature: 'swap',
+        });
+        setCreditsModalOpen(true);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("use-swap", {
         headers: {
           Authorization: `Bearer ${session.session.access_token}`,
         },
         body: {
-          meal_plan_id: menu.menu_id,
-          day: index,
+          recipe_id: recipeId,
+          meal_type: mealType,
         },
       });
 
@@ -236,12 +252,26 @@ export default function Dashboard() {
     }
   };
 
-  const handleValidateMeal = async () => {
-    // TODO: Implement meal validation
-    toast({
-      title: "Validation en cours...",
-      description: "Fonctionnalité bientôt disponible",
-    });
+  const handleValidateMeal = async (recipeId: string, mealType: 'lunch' | 'dinner') => {
+    try {
+      const { error } = await supabase.functions.invoke('meal-validated', {
+        body: { recipe_id: recipeId, meal_type: mealType },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Repas validé ✅",
+        description: "+2 points gagnés !",
+      });
+    } catch (error: any) {
+      console.error('Validate meal error:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error.message || "Impossible de valider le repas.",
+      });
+    }
   };
 
   const handleRegenWeek = async () => {
@@ -443,11 +473,11 @@ export default function Dashboard() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg md:text-xl font-bold">Semaine en cours</h2>
             </div>
-            {loading ? (
+            {weeklyDaysLoading ? (
               <div className="col-span-full text-center py-12">
                 <p className="text-muted-foreground">Chargement...</p>
               </div>
-            ) : weekMeals.length === 0 ? (
+            ) : !hasDays ? (
               <div className="col-span-full text-center py-12">
                 <p className="text-muted-foreground mb-4">Aucun menu généré pour cette semaine.</p>
                 <Button onClick={handleRegenWeek} disabled={generating}>
@@ -456,24 +486,41 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {weekMeals.map((meal, i) => (
-                <MealCard
-                    key={`${meal.id}-${i}`}
-                    day={weekdays[i]}
-                    title={meal.title}
-                    time={meal.time}
-                    kcal={meal.kcal}
-                    imageUrl={meal.imageUrl}
+                {weeklyDays.map((dayData, i) => (
+                  <DayCardWithRecipes
+                    key={`${dayData.day_name}-${i}`}
+                    day={dayData.day_name}
+                    lunchRecipe={dayData.lunch ? {
+                      recipe_id: dayData.lunch.recipe_id,
+                      title: dayData.lunch.title,
+                      image_url: dayData.lunch.image_url,
+                      prep_min: dayData.lunch.prep_min,
+                      total_min: dayData.lunch.total_min,
+                      calories: dayData.lunch.calories,
+                      macros: {
+                        proteins_g: dayData.lunch.proteins_g,
+                        carbs_g: dayData.lunch.carbs_g,
+                        fats_g: dayData.lunch.fats_g,
+                      }
+                    } : null}
+                    dinnerRecipe={dayData.dinner ? {
+                      recipe_id: dayData.dinner.recipe_id,
+                      title: dayData.dinner.title,
+                      image_url: dayData.dinner.image_url,
+                      prep_min: dayData.dinner.prep_min,
+                      total_min: dayData.dinner.total_min,
+                      calories: dayData.dinner.calories,
+                      macros: {
+                        proteins_g: dayData.dinner.proteins_g,
+                        carbs_g: dayData.dinner.carbs_g,
+                        fats_g: dayData.dinner.fats_g,
+                      }
+                    } : null}
                     onValidate={handleValidateMeal}
-                    onSwap={() => handleSwap(i)}
-                    onViewRecipe={() => navigate(`/app/recipes/${meal.id}`)}
+                    onSwap={handleSwap}
                     swapsRemaining={stats.credits_zen}
                     householdAdults={householdAdults}
                     householdChildren={householdChildren}
-                    proteins={meal.proteins}
-                    carbs={meal.carbs}
-                    fats={meal.fats}
-                    servings={meal.servings || 1}
                     data-onboarding-target={i === 0 ? "meal-card" : undefined}
                   />
                 ))}

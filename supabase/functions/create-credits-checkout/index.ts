@@ -60,8 +60,12 @@ serve(async (req) => {
 
     // Create checkout session for Zen Credits pack
     // Product: "Crédits Zen x15" - 4.99€
-    // IMPORTANT: Replace with your actual Stripe price ID from dashboard
-    const zenCreditsPriceId = Deno.env.get("ZEN_CREDITS_PRICE_ID") || "price_1QVN8jEl2hJeGlFpJXYqvZx7";
+    // CRITICAL: Use PRICE ID (price_xxx), NOT product ID (prod_xxx)
+    const zenCreditsPriceId = Deno.env.get("ZEN_CREDITS_PRICE_ID");
+    
+    if (!zenCreditsPriceId) {
+      throw new Error("ZEN_CREDITS_PRICE_ID environment variable not configured. Please add the Stripe price ID for the Zen Credits product.");
+    }
     
     logStep("Using Zen Credits price ID", { priceId: zenCreditsPriceId });
     
