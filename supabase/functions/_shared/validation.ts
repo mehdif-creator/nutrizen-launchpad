@@ -127,6 +127,31 @@ export const AnalyzeFridgeRequestSchema = z.object({
 export type AnalyzeFridgeRequest = z.infer<typeof AnalyzeFridgeRequestSchema>;
 
 // =============================================================================
+// IMAGE UPLOAD SCHEMAS
+// =============================================================================
+
+export const ImageUploadSchema = z.object({
+  image: z.string()
+    .min(1, 'Image data is required')
+    .regex(/^data:image\/(jpeg|jpg|png|webp);base64,/, 'Invalid image format. Only JPEG, PNG, and WebP are supported')
+    .refine(
+      (val) => {
+        try {
+          const base64 = val.split(',')[1];
+          if (!base64) return false;
+          const sizeInBytes = (base64.length * 3) / 4;
+          return sizeInBytes <= 10 * 1024 * 1024; // 10MB max
+        } catch {
+          return false;
+        }
+      },
+      { message: 'Image too large (maximum 10MB)' }
+    ),
+});
+
+export type ImageUpload = z.infer<typeof ImageUploadSchema>;
+
+// =============================================================================
 // REFERRAL SCHEMAS
 // =============================================================================
 
