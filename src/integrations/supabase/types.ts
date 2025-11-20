@@ -2012,6 +2012,14 @@ export type Database = {
       generate_referral_code:
         | { Args: never; Returns: string }
         | { Args: { user_id: string }; Returns: string }
+      generate_shopping_list: {
+        Args: { p_menu_id: string; p_user_id: string }
+        Returns: {
+          canonical_unit: string
+          ingredient_name: string
+          total_quantity: number
+        }[]
+      }
       generate_week_menu: {
         Args: { p_user: string; p_week_start: string }
         Returns: Json
