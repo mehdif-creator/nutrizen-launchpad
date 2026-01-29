@@ -2044,7 +2044,7 @@ export type Database = {
         | {
             Args: {
               p_country?: string
-              p_days?: number
+              p_days: number
               p_exclude_ingrs?: string[]
               p_kcal_max?: number
               p_kcal_min?: number
@@ -2056,7 +2056,7 @@ export type Database = {
         | {
             Args: {
               p_country?: string
-              p_days: number
+              p_days?: number
               p_exclude_ingrs?: string[]
               p_kcal_max?: number
               p_kcal_min?: number
@@ -2170,13 +2170,13 @@ export type Database = {
       parse_quantity_text: { Args: { raw_text: string }; Returns: number }
       refresh_one_recipe:
         | {
-            Args: { p_recipe_id: string }
+            Args: { p_recipe_id: number }
             Returns: {
               error: true
             } & "Could not choose the best candidate function between: public.refresh_one_recipe(p_recipe_id => int8), public.refresh_one_recipe(p_recipe_id => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
           }
         | {
-            Args: { p_recipe_id: number }
+            Args: { p_recipe_id: string }
             Returns: {
               error: true
             } & "Could not choose the best candidate function between: public.refresh_one_recipe(p_recipe_id => int8), public.refresh_one_recipe(p_recipe_id => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
