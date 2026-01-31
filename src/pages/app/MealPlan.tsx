@@ -7,7 +7,7 @@ import { ShoppingCart, Download, Mail, Clock, Flame, ChefHat } from 'lucide-reac
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWeeklyMenu } from '@/hooks/useWeeklyMenu';
-import { Spinner } from '@/components/common/Spinner';
+import { LoadingMessages } from '@/components/common/LoadingMessages';
 import { useNavigate } from 'react-router-dom';
 
 const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
@@ -30,8 +30,13 @@ export default function MealPlan() {
       <div className="min-h-screen flex flex-col">
         <AppHeader />
         <main className="flex-1 container py-8 px-4">
-          <div className="flex items-center justify-center py-12">
-            <Spinner />
+          <div className="py-12">
+            <LoadingMessages 
+              variant="menu" 
+              isLoading={true} 
+              skeletonCount={4}
+              minDisplayMs={400}
+            />
           </div>
         </main>
         <AppFooter />

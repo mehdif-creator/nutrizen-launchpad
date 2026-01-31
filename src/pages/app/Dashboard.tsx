@@ -25,6 +25,9 @@ import { useShoppingList } from "@/hooks/useShoppingList";
 import { useCreditsReset } from "@/hooks/useCreditsReset";
 import { useEffectivePortions } from "@/hooks/useEffectivePortions";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ProgressionCard } from "@/components/gamification/ProgressionCard";
+import { useGamification } from "@/hooks/useGamification";
+import { LoadingMessages } from "@/components/common/LoadingMessages";
 
 const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -43,6 +46,9 @@ export default function Dashboard() {
     householdAdults,
     householdChildren 
   } = useWeeklyMenu(user?.id);
+  
+  // Gamification data
+  const { gamification, isLoading: gamificationLoading } = useGamification(user?.id);
   
   // Get weekly recipes grouped by day (lunch + dinner)
   const { days: weeklyDays, isLoading: weeklyDaysLoading, hasDays } = useWeeklyRecipesByDay(user?.id);
@@ -430,8 +436,8 @@ export default function Dashboard() {
               <h2 className="text-lg md:text-xl font-bold">Semaine en cours</h2>
             </div>
             {weeklyDaysLoading ? (
-              <div className="col-span-full text-center py-12">
-                <p className="text-muted-foreground">Chargement...</p>
+              <div className="col-span-full py-12">
+                <LoadingMessages variant="menu" isLoading={true} skeletonCount={4} />
               </div>
             ) : !hasDays ? (
               <div className="col-span-full text-center py-12">
@@ -486,6 +492,16 @@ export default function Dashboard() {
 
           {/* Right: Sidebar */}
           <aside className="space-y-4 md:space-y-6">
+            {/* Progression Card */}
+            <ProgressionCard
+              points={gamification.points}
+              level={gamification.level}
+              xpToNext={gamification.xp_to_next}
+              streakDays={gamification.streak_days}
+              badgesCount={gamification.badges_count}
+              isLoading={gamificationLoading}
+            />
+
             {/* Credits Display & Purchase */}
             <div className="space-y-4" id="credits">
               <ZenCreditsDisplay userId={user?.id} showBuyButton={false} size="md" />
@@ -501,10 +517,8 @@ export default function Dashboard() {
                   <span className="hidden sm:inline">Exporter</span>
                 </Button>
               </div>
-              {shoppingListLoading ? (
-                <div className="flex items-center justify-center py-6">
-                  <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
-                </div>
+            {shoppingListLoading ? (
+                <LoadingMessages variant="grocery" isLoading={true} skeletonCount={3} className="py-2" />
               ) : shoppingList.length > 0 ? (
                 <>
                   <ul className="text-xs md:text-sm text-muted-foreground space-y-1 max-h-48 md:max-h-64 overflow-y-auto">
