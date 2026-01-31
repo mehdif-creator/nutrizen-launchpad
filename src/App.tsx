@@ -27,6 +27,7 @@ import InspiFrigo from "./pages/app/InspiFrigo";
 import RecipeDetail from "./pages/app/RecipeDetail";
 import MenuHistory from "./pages/app/MenuHistory";
 import Gamification from "./pages/app/Gamification";
+import Onboarding from "./pages/app/Onboarding";
 
 // Admin
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -73,6 +74,8 @@ const App = () => {
             
             {/* App (Protected) */}
           <Route path="/app" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/app/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/app/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
           <Route path="/app/meal-plan" element={<ProtectedRoute><MealPlan /></ProtectedRoute>} />
           <Route path="/app/menu-history" element={<ProtectedRoute><MenuHistory /></ProtectedRoute>} />
           <Route path="/app/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

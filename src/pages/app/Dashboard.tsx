@@ -3,7 +3,7 @@ import { AppFooter } from "@/components/app/AppFooter";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, Sparkles, Flame, Users, ShoppingCart, Share2, Copy, Brain, Trophy } from "lucide-react";
+import { Clock, Sparkles, Flame, Users, ShoppingCart, Share2, Copy, Brain, Trophy, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { StatCard } from "@/components/app/StatCard";
 import { Progress } from "@/components/app/Progress";
@@ -22,6 +22,9 @@ import { OnboardingCoach } from "@/components/app/OnboardingCoach";
 import { useWeeklyRecipesByDay } from "@/hooks/useWeeklyRecipesByDay";
 import { DayCardWithRecipes } from "@/components/app/DayCardWithRecipes";
 import { useShoppingList } from "@/hooks/useShoppingList";
+import { useCreditsReset } from "@/hooks/useCreditsReset";
+import { useEffectivePortions } from "@/hooks/useEffectivePortions";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -43,6 +46,12 @@ export default function Dashboard() {
   
   // Get weekly recipes grouped by day (lunch + dinner)
   const { days: weeklyDays, isLoading: weeklyDaysLoading, hasDays } = useWeeklyRecipesByDay(user?.id);
+  
+  // Credit reset fallback - runs once per session
+  useCreditsReset(user?.id);
+  
+  // Effective portions from profile (single source of truth)
+  const { data: portions } = useEffectivePortions(user?.id);
 
   // Update streak on mount
   useEffect(() => {
@@ -378,12 +387,23 @@ export default function Dashboard() {
             sub="+5 crédits"
             icon={<Flame className="h-4 w-4 md:h-5 md:w-5" />}
           />
-          <StatCard
-            label="Crédits"
-            value={`${stats.credits_zen}`}
-            sub={`${10 - stats.credits_zen} utilisés`}
-            icon={<Sparkles className="h-4 w-4 md:h-5 md:w-5" />}
-          />
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <StatCard
+                    label="Crédits"
+                    value={`${stats.credits_zen}`}
+                    sub={<span className="flex items-center gap-1">Achetés + mensuels <Info className="h-3 w-3" /></span>}
+                    icon={<Sparkles className="h-4 w-4 md:h-5 md:w-5" />}
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-xs">Crédits achetés + crédits mensuels/hebdo</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <StatCard
             label="Références"
             value={`${refCount}`}

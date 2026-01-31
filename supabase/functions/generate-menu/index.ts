@@ -424,9 +424,11 @@ serve(async (req) => {
 
     // Build weekly menu with portion factors
     const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+    const roundedServings = Math.max(1, Math.round(effectiveHouseholdSize));
+    
     const days = selectedRecipes.map((recipe, index) => {
       const baseServings = recipe.base_servings || recipe.servings || 2; // Default to 2 if not set
-      const portionFactor = effectiveHouseholdSize / baseServings;
+      const portionFactor = roundedServings / baseServings;
       
       return {
         day: weekdays[index],
@@ -442,7 +444,7 @@ serve(async (req) => {
           fats_g: Math.round((recipe.fats_g || 0) * portionFactor)
         },
         portion_factor: portionFactor,
-        target_servings: effectiveHouseholdSize,
+        servings_used: roundedServings, // Store the effective servings for consistency
         base_servings: baseServings
       };
     });
@@ -503,7 +505,7 @@ serve(async (req) => {
       recipe_id: day.recipe_id,
       day_of_week: index + 1, // 1-7 for Mon-Sun
       meal_slot: 'dinner',
-      target_servings: day.target_servings || effectiveHouseholdSize,
+      target_servings: day.servings_used,
       scale_factor: day.portion_factor,
       portion_factor: day.portion_factor
     }));
