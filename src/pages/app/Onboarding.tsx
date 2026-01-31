@@ -4,13 +4,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MobileSelect } from '@/components/ui/mobile-select';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { Check, ChevronRight, Users, Target, Utensils, AlertCircle } from 'lucide-react';
 import { updateOnboardingStatus } from '@/hooks/useOnboardingGuard';
+import { MenuGenerationProgress } from '@/components/app/MenuGenerationProgress';
+import { useAutoMenuGeneration } from '@/hooks/useAutoMenuGeneration';
 
 const TOTAL_STEPS = 4;
 
@@ -29,11 +30,13 @@ export default function Onboarding() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const menuGeneration = useAutoMenuGeneration();
   
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [showMenuGeneration, setShowMenuGeneration] = useState(false);
   
   const [profileData, setProfileData] = useState<ProfileData>({
     household_adults: 1,
@@ -190,10 +193,19 @@ export default function Onboarding() {
 
       toast({
         title: '🎉 Parfait, tout est prêt !',
-        description: 'Générons ta première semaine de menus.',
+        description: 'On génère ta première semaine de menus...',
       });
 
-      navigate('/app/dashboard', { replace: true });
+      // Show menu generation progress and start generation
+      setShowMenuGeneration(true);
+      const success = await menuGeneration.generateMenu();
+      
+      // Wait a moment to show success state before navigating
+      if (success) {
+        setTimeout(() => {
+          navigate('/app/dashboard', { replace: true });
+        }, 2000);
+      }
     } catch (error) {
       console.error('[Onboarding] Complete error:', error);
       toast({
@@ -201,10 +213,39 @@ export default function Onboarding() {
         title: 'Erreur',
         description: 'Impossible de finaliser. Réessaie.',
       });
+      setShowMenuGeneration(false);
     } finally {
       setSaving(false);
     }
   };
+
+  // Handle menu generation retry
+  const handleRetry = async () => {
+    menuGeneration.reset();
+    const success = await menuGeneration.generateMenu();
+    if (success) {
+      setTimeout(() => {
+        navigate('/app/dashboard', { replace: true });
+      }, 2000);
+    }
+  };
+
+  // Skip menu generation and go to dashboard
+  const handleSkip = () => {
+    navigate('/app/dashboard', { replace: true });
+  };
+
+  // Show menu generation progress screen
+  if (showMenuGeneration) {
+    return (
+      <MenuGenerationProgress
+        status={menuGeneration.status}
+        errorMessage={menuGeneration.errorMessage}
+        onRetry={handleRetry}
+        onSkip={handleSkip}
+      />
+    );
+  }
 
   // If already completed, show message
   if (isCompleted) {
@@ -307,6 +348,30 @@ export default function Onboarding() {
 
 // Step 1: Household
 function StepHousehold({ data, onChange }: { data: ProfileData; onChange: (d: ProfileData) => void }) {
+  const adultsOptions = [1, 2, 3, 4, 5, 6].map(n => ({
+    value: String(n),
+    label: `${n} adulte${n > 1 ? 's' : ''}`
+  }));
+  
+  const childrenOptions = [0, 1, 2, 3, 4, 5].map(n => ({
+    value: String(n),
+    label: `${n} enfant${n > 1 ? 's' : ''}`
+  }));
+  
+  const ratioOptions = [
+    { value: '0.5', label: '50% (petits enfants)' },
+    { value: '0.6', label: '60% (enfants)' },
+    { value: '0.7', label: '70% (pré-ados)' },
+    { value: '0.8', label: '80% (adolescents)' },
+    { value: '1', label: '100% (comme un adulte)' },
+  ];
+  
+  const mealsOptions = [
+    { value: '1', label: '1 repas (dîner uniquement)' },
+    { value: '2', label: '2 repas (déjeuner + dîner)' },
+    { value: '3', label: '3 repas (petit-déj + déj + dîner)' },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-4">
@@ -320,77 +385,51 @@ function StepHousehold({ data, onChange }: { data: ProfileData; onChange: (d: Pr
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4">
-        <div>
+        <div className="space-y-2">
           <Label htmlFor="adults">Nombre d'adultes</Label>
-          <Select
+          <MobileSelect
+            id="adults"
             value={String(data.household_adults)}
             onValueChange={(v) => onChange({ ...data, household_adults: parseInt(v) })}
-          >
-            <SelectTrigger id="adults">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[1, 2, 3, 4, 5, 6].map((n) => (
-                <SelectItem key={n} value={String(n)}>{n} adulte{n > 1 ? 's' : ''}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            options={adultsOptions}
+            placeholder="Sélectionne..."
+          />
         </div>
 
-        <div>
+        <div className="space-y-2">
           <Label htmlFor="children">Nombre d'enfants</Label>
-          <Select
+          <MobileSelect
+            id="children"
             value={String(data.household_children)}
             onValueChange={(v) => onChange({ ...data, household_children: parseInt(v) })}
-          >
-            <SelectTrigger id="children">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[0, 1, 2, 3, 4, 5].map((n) => (
-                <SelectItem key={n} value={String(n)}>{n} enfant{n > 1 ? 's' : ''}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            options={childrenOptions}
+            placeholder="Sélectionne..."
+          />
         </div>
       </div>
 
       {data.household_children > 0 && (
-        <div>
+        <div className="space-y-2">
           <Label htmlFor="ratio">Part enfant (par rapport à un adulte)</Label>
-          <Select
+          <MobileSelect
+            id="ratio"
             value={String(data.kid_portion_ratio)}
             onValueChange={(v) => onChange({ ...data, kid_portion_ratio: parseFloat(v) })}
-          >
-            <SelectTrigger id="ratio">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="0.5">50% (petits enfants)</SelectItem>
-              <SelectItem value="0.6">60% (enfants)</SelectItem>
-              <SelectItem value="0.7">70% (pré-ados)</SelectItem>
-              <SelectItem value="0.8">80% (adolescents)</SelectItem>
-              <SelectItem value="1">100% (comme un adulte)</SelectItem>
-            </SelectContent>
-          </Select>
+            options={ratioOptions}
+            placeholder="Sélectionne..."
+          />
         </div>
       )}
 
-      <div>
+      <div className="space-y-2">
         <Label htmlFor="meals">Repas par jour</Label>
-        <Select
+        <MobileSelect
+          id="meals"
           value={String(data.meals_per_day)}
           onValueChange={(v) => onChange({ ...data, meals_per_day: parseInt(v) })}
-        >
-          <SelectTrigger id="meals">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="1">1 repas (dîner uniquement)</SelectItem>
-            <SelectItem value="2">2 repas (déjeuner + dîner)</SelectItem>
-            <SelectItem value="3">3 repas (petit-déj + déj + dîner)</SelectItem>
-          </SelectContent>
-        </Select>
+          options={mealsOptions}
+          placeholder="Sélectionne..."
+        />
       </div>
     </div>
   );

@@ -776,6 +776,87 @@ export type Database = {
           },
         ]
       }
+      menu_generation_audit: {
+        Row: {
+          candidate_recipes_count: number | null
+          constraints_used: Json
+          created_at: string | null
+          fallback_level: number | null
+          final_recipes_count: number | null
+          generation_duration_ms: number | null
+          hard_constraint_violations: Json | null
+          id: string
+          menu_id: string | null
+          soft_constraint_relaxations: Json | null
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          candidate_recipes_count?: number | null
+          constraints_used?: Json
+          created_at?: string | null
+          fallback_level?: number | null
+          final_recipes_count?: number | null
+          generation_duration_ms?: number | null
+          hard_constraint_violations?: Json | null
+          id?: string
+          menu_id?: string | null
+          soft_constraint_relaxations?: Json | null
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          candidate_recipes_count?: number | null
+          constraints_used?: Json
+          created_at?: string | null
+          fallback_level?: number | null
+          final_recipes_count?: number | null
+          generation_duration_ms?: number | null
+          hard_constraint_violations?: Json | null
+          id?: string
+          menu_id?: string | null
+          soft_constraint_relaxations?: Json | null
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
+      menu_generation_jobs: {
+        Row: {
+          constraints_used: Json | null
+          created_at: string | null
+          error: string | null
+          id: string
+          retries: number | null
+          status: string
+          updated_at: string | null
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          constraints_used?: Json | null
+          created_at?: string | null
+          error?: string | null
+          id?: string
+          retries?: number | null
+          status?: string
+          updated_at?: string | null
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          constraints_used?: Json | null
+          created_at?: string | null
+          error?: string | null
+          id?: string
+          retries?: number | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       payment_events_log: {
         Row: {
           amount_cents: number | null
@@ -1696,6 +1777,81 @@ export type Database = {
           },
         ]
       }
+      translation_glossary: {
+        Row: {
+          context: string
+          created_at: string | null
+          id: string
+          notes: string | null
+          source_term: string
+          target_term: string
+        }
+        Insert: {
+          context?: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          source_term: string
+          target_term: string
+        }
+        Update: {
+          context?: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          source_term?: string
+          target_term?: string
+        }
+        Relationships: []
+      }
+      translation_issues: {
+        Row: {
+          created_at: string | null
+          fixed_at: string | null
+          id: string
+          issue_type: string
+          problematic_text: string
+          recipe_id: string | null
+          status: string
+          suggested_fix: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          fixed_at?: string | null
+          id?: string
+          issue_type: string
+          problematic_text: string
+          recipe_id?: string | null
+          status?: string
+          suggested_fix?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          fixed_at?: string | null
+          id?: string
+          issue_type?: string
+          problematic_text?: string
+          recipe_id?: string | null
+          status?: string
+          suggested_fix?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "translation_issues_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_macros_v"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "translation_issues_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_badges: {
         Row: {
           badge_code: string
@@ -1975,6 +2131,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           default_servings_per_recipe: number
+          default_servings_rounding: string
           display_name: string | null
           household_adults: number
           household_children: number
@@ -1998,6 +2155,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           default_servings_per_recipe?: number
+          default_servings_rounding?: string
           display_name?: string | null
           household_adults?: number
           household_children?: number
@@ -2021,6 +2179,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           default_servings_per_recipe?: number
+          default_servings_rounding?: string
           display_name?: string | null
           household_adults?: number
           household_children?: number
