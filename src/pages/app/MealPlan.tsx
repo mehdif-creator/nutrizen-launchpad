@@ -157,63 +157,21 @@ export default function MealPlan() {
           ))}
         </div>
 
-        {/* Shopping List */}
+        {/* Shopping List CTA */}
         <Card className="p-4 md:p-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-            <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5 md:h-6 md:w-6" />
-              Liste de courses
-            </h2>
-            <Button variant="outline" onClick={handleExportList} className="w-full sm:w-auto">
-              <Download className="h-4 w-4 mr-2" />
-              Télécharger
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+            <div>
+              <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+                <ShoppingCart className="h-5 w-5 md:h-6 md:w-6" />
+                Liste de courses
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Générée automatiquement à partir de ton menu
+              </p>
+            </div>
+            <Button onClick={() => navigate('/app/shopping-list')}>
+              Voir la liste complète
             </Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-            <div>
-              <h3 className="font-semibold mb-3 text-sm md:text-base">🥦 Fruits & Légumes</h3>
-              <ul className="space-y-2 text-xs md:text-sm text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <div className="w-1 h-1 rounded-full bg-primary" />
-                  Tomates (4)
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-1 h-1 rounded-full bg-primary" />
-                  Oignons (2)
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-1 h-1 rounded-full bg-primary" />
-                  Carottes (6)
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-3 text-sm md:text-base">🥩 Protéines</h3>
-              <ul className="space-y-2 text-xs md:text-sm text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <div className="w-1 h-1 rounded-full bg-primary" />
-                  Poulet (600g)
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-1 h-1 rounded-full bg-primary" />
-                  Œufs (12)
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-3 text-sm md:text-base">🍚 Féculents</h3>
-              <ul className="space-y-2 text-xs md:text-sm text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <div className="w-1 h-1 rounded-full bg-primary" />
-                  Riz basmati (500g)
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-1 h-1 rounded-full bg-primary" />
-                  Pâtes (400g)
-                </li>
-              </ul>
-            </div>
           </div>
         </Card>
       </main>
