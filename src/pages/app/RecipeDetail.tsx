@@ -5,10 +5,13 @@ import { AppFooter } from '@/components/app/AppFooter';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
-import { Clock, Users, Flame, ChefHat, ArrowLeft } from 'lucide-react';
+import { Clock, Users, Flame, ChefHat, ArrowLeft, Utensils, BarChart3, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { RecipeMacrosCard } from '@/components/app/RecipeMacrosCard';
+import { SubstitutionsTab } from '@/components/recipe/SubstitutionsTab';
+import { useAwardXp } from '@/hooks/useAwardXp';
 
 interface Recipe {
   id: string;
@@ -37,8 +40,10 @@ export default function RecipeDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { awardRecipeView } = useAwardXp();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('recipe');
 
   useEffect(() => {
     const loadRecipe = async () => {
@@ -53,6 +58,11 @@ export default function RecipeDetail() {
 
         if (error) throw error;
         setRecipe(data);
+        
+        // Award XP for viewing recipe (idempotent per recipe per day)
+        if (data) {
+          awardRecipeView(id);
+        }
       } catch (error) {
         console.error('Error loading recipe:', error);
         toast({
@@ -66,7 +76,7 @@ export default function RecipeDetail() {
     };
 
     loadRecipe();
-  }, [id, toast]);
+  }, [id, toast, awardRecipeView]);
 
   if (loading) {
     return (
@@ -192,77 +202,108 @@ export default function RecipeDetail() {
             </div>
           </div>
 
-          {/* Macros Card - Full featured component */}
-          <div className="mb-8">
-            <RecipeMacrosCard
-              calories={recipe.calories_kcal}
-              proteins={recipe.proteins_g}
-              carbs={recipe.carbs_g}
-              fats={recipe.fats_g}
-              servings={recipe.servings || 1}
-              isPartial={false}
-            />
-          </div>
+          {/* Tabs for Recette / Macros / Substitutions */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="recipe" className="gap-1">
+                <Utensils className="h-4 w-4" />
+                <span className="hidden sm:inline">Recette</span>
+              </TabsTrigger>
+              <TabsTrigger value="macros" className="gap-1">
+                <BarChart3 className="h-4 w-4" />
+                <span className="hidden sm:inline">Macros</span>
+              </TabsTrigger>
+              <TabsTrigger value="substitutions" className="gap-1">
+                <RefreshCw className="h-4 w-4" />
+                <span className="hidden sm:inline">Substitutions</span>
+              </TabsTrigger>
+            </TabsList>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Ingredients */}
-            {ingredients.length > 0 && (
+            {/* Recipe Tab */}
+            <TabsContent value="recipe" className="mt-6">
+              <div className="grid md:grid-cols-2 gap-8">
+                {/* Ingredients */}
+                {ingredients.length > 0 && (
+                  <Card className="p-6">
+                    <h2 className="text-xl font-semibold mb-4">Ingrédients</h2>
+                    <ul className="space-y-2">
+                      {ingredients.map((ingredient: any, index: number) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <span className="text-primary mt-1">•</span>
+                          <span>{typeof ingredient === 'string' ? ingredient : ingredient.name || ingredient.ingredient}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Card>
+                )}
+
+                {/* Instructions */}
+                {instructions.length > 0 && (
+                  <Card className="p-6">
+                    <h2 className="text-xl font-semibold mb-4">Instructions</h2>
+                    <ol className="space-y-3">
+                      {instructions.map((instruction: any, index: number) => (
+                        <li key={index} className="flex gap-3">
+                          <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
+                            {index + 1}
+                          </span>
+                          <span className="flex-1">{typeof instruction === 'string' ? instruction : instruction.step || instruction.instruction}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </Card>
+                )}
+              </div>
+
+              {/* Allergens & Appliances */}
+              {(recipe.allergens && recipe.allergens.length > 0) || (recipe.appliances && recipe.appliances.length > 0) ? (
+                <Card className="p-6 mt-8">
+                  {recipe.allergens && recipe.allergens.length > 0 && (
+                    <div className="mb-4">
+                      <h3 className="font-semibold mb-2">Allergènes</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {recipe.allergens.map((allergen, index) => (
+                          <Badge key={index} variant="destructive">{allergen}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {recipe.appliances && recipe.appliances.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold mb-2">Équipement nécessaire</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {recipe.appliances.map((appliance, index) => (
+                          <Badge key={index} variant="secondary">{appliance}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              ) : null}
+            </TabsContent>
+
+            {/* Macros Tab */}
+            <TabsContent value="macros" className="mt-6">
+              <RecipeMacrosCard
+                calories={recipe.calories_kcal}
+                proteins={recipe.proteins_g}
+                carbs={recipe.carbs_g}
+                fats={recipe.fats_g}
+                servings={recipe.servings || 1}
+                isPartial={false}
+              />
+            </TabsContent>
+
+            {/* Substitutions Tab */}
+            <TabsContent value="substitutions" className="mt-6">
               <Card className="p-6">
-                <h2 className="text-xl font-semibold mb-4">Ingrédients</h2>
-                <ul className="space-y-2">
-                  {ingredients.map((ingredient: any, index: number) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <span className="text-primary mt-1">•</span>
-                      <span>{typeof ingredient === 'string' ? ingredient : ingredient.name || ingredient.ingredient}</span>
-                    </li>
-                  ))}
-                </ul>
+                <SubstitutionsTab
+                  recipeId={recipe.id}
+                  ingredients={ingredients}
+                />
               </Card>
-            )}
-
-            {/* Instructions */}
-            {instructions.length > 0 && (
-              <Card className="p-6">
-                <h2 className="text-xl font-semibold mb-4">Instructions</h2>
-                <ol className="space-y-3">
-                  {instructions.map((instruction: any, index: number) => (
-                    <li key={index} className="flex gap-3">
-                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
-                        {index + 1}
-                      </span>
-                      <span className="flex-1">{typeof instruction === 'string' ? instruction : instruction.step || instruction.instruction}</span>
-                    </li>
-                  ))}
-                </ol>
-              </Card>
-            )}
-          </div>
-
-          {/* Allergens & Appliances */}
-          {(recipe.allergens && recipe.allergens.length > 0) || (recipe.appliances && recipe.appliances.length > 0) ? (
-            <Card className="p-6 mt-8">
-              {recipe.allergens && recipe.allergens.length > 0 && (
-                <div className="mb-4">
-                  <h3 className="font-semibold mb-2">Allergènes</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {recipe.allergens.map((allergen, index) => (
-                      <Badge key={index} variant="destructive">{allergen}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {recipe.appliances && recipe.appliances.length > 0 && (
-                <div>
-                  <h3 className="font-semibold mb-2">Équipement nécessaire</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {recipe.appliances.map((appliance, index) => (
-                      <Badge key={index} variant="secondary">{appliance}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </Card>
-          ) : null}
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
 
