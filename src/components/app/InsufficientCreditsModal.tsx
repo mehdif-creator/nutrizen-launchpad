@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Sparkles, ShoppingCart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 
 interface InsufficientCreditsModalProps {
   open: boolean;
@@ -21,9 +20,10 @@ interface InsufficientCreditsModalProps {
 }
 
 const featureNames: Record<string, string> = {
-  swap: 'changer ce repas',
+  swap: 'changer cette recette',
   inspifrigo: 'utiliser InspiFrigo',
   scanrepas: 'utiliser ScanRepas',
+  menu_generation: 'générer un menu',
 };
 
 export function InsufficientCreditsModal({
@@ -35,33 +35,12 @@ export function InsufficientCreditsModal({
 }: InsufficientCreditsModalProps) {
   const navigate = useNavigate();
 
-  const handleBuyCredits = async () => {
+  const handleBuyCredits = () => {
     onOpenChange(false);
-    
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        navigate('/login');
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke('create-credits-checkout', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (error) throw error;
-
-      if (data?.url) {
-        window.open(data.url, '_blank');
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      navigate('/app/dashboard?scroll_to=credits');
-    }
+    navigate('/credits');
   };
+
+  const missing = required - currentBalance;
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -72,21 +51,25 @@ export function InsufficientCreditsModal({
               <Sparkles className="h-6 w-6 text-primary" />
             </div>
             <AlertDialogTitle className="text-xl">
-              Plus de Crédits Zen
+              Crédits insuffisants
             </AlertDialogTitle>
           </div>
           <AlertDialogDescription className="text-base space-y-3 pt-2">
             <p>
-              Tu n'as plus assez de crédits pour {featureNames[feature] || 'utiliser cette fonctionnalité'}.
+              Tu n'as pas assez de crédits pour {featureNames[feature] || 'utiliser cette fonctionnalité'}.
             </p>
             <div className="bg-muted/50 rounded-lg p-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Ton solde actuel:</span>
-                <span className="font-semibold">{currentBalance} crédit{currentBalance > 1 ? 's' : ''}</span>
+                <span className="text-muted-foreground">Ton solde actuel :</span>
+                <span className="font-semibold">{currentBalance} crédit{currentBalance !== 1 ? 's' : ''}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Crédits nécessaires:</span>
+                <span className="text-muted-foreground">Crédits nécessaires :</span>
                 <span className="font-semibold">{required} crédit{required > 1 ? 's' : ''}</span>
+              </div>
+              <div className="flex justify-between text-sm border-t pt-2">
+                <span className="text-muted-foreground">Il te manque :</span>
+                <span className="font-bold text-primary">{missing} crédit{missing !== 1 ? 's' : ''}</span>
               </div>
             </div>
             <p className="text-sm">
