@@ -11,6 +11,8 @@ interface MobileSelectProps {
   disabled?: boolean;
   className?: string;
   id?: string;
+  /** Force native select even on desktop (safer for critical forms) */
+  forceNative?: boolean;
 }
 
 /**
@@ -19,6 +21,12 @@ interface MobileSelectProps {
  * 
  * On desktop, uses a custom dropdown with better UX.
  * On mobile (<768px), uses native select for reliability.
+ * 
+ * SAFETY FEATURES:
+ * - Controlled component only (no undefined value)
+ * - No portals on mobile (avoids blank screen crashes)
+ * - Proper cleanup on unmount
+ * - Safe backdrop handling
  */
 export function MobileSelect({
   value,
@@ -28,16 +36,70 @@ export function MobileSelect({
   disabled = false,
   className,
   id,
+  forceNative = false,
 }: MobileSelectProps) {
   const isMobile = useIsMobile();
+  const [open, setOpen] = React.useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const isMounted = React.useRef(true);
 
-  // Native select for mobile
-  if (isMobile) {
+  // Track mounted state to prevent state updates after unmount
+  React.useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  // Close dropdown when clicking outside (safety backup)
+  React.useEffect(() => {
+    if (!open) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        if (isMounted.current) {
+          setOpen(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
+
+  // Close on escape key
+  React.useEffect(() => {
+    if (!open) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMounted.current) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [open]);
+
+  // Safe value change handler
+  const handleValueChange = React.useCallback((newValue: string) => {
+    if (!isMounted.current) return;
+    
+    onValueChange(newValue);
+    setOpen(false);
+  }, [onValueChange]);
+
+  // Native select for mobile OR when forced (safest option)
+  if (isMobile || forceNative) {
     return (
       <select
         id={id}
-        value={value}
-        onChange={(e) => onValueChange(e.target.value)}
+        value={value || ''}
+        onChange={(e) => {
+          if (isMounted.current) {
+            onValueChange(e.target.value);
+          }
+        }}
         disabled={disabled}
         className={cn(
           "flex h-10 w-full items-center justify-between rounded-md border border-input",
@@ -61,11 +123,10 @@ export function MobileSelect({
   }
 
   // Custom select for desktop
-  const [open, setOpen] = React.useState(false);
   const selectedOption = options.find((opt) => opt.value === value);
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <button
         id={id}
         type="button"
@@ -73,12 +134,20 @@ export function MobileSelect({
         aria-expanded={open}
         aria-haspopup="listbox"
         disabled={disabled}
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          if (isMounted.current) {
+            setOpen(!open);
+          }
+        }}
         onKeyDown={(e) => {
-          if (e.key === "Escape") setOpen(false);
+          if (e.key === "Escape") {
+            setOpen(false);
+          }
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            setOpen(!open);
+            if (isMounted.current) {
+              setOpen(!open);
+            }
           }
         }}
         className={cn(
@@ -100,14 +169,18 @@ export function MobileSelect({
           {/* Backdrop - tap to close */}
           <div
             className="fixed inset-0 z-40"
-            onClick={() => setOpen(false)}
+            onClick={() => {
+              if (isMounted.current) {
+                setOpen(false);
+              }
+            }}
             onTouchMove={(e) => {
               // Allow scrolling on backdrop
               e.stopPropagation();
             }}
           />
           
-          {/* Dropdown menu */}
+          {/* Dropdown menu - NO PORTAL, stays in DOM flow for safety */}
           <div
             role="listbox"
             className={cn(
@@ -123,15 +196,11 @@ export function MobileSelect({
                   key={option.value}
                   role="option"
                   aria-selected={isSelected}
-                  onClick={() => {
-                    onValueChange(option.value);
-                    setOpen(false);
-                  }}
+                  onClick={() => handleValueChange(option.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
-                      onValueChange(option.value);
-                      setOpen(false);
+                      handleValueChange(option.value);
                     }
                   }}
                   className={cn(

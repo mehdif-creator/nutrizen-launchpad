@@ -8,6 +8,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 interface AppProvidersProps {
   children: React.ReactNode;
@@ -15,6 +16,7 @@ interface AppProvidersProps {
 
 /**
  * Global providers wrapper
+ * - ErrorBoundary for crash protection (especially mobile)
  * - TanStack Query for data fetching & caching
  * - Router for navigation
  * - Auth context for user authentication
@@ -22,22 +24,24 @@ interface AppProvidersProps {
  */
 export function AppProviders({ children }: AppProvidersProps) {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <ThemeProvider>
-          <LanguageProvider>
-            <AuthProvider>
-              <TooltipProvider>
-                {children}
-                <ShadcnToaster />
-                <Toaster />
-                {/* Only show React Query devtools in development */}
-                {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
-              </TooltipProvider>
-            </AuthProvider>
-          </LanguageProvider>
-        </ThemeProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <ThemeProvider>
+            <LanguageProvider>
+              <AuthProvider>
+                <TooltipProvider>
+                  {children}
+                  <ShadcnToaster />
+                  <Toaster />
+                  {/* Only show React Query devtools in development */}
+                  {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
+                </TooltipProvider>
+              </AuthProvider>
+            </LanguageProvider>
+          </ThemeProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
