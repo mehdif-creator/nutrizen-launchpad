@@ -409,6 +409,36 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_resets_log: {
+        Row: {
+          cadence: string
+          created_at: string
+          granted_amount: number
+          id: string
+          idempotency_key: string
+          period_key: string
+          user_id: string
+        }
+        Insert: {
+          cadence: string
+          created_at?: string
+          granted_amount: number
+          id?: string
+          idempotency_key: string
+          period_key: string
+          user_id: string
+        }
+        Update: {
+          cadence?: string
+          created_at?: string
+          granted_amount?: number
+          id?: string
+          idempotency_key?: string
+          period_key?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       credit_transactions: {
         Row: {
           created_at: string
@@ -1633,14 +1663,22 @@ export type Database = {
           affiliate_code: string | null
           avatar_url: string | null
           created_at: string
+          default_servings_per_recipe: number
           display_name: string | null
           household_adults: number
           household_children: number
           id: string
           is_affiliate: boolean
+          kid_portion_ratio: number
+          meals_per_day: number
           onboarding_completed: boolean | null
+          onboarding_completed_at: string | null
+          onboarding_status: string
           onboarding_step: number | null
+          onboarding_version: number
+          portion_strategy: string
           referral_code: string
+          required_fields_ok: boolean
           show_on_leaderboard: boolean
           updated_at: string
         }
@@ -1648,14 +1686,22 @@ export type Database = {
           affiliate_code?: string | null
           avatar_url?: string | null
           created_at?: string
+          default_servings_per_recipe?: number
           display_name?: string | null
           household_adults?: number
           household_children?: number
           id: string
           is_affiliate?: boolean
+          kid_portion_ratio?: number
+          meals_per_day?: number
           onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
+          onboarding_status?: string
           onboarding_step?: number | null
+          onboarding_version?: number
+          portion_strategy?: string
           referral_code: string
+          required_fields_ok?: boolean
           show_on_leaderboard?: boolean
           updated_at?: string
         }
@@ -1663,14 +1709,22 @@ export type Database = {
           affiliate_code?: string | null
           avatar_url?: string | null
           created_at?: string
+          default_servings_per_recipe?: number
           display_name?: string | null
           household_adults?: number
           household_children?: number
           id?: string
           is_affiliate?: boolean
+          kid_portion_ratio?: number
+          meals_per_day?: number
           onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
+          onboarding_status?: string
           onboarding_step?: number | null
+          onboarding_version?: number
+          portion_strategy?: string
           referral_code?: string
+          required_fields_ok?: boolean
           show_on_leaderboard?: boolean
           updated_at?: string
         }
@@ -1750,40 +1804,58 @@ export type Database = {
       }
       user_wallets: {
         Row: {
+          allowance_amount: number
           balance: number | null
+          balance_allowance: number
+          balance_purchased: number
           credits_total: number
           free_months_earned: number
           free_months_used: number
+          last_reset_at: string | null
           lifetime_credits: number
           lifetime_credits_earned: number
           lifetime_points: number
+          next_reset_at: string | null
           points_total: number
+          reset_cadence: string
           subscription_credits: number
           updated_at: string
           user_id: string
         }
         Insert: {
+          allowance_amount?: number
           balance?: number | null
+          balance_allowance?: number
+          balance_purchased?: number
           credits_total?: number
           free_months_earned?: number
           free_months_used?: number
+          last_reset_at?: string | null
           lifetime_credits?: number
           lifetime_credits_earned?: number
           lifetime_points?: number
+          next_reset_at?: string | null
           points_total?: number
+          reset_cadence?: string
           subscription_credits?: number
           updated_at?: string
           user_id: string
         }
         Update: {
+          allowance_amount?: number
           balance?: number | null
+          balance_allowance?: number
+          balance_purchased?: number
           credits_total?: number
           free_months_earned?: number
           free_months_used?: number
+          last_reset_at?: string | null
           lifetime_credits?: number
           lifetime_credits_earned?: number
           lifetime_points?: number
+          next_reset_at?: string | null
           points_total?: number
+          reset_cadence?: string
           subscription_credits?: number
           updated_at?: string
           user_id?: string
@@ -2155,6 +2227,10 @@ export type Database = {
             }
             Returns: Json
           }
+      get_menu_servings_used: {
+        Args: { p_day?: string; p_payload: Json }
+        Returns: number
+      }
       get_recipe_ingredients_household: {
         Args: { p_people: Json; p_recipe: string; p_round_grams?: number }
         Returns: Json
@@ -2274,6 +2350,7 @@ export type Database = {
       refresh_recipe_macros: { Args: never; Returns: undefined }
       refresh_recipe_macros_from_ciqual: { Args: never; Returns: undefined }
       refresh_some_recipes: { Args: { batch_size?: number }; Returns: number }
+      rpc_apply_credit_reset: { Args: { p_user_id: string }; Returns: Json }
       rpc_apply_credit_transaction: {
         Args: {
           p_amount: number
@@ -2285,6 +2362,11 @@ export type Database = {
           p_type: string
           p_user_id: string
         }
+        Returns: Json
+      }
+      rpc_compute_reset_state: { Args: { p_user_id: string }; Returns: Json }
+      rpc_get_effective_portions: {
+        Args: { p_user_id: string; p_week_start?: string }
         Returns: Json
       }
       to_num: { Args: { input_text: string }; Returns: number }
