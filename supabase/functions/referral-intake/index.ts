@@ -12,7 +12,8 @@ serve(async (req) => {
   }
 
   try {
-    const { referralCode, action } = await req.json(); // action: 'CLICKED', 'SIGNED_UP'
+    const body = await req.json();
+    const { referralCode, action, ip_hash, user_agent } = body;
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -34,29 +35,74 @@ serve(async (req) => {
       currentUser = user;
     }
 
-    // Find referrer by code
-    const { data: referrer, error: referrerError } = await supabaseAdmin
-      .from('user_profiles')
-      .select('id')
-      .eq('referral_code', referralCode)
-      .single();
+    // Handle click tracking (public, no auth required)
+    if (action === 'track_click' && referralCode) {
+      // Find referrer by code in the new referral_codes table
+      const { data: codeData, error: codeError } = await supabaseAdmin
+        .from('referral_codes')
+        .select('user_id')
+        .eq('code', referralCode.toUpperCase())
+        .single();
 
-    if (referrerError || !referrer) {
-      throw new Error('Invalid referral code');
-    }
+      if (codeError || !codeData) {
+        return new Response(
+          JSON.stringify({ success: false, message: 'Invalid referral code' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
-    // Create or update referral record
-    if (action === 'CLICKED') {
-      const { error: insertError } = await supabaseAdmin
-        .from('user_referrals')
+      // Record click
+      await supabaseAdmin
+        .from('referral_clicks')
         .insert({
-          referrer_id: referrer.id,
-          referred_email: currentUser?.email || null,
-          status: 'CLICKED',
+          referral_code: referralCode.toUpperCase(),
+          referrer_user_id: codeData.user_id,
+          ip_hash: ip_hash || null,
+          user_agent: user_agent || null,
         });
 
-      if (insertError && !insertError.message.includes('duplicate')) {
-        throw insertError;
+      return new Response(
+        JSON.stringify({ success: true, message: 'Click tracked' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Handle signup attribution (requires authenticated user)
+    if (action === 'apply_attribution' && referralCode && currentUser) {
+      const { data, error } = await supabaseAdmin.rpc('handle_referral_signup', {
+        p_referral_code: referralCode,
+        p_new_user_id: currentUser.id,
+      });
+
+      if (error) {
+        console.error('Error applying referral attribution:', error);
+        return new Response(
+          JSON.stringify({ success: false, message: error.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Legacy action support: CLICKED
+    if (action === 'CLICKED' && referralCode) {
+      const { data: codeData } = await supabaseAdmin
+        .from('referral_codes')
+        .select('user_id')
+        .eq('code', referralCode.toUpperCase())
+        .single();
+
+      if (codeData) {
+        await supabaseAdmin
+          .from('referral_clicks')
+          .insert({
+            referral_code: referralCode.toUpperCase(),
+            referrer_user_id: codeData.user_id,
+          });
       }
 
       return new Response(
@@ -65,45 +111,30 @@ serve(async (req) => {
       );
     }
 
-    if (action === 'SIGNED_UP' && currentUser) {
-      // Update referral to SIGNED_UP
-      const { error: updateError } = await supabaseAdmin
-        .from('user_referrals')
-        .update({ 
-          referred_user_id: currentUser.id,
-          referred_email: currentUser.email,
-          status: 'SIGNED_UP',
-          updated_at: new Date().toISOString()
-        })
-        .eq('referrer_id', referrer.id)
-        .eq('referred_email', currentUser.email);
+    // Legacy action support: SIGNED_UP
+    if (action === 'SIGNED_UP' && currentUser && referralCode) {
+      const { data, error } = await supabaseAdmin.rpc('handle_referral_signup', {
+        p_referral_code: referralCode,
+        p_new_user_id: currentUser.id,
+      });
 
-      if (updateError) {
-        // Try inserting if update failed
-        await supabaseAdmin
-          .from('user_referrals')
-          .insert({
-            referrer_id: referrer.id,
-            referred_user_id: currentUser.id,
-            referred_email: currentUser.email,
-            status: 'SIGNED_UP',
-          });
+      if (error) {
+        console.error('Referral signup error:', error);
       }
 
       return new Response(
-        JSON.stringify({ success: true, message: 'Referral signup recorded' }),
+        JSON.stringify({ success: true, message: 'Referral signup recorded', data }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     return new Response(
-      JSON.stringify({ success: false, message: 'Invalid action' }),
+      JSON.stringify({ success: false, message: 'Invalid action or missing parameters' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Referral intake error:', error);
     
-    // Sanitize error - don't expose internal details
     const message = (error as Error).message;
     const isInvalidCode = message.includes('Invalid referral code');
     
