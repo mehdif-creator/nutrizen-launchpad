@@ -127,3 +127,20 @@ verify_jwt = false
 limit = 10
 period = "1h"
 
+[functions.brevo-sync]
+verify_jwt = false
+
+[functions.brevo-sync.rate_limit]
+limit = 100
+period = "1h"
+
+[functions.send-transactional-email]
+verify_jwt = false
+
+[functions.send-transactional-email.rate_limit]
+limit = 50
+period = "1h"
+
+[functions.generate-grocery-list]
+verify_jwt = true
+

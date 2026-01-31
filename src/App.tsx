@@ -28,6 +28,7 @@ import RecipeDetail from "./pages/app/RecipeDetail";
 import MenuHistory from "./pages/app/MenuHistory";
 import Gamification from "./pages/app/Gamification";
 import Onboarding from "./pages/app/Onboarding";
+import ShoppingList from "./pages/app/ShoppingList";
 
 // Admin
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -87,6 +88,7 @@ const App = () => {
           <Route path="/app/scan-repas" element={<ProtectedRoute><ScanRepas /></ProtectedRoute>} />
           <Route path="/app/inspi-frigo" element={<ProtectedRoute><InspiFrigo /></ProtectedRoute>} />
           <Route path="/app/recipes/:id" element={<ProtectedRoute><RecipeDetail /></ProtectedRoute>} />
+          <Route path="/app/shopping-list" element={<ProtectedRoute><ShoppingList /></ProtectedRoute>} />
             
             {/* Admin (Protected + Admin Only) */}
         <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
