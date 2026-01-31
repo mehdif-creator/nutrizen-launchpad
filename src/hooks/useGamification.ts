@@ -9,6 +9,7 @@ export interface Gamification {
   level: number;
   streak_days: number;
   badges_count: number;
+  xp_to_next: number;
 }
 
 const DEFAULT_GAMIFICATION: Gamification = {
@@ -16,9 +17,31 @@ const DEFAULT_GAMIFICATION: Gamification = {
   level: 1,
   streak_days: 0,
   badges_count: 0,
+  xp_to_next: 100,
 };
 
+// Level thresholds
+const LEVEL_THRESHOLDS = [0, 100, 250, 450, 700, 1000, 1400, 1900, 2500, 3200];
+
+function computeLevelInfo(points: number): { level: number; xpToNext: number } {
+  let level = 1;
+  for (let i = 1; i < LEVEL_THRESHOLDS.length; i++) {
+    if (points >= LEVEL_THRESHOLDS[i]) {
+      level = i + 1;
+    } else {
+      break;
+    }
+  }
+  
+  const nextThreshold = LEVEL_THRESHOLDS[level] || LEVEL_THRESHOLDS[level - 1] + 500;
+  const currentThreshold = LEVEL_THRESHOLDS[level - 1] || 0;
+  const xpToNext = nextThreshold - currentThreshold;
+  
+  return { level, xpToNext };
+}
+
 async function fetchGamification(userId: string): Promise<Gamification> {
+  // Get gamification data
   const { data, error } = await supabase
     .from('user_gamification')
     .select('points, level, streak_days, badges_count')
@@ -35,36 +58,46 @@ async function fetchGamification(userId: string): Promise<Gamification> {
     return DEFAULT_GAMIFICATION;
   }
 
-  // Coalesce all values (never show null/undefined)
+  const points = data.points ?? 0;
+  const { xpToNext } = computeLevelInfo(points);
+
   return {
-    points: data.points ?? 0,
+    points,
     level: data.level ?? 1,
     streak_days: data.streak_days ?? 0,
     badges_count: data.badges_count ?? 0,
+    xp_to_next: xpToNext,
   };
 }
 
 /**
- * Calculate level name from points
+ * Get level name from level number
  */
-export function getLevelName(points: number): string {
-  if (points < 50) return 'Bronze';
-  if (points < 150) return 'Silver';
-  if (points < 300) return 'Gold';
-  return 'Platinum';
+export function getLevelName(level: number): string {
+  const names: Record<number, string> = {
+    1: 'Debutant',
+    2: 'Apprenti',
+    3: 'Cuisinier',
+    4: 'Chef',
+    5: 'Chef etoile',
+    6: 'Grand Chef',
+    7: 'Chef Executif',
+    8: 'Maitre Cuisinier',
+    9: 'Legende',
+    10: 'Maitre Zen',
+  };
+  return names[level] || `Niveau ${level}`;
 }
 
 /**
  * Get level color for styling
  */
-export function getLevelColor(levelName: string): string {
-  const colors = {
-    Bronze: 'text-amber-700',
-    Silver: 'text-gray-400',
-    Gold: 'text-yellow-500',
-    Platinum: 'text-blue-400',
-  };
-  return colors[levelName as keyof typeof colors] || colors.Bronze;
+export function getLevelColor(level: number): string {
+  if (level >= 9) return 'text-purple-500';
+  if (level >= 7) return 'text-yellow-500';
+  if (level >= 5) return 'text-blue-500';
+  if (level >= 3) return 'text-green-500';
+  return 'text-gray-500';
 }
 
 export function useGamification(userId: string | undefined) {
@@ -80,7 +113,7 @@ export function useGamification(userId: string | undefined) {
   useEffect(() => {
     if (!userId) return;
 
-    const unsubscribe = subscribeToGamification(userId, (payload) => {
+    const unsubscribe = subscribeToGamification(userId, () => {
       queryClient.invalidateQueries({ queryKey: ['gamification', userId] });
     });
 
@@ -88,12 +121,12 @@ export function useGamification(userId: string | undefined) {
   }, [userId]);
 
   const gamification = query.data ?? DEFAULT_GAMIFICATION;
-  const levelName = getLevelName(gamification.points);
+  const levelName = getLevelName(gamification.level);
 
   return {
     ...query,
     gamification,
     levelName,
-    levelColor: getLevelColor(levelName),
+    levelColor: getLevelColor(gamification.level),
   };
 }

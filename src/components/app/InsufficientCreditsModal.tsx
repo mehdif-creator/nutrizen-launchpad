@@ -24,6 +24,7 @@ const featureNames: Record<string, string> = {
   inspifrigo: 'utiliser InspiFrigo',
   scanrepas: 'utiliser ScanRepas',
   menu_generation: 'générer un menu',
+  substitution: 'trouver une alternative',
 };
 
 export function InsufficientCreditsModal({

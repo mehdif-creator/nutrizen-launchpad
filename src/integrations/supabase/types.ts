@@ -595,6 +595,36 @@ export type Database = {
         }
         Relationships: []
       }
+      gamification_events: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          id: string
+          idempotency_key: string
+          metadata: Json | null
+          user_id: string
+          xp_delta: number
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          id?: string
+          idempotency_key: string
+          metadata?: Json | null
+          user_id: string
+          xp_delta?: number
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          idempotency_key?: string
+          metadata?: Json | null
+          user_id?: string
+          xp_delta?: number
+        }
+        Relationships: []
+      }
       grocery_lists: {
         Row: {
           generated_at: string
@@ -616,6 +646,39 @@ export type Database = {
           items?: Json
           user_id?: string
           weekly_menu_id?: string
+        }
+        Relationships: []
+      }
+      ingredient_substitutions_cache: {
+        Row: {
+          constraints: Json | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          ingredient_name: string
+          recipe_id: string | null
+          result: Json
+          user_id: string
+        }
+        Insert: {
+          constraints?: Json | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          ingredient_name: string
+          recipe_id?: string | null
+          result?: Json
+          user_id: string
+        }
+        Update: {
+          constraints?: Json | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          ingredient_name?: string
+          recipe_id?: string | null
+          result?: Json
+          user_id?: string
         }
         Relationships: []
       }
@@ -2628,6 +2691,17 @@ export type Database = {
         }
         Returns: Json
       }
+      rpc_award_xp: {
+        Args: {
+          p_event_type: string
+          p_idempotency_key: string
+          p_metadata?: Json
+          p_user_id: string
+          p_xp_delta: number
+        }
+        Returns: Json
+      }
+      rpc_compute_level: { Args: { p_xp: number }; Returns: Json }
       rpc_compute_reset_state: { Args: { p_user_id: string }; Returns: Json }
       rpc_get_effective_portions: {
         Args: { p_user_id: string; p_week_start?: string }
