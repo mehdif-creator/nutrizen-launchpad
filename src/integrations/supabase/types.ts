@@ -409,6 +409,36 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_reset_runs: {
+        Row: {
+          error: string | null
+          finished_at: string | null
+          id: string
+          started_at: string
+          status: string
+          summary: Json | null
+          trigger: string
+        }
+        Insert: {
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          summary?: Json | null
+          trigger?: string
+        }
+        Update: {
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          summary?: Json | null
+          trigger?: string
+        }
+        Relationships: []
+      }
       credit_resets_log: {
         Row: {
           cadence: string
@@ -481,6 +511,42 @@ export type Database = {
         }
         Relationships: []
       }
+      email_events: {
+        Row: {
+          created_at: string
+          error: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          provider: string
+          provider_message_id: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          provider?: string
+          provider_message_id?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          provider?: string
+          provider_message_id?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       feature_flags: {
         Row: {
           description: string | null
@@ -496,6 +562,30 @@ export type Database = {
           description?: string | null
           enabled?: boolean | null
           key?: string
+        }
+        Relationships: []
+      }
+      grocery_lists: {
+        Row: {
+          generated_at: string
+          id: string
+          items: Json
+          user_id: string
+          weekly_menu_id: string
+        }
+        Insert: {
+          generated_at?: string
+          id?: string
+          items?: Json
+          user_id: string
+          weekly_menu_id: string
+        }
+        Update: {
+          generated_at?: string
+          id?: string
+          items?: Json
+          user_id?: string
+          weekly_menu_id?: string
         }
         Relationships: []
       }
@@ -2178,6 +2268,10 @@ export type Database = {
       fn_points_to_credits: { Args: { p_points: number }; Returns: boolean }
       fn_touch_streak_today: { Args: never; Returns: undefined }
       generate_affiliate_code: { Args: never; Returns: string }
+      generate_grocery_list: {
+        Args: { p_weekly_menu_id: string }
+        Returns: Json
+      }
       generate_referral_code:
         | { Args: never; Returns: string }
         | { Args: { user_id: string }; Returns: string }
@@ -2372,6 +2466,14 @@ export type Database = {
       to_num: { Args: { input_text: string }; Returns: number }
       to_number_fr: { Args: { p: string }; Returns: number }
       unaccent_safe: { Args: { p: string }; Returns: string }
+      update_grocery_item_checked: {
+        Args: {
+          p_checked: boolean
+          p_grocery_list_id: string
+          p_ingredient_key: string
+        }
+        Returns: boolean
+      }
       update_user_streak_and_stats: {
         Args: { p_user_id: string }
         Returns: Json
