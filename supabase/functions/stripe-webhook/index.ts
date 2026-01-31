@@ -176,7 +176,7 @@ serve(async (req) => {
           
           // Check if this was an idempotent hit (already processed)
           if (creditsResult?.idempotent_hit) {
-            logStep("Idempotent hit - transaction already processed", { 
+          logStep("Idempotent hit - transaction already processed", { 
               transactionId: creditsResult.transaction_id 
             });
             return new Response(JSON.stringify({ received: true, idempotent: true }), {
@@ -207,6 +207,29 @@ serve(async (req) => {
               new_balance: creditsResult.total_balance 
             }
           );
+          
+          // =========================================
+          // REFERRAL QUALIFICATION - First credits purchase
+          // =========================================
+          // Check if this user was referred and trigger qualification
+          try {
+            const { data: qualResult, error: qualError } = await supabaseAdmin.rpc('handle_referral_qualification', {
+              p_referred_user_id: supabaseUserId,
+              p_reference_type: 'stripe_checkout_session',
+              p_reference_id: session.id,
+            });
+            
+            if (qualError) {
+              logStep("Referral qualification check failed (non-blocking)", { error: qualError.message });
+            } else if (qualResult?.success) {
+              logStep("Referral qualification processed", { 
+                rewardCredits: qualResult.reward_credits,
+                alreadyQualified: qualResult.already_qualified 
+              });
+            }
+          } catch (refErr) {
+            logStep("Referral qualification error (non-blocking)", { error: String(refErr) });
+          }
           
           return new Response(JSON.stringify({ received: true, credits_added: true }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },

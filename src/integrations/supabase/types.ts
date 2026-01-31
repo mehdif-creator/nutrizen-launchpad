@@ -511,6 +511,36 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_advice: {
+        Row: {
+          category: string
+          created_at: string | null
+          date: string
+          id: string
+          is_active: boolean
+          text: string
+          title: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          date: string
+          id?: string
+          is_active?: boolean
+          text: string
+          title: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          date?: string
+          id?: string
+          is_active?: boolean
+          text?: string
+          title?: string
+        }
+        Relationships: []
+      }
       email_events: {
         Row: {
           created_at: string
@@ -1273,6 +1303,108 @@ export type Database = {
           },
         ]
       }
+      referral_attributions: {
+        Row: {
+          created_at: string | null
+          id: string
+          referred_user_id: string
+          referrer_user_id: string
+          source: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          referred_user_id: string
+          referrer_user_id: string
+          source?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          referred_user_id?: string
+          referrer_user_id?: string
+          source?: string | null
+        }
+        Relationships: []
+      }
+      referral_clicks: {
+        Row: {
+          created_at: string | null
+          id: string
+          ip_hash: string | null
+          referral_code: string
+          referrer_user_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          ip_hash?: string | null
+          referral_code: string
+          referrer_user_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          ip_hash?: string | null
+          referral_code?: string
+          referrer_user_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      referral_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referral_events: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          id: string
+          idempotency_key: string
+          reference_id: string | null
+          reference_type: string | null
+          referred_user_id: string
+          referrer_user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          id?: string
+          idempotency_key: string
+          reference_id?: string | null
+          reference_type?: string | null
+          referred_user_id: string
+          referrer_user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          idempotency_key?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          referred_user_id?: string
+          referrer_user_id?: string
+        }
+        Relationships: []
+      }
       referrals: {
         Row: {
           completed_at: string | null
@@ -1585,6 +1717,32 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_daily_advice_seen: {
+        Row: {
+          advice_id: string
+          seen_at: string | null
+          user_id: string
+        }
+        Insert: {
+          advice_id: string
+          seen_at?: string | null
+          user_id: string
+        }
+        Update: {
+          advice_id?: string
+          seen_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_daily_advice_seen_advice_id_fkey"
+            columns: ["advice_id"]
+            isOneToOne: false
+            referencedRelation: "daily_advice"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_daily_recipes: {
         Row: {
@@ -2283,6 +2441,10 @@ export type Database = {
           total_quantity: number
         }[]
       }
+      generate_user_referral_code: {
+        Args: { p_user_id: string }
+        Returns: string
+      }
       generate_week_menu: {
         Args: { p_user: string; p_week_start: string }
         Returns: Json
@@ -2392,6 +2554,14 @@ export type Database = {
         Args: { p_user_id: string; p_week_start?: string }
         Returns: Json
       }
+      handle_referral_qualification: {
+        Args: {
+          p_reference_id?: string
+          p_reference_type?: string
+          p_referred_user_id: string
+        }
+        Returns: Json
+      }
       handle_referral_signup: {
         Args: { p_new_user_id: string; p_referral_code: string }
         Returns: Json
@@ -2463,6 +2633,7 @@ export type Database = {
         Args: { p_user_id: string; p_week_start?: string }
         Returns: Json
       }
+      rpc_get_user_dashboard: { Args: { p_user_id: string }; Returns: Json }
       to_num: { Args: { input_text: string }; Returns: number }
       to_number_fr: { Args: { p: string }; Returns: number }
       unaccent_safe: { Args: { p: string }; Returns: string }
