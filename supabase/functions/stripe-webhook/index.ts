@@ -2,14 +2,10 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
-// SECURITY: Strict CORS - only allow requests from Stripe
-// Stripe webhooks don't send Origin header, so we don't validate CORS here
-// Signature verification provides security instead
 const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
 };
 
-// Helper function to redact sensitive data
 const redactEmail = (email: string): string => {
   const [user, domain] = email.split('@');
   return `${user.slice(0, 2)}***@${domain}`;
@@ -28,6 +24,41 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const supabaseAdmin = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    { auth: { persistSession: false } }
+  );
+
+  // Helper to log payment events
+  const logPaymentEvent = async (
+    eventType: string,
+    stripeEventId: string | null,
+    userId: string | null,
+    userEmail: string | null,
+    amountCents: number | null,
+    creditsAmount: number | null,
+    status: string,
+    errorMessage: string | null = null,
+    metadata: any = {}
+  ) => {
+    try {
+      await supabaseAdmin.from('payment_events_log').insert({
+        event_type: eventType,
+        stripe_event_id: stripeEventId,
+        user_id: userId,
+        user_email: userEmail,
+        amount_cents: amountCents,
+        credits_amount: creditsAmount,
+        status,
+        error_message: errorMessage,
+        metadata,
+      });
+    } catch (err) {
+      console.error('[PAYMENT-LOG] Error logging event:', err);
+    }
+  };
 
   try {
     logStep("Webhook received", { method: req.method, hasSignature: !!req.headers.get("stripe-signature") });
@@ -51,7 +82,7 @@ serve(async (req) => {
     }
     
     logStep("Constructing Stripe event from webhook");
-    let event;
+    let event: Stripe.Event;
     try {
       event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
       logStep("Stripe event constructed successfully", { eventId: event.id });
@@ -62,13 +93,7 @@ serve(async (req) => {
 
     logStep("Event type", { type: event.type, eventId: event.id });
 
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
-
-    // SECURITY: Idempotency check - prevent duplicate processing
+    // IDEMPOTENCY CHECK: prevent duplicate processing
     const { data: existingEvent } = await supabaseAdmin
       .from('stripe_events')
       .select('id')
@@ -91,7 +116,7 @@ serve(async (req) => {
         event_type: event.type,
       });
 
-    // Handle checkout.session.completed - Create user account OR credit purchase
+    // Handle checkout.session.completed - Credits purchase OR Subscription
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
       const customerEmail = session.customer_email || session.customer_details?.email;
@@ -99,38 +124,65 @@ serve(async (req) => {
       const subscriptionId = session.subscription as string;
       
       // Check if this is a credit pack purchase
-      const isCreditPurchase = session.metadata?.product_role === 'zen_credits_pack' || session.metadata?.credits_type === 'lifetime';
+      const isCreditPurchase = session.metadata?.product_role === 'zen_credits_pack' || 
+                               session.metadata?.credits_type === 'lifetime' ||
+                               session.metadata?.pack_id;
       const creditsAmount = session.metadata?.credits_amount ? parseInt(session.metadata.credits_amount) : null;
       const supabaseUserId = session.metadata?.supabase_user_id;
+      const packId = session.metadata?.pack_id;
       
       if (isCreditPurchase && creditsAmount && supabaseUserId) {
-        // Handle credit pack purchase
+        // =========================================
+        // CREDITS PURCHASE - Atomic & Idempotent
+        // =========================================
         logStep("Processing credit pack purchase", {
           userId: redactId(supabaseUserId),
           credits: creditsAmount,
+          packId,
           sessionId: session.id.substring(0, 8) + "***"
         });
         
+        // Build stable idempotency key
+        const idempotencyKey = `stripe:checkout_session:${session.id}`;
+        
         try {
-          const { data: creditsResult, error: creditsError } = await supabaseAdmin.rpc('add_credits_from_purchase', {
+          // Use atomic RPC function
+          const { data: creditsResult, error: creditsError } = await supabaseAdmin.rpc('rpc_apply_credit_transaction', {
             p_user_id: supabaseUserId,
+            p_type: 'purchase',
             p_amount: creditsAmount,
-            p_credit_type: 'lifetime',
-            p_metadata: {
-              stripe_event_id: event.id,
-              stripe_session_id: session.id,
-              stripe_customer_id: customerId,
-              stripe_payment_intent: session.payment_intent,
-              amount_paid: session.amount_total,
-              currency: session.currency,
-              product_id: 'prod_TS7tSGWcVfrv4S',
-              purchased_at: new Date().toISOString()
-            }
+            p_reason: `Achat pack ${packId || 'credits'} - ${creditsAmount} crédits`,
+            p_reference_type: 'stripe_checkout_session',
+            p_reference_id: session.id,
+            p_idempotency_key: idempotencyKey,
+            p_feature: null,
           });
           
           if (creditsError) {
-            logStep("ERROR adding credits", { error: creditsError.message });
+            logStep("ERROR adding credits via RPC", { error: creditsError.message });
+            await logPaymentEvent(
+              'credits_purchase_failed',
+              event.id,
+              supabaseUserId,
+              customerEmail,
+              session.amount_total,
+              creditsAmount,
+              'error',
+              creditsError.message,
+              { session_id: session.id, pack_id: packId }
+            );
             throw creditsError;
+          }
+          
+          // Check if this was an idempotent hit (already processed)
+          if (creditsResult?.idempotent_hit) {
+            logStep("Idempotent hit - transaction already processed", { 
+              transactionId: creditsResult.transaction_id 
+            });
+            return new Response(JSON.stringify({ received: true, idempotent: true }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200,
+            });
           }
           
           logStep("Credits added successfully", { 
@@ -138,6 +190,23 @@ serve(async (req) => {
             lifetimeBalance: creditsResult.lifetime_balance,
             totalBalance: creditsResult.total_balance
           });
+          
+          // Log successful payment event
+          await logPaymentEvent(
+            'credits_purchase_success',
+            event.id,
+            supabaseUserId,
+            customerEmail,
+            session.amount_total,
+            creditsAmount,
+            'success',
+            null,
+            { 
+              session_id: session.id, 
+              pack_id: packId,
+              new_balance: creditsResult.total_balance 
+            }
+          );
           
           return new Response(JSON.stringify({ received: true, credits_added: true }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -149,8 +218,9 @@ serve(async (req) => {
         }
       }
       
-      // Original subscription handling logic follows
-      // Get referral code from session metadata if it exists
+      // =========================================
+      // SUBSCRIPTION HANDLING (legacy, when enabled)
+      // =========================================
       const referralCode = session.metadata?.referral_code;
       const fromCheckout = session.metadata?.from_checkout === 'true';
 
@@ -158,7 +228,7 @@ serve(async (req) => {
         throw new Error("No customer email found");
       }
 
-      logStep("Processing checkout for customer", { 
+      logStep("Processing subscription checkout for customer", { 
         email: redactEmail(customerEmail), 
         customerId: redactId(customerId),
         subscriptionId: redactId(subscriptionId),
@@ -166,10 +236,8 @@ serve(async (req) => {
         fromCheckout 
       });
 
-      // Create a random password for the user
       const randomPassword = crypto.randomUUID();
 
-      // Check if user already exists
       let userId: string | null = null;
       logStep("Checking for existing user");
       const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
@@ -184,18 +252,16 @@ serve(async (req) => {
       if (existingUser) {
         logStep("User already exists", { email: redactEmail(customerEmail), userId: redactId(existingUser.id) });
         userId = existingUser.id;
-        // Update existing subscription
         logStep("Updating subscription for existing user");
         await updateSubscriptionRecord(supabaseAdmin, userId, customerId, subscriptionId, session, stripe);
       } else {
-        // Create user in Supabase Auth - email_confirm: true to skip default email
         logStep("Creating new user in Supabase Auth", { email: redactEmail(customerEmail) });
         
         try {
           const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
             email: customerEmail,
             password: randomPassword,
-            email_confirm: true, // Skip default confirmation email - we'll send magic link
+            email_confirm: true,
             user_metadata: {
               stripe_customer_id: customerId,
               created_via_stripe: true,
@@ -206,7 +272,6 @@ serve(async (req) => {
             logStep("ERROR creating user in Supabase Auth", { 
               error: authError.message,
               code: authError.status,
-              details: JSON.stringify(authError)
             });
             throw authError;
           }
@@ -219,10 +284,8 @@ serve(async (req) => {
           userId = authData.user.id;
           logStep("User created successfully in Supabase Auth", { userId: redactId(userId) });
           
-          // Small delay to let triggers complete
           await new Promise(resolve => setTimeout(resolve, 500));
           
-          // Create subscription record
           logStep("Creating subscription record");
           await updateSubscriptionRecord(supabaseAdmin, userId, customerId, subscriptionId, session, stripe);
           
@@ -236,12 +299,9 @@ serve(async (req) => {
         }
       }
       
-      // Create one-time login token for immediate access
+      // Create one-time login token
       if (userId && session.id) {
-        const appBaseUrl = Deno.env.get("APP_BASE_URL") || "https://mynutrizen.fr";
-        
-        // Generate secure one-time token tied to checkout session
-        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
         
         logStep("Creating one-time login token", { 
           email: redactEmail(customerEmail),
@@ -260,19 +320,16 @@ serve(async (req) => {
         if (tokenError) {
           logStep("ERROR creating login token", { error: tokenError.message });
         } else {
-          logStep("One-time login token created - user will be auto-logged in via success_url");
+          logStep("One-time login token created");
         }
       }
         
-      // Handle referral and affiliate codes
+      // Handle referral
       const refCode = session.metadata?.referral_code;
       const affCode = session.metadata?.affiliate_code;
       
       if (referralCode && userId) {
-        logStep("Processing referral signup and subscription reward", { 
-          referralCode: '[REDACTED]', 
-          newUserId: redactId(userId) 
-        });
+        logStep("Processing referral signup and subscription reward");
           
         try {
           const referralResponse = await fetch(
@@ -313,7 +370,6 @@ serve(async (req) => {
       if (affCode && userId && subscriptionId) {
         logStep("Processing affiliate conversion", { affiliateCode: redactId(affCode) });
         try {
-          // Find affiliate user by code
           const { data: affiliateProfile } = await supabaseAdmin
             .from('user_profiles')
             .select('id')
@@ -322,11 +378,9 @@ serve(async (req) => {
             .single();
           
           if (affiliateProfile) {
-            // Get subscription details to calculate commission
             const subscription = await stripe.subscriptions.retrieve(subscriptionId);
             const amountRecurring = subscription.items.data[0].price.unit_amount || 0;
             
-            // Create affiliate conversion record
             await supabaseAdmin
               .from('affiliate_conversions')
               .insert({
@@ -334,7 +388,7 @@ serve(async (req) => {
                 referred_user_id: userId,
                 stripe_subscription_id: subscriptionId,
                 commission_rate: 0.04,
-                amount_recurring: amountRecurring / 100, // Convert cents to euros
+                amount_recurring: amountRecurring / 100,
                 status: 'active',
               });
             
@@ -343,6 +397,41 @@ serve(async (req) => {
         } catch (affError) {
           logStep("Affiliate tracking error", { error: String(affError) });
         }
+      }
+    }
+
+    // Handle charge.refunded - Reverse credits if needed
+    if (event.type === "charge.refunded") {
+      const charge = event.data.object as Stripe.Charge;
+      const refunds = charge.refunds?.data || [];
+      
+      for (const refund of refunds) {
+        const idempotencyKey = `stripe:refund:${refund.id}`;
+        
+        // Check if this was a credits purchase refund via payment intent metadata
+        // Note: You may need to look up the original transaction
+        logStep("Processing refund", { 
+          refundId: refund.id, 
+          amount: refund.amount,
+          chargeId: charge.id 
+        });
+        
+        // Log refund event for admin review
+        await logPaymentEvent(
+          'refund_received',
+          event.id,
+          null,
+          charge.billing_details?.email,
+          refund.amount,
+          null,
+          'pending_review',
+          null,
+          { 
+            refund_id: refund.id, 
+            charge_id: charge.id,
+            reason: refund.reason 
+          }
+        );
       }
     }
 
@@ -388,7 +477,6 @@ async function updateSubscriptionRecord(
   let currentPeriodEnd = null;
   let trialStart = null;
 
-  // Safe timestamp conversion helper
   const safeTimestamp = (unixTime: number | null | undefined): string | null => {
     if (!unixTime || typeof unixTime !== 'number') return null;
     try {
@@ -406,11 +494,10 @@ async function updateSubscriptionRecord(
     status = subscription.status;
     const priceId = subscription.items.data[0]?.price.id;
     
-    // Map price IDs to plans
     if (priceId === 'price_1SIWDPEl2hJeGlFp14plp0D5') plan = 'essentiel';
     else if (priceId === 'price_1SIWFyEl2hJeGlFp8pQyEMQC') plan = 'equilibre';
     else if (priceId === 'price_1SIWGdEl2hJeGlFp1e1pekfL') plan = 'premium';
-    else plan = priceId; // Use price ID as fallback
+    else plan = priceId;
 
     logStep("Subscription details", { 
       status, 
@@ -424,7 +511,6 @@ async function updateSubscriptionRecord(
     trialStart = safeTimestamp(subscription.trial_start);
   }
 
-  // Use session created time or current time as trial_start
   if (!trialStart && session?.created) {
     trialStart = safeTimestamp(session.created);
   }
@@ -456,7 +542,6 @@ async function updateSubscriptionRecord(
     logStep("ERROR upserting subscription", { 
       error: subError.message, 
       code: subError.code,
-      details: JSON.stringify(subError)
     });
     throw subError;
   }

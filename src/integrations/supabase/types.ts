@@ -373,6 +373,42 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_packs: {
+        Row: {
+          active: boolean
+          created_at: string
+          credits: number
+          currency: string
+          id: string
+          name: string
+          price_cents: number
+          sort_order: number
+          stripe_price_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          credits: number
+          currency?: string
+          id: string
+          name: string
+          price_cents: number
+          sort_order?: number
+          stripe_price_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          credits?: number
+          currency?: string
+          id?: string
+          name?: string
+          price_cents?: number
+          sort_order?: number
+          stripe_price_id?: string | null
+        }
+        Relationships: []
+      }
       credit_transactions: {
         Row: {
           created_at: string
@@ -380,8 +416,11 @@ export type Database = {
           delta: number
           feature: string | null
           id: string
+          idempotency_key: string | null
           metadata: Json | null
           reason: string
+          reference_id: string | null
+          reference_type: string | null
           user_id: string
         }
         Insert: {
@@ -390,8 +429,11 @@ export type Database = {
           delta: number
           feature?: string | null
           id?: string
+          idempotency_key?: string | null
           metadata?: Json | null
           reason: string
+          reference_id?: string | null
+          reference_type?: string | null
           user_id: string
         }
         Update: {
@@ -400,8 +442,11 @@ export type Database = {
           delta?: number
           feature?: string | null
           id?: string
+          idempotency_key?: string | null
           metadata?: Json | null
           reason?: string
+          reference_id?: string | null
+          reference_type?: string | null
           user_id?: string
         }
         Relationships: []
@@ -517,6 +562,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payment_events_log: {
+        Row: {
+          amount_cents: number | null
+          created_at: string
+          credits_amount: number | null
+          error_message: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          status: string
+          stripe_event_id: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount_cents?: number | null
+          created_at?: string
+          credits_amount?: number | null
+          error_message?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          status?: string
+          stripe_event_id?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount_cents?: number | null
+          created_at?: string
+          credits_amount?: number | null
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          status?: string
+          stripe_event_id?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       preferences: {
         Row: {
@@ -1663,6 +1750,7 @@ export type Database = {
       }
       user_wallets: {
         Row: {
+          balance: number | null
           credits_total: number
           free_months_earned: number
           free_months_used: number
@@ -1675,6 +1763,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          balance?: number | null
           credits_total?: number
           free_months_earned?: number
           free_months_used?: number
@@ -1687,6 +1776,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          balance?: number | null
           credits_total?: number
           free_months_earned?: number
           free_months_used?: number
@@ -2184,6 +2274,19 @@ export type Database = {
       refresh_recipe_macros: { Args: never; Returns: undefined }
       refresh_recipe_macros_from_ciqual: { Args: never; Returns: undefined }
       refresh_some_recipes: { Args: { batch_size?: number }; Returns: number }
+      rpc_apply_credit_transaction: {
+        Args: {
+          p_amount: number
+          p_feature?: string
+          p_idempotency_key?: string
+          p_reason?: string
+          p_reference_id?: string
+          p_reference_type?: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       to_num: { Args: { input_text: string }; Returns: number }
       to_number_fr: { Args: { p: string }; Returns: number }
       unaccent_safe: { Args: { p: string }; Returns: string }
