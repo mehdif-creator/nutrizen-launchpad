@@ -5,7 +5,6 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import { 
   ShoppingCart, 
   Download, 
@@ -19,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { LoadingMessages } from '@/components/common/LoadingMessages';
 
 interface GroceryItem {
   ingredient_key: string;
@@ -296,21 +296,13 @@ export default function ShoppingList() {
       <div className="min-h-screen flex flex-col">
         <AppHeader />
         <main className="flex-1 container py-8 px-4">
-          <div className="mb-6">
-            <Skeleton className="h-8 w-64 mb-2" />
-            <Skeleton className="h-4 w-48" />
-          </div>
-          <div className="space-y-4">
-            {[1, 2, 3].map(i => (
-              <Card key={i} className="p-4">
-                <Skeleton className="h-6 w-32 mb-3" />
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                </div>
-              </Card>
-            ))}
+          <div className="py-12">
+            <LoadingMessages 
+              variant="grocery" 
+              isLoading={true} 
+              skeletonCount={4}
+              minDisplayMs={400}
+            />
           </div>
         </main>
         <AppFooter />
