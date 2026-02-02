@@ -375,6 +375,18 @@ export default function AdminDashboard() {
                   Diagnostics QA
                 </Button>
               </Link>
+              <Link to="/admin/referrals">
+                <Button variant="outline" className="w-full justify-start">
+                  <Users className="mr-2 h-4 w-4" />
+                  Parrainage
+                </Button>
+              </Link>
+              <Link to="/admin/conversion">
+                <Button variant="outline" className="w-full justify-start">
+                  <TrendingUp className="mr-2 h-4 w-4" />
+                  Funnel de conversion
+                </Button>
+              </Link>
             </div>
           </Card>
 
