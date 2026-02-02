@@ -1613,25 +1613,31 @@ export type Database = {
           created_at: string | null
           id: string
           ip_hash: string | null
+          landing_path: string | null
           referral_code: string
           referrer_user_id: string | null
           user_agent: string | null
+          visitor_id: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
           ip_hash?: string | null
+          landing_path?: string | null
           referral_code: string
           referrer_user_id?: string | null
           user_agent?: string | null
+          visitor_id?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
           ip_hash?: string | null
+          landing_path?: string | null
           referral_code?: string
           referrer_user_id?: string | null
           user_agent?: string | null
+          visitor_id?: string | null
         }
         Relationships: []
       }
@@ -1659,30 +1665,39 @@ export type Database = {
           event_type: string
           id: string
           idempotency_key: string
+          metadata: Json
           reference_id: string | null
           reference_type: string | null
+          referral_code: string | null
           referred_user_id: string
           referrer_user_id: string
+          visitor_id: string | null
         }
         Insert: {
           created_at?: string | null
           event_type: string
           id?: string
           idempotency_key: string
+          metadata?: Json
           reference_id?: string | null
           reference_type?: string | null
+          referral_code?: string | null
           referred_user_id: string
           referrer_user_id: string
+          visitor_id?: string | null
         }
         Update: {
           created_at?: string | null
           event_type?: string
           id?: string
           idempotency_key?: string
+          metadata?: Json
           reference_id?: string | null
           reference_type?: string | null
+          referral_code?: string | null
           referred_user_id?: string
           referrer_user_id?: string
+          visitor_id?: string | null
         }
         Relationships: []
       }
@@ -2986,6 +3001,14 @@ export type Database = {
       refresh_recipe_macros: { Args: never; Returns: undefined }
       refresh_recipe_macros_from_ciqual: { Args: never; Returns: undefined }
       refresh_some_recipes: { Args: { batch_size?: number }; Returns: number }
+      rpc_admin_conversion_funnel: {
+        Args: { p_date_from?: string; p_date_to?: string }
+        Returns: Json
+      }
+      rpc_admin_referral_funnel: {
+        Args: { p_date_from?: string; p_date_to?: string }
+        Returns: Json
+      }
       rpc_apply_credit_reset: { Args: { p_user_id: string }; Returns: Json }
       rpc_apply_credit_transaction: {
         Args: {
@@ -3024,7 +3047,20 @@ export type Database = {
         Args: { p_user_id: string; p_week_start?: string }
         Returns: Json
       }
+      rpc_get_referral_stats: { Args: { p_user_id: string }; Returns: Json }
       rpc_get_user_dashboard: { Args: { p_user_id: string }; Returns: Json }
+      rpc_record_referral_event: {
+        Args: {
+          p_event_type: string
+          p_idempotency_key?: string
+          p_metadata?: Json
+          p_referral_code?: string
+          p_referred_user_id?: string
+          p_referrer_user_id: string
+          p_visitor_id?: string
+        }
+        Returns: Json
+      }
       rpc_refund_credits_for_job: {
         Args: {
           p_feature: string

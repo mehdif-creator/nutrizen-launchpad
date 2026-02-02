@@ -37,6 +37,8 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminOnboarding from "./pages/admin/AdminOnboarding";
 import AdminTickets from "./pages/admin/AdminTickets";
 import AdminDiagnostics from "./pages/admin/AdminDiagnostics";
+import AdminReferrals from "./pages/admin/AdminReferrals";
+import AdminConversion from "./pages/admin/AdminConversion";
 
 // Blog
 import BlogIndex from "./pages/blog/BlogIndex";
@@ -99,6 +101,8 @@ const App = () => {
         <Route path="/admin/onboarding" element={<ProtectedRoute requireAdmin><AdminOnboarding /></ProtectedRoute>} />
         <Route path="/admin/tickets" element={<ProtectedRoute requireAdmin><AdminTickets /></ProtectedRoute>} />
         <Route path="/admin/diagnostics" element={<ProtectedRoute requireAdmin><AdminDiagnostics /></ProtectedRoute>} />
+        <Route path="/admin/referrals" element={<ProtectedRoute requireAdmin><AdminReferrals /></ProtectedRoute>} />
+        <Route path="/admin/conversion" element={<ProtectedRoute requireAdmin><AdminConversion /></ProtectedRoute>} />
             
             {/* Blog */}
             <Route path="/blog" element={<BlogIndex />} />
