@@ -541,6 +541,74 @@ export type Database = {
         }
         Relationships: []
       }
+      diagnostics_results: {
+        Row: {
+          created_at: string
+          details: Json | null
+          id: string
+          run_id: string
+          status: string
+          test_key: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          id?: string
+          run_id: string
+          status: string
+          test_key: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          id?: string
+          run_id?: string
+          status?: string
+          test_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagnostics_results_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "diagnostics_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diagnostics_runs: {
+        Row: {
+          admin_user_id: string
+          environment: string
+          error: string | null
+          finished_at: string | null
+          id: string
+          started_at: string
+          status: string
+          summary: Json | null
+        }
+        Insert: {
+          admin_user_id: string
+          environment?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          summary?: Json | null
+        }
+        Update: {
+          admin_user_id?: string
+          environment?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          summary?: Json | null
+        }
+        Relationships: []
+      }
       email_events: {
         Row: {
           created_at: string

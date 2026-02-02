@@ -1,6 +1,6 @@
 import { AppFooter } from '@/components/app/AppFooter';
 import { Card } from '@/components/ui/card';
-import { Users, Ticket, DollarSign, TrendingUp, Crown, Star, Calendar, Activity, Percent, Euro, UserMinus, UserPlus, BarChart3 } from 'lucide-react';
+import { Users, Ticket, DollarSign, TrendingUp, Crown, Star, Calendar, Activity, Percent, Euro, UserMinus, UserPlus, BarChart3, Stethoscope } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
@@ -367,6 +367,12 @@ export default function AdminDashboard() {
                 <Button variant="outline" className="w-full justify-start">
                   <Ticket className="mr-2 h-4 w-4" />
                   Gérer les tickets
+                </Button>
+              </Link>
+              <Link to="/admin/diagnostics">
+                <Button variant="outline" className="w-full justify-start">
+                  <Stethoscope className="mr-2 h-4 w-4" />
+                  Diagnostics QA
                 </Button>
               </Link>
             </div>
