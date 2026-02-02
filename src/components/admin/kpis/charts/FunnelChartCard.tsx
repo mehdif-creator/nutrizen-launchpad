@@ -2,13 +2,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight } from 'lucide-react';
-import { ConversionFunnelStep } from '@/lib/adminKpis';
+import { BreakdownRow } from '@/lib/adminKpis';
 import { cn } from '@/lib/utils';
 
 interface FunnelChartCardProps {
   title: string;
   description?: string;
-  data: ConversionFunnelStep[];
+  data: BreakdownRow[];
   isLoading?: boolean;
 }
 
@@ -63,7 +63,7 @@ export function FunnelChartCard({
     );
   }
 
-  const maxCount = Math.max(...data.map(d => d.count));
+  const maxCount = Math.max(...data.map(d => d.value));
 
   return (
     <Card>
@@ -74,14 +74,14 @@ export function FunnelChartCard({
       <CardContent>
         <div className="flex items-center justify-between gap-2">
           {data.map((step, index) => {
-            const widthPercentage = maxCount > 0 ? (step.count / maxCount) * 100 : 0;
+            const widthPercentage = maxCount > 0 ? (step.value / maxCount) * 100 : 0;
             
             return (
-              <div key={step.step} className="flex-1 flex items-center gap-2">
+              <div key={step.segment} className="flex-1 flex items-center gap-2">
                 <Card 
                   className={cn(
                     "flex-1 p-4 text-center border-2 transition-colors",
-                    step.count > 0 ? "hover:border-primary/50" : "opacity-50"
+                    step.value > 0 ? "hover:border-primary/50" : "opacity-50"
                   )}
                 >
                   {/* Mini bar indicator */}
@@ -92,12 +92,12 @@ export function FunnelChartCard({
                     />
                   </div>
                   
-                  <p className="text-2xl font-bold">{step.count.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{step.step}</p>
+                  <p className="text-2xl font-bold">{step.value.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{step.segment}</p>
                   
-                  {step.conversion_rate !== undefined && (
+                  {step.percentage !== undefined && step.percentage > 0 && (
                     <Badge variant="secondary" className="mt-2 text-xs">
-                      {step.conversion_rate.toFixed(1)}% conv.
+                      {step.percentage.toFixed(1)}% conv.
                     </Badge>
                   )}
                 </Card>
@@ -111,11 +111,11 @@ export function FunnelChartCard({
         </div>
         
         {/* Overall conversion rate */}
-        {data.length >= 2 && data[0].count > 0 && (
+        {data.length >= 2 && data[0].value > 0 && (
           <div className="mt-4 text-center text-sm text-muted-foreground">
             Taux global: {' '}
             <span className="font-bold text-primary">
-              {((data[data.length - 1].count / data[0].count) * 100).toFixed(1)}%
+              {((data[data.length - 1].value / data[0].value) * 100).toFixed(1)}%
             </span>
           </div>
         )}
