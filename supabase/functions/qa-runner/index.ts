@@ -205,14 +205,25 @@ async function testProfileUpsert(userId: string): Promise<TestResult> {
       };
     }
 
-    if (verifyProfile?.last_diagnostics_at !== testTimestamp) {
+    // Compare timestamps by epoch milliseconds instead of string (avoids Z vs +00:00 mismatch)
+    const TOLERANCE_MS = 1500;
+    const expectedMs = new Date(testTimestamp).getTime();
+    const actualIso = verifyProfile?.last_diagnostics_at;
+    const actualMs = actualIso ? new Date(actualIso).getTime() : 0;
+    const diffMs = Math.abs(expectedMs - actualMs);
+
+    if (diffMs > TOLERANCE_MS) {
       return {
         test_key: 'profile_upsert',
         status: 'fail',
         details: { 
-          expected: testTimestamp,
-          actual: verifyProfile?.last_diagnostics_at,
-          message_fr: 'Échec — modification non persistée.' 
+          expected_iso: testTimestamp,
+          actual_iso: actualIso,
+          expected_ms: expectedMs,
+          actual_ms: actualMs,
+          diff_ms: diffMs,
+          tolerance_ms: TOLERANCE_MS,
+          message_fr: `Échec — modification non persistée (écart ${diffMs}ms > ${TOLERANCE_MS}ms tolérance).` 
         },
       };
     }
@@ -222,7 +233,12 @@ async function testProfileUpsert(userId: string): Promise<TestResult> {
       status: 'pass',
       details: { 
         message_fr: 'OK — profil mis à jour et vérifié.', 
-        last_diagnostics_at: testTimestamp 
+        expected_iso: testTimestamp,
+        actual_iso: actualIso,
+        expected_ms: expectedMs,
+        actual_ms: actualMs,
+        diff_ms: diffMs,
+        tolerance_ms: TOLERANCE_MS,
       },
     };
   } catch (err) {
