@@ -2886,6 +2886,7 @@ export type Database = {
         Returns: boolean
       }
       household_portion_factor: { Args: { p_people: Json }; Returns: number }
+      is_onboarding_complete: { Args: { p_user_id: string }; Returns: boolean }
       normalize_fraction: { Args: { p_text: string }; Returns: number }
       normalize_ingredient_line: {
         Args: { p_line: string }

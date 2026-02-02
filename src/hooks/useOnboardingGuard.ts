@@ -1,27 +1,33 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export interface OnboardingStatus {
-  status: 'not_started' | 'in_progress' | 'completed';
-  required_fields_ok: boolean;
-  onboarding_step: number;
+  completed: boolean;
+  version: number;
+  completedAt: string | null;
   loading: boolean;
 }
 
 /**
  * Hook to guard routes based on onboarding status.
- * Redirects to /onboarding if not completed.
+ * Uses server-side truth: onboarding_completed_at + onboarding_version.
+ * Redirects to /app/onboarding if not completed.
  */
 export function useOnboardingGuard(userId: string | undefined) {
   const [state, setState] = useState<OnboardingStatus>({
-    status: 'not_started',
-    required_fields_ok: false,
-    onboarding_step: 0,
+    completed: false,
+    version: 0,
+    completedAt: null,
     loading: true,
   });
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
+  
+  // Prevent redirect loops with a ref
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
     if (!userId) {
@@ -33,44 +39,52 @@ export function useOnboardingGuard(userId: string | undefined) {
       try {
         const { data, error } = await supabase
           .from('user_profiles')
-          .select('onboarding_status, onboarding_step, required_fields_ok, onboarding_completed')
+          .select('onboarding_completed_at, onboarding_version')
           .eq('id', userId)
           .single();
 
         if (error) {
           console.error('[useOnboardingGuard] Error fetching profile:', error);
-          setState(prev => ({ ...prev, loading: false }));
+          // If profile doesn't exist, user needs onboarding
+          if (error.code === 'PGRST116') {
+            setState({
+              completed: false,
+              version: 0,
+              completedAt: null,
+              loading: false,
+            });
+          } else {
+            // Other error - log but don't block
+            toast({
+              variant: 'destructive',
+              title: 'Erreur',
+              description: 'Impossible de vérifier le statut du profil.',
+            });
+            setState(prev => ({ ...prev, loading: false }));
+          }
           return;
         }
 
-        // Determine status - handle legacy onboarding_completed field
-        let status: 'not_started' | 'in_progress' | 'completed' = 
-          (data?.onboarding_status as 'not_started' | 'in_progress' | 'completed') || 'not_started';
-        
-        // Migrate from old system if needed
-        if (data?.onboarding_completed === true && status !== 'completed') {
-          status = 'completed';
-        }
-
-        const requiredFieldsOk = data?.required_fields_ok ?? false;
-        const step = data?.onboarding_step ?? 0;
+        // Server truth: completed if onboarding_completed_at is set AND version is 1
+        const completedAt = data?.onboarding_completed_at;
+        const version = data?.onboarding_version ?? 0;
+        const isCompleted = completedAt !== null && version === 1;
 
         setState({
-          status,
-          required_fields_ok: requiredFieldsOk,
-          onboarding_step: step,
+          completed: isCompleted,
+          version,
+          completedAt,
           loading: false,
         });
 
-        // Redirect logic - only if not already on onboarding page
-        const isOnboardingPage = location.pathname.startsWith('/onboarding') || 
-                                  location.pathname.startsWith('/app/onboarding');
+        // Redirect logic - only if not already on onboarding/auth pages
+        const isOnboardingPage = location.pathname.startsWith('/app/onboarding');
         const isAuthPage = location.pathname.startsWith('/auth/');
         
-        if (!isOnboardingPage && !isAuthPage) {
-          // If onboarding not completed and required fields not ok, redirect
-          if (status !== 'completed' || !requiredFieldsOk) {
-            console.log('[useOnboardingGuard] Redirecting to onboarding');
+        if (!isOnboardingPage && !isAuthPage && !hasRedirected.current) {
+          if (!isCompleted) {
+            console.log('[useOnboardingGuard] Onboarding not complete, redirecting');
+            hasRedirected.current = true;
             navigate('/app/onboarding', { replace: true });
           }
         }
@@ -81,13 +95,41 @@ export function useOnboardingGuard(userId: string | undefined) {
     };
 
     fetchOnboardingStatus();
-  }, [userId, navigate, location.pathname]);
+  }, [userId, navigate, location.pathname, toast]);
 
   return state;
 }
 
 /**
- * Helper to update onboarding status
+ * Helper to complete onboarding with server timestamp
+ */
+export async function completeOnboarding(userId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('user_profiles')
+      .update({
+        onboarding_completed_at: new Date().toISOString(),
+        onboarding_version: 1,
+        onboarding_status: 'completed',
+        onboarding_completed: true,
+        required_fields_ok: true,
+      })
+      .eq('id', userId);
+
+    if (error) {
+      console.error('[completeOnboarding] Error:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('[completeOnboarding] Exception:', error);
+    return false;
+  }
+}
+
+/**
+ * Legacy helper for compatibility - calls new function
  */
 export async function updateOnboardingStatus(
   userId: string,
@@ -96,15 +138,15 @@ export async function updateOnboardingStatus(
     step?: number;
     required_fields_ok?: boolean;
   }
-) {
-  const updateData: Record<string, any> = {};
+): Promise<void> {
+  const updateData: Record<string, unknown> = {};
   
   if (updates.status !== undefined) {
     updateData.onboarding_status = updates.status;
-    // Also update legacy field for compatibility
     if (updates.status === 'completed') {
       updateData.onboarding_completed = true;
       updateData.onboarding_completed_at = new Date().toISOString();
+      updateData.onboarding_version = 1;
     }
   }
   
