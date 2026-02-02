@@ -2791,6 +2791,41 @@ export type Database = {
         }
         Relationships: []
       }
+      kpi_events_daily_mv: {
+        Row: {
+          country: string | null
+          day: string | null
+          device: string | null
+          metric: string | null
+          value: number | null
+        }
+        Relationships: []
+      }
+      kpi_subscriptions_daily_mv: {
+        Row: {
+          active_subscribers: number | null
+          cancelled_subscribers: number | null
+          churned_subscribers: number | null
+          country: string | null
+          day: string | null
+          new_subscribers: number | null
+          plan_name: string | null
+          revenue_mrr: number | null
+        }
+        Relationships: []
+      }
+      kpi_users_daily_mv: {
+        Row: {
+          active_users_30d: number | null
+          active_users_7d: number | null
+          day: string | null
+          new_users: number | null
+          paid_users: number | null
+          total_users: number | null
+          trial_users: number | null
+        }
+        Relationships: []
+      }
       recipe_ingredients_normalized: {
         Row: {
           id: number | null
@@ -2974,6 +3009,393 @@ export type Database = {
         Returns: Json
       }
       get_dashboard_stats: { Args: { p_user_id: string }; Returns: Json }
+      get_kpi_activation_rate_timeseries: {
+        Args: { _from?: string; _granularity?: string; _to?: string }
+        Returns: {
+          activated: number
+          activation_rate: number
+          bucket: string
+          new_users: number
+        }[]
+      }
+      get_kpi_arpu_by_cohort: {
+        Args: { _from?: string; _to?: string }
+        Returns: {
+          arpu: number
+          cohort_month: string
+          users: number
+        }[]
+      }
+      get_kpi_arpu_by_plan: {
+        Args: { _from?: string; _to?: string }
+        Returns: {
+          arpu: number
+          plan: string
+          revenue: number
+          users: number
+        }[]
+      }
+      get_kpi_arpu_timeseries: {
+        Args: {
+          _country?: string
+          _from?: string
+          _granularity?: string
+          _plan?: string
+          _to?: string
+        }
+        Returns: {
+          active_users: number
+          arpu: number
+          bucket: string
+          revenue: number
+        }[]
+      }
+      get_kpi_churn_breakdown: {
+        Args: { _dimension?: string; _from?: string; _to?: string }
+        Returns: {
+          cancels: number
+          churn_rate: number
+          dimension_value: string
+        }[]
+      }
+      get_kpi_churn_by_plan: {
+        Args: { _from?: string; _to?: string }
+        Returns: {
+          cancels: number
+          churn_rate: number
+          plan: string
+        }[]
+      }
+      get_kpi_churn_timeseries: {
+        Args: { _from?: string; _granularity?: string; _to?: string }
+        Returns: {
+          bucket: string
+          cancels: number
+          churn_rate: number
+        }[]
+      }
+      get_kpi_conversion_breakdown: {
+        Args: { _dimension?: string; _from?: string; _to?: string }
+        Returns: {
+          conversion_rate: number
+          dimension_value: string
+          paid: number
+          trials: number
+        }[]
+      }
+      get_kpi_conversion_funnel: {
+        Args: { _from?: string; _to?: string }
+        Returns: {
+          step: string
+          users: number
+        }[]
+      }
+      get_kpi_conversion_timeseries: {
+        Args: { _from?: string; _granularity?: string; _to?: string }
+        Returns: {
+          bucket: string
+          conversion_rate: number
+          paid: number
+          trials: number
+        }[]
+      }
+      get_kpi_menus_breakdown: {
+        Args: { _dimension?: string; _from?: string; _to?: string }
+        Returns: {
+          dimension_value: string
+          menus: number
+        }[]
+      }
+      get_kpi_menus_by_type: {
+        Args: { _from?: string; _to?: string }
+        Returns: {
+          meal_type: string
+          menus: number
+        }[]
+      }
+      get_kpi_menus_created_timeseries: {
+        Args: { _from?: string; _granularity?: string; _to?: string }
+        Returns: {
+          bucket: string
+          menus_created: number
+        }[]
+      }
+      get_kpi_menus_per_user_by_cohort: {
+        Args: { _from?: string; _to?: string }
+        Returns: {
+          avg_menus_per_user: number
+          cohort_month: string
+          users: number
+        }[]
+      }
+      get_kpi_menus_per_user_distribution: {
+        Args: { _from?: string; _to?: string }
+        Returns: {
+          bucket: string
+          users: number
+        }[]
+      }
+      get_kpi_menus_per_user_timeseries: {
+        Args: { _from?: string; _granularity?: string; _to?: string }
+        Returns: {
+          avg_menus_per_user: number
+          bucket: string
+          median_menus_per_user: number
+          p90_menus_per_user: number
+        }[]
+      }
+      get_kpi_mrr_by_plan: {
+        Args: { _from?: string; _to?: string }
+        Returns: {
+          mrr: number
+          plan: string
+        }[]
+      }
+      get_kpi_mrr_movements: {
+        Args: { _from?: string; _granularity?: string; _to?: string }
+        Returns: {
+          bucket: string
+          churned_mrr: number
+          contraction_mrr: number
+          expansion_mrr: number
+          new_mrr: number
+        }[]
+      }
+      get_kpi_mrr_timeseries: {
+        Args: {
+          _country?: string
+          _from?: string
+          _granularity?: string
+          _plan?: string
+          _to?: string
+        }
+        Returns: {
+          bucket: string
+          mrr: number
+        }[]
+      }
+      get_kpi_mrr_top_customers: {
+        Args: {
+          _cursor?: string
+          _from?: string
+          _limit?: number
+          _to?: string
+        }
+        Returns: {
+          cursor_out: string
+          customer_id: string
+          last_payment: string
+          mrr: number
+        }[]
+      }
+      get_kpi_new_users_by_channel: {
+        Args: { _from?: string; _to?: string }
+        Returns: {
+          channel: string
+          new_users: number
+        }[]
+      }
+      get_kpi_new_users_timeseries: {
+        Args: { _from?: string; _granularity?: string; _to?: string }
+        Returns: {
+          bucket: string
+          new_users: number
+        }[]
+      }
+      get_kpi_plan_mix_timeseries: {
+        Args: { _from?: string; _granularity?: string; _to?: string }
+        Returns: {
+          active_subscribers: number
+          bucket: string
+          plan: string
+        }[]
+      }
+      get_kpi_points_breakdown: {
+        Args: { _dimension?: string; _from?: string; _to?: string }
+        Returns: {
+          dimension_value: string
+          points: number
+        }[]
+      }
+      get_kpi_points_by_event_type: {
+        Args: { _from?: string; _to?: string }
+        Returns: {
+          event_type: string
+          points: number
+        }[]
+      }
+      get_kpi_points_leaderboard: {
+        Args: {
+          _cursor?: string
+          _from?: string
+          _limit?: number
+          _to?: string
+        }
+        Returns: {
+          cursor_out: string
+          last_event_at: string
+          points: number
+          user_id: string
+        }[]
+      }
+      get_kpi_points_timeseries: {
+        Args: { _from?: string; _granularity?: string; _to?: string }
+        Returns: {
+          bucket: string
+          points: number
+        }[]
+      }
+      get_kpi_ratings_distribution: {
+        Args: { _from?: string; _to?: string }
+        Returns: {
+          count: number
+          stars: number
+        }[]
+      }
+      get_kpi_ratings_timeseries: {
+        Args: { _from?: string; _granularity?: string; _to?: string }
+        Returns: {
+          avg_rating: number
+          bucket: string
+          ratings_count: number
+        }[]
+      }
+      get_kpi_recipe_ratings_table: {
+        Args: {
+          _cursor?: string
+          _from?: string
+          _limit?: number
+          _min_count?: number
+          _sort?: string
+          _to?: string
+        }
+        Returns: {
+          avg_rating: number
+          cursor_out: string
+          ratings_count: number
+          recipe_id: string
+        }[]
+      }
+      get_kpi_retention_cohorts: {
+        Args: { _from?: string; _to?: string }
+        Returns: {
+          cohort_month: string
+          month_n: number
+          retained_rate: number
+        }[]
+      }
+      get_kpi_subscribers_breakdown: {
+        Args: { _dimension?: string; _from?: string; _to?: string }
+        Returns: {
+          active_subscribers: number
+          dimension_value: string
+        }[]
+      }
+      get_kpi_subscribers_timeseries: {
+        Args: { _from?: string; _granularity?: string; _to?: string }
+        Returns: {
+          active_subscribers: number
+          bucket: string
+          cancelled_subscribers: number
+          new_subscribers: number
+        }[]
+      }
+      get_kpi_subscription_changes: {
+        Args: { _from?: string; _granularity?: string; _to?: string }
+        Returns: {
+          bucket: string
+          downgrades: number
+          upgrades: number
+        }[]
+      }
+      get_kpi_support_sla_stats: {
+        Args: { _from?: string; _to?: string }
+        Returns: {
+          avg_first_response_minutes: number
+          avg_resolution_minutes: number
+          sla_breaches: number
+        }[]
+      }
+      get_kpi_ticket_list: {
+        Args: {
+          _category?: string
+          _cursor?: string
+          _from?: string
+          _limit?: number
+          _priority?: string
+          _status?: string
+          _to?: string
+        }
+        Returns: {
+          category: string
+          created_at: string
+          cursor_out: string
+          priority: string
+          status: string
+          subject: string
+          ticket_id: string
+        }[]
+      }
+      get_kpi_tickets_by_category: {
+        Args: { _from?: string; _to?: string }
+        Returns: {
+          category: string
+          tickets: number
+        }[]
+      }
+      get_kpi_tickets_timeseries: {
+        Args: { _from?: string; _granularity?: string; _to?: string }
+        Returns: {
+          bucket: string
+          created_tickets: number
+          open_tickets: number
+          resolved_tickets: number
+        }[]
+      }
+      get_kpi_time_to_convert_distribution: {
+        Args: { _from?: string; _to?: string }
+        Returns: {
+          days_bucket: number
+          users: number
+        }[]
+      }
+      get_kpi_top_menu_creators: {
+        Args: {
+          _cursor?: string
+          _from?: string
+          _limit?: number
+          _to?: string
+        }
+        Returns: {
+          cursor_out: string
+          last_menu_at: string
+          menus: number
+          user_id: string
+        }[]
+      }
+      get_kpi_users_active_timeseries: {
+        Args: { _from?: string; _granularity?: string; _to?: string }
+        Returns: {
+          active_30d: number
+          active_7d: number
+          bucket: string
+        }[]
+      }
+      get_kpi_users_breakdown: {
+        Args: { _dimension?: string; _from?: string; _to?: string }
+        Returns: {
+          dimension_value: string
+          users: number
+        }[]
+      }
+      get_kpi_users_growth_timeseries: {
+        Args: { _from?: string; _granularity?: string; _to?: string }
+        Returns: {
+          bucket: string
+          new_users: number
+          total_users: number
+        }[]
+      }
       get_menu_household:
         | {
             Args: {
@@ -3108,6 +3530,7 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_onboarding_complete: { Args: { p_user_id: string }; Returns: boolean }
       normalize_fraction: { Args: { p_text: string }; Returns: number }
+      normalize_granularity: { Args: { _g: string }; Returns: string }
       normalize_ingredient_line: {
         Args: { p_line: string }
         Returns: {
@@ -3131,6 +3554,9 @@ export type Database = {
         Args: { p_limit?: number }
         Returns: number
       }
+      refresh_kpi_events_daily_mv: { Args: never; Returns: undefined }
+      refresh_kpi_subscriptions_daily_mv: { Args: never; Returns: undefined }
+      refresh_kpi_users_daily_mv: { Args: never; Returns: undefined }
       refresh_one_recipe:
         | {
             Args: { p_recipe_id: number }
@@ -3148,6 +3574,10 @@ export type Database = {
       refresh_recipe_macros_from_ciqual: { Args: never; Returns: undefined }
       refresh_recipe_macros_mv2: { Args: never; Returns: undefined }
       refresh_some_recipes: { Args: { batch_size?: number }; Returns: number }
+      resolve_range: {
+        Args: { _from: string; _to: string }
+        Returns: Record<string, unknown>
+      }
       rpc_admin_conversion_funnel: {
         Args: { p_date_from?: string; p_date_to?: string }
         Returns: Json
@@ -3218,6 +3648,10 @@ export type Database = {
       }
       to_num: { Args: { input_text: string }; Returns: number }
       to_number_fr: { Args: { p: string }; Returns: number }
+      trunc_to_granularity: {
+        Args: { _granularity: string; _ts: string }
+        Returns: string
+      }
       unaccent_safe: { Args: { p: string }; Returns: string }
       update_grocery_item_checked: {
         Args: {
