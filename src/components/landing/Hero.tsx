@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Star, Check } from "lucide-react";
+import { Star, Check, CreditCard } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface HeroProps {
@@ -9,6 +9,13 @@ interface HeroProps {
 
 export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
   const { t } = useLanguage();
+
+  const scrollToCredits = () => {
+    const element = document.getElementById('tarifs');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
   
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-background via-secondary/30 to-background">
@@ -18,34 +25,34 @@ export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
           <div className="space-y-8 animate-fade-in">
             {/* Preuve sociale immédiate */}
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-accent/10 rounded-full text-sm">
-              <span className="text-accent font-semibold">{t('hero.badge')}</span>
-              <span className="text-muted-foreground">{t('hero.badgeSuffix')}</span>
+              <span className="text-accent font-semibold">+2 000 familles</span>
+              <span className="text-muted-foreground">mangent mieux avec NutriZen</span>
             </div>
 
             <div className="space-y-4">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                {t('hero.title')}
+                Menus adaptés à tes objectifs en 30 secondes
               </h1>
               <p className="text-xl text-muted-foreground font-medium">
-                {t('hero.subtitle')}
+                Fini le casse-tête des repas. NutriZen crée ton menu hebdomadaire personnalisé.
               </p>
               <div className="space-y-2 text-lg">
                 <p className="flex items-start gap-2">
-                  <span className="text-primary font-bold">→</span>
+                  <Check className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
                   <span>
-                    <strong>{t('hero.benefit1')}</strong> {t('hero.benefit1Desc')}
+                    <strong>Menu hebdo personnalisé</strong> — gratuit
                   </span>
                 </p>
                 <p className="flex items-start gap-2">
-                  <span className="text-primary font-bold">→</span>
+                  <Check className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
                   <span>
-                    <strong>{t('hero.benefit2')}</strong> {t('hero.benefit2Desc')}
+                    <strong>Recettes + macros + liste de courses</strong> — inclus
                   </span>
                 </p>
                 <p className="flex items-start gap-2">
-                  <span className="text-primary font-bold">→</span>
+                  <Check className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
                   <span>
-                    <strong>{t('hero.benefit3')}</strong> {t('hero.benefit3Desc')}
+                    <strong>Options avancées</strong> — via Crédits Zen (ScanRepas, InspiFrigo…)
                   </span>
                 </p>
               </div>
@@ -53,15 +60,26 @@ export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
 
             {/* CTAs */}
             <div className="space-y-3">
-              <Button
-                onClick={onCtaClick}
-                size="lg"
-                className="w-full sm:w-auto bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] shadow-glow transition-tech text-base md:text-lg px-6 md:px-8 py-4"
-              >
-                {t('hero.cta')}
-              </Button>
-              <p className="text-xs md:text-sm text-muted-foreground">
-                <strong>{t('hero.trial')}</strong> {t('hero.trialDetails')}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  onClick={onCtaClick}
+                  size="lg"
+                  className="w-full sm:w-auto bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] shadow-glow transition-tech text-base md:text-lg px-6 md:px-8 py-4"
+                >
+                  Commencer gratuitement
+                </Button>
+                <Button
+                  onClick={scrollToCredits}
+                  variant="outline"
+                  size="lg"
+                  className="w-full sm:w-auto text-base md:text-lg px-6 md:px-8 py-4"
+                >
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Voir les Crédits Zen
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                <strong>Sans carte bancaire</strong> — Créer ton compte en 30 secondes
               </p>
             </div>
 
@@ -73,22 +91,22 @@ export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
                     <Star key={star} className="w-4 h-4 fill-accent text-accent" />
                   ))}
                 </div>
-                <span className="font-medium">{t('hero.rating')}</span>
-                <span className="text-muted-foreground">{t('hero.reviews')}</span>
+                <span className="font-medium">4.8/5</span>
+                <span className="text-muted-foreground">sur 200+ avis</span>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-4 text-xs md:text-sm text-muted-foreground">
                 <div className="flex items-center gap-1.5">
                   <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                  <span>{t('hero.cancelAnytime')}</span>
+                  <span>Compte gratuit à vie</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                  <span>{t('hero.guarantee')}</span>
+                  <span>Paiement sécurisé Stripe</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                  <span>{t('hero.validated')}</span>
+                  <span>Recettes validées par diététicienne</span>
                 </div>
               </div>
             </div>
@@ -106,11 +124,11 @@ export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
             {/* Floating elements */}
             <div className="absolute -top-4 -right-4 bg-card rounded-2xl shadow-card p-4 animate-slide-up-delay border">
               <div className="text-2xl font-bold text-primary">30s</div>
-              <div className="text-xs text-muted-foreground">{t('hero.menuGenerated')}</div>
+              <div className="text-xs text-muted-foreground">Menu généré</div>
             </div>
             <div className="absolute -bottom-4 -left-4 bg-card rounded-2xl shadow-card p-4 animate-slide-up-delay border">
-              <div className="text-2xl font-bold text-accent">{t('hero.autoShoppingList').split(' ')[0]}</div>
-              <div className="text-xs text-muted-foreground">{t('hero.autoShoppingList').split(' ')[1]}</div>
+              <div className="text-2xl font-bold text-accent">100%</div>
+              <div className="text-xs text-muted-foreground">Gratuit de base</div>
             </div>
           </div>
         </div>

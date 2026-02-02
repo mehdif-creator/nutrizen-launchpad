@@ -43,7 +43,7 @@ const Index = () => {
       <Hero onCtaClick={handleCtaClick} onExampleClick={handleExampleClick} />
       <Benefits />
       <HowItWorks />
-      <ValueStack />
+      <ValueStack onCtaClick={handleCtaClick} />
       <Guarantee />
       <RecipeGallery />
       <CommunityTestimonials />
