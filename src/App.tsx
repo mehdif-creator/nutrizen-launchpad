@@ -36,6 +36,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminOnboarding from "./pages/admin/AdminOnboarding";
 import AdminTickets from "./pages/admin/AdminTickets";
+import AdminDiagnostics from "./pages/admin/AdminDiagnostics";
 
 // Blog
 import BlogIndex from "./pages/blog/BlogIndex";
@@ -97,6 +98,7 @@ const App = () => {
         <Route path="/admin/users" element={<ProtectedRoute requireAdmin><AdminUsers /></ProtectedRoute>} />
         <Route path="/admin/onboarding" element={<ProtectedRoute requireAdmin><AdminOnboarding /></ProtectedRoute>} />
         <Route path="/admin/tickets" element={<ProtectedRoute requireAdmin><AdminTickets /></ProtectedRoute>} />
+        <Route path="/admin/diagnostics" element={<ProtectedRoute requireAdmin><AdminDiagnostics /></ProtectedRoute>} />
             
             {/* Blog */}
             <Route path="/blog" element={<BlogIndex />} />
