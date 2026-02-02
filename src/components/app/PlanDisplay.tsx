@@ -58,7 +58,7 @@ export const PlanDisplay = () => {
   if (!subscription) return null;
 
   const isTrialing = subscription.status === 'trialing';
-  const planName = subscription.plan || 'Essai gratuit';
+  const planName = subscription.plan || 'Gratuit à vie';
   
   const getDaysRemaining = () => {
     if (!subscription.trial_end && !subscription.current_period_end) return null;
@@ -89,11 +89,11 @@ export const PlanDisplay = () => {
             <Badge variant={isTrialing ? "secondary" : "default"}>
               {planName}
             </Badge>
-            {isTrialing && (
-              <span className="text-sm text-muted-foreground">
-                (Essai gratuit)
-              </span>
-            )}
+          {isTrialing && (
+            <span className="text-sm text-muted-foreground">
+              (Gratuit à vie)
+            </span>
+          )}
           </div>
         </div>
         <div className="flex gap-2">
