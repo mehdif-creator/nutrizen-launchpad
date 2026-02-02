@@ -29,6 +29,7 @@ import MenuHistory from "./pages/app/MenuHistory";
 import Gamification from "./pages/app/Gamification";
 import Onboarding from "./pages/app/Onboarding";
 import ShoppingList from "./pages/app/ShoppingList";
+import SupabaseDebug from "./pages/app/SupabaseDebug";
 
 // Admin
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -89,6 +90,7 @@ const App = () => {
           <Route path="/app/inspi-frigo" element={<ProtectedRoute><InspiFrigo /></ProtectedRoute>} />
           <Route path="/app/recipes/:id" element={<ProtectedRoute><RecipeDetail /></ProtectedRoute>} />
           <Route path="/app/shopping-list" element={<ProtectedRoute><ShoppingList /></ProtectedRoute>} />
+          <Route path="/app/debug" element={<ProtectedRoute><SupabaseDebug /></ProtectedRoute>} />
             
             {/* Admin (Protected + Admin Only) */}
         <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />

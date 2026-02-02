@@ -65,8 +65,19 @@ export function DailyAdviceCard({ advice, isLoading, userId }: DailyAdviceCardPr
     );
   }
 
-  if (!advice) {
-    return null;
+  // Fallback: always show something
+  if (!advice || !advice.title) {
+    return (
+      <Card className="rounded-2xl border shadow-sm p-4 md:p-5 bg-gradient-to-br from-primary/5 to-accent/5">
+        <div className="flex items-center gap-2 mb-3">
+          <Lightbulb className="h-5 w-5 text-primary" />
+          <h3 className="text-sm md:text-base font-semibold">Conseil du jour</h3>
+        </div>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Aucun conseil disponible aujourd'hui. Revenez demain pour un nouveau conseil !
+        </p>
+      </Card>
+    );
   }
 
   const isLong = advice.text.length > 150;

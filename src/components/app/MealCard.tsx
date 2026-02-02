@@ -1,7 +1,9 @@
 import { Button } from '@/components/ui/button';
-import { Clock, Flame, Users } from 'lucide-react';
+import { Clock, Flame, Users, ImageOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { RecipeMacrosBadge } from '@/components/app/RecipeMacrosBadge';
+import { getRecipeImageUrl, handleImageError, RECIPE_PLACEHOLDER } from '@/lib/images';
+import { useState } from 'react';
 
 interface MealCardProps {
   day: string;
@@ -9,6 +11,7 @@ interface MealCardProps {
   time: number;
   kcal: number;
   imageUrl?: string | null;
+  imagePath?: string | null;
   onValidate?: () => void;
   onSwap?: () => void;
   onViewRecipe?: () => void;
@@ -28,6 +31,7 @@ export function MealCard({
   time,
   kcal,
   imageUrl,
+  imagePath,
   onValidate,
   onSwap,
   onViewRecipe,
@@ -40,7 +44,15 @@ export function MealCard({
   servings = 1,
   'data-onboarding-target': dataOnboardingTarget
 }: MealCardProps) {
+  const [imageFailed, setImageFailed] = useState(false);
   const effectiveSize = (householdAdults + householdChildren * 0.7).toFixed(1);
+  
+  const displayImageUrl = getRecipeImageUrl({ image_url: imageUrl, image_path: imagePath });
+  
+  const onImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    handleImageError(e);
+    setImageFailed(true);
+  };
   
   return (
     <div 
@@ -48,21 +60,19 @@ export function MealCard({
       data-onboarding-target={dataOnboardingTarget}
     >
       <div className="h-32 bg-muted relative overflow-hidden">
-        {imageUrl ? (
-          <img 
-            src={imageUrl} 
-            alt={title}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = '/img/hero-default.png';
-            }}
-          />
-        ) : (
-          <img 
-            src="/img/hero-default.png"
-            alt={title}
-            className="w-full h-full object-cover opacity-50"
-          />
+        <img 
+          src={displayImageUrl} 
+          alt={title}
+          className={`w-full h-full object-cover ${imageFailed ? 'opacity-60' : ''}`}
+          onError={onImgError}
+        />
+        {imageFailed && (
+          <div className="absolute inset-0 flex items-center justify-center bg-muted/80">
+            <div className="text-center">
+              <ImageOff className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
+              <span className="text-xs text-muted-foreground">Image indisponible</span>
+            </div>
+          </div>
         )}
       </div>
       <div className="p-4 space-y-2">
