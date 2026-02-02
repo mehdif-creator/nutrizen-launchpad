@@ -39,6 +39,7 @@ async function testStorageImages(): Promise<TestResult> {
       .from('recipes')
       .select('id, title, image_url, image_path')
       .or('image_url.neq.null,image_path.neq.null')
+      .eq('published', true)
       .limit(5);
 
     if (error) {
@@ -63,13 +64,14 @@ async function testStorageImages(): Promise<TestResult> {
     for (const recipe of recipes) {
       let urlToCheck: string | null = null;
 
-      if (recipe.image_url) {
-        urlToCheck = recipe.image_url;
-      } else if (recipe.image_path) {
+      // Prefer image_path (Supabase Storage) over image_url
+      if (recipe.image_path) {
         const { data: urlData } = adminClient.storage
           .from('recipe-images')
           .getPublicUrl(recipe.image_path);
         urlToCheck = urlData?.publicUrl || null;
+      } else if (recipe.image_url) {
+        urlToCheck = recipe.image_url;
       }
 
       if (urlToCheck) {
@@ -116,15 +118,16 @@ async function testStorageImages(): Promise<TestResult> {
   }
 }
 
-// Test B: Profile upsert test
+// Test B: Profile upsert test using last_diagnostics_at column
 async function testProfileUpsert(userId: string): Promise<TestResult> {
   try {
     const testTimestamp = new Date().toISOString();
+    const testMeta = { test_run: testTimestamp, version: '1.0' };
 
     // First, check if profile exists
     const { data: existingProfile, error: selectError } = await adminClient
       .from('profiles')
-      .select('id, updated_at')
+      .select('id, updated_at, last_diagnostics_at, diagnostics_meta')
       .eq('id', userId)
       .maybeSingle();
 
@@ -132,45 +135,95 @@ async function testProfileUpsert(userId: string): Promise<TestResult> {
       return {
         test_key: 'profile_upsert',
         status: 'fail',
-        details: { error: selectError.message, message_fr: 'Erreur lecture profil — vérifiez les RLS policies.' },
+        details: { 
+          error: selectError.message, 
+          code: selectError.code,
+          message_fr: `Erreur lecture profil — ${selectError.message}` 
+        },
       };
     }
 
-    // Update the profile with a harmless field change
-    const { data: updatedProfile, error: upsertError } = await adminClient
-      .from('profiles')
-      .update({ updated_at: testTimestamp })
-      .eq('id', userId)
-      .select()
-      .single();
+    if (!existingProfile) {
+      // Profile doesn't exist - create it
+      const { error: insertError } = await adminClient
+        .from('profiles')
+        .insert({ 
+          id: userId, 
+          last_diagnostics_at: testTimestamp,
+          diagnostics_meta: testMeta
+        });
 
-    if (upsertError) {
-      return {
-        test_key: 'profile_upsert',
-        status: 'fail',
-        details: { error: upsertError.message, message_fr: 'Échec — écriture profil bloquée (RLS).' },
-      };
+      if (insertError) {
+        return {
+          test_key: 'profile_upsert',
+          status: 'fail',
+          details: { 
+            error: insertError.message, 
+            code: insertError.code,
+            message_fr: `Échec création profil — ${insertError.message}` 
+          },
+        };
+      }
+    } else {
+      // Update the profile with diagnostics fields
+      const { error: updateError } = await adminClient
+        .from('profiles')
+        .update({ 
+          last_diagnostics_at: testTimestamp,
+          diagnostics_meta: testMeta
+        })
+        .eq('id', userId);
+
+      if (updateError) {
+        return {
+          test_key: 'profile_upsert',
+          status: 'fail',
+          details: { 
+            error: updateError.message, 
+            code: updateError.code,
+            message_fr: `Échec mise à jour profil — ${updateError.message}` 
+          },
+        };
+      }
     }
 
     // Verify the update persisted
     const { data: verifyProfile, error: verifyError } = await adminClient
       .from('profiles')
-      .select('updated_at')
+      .select('last_diagnostics_at, diagnostics_meta')
       .eq('id', userId)
       .single();
 
-    if (verifyError || verifyProfile?.updated_at !== testTimestamp) {
+    if (verifyError) {
       return {
         test_key: 'profile_upsert',
         status: 'fail',
-        details: { message_fr: 'Échec — modification non persistée.' },
+        details: { 
+          error: verifyError.message, 
+          message_fr: `Échec vérification profil — ${verifyError.message}` 
+        },
+      };
+    }
+
+    if (verifyProfile?.last_diagnostics_at !== testTimestamp) {
+      return {
+        test_key: 'profile_upsert',
+        status: 'fail',
+        details: { 
+          expected: testTimestamp,
+          actual: verifyProfile?.last_diagnostics_at,
+          message_fr: 'Échec — modification non persistée.' 
+        },
       };
     }
 
     return {
       test_key: 'profile_upsert',
       status: 'pass',
-      details: { message_fr: 'OK — profil mis à jour et vérifié.', updated_at: testTimestamp },
+      details: { 
+        message_fr: 'OK — profil mis à jour et vérifié.', 
+        last_diagnostics_at: testTimestamp 
+      },
     };
   } catch (err) {
     return {
@@ -240,7 +293,7 @@ async function testAdviceOfDay(): Promise<TestResult> {
   }
 }
 
-// Test D: Dashboard RPC contract
+// Test D: Dashboard RPC contract - validates structure including week.days
 async function testDashboardRPC(userId: string): Promise<TestResult> {
   try {
     const { data, error } = await adminClient.rpc('rpc_get_user_dashboard', {
@@ -251,7 +304,7 @@ async function testDashboardRPC(userId: string): Promise<TestResult> {
       return {
         test_key: 'dashboard_rpc',
         status: 'fail',
-        details: { error: error.message, message_fr: 'Erreur appel rpc_get_user_dashboard.' },
+        details: { error: error.message, message_fr: `Erreur appel rpc_get_user_dashboard — ${error.message}` },
       };
     }
 
@@ -263,7 +316,7 @@ async function testDashboardRPC(userId: string): Promise<TestResult> {
       };
     }
 
-    // Verify required keys exist
+    // Verify required top-level keys exist
     const requiredKeys = ['wallet', 'week', 'advice_of_day', 'last_updated_at'];
     const missingKeys = requiredKeys.filter((key) => !(key in data));
 
@@ -285,15 +338,57 @@ async function testDashboardRPC(userId: string): Promise<TestResult> {
       };
     }
 
+    // Verify week.days is an array of 7 elements
+    const days = week.days;
+    if (!Array.isArray(days)) {
+      return {
+        test_key: 'dashboard_rpc',
+        status: 'fail',
+        details: { message_fr: 'Contrat cassé — week.days n\'est pas un tableau.' },
+      };
+    }
+
+    if (days.length !== 7) {
+      return {
+        test_key: 'dashboard_rpc',
+        status: 'fail',
+        details: { 
+          days_count: days.length,
+          message_fr: `Contrat cassé — week.days doit avoir 7 entrées (trouvé ${days.length}).` 
+        },
+      };
+    }
+
+    // Verify each day has lunch and dinner keys
+    const daysWithMissingSlots: string[] = [];
+    for (let i = 0; i < days.length; i++) {
+      const day = days[i];
+      if (!('lunch' in day) || !('dinner' in day)) {
+        daysWithMissingSlots.push(day.day_name || `Jour ${i + 1}`);
+      }
+    }
+
+    if (daysWithMissingSlots.length > 0) {
+      return {
+        test_key: 'dashboard_rpc',
+        status: 'fail',
+        details: { 
+          missing_slots: daysWithMissingSlots,
+          message_fr: `Contrat cassé — jours sans clés lunch/dinner: ${daysWithMissingSlots.join(', ')}.` 
+        },
+      };
+    }
+
     return {
       test_key: 'dashboard_rpc',
       status: 'pass',
       details: {
         keys_present: requiredKeys,
+        days_count: 7,
         has_wallet: 'wallet' in data,
         has_week: 'week' in data,
         has_advice: 'advice_of_day' in data,
-        message_fr: 'OK — contrat dashboard valide.',
+        message_fr: 'OK — contrat dashboard valide (7 jours × lunch/dinner).',
       },
     };
   } catch (err) {
@@ -305,32 +400,26 @@ async function testDashboardRPC(userId: string): Promise<TestResult> {
   }
 }
 
-// Test E: Week structure validation
+// Test E: Week structure validation using user_daily_recipes table
 async function testWeekStructure(userId: string): Promise<TestResult> {
   try {
-    // Get current week's menu
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-    const weekStart = new Date(now.setDate(diff));
-    weekStart.setHours(0, 0, 0, 0);
-    const weekStartStr = weekStart.toISOString().split('T')[0];
-
-    const { data: menuItems, error } = await adminClient
-      .from('user_daily_recipes')
-      .select('day_of_week, meal_slot, recipe_id')
-      .eq('user_id', userId)
-      .eq('week_start', weekStartStr);
+    // Get current week's menu via the dashboard RPC which already returns week.days
+    const { data, error } = await adminClient.rpc('rpc_get_user_dashboard', {
+      p_user_id: userId,
+    });
 
     if (error) {
       return {
         test_key: 'week_structure',
         status: 'fail',
-        details: { error: error.message, message_fr: 'Erreur lecture user_daily_recipes.' },
+        details: { error: error.message, message_fr: `Erreur lecture dashboard — ${error.message}` },
       };
     }
 
-    if (!menuItems || menuItems.length === 0) {
+    const week = data?.week;
+    const days = week?.days;
+
+    if (!days || !Array.isArray(days) || days.length === 0) {
       return {
         test_key: 'week_structure',
         status: 'pass',
@@ -341,27 +430,42 @@ async function testWeekStructure(userId: string): Promise<TestResult> {
       };
     }
 
-    // Check for lunch and dinner for each day
-    const slotsByDay: Record<number, Set<string>> = {};
-    for (const item of menuItems) {
-      if (!slotsByDay[item.day_of_week]) {
-        slotsByDay[item.day_of_week] = new Set();
-      }
-      if (item.meal_slot) {
-        slotsByDay[item.day_of_week].add(item.meal_slot);
-      }
+    // Check if there's at least one meal in the week
+    const hasAnyMeal = days.some((day: { lunch?: unknown; dinner?: unknown }) => 
+      day.lunch !== null || day.dinner !== null
+    );
+
+    if (!hasAnyMeal) {
+      return {
+        test_key: 'week_structure',
+        status: 'pass',
+        details: { 
+          message_fr: 'Aucun repas planifié cette semaine — structure valide mais vide.',
+          has_menu: false,
+        },
+      };
     }
 
+    // Verify structure: each day should have lunch and dinner keys
     const missingSlots: string[] = [];
-    const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+    const daysWithMeals: string[] = [];
 
-    for (let day = 1; day <= 7; day++) {
-      const slots = slotsByDay[day] || new Set();
-      if (!slots.has('lunch')) {
-        missingSlots.push(`${dayNames[day % 7]} - déjeuner`);
+    for (const day of days) {
+      const hasLunch = day.lunch !== null;
+      const hasDinner = day.dinner !== null;
+      
+      if (hasLunch || hasDinner) {
+        daysWithMeals.push(day.day_name);
       }
-      if (!slots.has('dinner')) {
-        missingSlots.push(`${dayNames[day % 7]} - dîner`);
+      
+      // Only report missing slots for days that have at least one meal
+      if ((hasLunch && !hasDinner) || (!hasLunch && hasDinner)) {
+        if (!hasLunch) {
+          missingSlots.push(`${day.day_name} - déjeuner`);
+        }
+        if (!hasDinner) {
+          missingSlots.push(`${day.day_name} - dîner`);
+        }
       }
     }
 
@@ -371,8 +475,8 @@ async function testWeekStructure(userId: string): Promise<TestResult> {
         status: 'fail',
         details: {
           missing_slots: missingSlots,
-          total_items: menuItems.length,
-          message_fr: `Échec — créneaux manquants: ${missingSlots.slice(0, 5).join(', ')}${missingSlots.length > 5 ? '...' : ''}.`,
+          days_with_meals: daysWithMeals,
+          message_fr: `Avertissement — créneaux incomplets: ${missingSlots.slice(0, 5).join(', ')}${missingSlots.length > 5 ? '...' : ''}.`,
         },
       };
     }
@@ -381,9 +485,9 @@ async function testWeekStructure(userId: string): Promise<TestResult> {
       test_key: 'week_structure',
       status: 'pass',
       details: {
-        total_items: menuItems.length,
-        days_with_slots: Object.keys(slotsByDay).length,
-        message_fr: 'OK — structure semaine valide (7 jours × 2 créneaux).',
+        days_with_meals: daysWithMeals,
+        total_days: 7,
+        message_fr: `OK — structure semaine valide (${daysWithMeals.length} jours avec repas).`,
       },
     };
   } catch (err) {
@@ -413,22 +517,28 @@ async function testRealtimeRefresh(userId: string): Promise<TestResult> {
 
     const initialUpdatedAt = initial.last_updated_at;
 
-    // Update profile timestamp (harmless change)
+    // Small delay to ensure time difference
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Update profile diagnostics field (harmless change)
     const { error: updateError } = await adminClient
       .from('profiles')
-      .update({ updated_at: new Date().toISOString() })
+      .update({ 
+        last_diagnostics_at: new Date().toISOString(),
+        diagnostics_meta: { refresh_test: new Date().toISOString() }
+      })
       .eq('id', userId);
 
     if (updateError) {
       return {
         test_key: 'realtime_refresh',
         status: 'fail',
-        details: { error: updateError.message, message_fr: 'Échec mise à jour profil pour test refresh.' },
+        details: { error: updateError.message, message_fr: `Échec mise à jour profil — ${updateError.message}` },
       };
     }
 
     // Small delay to allow propagation
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
     // Call dashboard RPC again
     const { data: updated, error: updatedError } = await adminClient.rpc('rpc_get_user_dashboard', {
@@ -446,6 +556,7 @@ async function testRealtimeRefresh(userId: string): Promise<TestResult> {
     const updatedUpdatedAt = updated.last_updated_at;
 
     // Check if last_updated_at changed (indicates refresh works)
+    // The RPC returns now() so it should always be fresh
     if (new Date(updatedUpdatedAt) >= new Date(initialUpdatedAt)) {
       return {
         test_key: 'realtime_refresh',

@@ -1174,27 +1174,33 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string | null
+          diagnostics_meta: Json | null
           email: string | null
           full_name: string | null
           id: string
+          last_diagnostics_at: string | null
           locale: string | null
           updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
+          diagnostics_meta?: Json | null
           email?: string | null
           full_name?: string | null
           id: string
+          last_diagnostics_at?: string | null
           locale?: string | null
           updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string | null
+          diagnostics_meta?: Json | null
           email?: string | null
           full_name?: string | null
           id?: string
+          last_diagnostics_at?: string | null
           locale?: string | null
           updated_at?: string | null
         }
@@ -2035,6 +2041,7 @@ export type Database = {
         Row: {
           created_at: string
           date: string
+          day_of_week: number | null
           dinner_recipe_id: string | null
           id: string
           lunch_recipe_id: string | null
@@ -2043,6 +2050,7 @@ export type Database = {
         Insert: {
           created_at?: string
           date: string
+          day_of_week?: number | null
           dinner_recipe_id?: string | null
           id?: string
           lunch_recipe_id?: string | null
@@ -2051,6 +2059,7 @@ export type Database = {
         Update: {
           created_at?: string
           date?: string
+          day_of_week?: number | null
           dinner_recipe_id?: string | null
           id?: string
           lunch_recipe_id?: string | null
@@ -2124,6 +2133,7 @@ export type Database = {
       user_gamification: {
         Row: {
           badges_count: number
+          best_streak_days: number
           created_at: string
           last_activity_date: string | null
           level: number
@@ -2134,6 +2144,7 @@ export type Database = {
         }
         Insert: {
           badges_count?: number
+          best_streak_days?: number
           created_at?: string
           last_activity_date?: string | null
           level?: number
@@ -2144,6 +2155,7 @@ export type Database = {
         }
         Update: {
           badges_count?: number
+          best_streak_days?: number
           created_at?: string
           last_activity_date?: string | null
           level?: number
@@ -2200,12 +2212,14 @@ export type Database = {
           created_at: string
           default_servings_per_recipe: number
           default_servings_rounding: string
+          diagnostics_meta: Json
           display_name: string | null
           household_adults: number
           household_children: number
           id: string
           is_affiliate: boolean
           kid_portion_ratio: number
+          last_diagnostics_at: string | null
           meals_per_day: number
           onboarding_completed: boolean | null
           onboarding_completed_at: string | null
@@ -2224,12 +2238,14 @@ export type Database = {
           created_at?: string
           default_servings_per_recipe?: number
           default_servings_rounding?: string
+          diagnostics_meta?: Json
           display_name?: string | null
           household_adults?: number
           household_children?: number
           id: string
           is_affiliate?: boolean
           kid_portion_ratio?: number
+          last_diagnostics_at?: string | null
           meals_per_day?: number
           onboarding_completed?: boolean | null
           onboarding_completed_at?: string | null
@@ -2248,12 +2264,14 @@ export type Database = {
           created_at?: string
           default_servings_per_recipe?: number
           default_servings_rounding?: string
+          diagnostics_meta?: Json
           display_name?: string | null
           household_adults?: number
           household_children?: number
           id?: string
           is_affiliate?: boolean
           kid_portion_ratio?: number
+          last_diagnostics_at?: string | null
           meals_per_day?: number
           onboarding_completed?: boolean | null
           onboarding_completed_at?: string | null
