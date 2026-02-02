@@ -168,7 +168,7 @@ const translations: Record<Language, Record<string, string>> = {
     "footer.pro": "NutriZen Pro",
     "footer.tagline":
       "Menus adaptés à tes objectifs en 30 secondes.\nSans passer des heures à réfléchir, planifier et calculer.",
-    "footer.copyright": "© 2025 NutriZen. Tous droits réservés.",
+    "footer.copyright": "© 2026 NutriZen. Tous droits réservés.",
     "footer.disclaimer":
       "NutriZen est un assistant d'organisation de repas, pas un professionnel de santé. Les informations fournies ne constituent pas un avis médical. Consulte un médecin ou diététicien(ne) pour des conseils personnalisés.",
   },
