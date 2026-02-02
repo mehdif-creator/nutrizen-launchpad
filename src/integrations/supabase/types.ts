@@ -125,6 +125,45 @@ export type Database = {
         }
         Relationships: []
       }
+      automation_jobs: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          idempotency_key: string
+          payload: Json
+          result: Json | null
+          status: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          idempotency_key: string
+          payload?: Json
+          result?: Json | null
+          status?: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          idempotency_key?: string
+          payload?: Json
+          result?: Json | null
+          status?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       badges: {
         Row: {
           code: string
@@ -642,6 +681,27 @@ export type Database = {
           provider_message_id?: string | null
           status?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      feature_costs: {
+        Row: {
+          cost: number
+          description: string | null
+          feature: string
+          updated_at: string | null
+        }
+        Insert: {
+          cost?: number
+          description?: string | null
+          feature: string
+          updated_at?: string | null
+        }
+        Update: {
+          cost?: number
+          description?: string | null
+          feature?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -2952,11 +3012,27 @@ export type Database = {
       }
       rpc_compute_level: { Args: { p_xp: number }; Returns: Json }
       rpc_compute_reset_state: { Args: { p_user_id: string }; Returns: Json }
+      rpc_debit_credits_for_job: {
+        Args: {
+          p_feature: string
+          p_idempotency_key: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       rpc_get_effective_portions: {
         Args: { p_user_id: string; p_week_start?: string }
         Returns: Json
       }
       rpc_get_user_dashboard: { Args: { p_user_id: string }; Returns: Json }
+      rpc_refund_credits_for_job: {
+        Args: {
+          p_feature: string
+          p_original_idempotency_key: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       to_num: { Args: { input_text: string }; Returns: number }
       to_number_fr: { Args: { p: string }; Returns: number }
       unaccent_safe: { Args: { p: string }; Returns: string }
