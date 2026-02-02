@@ -233,7 +233,42 @@ export default function ShoppingList() {
     }
   };
 
-  const handleExport = () => {
+  const handleExportCSV = () => {
+    if (!groceryList?.items) return;
+
+    // CSV header
+    const header = ['Catégorie', 'Article', 'Quantité', 'Unité', 'Coché'];
+    
+    // Build CSV rows
+    const rows = groceryList.items.map(item => [
+      item.category || 'Divers',
+      // Escape quotes in name
+      `"${(item.name || '').replace(/"/g, '""')}"`,
+      item.quantity.toString().replace('.', ','), // French decimal separator
+      item.unit || 'pièce',
+      item.checked ? 'Oui' : 'Non',
+    ]);
+
+    // Combine into CSV content with BOM for Excel compatibility
+    const BOM = '\uFEFF';
+    const csvContent = BOM + [header.join(';'), ...rows.map(r => r.join(';'))].join('\r\n');
+
+    // Download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `liste-courses-${weekStart}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: '📥 Liste téléchargée',
+      description: 'Ta liste de courses est prête au format CSV.',
+    });
+  };
+
+  const handleExportText = () => {
     if (!groceryList?.items) return;
 
     // Group by category
@@ -373,9 +408,9 @@ export default function ShoppingList() {
               <X className="h-4 w-4 mr-2" />
               Tout décocher
             </Button>
-            <Button onClick={handleExport}>
+            <Button onClick={handleExportCSV}>
               <Download className="h-4 w-4 mr-2" />
-              Télécharger
+              Exporter (CSV)
             </Button>
           </div>
         </div>

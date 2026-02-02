@@ -3,9 +3,10 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Flame, AlertCircle } from 'lucide-react';
+import { Flame, AlertCircle, RefreshCw, AlertTriangle } from 'lucide-react';
 
 interface RecipeMacrosCardProps {
+  recipeId?: string;
   calories?: number;
   proteins?: number;
   carbs?: number;
@@ -16,9 +17,12 @@ interface RecipeMacrosCardProps {
   servings?: number;
   isLoading?: boolean;
   isPartial?: boolean;
+  onRecompute?: () => void;
+  isRecomputing?: boolean;
 }
 
 export function RecipeMacrosCard({
+  recipeId,
   calories,
   proteins,
   carbs,
@@ -29,19 +33,24 @@ export function RecipeMacrosCard({
   servings = 1,
   isLoading = false,
   isPartial = false,
+  onRecompute,
+  isRecomputing = false,
 }: RecipeMacrosCardProps) {
   const [viewMode, setViewMode] = useState<'portion' | 'total'>('portion');
+
+  // Check if we have any macro data
+  const hasMacros = calories !== undefined || proteins !== undefined || carbs !== undefined || fats !== undefined;
 
   // Calculate values based on view mode
   const factor = viewMode === 'portion' ? 1 : servings;
   const displayValues = {
-    calories: calories ? Math.round(calories * factor / servings) : null,
-    proteins: proteins ? Math.round(proteins * factor / servings) : null,
-    carbs: carbs ? Math.round(carbs * factor / servings) : null,
-    fats: fats ? Math.round(fats * factor / servings) : null,
-    fibers: fibers ? Math.round(fibers * factor / servings) : null,
-    sugars: sugars ? Math.round(sugars * factor / servings) : null,
-    salt: salt ? (salt * factor / servings).toFixed(1) : null,
+    calories: calories !== undefined ? Math.round(calories * factor / servings) : null,
+    proteins: proteins !== undefined ? Math.round(proteins * factor / servings) : null,
+    carbs: carbs !== undefined ? Math.round(carbs * factor / servings) : null,
+    fats: fats !== undefined ? Math.round(fats * factor / servings) : null,
+    fibers: fibers !== undefined ? Math.round(fibers * factor / servings) : null,
+    sugars: sugars !== undefined ? Math.round(sugars * factor / servings) : null,
+    salt: salt !== undefined ? (salt * factor / servings).toFixed(1) : null,
   };
 
   if (isLoading) {
@@ -63,9 +72,29 @@ export function RecipeMacrosCard({
     );
   }
 
-  // If no data at all, don't render
-  if (!calories && !proteins && !carbs && !fats) {
-    return null;
+  // If no data at all, show empty state with optional recompute
+  if (!hasMacros) {
+    return (
+      <Card className="p-6">
+        <div className="text-center py-8">
+          <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-lg font-medium mb-2">Macros indisponibles</h3>
+          <p className="text-muted-foreground text-sm mb-4">
+            Les informations nutritionnelles ne sont pas encore disponibles pour cette recette.
+          </p>
+          {onRecompute && (
+            <Button 
+              onClick={onRecompute} 
+              variant="outline"
+              disabled={isRecomputing}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRecomputing ? 'animate-spin' : ''}`} />
+              {isRecomputing ? 'Calcul en cours...' : 'Recalculer les macros'}
+            </Button>
+          )}
+        </div>
+      </Card>
+    );
   }
 
   return (
@@ -185,6 +214,21 @@ export function RecipeMacrosCard({
           : `Valeurs totales pour ${servings} portions`
         }
       </div>
+
+      {/* Recompute button if available */}
+      {onRecompute && (
+        <div className="mt-4 pt-4 border-t text-center">
+          <Button 
+            onClick={onRecompute} 
+            variant="ghost"
+            size="sm"
+            disabled={isRecomputing}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRecomputing ? 'animate-spin' : ''}`} />
+            {isRecomputing ? 'Calcul en cours...' : 'Recalculer'}
+          </Button>
+        </div>
+      )}
     </Card>
   );
 }
