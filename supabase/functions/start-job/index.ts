@@ -28,12 +28,29 @@ const StartJobSchema = z.object({
   idempotency_key: z.string().min(1).max(255),
 });
 
-// Map job types to n8n webhook env vars
-const WEBHOOK_ENV_MAP: Record<string, string> = {
-  scan_repas: 'N8N_ANALYZE_MEAL_WEBHOOK',
-  inspi_frigo: 'N8N_ANALYZE_FRIDGE_WEBHOOK',
-  substitutions: 'N8N_SUBSTITUTIONS_WEBHOOK',
+// Map job types to n8n webhook env vars with fallback support
+const WEBHOOK_ENV_MAP: Record<string, string[]> = {
+  scan_repas: ['N8N_ANALYZE_MEAL_WEBHOOK', 'N8N_ANALYZE_MEAL_WEBHOOK_PROD', 'N8N_ANALYZE_MEAL_WEBHOOK_STAGING'],
+  inspi_frigo: ['N8N_ANALYZE_FRIDGE_WEBHOOK', 'N8N_ANALYZE_FRIDGE_WEBHOOK_PROD', 'N8N_ANALYZE_FRIDGE_WEBHOOK_STAGING'],
+  substitutions: ['N8N_SUBSTITUTIONS_WEBHOOK', 'N8N_SUBSTITUTIONS_WEBHOOK_PROD', 'N8N_SUBSTITUTIONS_WEBHOOK_STAGING'],
 };
+
+// Get webhook URL with fallback support
+function getWebhookUrl(type: string): string | null {
+  const envVars = WEBHOOK_ENV_MAP[type];
+  if (!envVars) return null;
+  
+  for (const envVar of envVars) {
+    const url = Deno.env.get(envVar);
+    if (url) {
+      console.log(`[start-job] Using webhook env var: ${envVar} (exists: true)`);
+      return url;
+    }
+  }
+  
+  console.log(`[start-job] No webhook configured for type=${type}, checked: ${envVars.join(', ')}`);
+  return null;
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -161,18 +178,26 @@ serve(async (req) => {
     }
 
     // 3. Call n8n webhook (server-side)
-    const webhookEnvVar = WEBHOOK_ENV_MAP[type];
-    const webhookUrl = webhookEnvVar ? Deno.env.get(webhookEnvVar) : null;
+    const webhookUrl = getWebhookUrl(type);
     
     // Get callback URL
     const callbackUrl = `${supabaseUrl}/functions/v1/job-callback`;
 
+    // Provide specific French error messages per type
+    const webhookErrorMessages: Record<string, string> = {
+      scan_repas: 'Configuration manquante : webhook ScanRepas.',
+      inspi_frigo: 'Configuration manquante : webhook InspiFrigo.',
+      substitutions: 'Configuration manquante : webhook substitutions.',
+    };
+
     if (!webhookUrl) {
+      const errorMessage = webhookErrorMessages[type] || 'Configuration webhook manquante.';
       console.error(`[start-job] Webhook not configured for type=${type}`);
+      
       // Mark job as error and refund
       await supabaseAdmin
         .from('automation_jobs')
-        .update({ status: 'error', error: 'Configuration webhook manquante' })
+        .update({ status: 'error', error: errorMessage })
         .eq('id', jobId);
       
       await supabaseAdmin.rpc('rpc_refund_credits_for_job', {
@@ -185,8 +210,9 @@ serve(async (req) => {
         JSON.stringify({ 
           success: false, 
           job_id: jobId,
-          error: 'Service temporairement indisponible', 
-          error_code: 'WEBHOOK_NOT_CONFIGURED' 
+          error: errorMessage, 
+          error_code: 'WEBHOOK_NOT_CONFIGURED',
+          message_fr: errorMessage,
         }),
         { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
