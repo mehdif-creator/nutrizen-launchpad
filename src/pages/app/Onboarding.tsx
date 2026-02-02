@@ -9,9 +9,10 @@ import { MobileSelect } from '@/components/ui/mobile-select';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { Check, ChevronRight, Users, Target, Utensils, AlertCircle } from 'lucide-react';
-import { updateOnboardingStatus } from '@/hooks/useOnboardingGuard';
+import { completeOnboarding, updateOnboardingStatus } from '@/hooks/useOnboardingGuard';
 import { MenuGenerationProgress } from '@/components/app/MenuGenerationProgress';
 import { useAutoMenuGeneration } from '@/hooks/useAutoMenuGeneration';
+import { queryClient } from '@/lib/queryClient';
 
 const TOTAL_STEPS = 4;
 
@@ -176,20 +177,21 @@ export default function Onboarding() {
       setCurrentStep(currentStep + 1);
     } else {
       // Complete onboarding
-      await completeOnboarding();
+      await handleCompleteOnboarding();
     }
   };
 
-  const completeOnboarding = async () => {
+  const handleCompleteOnboarding = async () => {
     if (!user?.id) return;
 
     setSaving(true);
     try {
-      await updateOnboardingStatus(user.id, {
-        status: 'completed',
-        step: TOTAL_STEPS,
-        required_fields_ok: true,
-      });
+      // Use the new completeOnboarding function which sets server truth
+      const success = await completeOnboarding(user.id);
+      
+      if (!success) {
+        throw new Error('Failed to complete onboarding');
+      }
 
       toast({
         title: '🎉 Parfait, tout est prêt !',
@@ -198,10 +200,14 @@ export default function Onboarding() {
 
       // Show menu generation progress and start generation
       setShowMenuGeneration(true);
-      const success = await menuGeneration.generateMenu();
+      const menuSuccess = await menuGeneration.generateMenu();
+      
+      // Invalidate dashboard queries so they refetch after navigation
+      queryClient.invalidateQueries({ queryKey: ['userDashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['weeklyRecipesByDay'] });
       
       // Wait a moment to show success state before navigating
-      if (success) {
+      if (menuSuccess) {
         setTimeout(() => {
           navigate('/app/dashboard', { replace: true });
         }, 2000);

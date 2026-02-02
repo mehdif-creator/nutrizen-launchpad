@@ -498,12 +498,12 @@ serve(async (req) => {
     }
 
     // Insert one row per day into user_weekly_menu_items
-    // day_of_week: 1=Monday, 2=Tuesday, ..., 7=Sunday
-    // meal_slot: 'dinner' (main meal of the day)
+    // For now, we generate DINNER only (7 recipes for 7 days)
+    // day_of_week: 0=Monday, 1=Tuesday, ..., 6=Sunday (matching RPC expectations)
     const menuItems = days.map((day, index) => ({
       weekly_menu_id: menu.menu_id,
       recipe_id: day.recipe_id,
-      day_of_week: index + 1, // 1-7 for Mon-Sun
+      day_of_week: index, // 0-6 for Mon-Sun to match get_weekly_recipes_by_day RPC
       meal_slot: 'dinner',
       target_servings: day.servings_used,
       scale_factor: day.portion_factor,
@@ -519,6 +519,49 @@ serve(async (req) => {
       // Continue anyway - the menu was saved successfully
     } else {
       console.log(`[generate-menu] Inserted ${menuItems.length} menu items for shopping list generation`);
+    }
+
+    // ========================================
+    // ALSO populate user_daily_recipes table
+    // This is what the dashboard RPC reads from
+    // ========================================
+    console.log(`[generate-menu] Populating user_daily_recipes table for dashboard...`);
+    
+    // Delete existing entries for this week
+    const { error: deleteRecipesError } = await supabaseClient
+      .from("user_daily_recipes")
+      .delete()
+      .eq("user_id", user.id)
+      .gte("date", weekStartStr)
+      .lt("date", new Date(new Date(weekStartStr).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+
+    if (deleteRecipesError) {
+      console.error("[generate-menu] Error deleting old daily recipes:", deleteRecipesError);
+    }
+
+    // Insert one row per day into user_daily_recipes with both lunch and dinner
+    // For now, since we only generate 7 recipes, we'll use the same recipe for dinner
+    // and leave lunch empty (null) - lunch support can be added later
+    const dailyRecipes = days.map((day, index) => {
+      const dayDate = new Date(weekStartStr);
+      dayDate.setDate(dayDate.getDate() + index);
+      return {
+        user_id: user.id,
+        date: dayDate.toISOString().split('T')[0],
+        lunch_recipe_id: null, // No lunch recipes for now
+        dinner_recipe_id: day.recipe_id,
+        day_of_week: index, // 0=Monday
+      };
+    });
+
+    const { error: dailyRecipesError } = await supabaseClient
+      .from("user_daily_recipes")
+      .upsert(dailyRecipes, { onConflict: 'user_id,date' });
+
+    if (dailyRecipesError) {
+      console.error("[generate-menu] Error upserting daily recipes:", dailyRecipesError);
+    } else {
+      console.log(`[generate-menu] Inserted ${dailyRecipes.length} daily recipe entries for dashboard`);
     }
 
     console.log(`[generate-menu] ✅ SUCCESS: Generated menu ${menu.menu_id} with ${usedFallback || 'strict filters'}`);

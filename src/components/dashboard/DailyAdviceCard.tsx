@@ -65,8 +65,18 @@ export function DailyAdviceCard({ advice, isLoading, userId }: DailyAdviceCardPr
     );
   }
 
-  // Fallback: always show something
-  if (!advice || !advice.title) {
+  // Fallback: always show something even if advice is missing
+  const displayAdvice = advice && advice.title ? advice : {
+    id: null,
+    title: 'Bienvenue sur NutriZen',
+    text: 'Planifie tes repas pour gagner du temps et manger équilibré. Génère ton premier menu pour commencer !',
+    category: 'motivation',
+    date: new Date().toISOString(),
+    is_today: true,
+  };
+
+  // This should never happen with the fallback above, but keep as safety
+  if (!displayAdvice.title) {
     return (
       <Card className="rounded-2xl border shadow-sm p-4 md:p-5 bg-gradient-to-br from-primary/5 to-accent/5">
         <div className="flex items-center gap-2 mb-3">
@@ -80,8 +90,8 @@ export function DailyAdviceCard({ advice, isLoading, userId }: DailyAdviceCardPr
     );
   }
 
-  const isLong = advice.text.length > 150;
-  const displayText = expanded || !isLong ? advice.text : advice.text.substring(0, 150) + '...';
+  const isLong = displayAdvice.text.length > 150;
+  const displayText = expanded || !isLong ? displayAdvice.text : displayAdvice.text.substring(0, 150) + '...';
 
   return (
     <Card className="rounded-2xl border shadow-sm p-4 md:p-5 bg-gradient-to-br from-primary/5 to-accent/5">
@@ -90,12 +100,12 @@ export function DailyAdviceCard({ advice, isLoading, userId }: DailyAdviceCardPr
           <Lightbulb className="h-5 w-5 text-primary" />
           <h3 className="text-sm md:text-base font-semibold">Conseil du jour</h3>
         </div>
-        <Badge className={CATEGORY_COLORS[advice.category] || 'bg-muted'}>
-          {CATEGORY_LABELS[advice.category] || advice.category}
+        <Badge className={CATEGORY_COLORS[displayAdvice.category] || 'bg-muted'}>
+          {CATEGORY_LABELS[displayAdvice.category] || displayAdvice.category}
         </Badge>
       </div>
 
-      <h4 className="font-medium text-foreground mb-2">{advice.title}</h4>
+      <h4 className="font-medium text-foreground mb-2">{displayAdvice.title}</h4>
       <p className="text-sm text-muted-foreground leading-relaxed">{displayText}</p>
 
       <div className="flex items-center justify-between mt-3">
@@ -123,12 +133,12 @@ export function DailyAdviceCard({ advice, isLoading, userId }: DailyAdviceCardPr
         </div>
 
         <div className="flex items-center gap-2">
-          {!advice.is_today && (
+          {!displayAdvice.is_today && (
             <span className="text-xs text-muted-foreground">
               (conseil récent)
             </span>
           )}
-          {advice.id && !isRead && (
+          {displayAdvice.id && !isRead && (
             <Button
               variant="outline"
               size="sm"
