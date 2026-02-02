@@ -41,6 +41,20 @@ import AdminReferrals from "./pages/admin/AdminReferrals";
 import AdminConversion from "./pages/admin/AdminConversion";
 import AdminMacrosMaintenance from "./pages/admin/AdminMacrosMaintenance";
 
+// KPI Detail Pages
+import KpiMrr from "./pages/admin/kpis/KpiMrr";
+import KpiArpu from "./pages/admin/kpis/KpiArpu";
+import KpiConversion from "./pages/admin/kpis/KpiConversion";
+import KpiChurn from "./pages/admin/kpis/KpiChurn";
+import KpiUsersTotal from "./pages/admin/kpis/KpiUsersTotal";
+import KpiSubscribersActive from "./pages/admin/kpis/KpiSubscribersActive";
+import KpiNewUsers from "./pages/admin/kpis/KpiNewUsers";
+import KpiTicketsOpen from "./pages/admin/kpis/KpiTicketsOpen";
+import KpiMenusCreated from "./pages/admin/kpis/KpiMenusCreated";
+import KpiMenusPerUser from "./pages/admin/kpis/KpiMenusPerUser";
+import KpiRatings from "./pages/admin/kpis/KpiRatings";
+import KpiPointsTotal from "./pages/admin/kpis/KpiPointsTotal";
+
 // Recipes
 import RecipeMacros from "./pages/recipes/RecipeMacros";
 
@@ -108,6 +122,20 @@ const App = () => {
         <Route path="/admin/referrals" element={<ProtectedRoute requireAdmin><AdminReferrals /></ProtectedRoute>} />
         <Route path="/admin/conversion" element={<ProtectedRoute requireAdmin><AdminConversion /></ProtectedRoute>} />
         <Route path="/admin/macros-maintenance" element={<ProtectedRoute requireAdmin><AdminMacrosMaintenance /></ProtectedRoute>} />
+        
+        {/* Admin KPI Detail Pages */}
+        <Route path="/admin/kpis/mrr" element={<ProtectedRoute requireAdmin><KpiMrr /></ProtectedRoute>} />
+        <Route path="/admin/kpis/arpu" element={<ProtectedRoute requireAdmin><KpiArpu /></ProtectedRoute>} />
+        <Route path="/admin/kpis/conversion" element={<ProtectedRoute requireAdmin><KpiConversion /></ProtectedRoute>} />
+        <Route path="/admin/kpis/churn" element={<ProtectedRoute requireAdmin><KpiChurn /></ProtectedRoute>} />
+        <Route path="/admin/kpis/users-total" element={<ProtectedRoute requireAdmin><KpiUsersTotal /></ProtectedRoute>} />
+        <Route path="/admin/kpis/subscribers-active" element={<ProtectedRoute requireAdmin><KpiSubscribersActive /></ProtectedRoute>} />
+        <Route path="/admin/kpis/new-users" element={<ProtectedRoute requireAdmin><KpiNewUsers /></ProtectedRoute>} />
+        <Route path="/admin/kpis/tickets-open" element={<ProtectedRoute requireAdmin><KpiTicketsOpen /></ProtectedRoute>} />
+        <Route path="/admin/kpis/menus-created" element={<ProtectedRoute requireAdmin><KpiMenusCreated /></ProtectedRoute>} />
+        <Route path="/admin/kpis/menus-per-user" element={<ProtectedRoute requireAdmin><KpiMenusPerUser /></ProtectedRoute>} />
+        <Route path="/admin/kpis/ratings" element={<ProtectedRoute requireAdmin><KpiRatings /></ProtectedRoute>} />
+        <Route path="/admin/kpis/points-total" element={<ProtectedRoute requireAdmin><KpiPointsTotal /></ProtectedRoute>} />
             
             {/* Recipes */}
             <Route path="/recipes/macros" element={<ProtectedRoute><RecipeMacros /></ProtectedRoute>} />
