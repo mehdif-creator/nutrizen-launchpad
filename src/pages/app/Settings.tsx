@@ -78,44 +78,44 @@ export default function Settings() {
           {/* Subscription */}
           <Card className="p-4 md:p-6 mb-4 md:mb-6">
             <div className="mb-4">
-              <div className="mb-3">
-                <h2 className="text-lg md:text-xl font-semibold mb-2">Abonnement actuel</h2>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                  <Badge className="bg-gradient-to-r from-primary to-accent text-white w-fit">
-                    Essai gratuit
-                  </Badge>
-                  <span className="text-xs md:text-sm text-muted-foreground">
-                    Expire le 27 janvier 2025
-                  </span>
-                </div>
+            <div className="mb-3">
+              <h2 className="text-lg md:text-xl font-semibold mb-2">Mon compte</h2>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                <Badge className="bg-gradient-to-r from-primary to-accent text-white w-fit">
+                  Gratuit à vie
+                </Badge>
+                <span className="text-xs md:text-sm text-muted-foreground">
+                  Accès complet aux fonctionnalités de base
+                </span>
               </div>
             </div>
+          </div>
 
-            <div className="space-y-2 md:space-y-3">
-              <div className="flex items-center justify-between py-2">
-                <span className="text-xs md:text-sm">Plan</span>
-                <span className="text-sm md:text-base font-medium">Gratuit (7 jours)</span>
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <span className="text-xs md:text-sm">Prochaine facturation</span>
-                <span className="text-sm md:text-base font-medium">27 janvier 2025</span>
-              </div>
+          <div className="space-y-2 md:space-y-3">
+            <div className="flex items-center justify-between py-2">
+              <span className="text-xs md:text-sm">Plan</span>
+              <span className="text-sm md:text-base font-medium">Gratuit à vie</span>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <span className="text-xs md:text-sm">Crédits Zen</span>
+              <span className="text-sm md:text-base font-medium">Options premium</span>
+            </div>
               <div className="flex items-center justify-between py-2">
                 <span className="text-xs md:text-sm">Swaps mensuels</span>
                 <span className="text-sm md:text-base font-medium">10 inclus</span>
               </div>
             </div>
 
-            <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t space-y-2 md:space-y-3">
-              <Button onClick={handleStripePortal} className="w-full text-sm md:text-base">
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Gérer mon abonnement
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                Depuis le portail Stripe, tu peux mettre à jour ton moyen de paiement, consulter 
-                tes factures et annuler ton abonnement en toute autonomie.
-              </p>
-            </div>
+          <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t space-y-2 md:space-y-3">
+            <Button onClick={handleStripePortal} className="w-full text-sm md:text-base">
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Gérer mes Crédits Zen
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Depuis le portail Stripe, tu peux consulter tes achats de crédits 
+              et tes factures.
+            </p>
+          </div>
           </Card>
 
           {/* Help & Support */}
@@ -150,15 +150,15 @@ export default function Settings() {
                 </div>
                 <Button variant="outline" size="sm" className="whitespace-nowrap">Activé</Button>
               </div>
-              <div className="flex items-start sm:items-center justify-between gap-3">
-                <div className="flex-1">
-                  <p className="text-sm md:text-base font-medium">Rappel fin d'essai</p>
-                  <p className="text-xs md:text-sm text-muted-foreground">
-                    3 jours avant la fin de ton essai
-                  </p>
-                </div>
-                <Button variant="outline" size="sm" className="whitespace-nowrap">Activé</Button>
+            <div className="flex items-start sm:items-center justify-between gap-3">
+              <div className="flex-1">
+                <p className="text-sm md:text-base font-medium">Nouveaux Crédits Zen</p>
+                <p className="text-xs md:text-sm text-muted-foreground">
+                  Quand de nouveaux packs sont disponibles
+                </p>
               </div>
+              <Button variant="outline" size="sm" className="whitespace-nowrap">Activé</Button>
+            </div>
             </div>
           </Card>
 
