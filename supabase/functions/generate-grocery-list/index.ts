@@ -10,7 +10,8 @@ const corsHeaders = {
  * Edge Function: generate-grocery-list
  * 
  * Generates/regenerates grocery list for a weekly menu.
- * Aggregates ingredients, scales by portions, normalizes units.
+ * Delegates to the RPC function for aggregation and portion scaling.
+ * Preserves checked states on regeneration.
  */
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -44,27 +45,32 @@ serve(async (req) => {
     let menuId = weekly_menu_id;
 
     // If no menu_id provided, find current week's menu
-    if (!menuId && !week_start) {
+    if (!menuId) {
       const now = new Date();
       const dayOfWeek = now.getDay();
       const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
       const weekStartDate = new Date(now);
       weekStartDate.setDate(now.getDate() + diff);
       weekStartDate.setHours(0, 0, 0, 0);
-      const weekStartStr = weekStartDate.toISOString().split('T')[0];
+      const weekStartStr = week_start || weekStartDate.toISOString().split('T')[0];
 
       const { data: menu, error: menuError } = await supabase
         .from('user_weekly_menus')
         .select('menu_id')
         .eq('user_id', user.id)
         .eq('week_start', weekStartStr)
-        .single();
+        .maybeSingle();
 
-      if (menuError || !menu) {
+      if (menuError) {
+        console.error('[generate-grocery-list] Error fetching menu:', menuError);
+        throw new Error('Failed to fetch menu');
+      }
+
+      if (!menu) {
         return new Response(
           JSON.stringify({ 
             success: false, 
-            error: 'Aucun menu trouvé pour cette semaine' 
+            error: 'Aucun menu trouvé pour cette semaine. Génère d\'abord ton menu hebdomadaire.' 
           }),
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
@@ -73,16 +79,12 @@ serve(async (req) => {
       menuId = menu.menu_id;
     }
 
-    if (!menuId) {
-      throw new Error('weekly_menu_id is required');
-    }
-
     console.log(`[generate-grocery-list] Generating for menu: ${menuId}`);
 
     // Verify user owns this menu
     const { data: menuCheck, error: checkError } = await supabase
       .from('user_weekly_menus')
-      .select('user_id')
+      .select('user_id, week_start')
       .eq('menu_id', menuId)
       .single();
 
@@ -90,19 +92,19 @@ serve(async (req) => {
       throw new Error('Menu not found or access denied');
     }
 
-    // Call the RPC function to generate grocery list
+    // Call the RPC function to generate grocery list (handles aggregation + portion scaling + checked state preservation)
     const { data: items, error: rpcError } = await supabase
       .rpc('generate_grocery_list', { p_weekly_menu_id: menuId });
 
     if (rpcError) {
       console.error('[generate-grocery-list] RPC error:', rpcError);
-      throw new Error('Failed to generate grocery list');
+      throw new Error('Échec de la génération de la liste de courses');
     }
 
-    // Fetch the persisted grocery list
+    // Fetch the persisted grocery list to get the ID
     const { data: groceryList, error: listError } = await supabase
       .from('grocery_lists')
-      .select('*')
+      .select('id, generated_at')
       .eq('weekly_menu_id', menuId)
       .single();
 
@@ -110,22 +112,25 @@ serve(async (req) => {
       console.error('[generate-grocery-list] Error fetching grocery list:', listError);
     }
 
-    console.log(`[generate-grocery-list] ✅ Generated ${(items || []).length} items`);
+    const itemCount = Array.isArray(items) ? items.length : 0;
+    console.log(`[generate-grocery-list] ✅ Generated ${itemCount} items`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         grocery_list_id: groceryList?.id,
         items: items || [],
-        generated_at: groceryList?.generated_at,
+        generated_at: groceryList?.generated_at || new Date().toISOString(),
+        week_start: menuCheck.week_start,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error: any) {
-    console.error('[generate-grocery-list] Error:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[generate-grocery-list] Error:', message);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

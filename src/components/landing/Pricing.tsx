@@ -1,13 +1,6 @@
-import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Check } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import { Check, Sparkles, Zap, Shield, ChefHat } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -17,171 +10,34 @@ interface PricingProps {
 }
 
 export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
-  const [annual, setAnnual] = useState(false);
-  const { user, session } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState<string | null>(null);
-  const [showEmailDialog, setShowEmailDialog] = useState(false);
-  const [email, setEmail] = useState("");
-  const [selectedPlan, setSelectedPlan] = useState<{ priceId: string; planName: string } | null>(null);
   const { t } = useLanguage();
 
-  const plans = [
-    {
-      name: "Équilibre",
-      price: 14.99,
-      priceId: "price_1SIWFyEl2hJeGlFp8pQyEMQC",
-      annualPrice: 125.90,
-      annualPriceId: "price_annual_equilibre_temp", // TODO: Remplacer par le vrai price ID Stripe
-      originalPrice: 29.99,
-      credits: "50 crédits / mois",
-      badge: "Offre unique",
-      popularLabel: "⭐ Notre formule tout-en-un",
-      features: [
-        "Génération de menus hebdo (7 crédits)",
-        "50 crédits mensuels inclus",
-        "Swaps illimités (1 crédit/swap)",
-        "InspiFrigo - Idées depuis ton frigo",
-        "ScanRepas - Analyse photos repas",
-        "Liste de courses intelligente",
-        "Recettes 20–30 min",
-        "Support prioritaire",
-        "Accès anticipé features",
-      ],
-      cta: "Commencer gratuitement",
-      popular: true,
-    },
+  const freeFeatures = [
+    "Génération de menu hebdomadaire",
+    "Accès à toutes les recettes",
+    "Liste de courses intelligente",
+    "Tableau de bord personnalisé",
+    "Conseils du jour",
+    "Historique des menus",
   ];
 
-  const handleSubscribe = async (priceId: string, planName: string) => {
-    // If user is already logged in, proceed directly
-    if (user && session) {
-      await createCheckoutSession(priceId, user.email || "");
-      return;
-    }
-
-    // Otherwise, ask for email first
-    setSelectedPlan({ priceId, planName });
-    setShowEmailDialog(true);
-  };
-
-  const createCheckoutSession = async (priceId: string, userEmail: string) => {
-    setLoading(priceId);
-    try {
-      const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { priceId, email: userEmail },
-      });
-
-      if (error) throw error;
-
-      if (data?.url) {
-        window.location.href = data.url; // Redirect to Stripe checkout
-      }
-    } catch (error) {
-      console.error("Error creating checkout:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer la session de paiement",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(null);
-      setShowEmailDialog(false);
-    }
-  };
-
-  const handleEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedPlan || !email) return;
-
-    await createCheckoutSession(selectedPlan.priceId, email);
-  };
+  const creditFeatures = [
+    { name: "Changer une recette (Swap)", cost: 1 },
+    { name: "InspiFrigo - Recettes depuis ton frigo", cost: 1 },
+    { name: "ScanRepas - Analyse tes repas", cost: 1 },
+    { name: "Substitutions d'ingrédients", cost: 1 },
+    { name: "Régénérer le menu hebdomadaire", cost: 7 },
+  ];
 
   return (
     <section id="tarifs" className="py-16 bg-gradient-to-b from-background to-secondary/20">
       <div className="container">
         <div className="text-center mb-12 animate-fade-in">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">{t("pricing.title")}</h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">{t("pricing.subtitle")}</p>
-          
-          {/* Toggle Mensuel / Annuel */}
-          <div className="flex items-center justify-center gap-4 mb-8">
-            <button
-              onClick={() => setAnnual(false)}
-              className={`px-6 py-2 rounded-full font-medium transition-all ${
-                !annual
-                  ? "bg-primary text-white shadow-lg"
-                  : "bg-secondary text-muted-foreground hover:bg-secondary/80"
-              }`}
-            >
-              Mensuel
-            </button>
-            <button
-              onClick={() => setAnnual(true)}
-              className={`px-6 py-2 rounded-full font-medium transition-all relative ${
-                annual
-                  ? "bg-primary text-white shadow-lg"
-                  : "bg-secondary text-muted-foreground hover:bg-secondary/80"
-              }`}
-            >
-              Annuel
-              <span className="absolute -top-2 -right-2 bg-accent text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                -30%
-              </span>
-            </button>
-          </div>
-        </div>
-
-        {/* Value Anchor */}
-        <div className="mb-8 p-6 bg-gradient-to-br from-accent/10 to-primary/10 rounded-2xl border-2 border-accent/20 text-center">
-          <div className="flex flex-col md:flex-row items-center justify-center gap-4">
-            <div className="text-left">
-              <p className="text-sm text-muted-foreground mb-1">Valeur réelle estimée :</p>
-              <p className="text-3xl font-bold line-through text-muted-foreground">
-                {annual ? "205 €/mois (2 460 €/an)" : "205 €/mois"}
-              </p>
-            </div>
-            <div className="text-4xl font-bold text-accent">→</div>
-            <div className="text-left">
-              <p className="text-sm text-accent font-medium mb-1">Ton tarif aujourd'hui :</p>
-              <p className="text-4xl font-bold text-foreground">
-                {annual ? (
-                  <>
-                    125,90 €<span className="text-lg">/an</span>
-                  </>
-                ) : (
-                  <>
-                    14,99 €<span className="text-lg">/mois</span>
-                  </>
-                )}
-              </p>
-              {annual && (
-                <p className="text-sm text-accent font-medium mt-1">
-                  Soit 10,49 €/mois · Économise 30%
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm">
-            <span className="flex items-center gap-1">
-              <Check className="w-4 h-4 text-accent" />
-              <span>50 crédits mensuels</span>
-            </span>
-            <span className="flex items-center gap-1">
-              <Check className="w-4 h-4 text-accent" />
-              <span>Toutes les fonctionnalités</span>
-            </span>
-            <span className="flex items-center gap-1">
-              <Check className="w-4 h-4 text-accent" />
-              <span>Garantie 30 jours</span>
-            </span>
-          </div>
-        </div>
-
-        {/* Trial Banner */}
-        <div className="mb-8 p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg border text-center">
-          <p className="text-sm font-medium">{t("pricing.trial")}</p>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
+            Un accès gratuit complet, des options premium à la carte.
+          </p>
         </div>
 
         {pricingNote && (
@@ -190,119 +46,125 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
           </div>
         )}
 
-        <div className="max-w-2xl mx-auto">
-          {plans.map((plan, index) => (
-            <Card
-              key={plan.name}
-              className="p-6 md:p-8 relative border-primary shadow-xl animate-slide-up"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <div className="px-4 py-1 bg-gradient-to-r from-primary to-accent text-white text-xs font-bold rounded-full shadow-glow">
-                    {plan.badge || "RECOMMANDÉ"}
-                  </div>
-                </div>
-              )}
-
-              {plan.popularLabel && (
-                <div className="mb-4 text-center">
-                  <span className="text-sm font-medium text-primary">{plan.popularLabel}</span>
-                </div>
-              )}
-
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-3xl font-bold mb-2">{plan.name}</h3>
-                  <div className="flex items-baseline gap-2 mb-2">
-                    {annual ? (
-                      <>
-                        <span className="text-5xl font-bold">{plan.annualPrice}€</span>
-                        <span className="text-muted-foreground">/ an</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-5xl font-bold">{plan.price}€</span>
-                        <span className="text-muted-foreground">/ mois</span>
-                      </>
-                    )}
-                  </div>
-                  {annual ? (
-                    <div className="space-y-1">
-                      <p className="text-base font-medium text-accent">
-                        Soit {(plan.annualPrice / 12).toFixed(2)}€/mois
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Économie de {((plan.price * 12 - plan.annualPrice).toFixed(2))}€ par an
-                      </p>
-                    </div>
-                  ) : (
-                    plan.originalPrice && (
-                      <p className="text-lg text-muted-foreground line-through mb-2">{plan.originalPrice}€ / mois</p>
-                    )
-                  )}
-                  <p className="text-base font-medium text-primary mt-2">{plan.credits}</p>
-                </div>
-
-                <div className="space-y-3">
-                  {plan.features.map((feature) => (
-                    <div key={feature} className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <Button
-                  onClick={() => handleSubscribe(annual ? plan.annualPriceId : plan.priceId, plan.name)}
-                  disabled={loading === (annual ? plan.annualPriceId : plan.priceId)}
-                  className={`w-full hover:scale-[1.02] active:scale-[0.99] transition-tech ${
-                    plan.popular ? "bg-gradient-to-r from-primary to-accent text-white shadow-glow" : ""
-                  }`}
-                  variant={plan.popular ? "default" : "outline"}
-                >
-                  {loading === (annual ? plan.annualPriceId : plan.priceId) ? "Chargement..." : plan.cta}
-                </Button>
-
-                <p className="text-xs text-center text-muted-foreground mt-3">
-                  Essai gratuit 7 jours — sans engagement
-                </p>
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          {/* Free Plan Card */}
+          <Card className="p-6 md:p-8 relative border-2 border-primary/20 hover:border-primary/40 transition-colors">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+              <div className="px-4 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full">
+                GRATUIT À VIE
               </div>
-            </Card>
-          ))}
+            </div>
+
+            <div className="text-center mb-6 pt-4">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <ChefHat className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-2xl font-bold mb-2">Compte gratuit</h3>
+              <div className="flex items-baseline justify-center gap-1">
+                <span className="text-4xl font-bold">0€</span>
+                <span className="text-muted-foreground">/ mois</span>
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Tout ce qu'il faut pour manger sainement
+              </p>
+            </div>
+
+            <div className="space-y-3 mb-8">
+              {freeFeatures.map((feature) => (
+                <div key={feature} className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                  <span className="text-sm">{feature}</span>
+                </div>
+              ))}
+            </div>
+
+            <Button
+              onClick={onCtaClick}
+              className="w-full bg-primary hover:bg-primary/90"
+              size="lg"
+            >
+              Commencer gratuitement
+            </Button>
+          </Card>
+
+          {/* Credits Card */}
+          <Card className="p-6 md:p-8 relative border-2 border-accent/30 hover:border-accent/50 transition-colors">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+              <div className="px-4 py-1 bg-accent text-white text-xs font-bold rounded-full flex items-center gap-1">
+                <Sparkles className="w-3 h-3" />
+                OPTIONS PREMIUM
+              </div>
+            </div>
+
+            <div className="text-center mb-6 pt-4">
+              <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="h-6 w-6 text-accent" />
+              </div>
+              <h3 className="text-2xl font-bold mb-2">Crédits Zen</h3>
+              <p className="text-lg font-medium text-accent">À l'unité</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Débloquez les options avancées quand vous en avez besoin
+              </p>
+            </div>
+
+            <div className="space-y-3 mb-6">
+              <p className="text-sm font-medium text-muted-foreground mb-2">
+                Fonctionnalités premium :
+              </p>
+              {creditFeatures.map((feature) => (
+                <div key={feature.name} className="flex items-center justify-between gap-3">
+                  <div className="flex items-start gap-2">
+                    <Zap className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
+                    <span className="text-sm">{feature.name}</span>
+                  </div>
+                  <span className="text-xs font-medium bg-accent/10 text-accent px-2 py-1 rounded-full whitespace-nowrap">
+                    {feature.cost} crédit{feature.cost > 1 ? 's' : ''}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-muted/50 rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                <Shield className="w-4 h-4 text-green-600" />
+                <span className="text-sm font-medium">Paiement unique</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Les crédits achetés n'expirent jamais. Pas d'abonnement, pas d'engagement.
+              </p>
+            </div>
+
+            <Button
+              onClick={() => navigate('/credits')}
+              variant="outline"
+              className="w-full border-accent text-accent hover:bg-accent/10"
+              size="lg"
+            >
+              Voir les packs de Crédits Zen
+            </Button>
+          </Card>
         </div>
 
-        <div className="mt-12 text-center text-sm text-muted-foreground">
+        {/* Trust indicators */}
+        <div className="mt-12 flex flex-wrap items-center justify-center gap-8 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <Shield className="w-4 h-4 text-green-600" />
+            <span>Paiement sécurisé Stripe</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Check className="w-4 h-4 text-primary" />
+            <span>Garantie 30 jours</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-accent" />
+            <span>Crédits non expirants</span>
+          </div>
+        </div>
+
+        <div className="mt-8 text-center text-sm text-muted-foreground">
           <p>{t("pricing.note")}</p>
         </div>
       </div>
-
-      {/* Email Dialog */}
-      <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Commence ton essai gratuit</DialogTitle>
-            <DialogDescription>Entre ton email pour démarrer ton essai de 7 jours gratuit</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleEmailSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Adresse email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="ton@email.fr"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoFocus
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading !== null}>
-              {loading ? "Chargement..." : "Continuer vers le paiement"}
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
     </section>
   );
 };

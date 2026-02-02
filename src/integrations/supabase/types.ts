@@ -699,6 +699,7 @@ export type Database = {
           id: string
           items: Json
           user_id: string
+          week_start: string | null
           weekly_menu_id: string
         }
         Insert: {
@@ -706,6 +707,7 @@ export type Database = {
           id?: string
           items?: Json
           user_id: string
+          week_start?: string | null
           weekly_menu_id: string
         }
         Update: {
@@ -713,6 +715,7 @@ export type Database = {
           id?: string
           items?: Json
           user_id?: string
+          week_start?: string | null
           weekly_menu_id?: string
         }
         Relationships: []
@@ -2736,7 +2739,7 @@ export type Database = {
       generate_affiliate_code: { Args: never; Returns: string }
       generate_grocery_list: {
         Args: { p_weekly_menu_id: string }
-        Returns: Json
+        Returns: Json[]
       }
       generate_referral_code:
         | { Args: never; Returns: string }
@@ -2963,7 +2966,7 @@ export type Database = {
           p_grocery_list_id: string
           p_ingredient_key: string
         }
-        Returns: boolean
+        Returns: undefined
       }
       update_user_streak_and_stats: {
         Args: { p_user_id: string }
