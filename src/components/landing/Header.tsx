@@ -85,7 +85,7 @@ export const Header = ({ onCtaClick }: HeaderProps) => {
             size="sm"
             className="bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] transition-tech shadow-glow"
           >
-            {t('header.cta')}
+            Commencer gratuitement
           </Button>
         </div>
 
@@ -148,7 +148,7 @@ export const Header = ({ onCtaClick }: HeaderProps) => {
               onClick={onCtaClick}
               className="w-full bg-gradient-to-r from-primary to-accent text-white"
             >
-              {t('header.cta')}
+              Commencer gratuitement
             </Button>
           </nav>
         </div>

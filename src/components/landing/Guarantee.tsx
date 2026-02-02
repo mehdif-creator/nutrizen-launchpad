@@ -1,18 +1,35 @@
-import { ShieldCheck } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { Shield, Lock, CreditCard, BadgeCheck } from 'lucide-react';
 
 export const Guarantee = () => {
-  const { t } = useLanguage();
+  const trustItems = [
+    {
+      icon: CreditCard,
+      text: 'Sans carte bancaire',
+    },
+    {
+      icon: Lock,
+      text: 'Paiement sécurisé Stripe',
+    },
+    {
+      icon: Shield,
+      text: 'Données protégées',
+    },
+    {
+      icon: BadgeCheck,
+      text: 'Conforme RGPD',
+    },
+  ];
   
   return (
-    <section className="py-16 bg-gradient-to-br from-primary/5 to-accent/5">
-      <div className="container max-w-3xl">
-        <div className="text-center p-10 bg-card rounded-2xl shadow-card">
-          <ShieldCheck className="w-16 h-16 mx-auto mb-6 text-primary" />
-          <h2 className="text-3xl font-bold mb-4 text-primary">{t('guarantee.title')}</h2>
-          <p className="text-lg text-muted-foreground">
-            {t('guarantee.description')}
-          </p>
+    <section className="py-12 bg-gradient-to-br from-primary/5 to-accent/5">
+      <div className="container">
+        <div className="flex flex-wrap items-center justify-center gap-6 md:gap-12">
+          {trustItems.map((item) => (
+            <div key={item.text} className="flex items-center gap-2 text-sm">
+              <item.icon className="w-5 h-5 text-primary" />
+              <span className="font-medium">{item.text}</span>
+            </div>
+          ))}
         </div>
       </div>
     </section>

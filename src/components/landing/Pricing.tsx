@@ -2,7 +2,6 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, Sparkles, Zap, Shield, ChefHat } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 interface PricingProps {
   onCtaClick: () => void;
@@ -11,7 +10,6 @@ interface PricingProps {
 
 export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
   const navigate = useNavigate();
-  const { t } = useLanguage();
 
   const freeFeatures = [
     "Génération de menu hebdomadaire",
@@ -24,17 +22,18 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
 
   const creditFeatures = [
     { name: "Changer une recette (Swap)", cost: 1 },
-    { name: "InspiFrigo - Recettes depuis ton frigo", cost: 1 },
-    { name: "ScanRepas - Analyse tes repas", cost: 1 },
+    { name: "InspiFrigo - Recettes depuis ton frigo", cost: 2 },
+    { name: "ScanRepas - Analyse tes repas", cost: 2 },
     { name: "Substitutions d'ingrédients", cost: 1 },
-    { name: "Régénérer le menu hebdomadaire", cost: 7 },
   ];
 
   return (
     <section id="tarifs" className="py-16 bg-gradient-to-b from-background to-secondary/20">
       <div className="container">
         <div className="text-center mb-12 animate-fade-in">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">{t("pricing.title")}</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Commence gratuitement, puis active les options quand tu veux
+          </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
             Un accès gratuit complet, des options premium à la carte.
           </p>
@@ -61,8 +60,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
               </div>
               <h3 className="text-2xl font-bold mb-2">Compte gratuit</h3>
               <div className="flex items-baseline justify-center gap-1">
-                <span className="text-4xl font-bold">0€</span>
-                <span className="text-muted-foreground">/ mois</span>
+                <span className="text-4xl font-bold">0 €</span>
               </div>
               <p className="text-sm text-muted-foreground mt-2">
                 Tout ce qu'il faut pour manger sainement
@@ -101,9 +99,9 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
                 <Sparkles className="h-6 w-6 text-accent" />
               </div>
               <h3 className="text-2xl font-bold mb-2">Crédits Zen</h3>
-              <p className="text-lg font-medium text-accent">À l'unité</p>
+              <p className="text-lg font-medium text-accent">Packs à l'unité</p>
               <p className="text-sm text-muted-foreground mt-2">
-                Débloquez les options avancées quand vous en avez besoin
+                Débloque les options avancées quand tu en as besoin
               </p>
             </div>
 
@@ -140,7 +138,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
               className="w-full border-accent text-accent hover:bg-accent/10"
               size="lg"
             >
-              Voir les packs de Crédits Zen
+              Voir les packs Crédits Zen
             </Button>
           </Card>
         </div>
@@ -152,17 +150,13 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
             <span>Paiement sécurisé Stripe</span>
           </div>
           <div className="flex items-center gap-2">
-            <Check className="w-4 h-4 text-primary" />
-            <span>Garantie 30 jours</span>
-          </div>
-          <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-accent" />
             <span>Crédits non expirants</span>
           </div>
         </div>
 
         <div className="mt-8 text-center text-sm text-muted-foreground">
-          <p>{t("pricing.note")}</p>
+          <p>Tu peux rester gratuit aussi longtemps que tu veux. Les Crédits Zen sont optionnels.</p>
         </div>
       </div>
     </section>

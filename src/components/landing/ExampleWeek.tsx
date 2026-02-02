@@ -3,112 +3,102 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 const weekDays = [
   {
     day: 'Lundi',
     meals: {
-      breakfast: 'Porridge protéiné aux fruits rouges',
       lunch: 'Bowl poulet teriyaki et riz basmati',
       dinner: 'Saumon grillé, brocolis et quinoa'
     },
-    macros: { calories: 2100, protein: 140, carbs: 210, fat: 65 }
+    macros: { calories: 1450, protein: 95, carbs: 140, fat: 48 }
   },
   {
     day: 'Mardi',
     meals: {
-      breakfast: 'Œufs brouillés et pain complet',
       lunch: 'Pâtes complètes, dinde et légumes',
       dinner: 'Curry de lentilles et riz'
     },
-    macros: { calories: 2050, protein: 135, carbs: 220, fat: 60 }
+    macros: { calories: 1380, protein: 88, carbs: 155, fat: 42 }
   },
   {
     day: 'Mercredi',
     meals: {
-      breakfast: 'Smoothie banane, avoine, whey',
       lunch: 'Steak haché, patates douces rôties',
       dinner: 'Wrap poulet, avocat, crudités'
     },
-    macros: { calories: 2150, protein: 145, carbs: 200, fat: 70 }
+    macros: { calories: 1420, protein: 98, carbs: 130, fat: 52 }
   },
   {
     day: 'Jeudi',
     meals: {
-      breakfast: 'Pancakes protéinés et sirop d\'érable',
       lunch: 'Riz, poulet mariné, haricots verts',
       dinner: 'Pizza maison à la pâte complète'
     },
-    macros: { calories: 2200, protein: 150, carbs: 230, fat: 65 }
+    macros: { calories: 1500, protein: 102, carbs: 165, fat: 48 }
   },
   {
     day: 'Vendredi',
     meals: {
-      breakfast: 'Yaourt grec, granola, fruits',
       lunch: 'Burger maison et frites de patate douce',
       dinner: 'Poisson blanc, ratatouille, boulgour'
     },
-    macros: { calories: 2100, protein: 140, carbs: 210, fat: 68 }
+    macros: { calories: 1400, protein: 92, carbs: 145, fat: 50 }
   },
   {
     day: 'Samedi',
     meals: {
-      breakfast: 'Tartines avocat, œuf poché',
       lunch: 'Tacos au bœuf et légumes grillés',
       dinner: 'Risotto aux champignons'
     },
-    macros: { calories: 2250, protein: 135, carbs: 240, fat: 72 }
+    macros: { calories: 1520, protein: 90, carbs: 170, fat: 55 }
   },
   {
     day: 'Dimanche',
     meals: {
-      breakfast: 'Crêpes protéinées et fruits',
       lunch: 'Poulet rôti, légumes et purée',
       dinner: 'Salade composée au thon'
     },
-    macros: { calories: 2000, protein: 130, carbs: 195, fat: 65 }
+    macros: { calories: 1350, protein: 88, carbs: 125, fat: 48 }
   }
 ];
 
 const shoppingList = {
   'Fruits & Légumes': [
-    'Fruits rouges (300g)',
-    'Bananes (6)',
     'Brocolis (2)',
     'Patates douces (1kg)',
     'Avocat (3)',
     'Tomates (6)',
-    'Salade verte (2)'
+    'Salade verte (2)',
+    'Haricots verts (400g)',
+    'Champignons (300g)'
   ],
   'Protéines': [
     'Poulet (1,2kg)',
     'Saumon (400g)',
     'Steak haché 5% (500g)',
     'Dinde hachée (400g)',
-    'Œufs (18)',
     'Thon en boîte (2)',
-    'Whey vanille'
+    'Poisson blanc (400g)'
   ],
   'Féculents': [
     'Riz basmati (1kg)',
     'Pâtes complètes (500g)',
     'Quinoa (400g)',
-    'Pain complet',
-    'Flocons d\'avoine (500g)'
+    'Boulgour (300g)',
+    'Pâte à pizza (2)'
   ],
   'Épicerie': [
     'Huile d\'olive',
     'Sauce soja',
     'Curry en poudre',
-    'Sirop d\'érable',
-    'Lentilles corail (400g)'
+    'Lentilles corail (400g)',
+    'Tortillas (8)'
   ]
 };
 
 export const ExampleWeek = () => {
   const [currentDay, setCurrentDay] = useState(0);
-  const { t } = useLanguage();
 
   const nextDay = () => {
     setCurrentDay((prev) => (prev + 1) % weekDays.length);
@@ -125,10 +115,10 @@ export const ExampleWeek = () => {
       <div className="container">
         <div className="text-center mb-12 animate-fade-in">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            {t('exampleWeek.title')}
+            À quoi ressemble une semaine ?
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {t('exampleWeek.subtitle')}
+            Découvre un exemple de menu généré par NutriZen, entièrement personnalisable.
           </p>
         </div>
 
@@ -170,18 +160,14 @@ export const ExampleWeek = () => {
               </Button>
             </div>
 
-            {/* Meals */}
+            {/* Meals - Only Lunch and Dinner */}
             <div className="space-y-4 mb-6">
               <div className="p-4 bg-muted/50 rounded-lg">
-                <div className="text-sm font-medium text-muted-foreground mb-1">{t('exampleWeek.breakfast')}</div>
-                <div className="font-medium">{day.meals.breakfast}</div>
-              </div>
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <div className="text-sm font-medium text-muted-foreground mb-1">{t('exampleWeek.lunch')}</div>
+                <div className="text-sm font-medium text-muted-foreground mb-1">Déjeuner</div>
                 <div className="font-medium">{day.meals.lunch}</div>
               </div>
               <div className="p-4 bg-muted/50 rounded-lg">
-                <div className="text-sm font-medium text-muted-foreground mb-1">{t('exampleWeek.dinner')}</div>
+                <div className="text-sm font-medium text-muted-foreground mb-1">Dîner</div>
                 <div className="font-medium">{day.meals.dinner}</div>
               </div>
             </div>
@@ -190,19 +176,19 @@ export const ExampleWeek = () => {
             <div className="grid grid-cols-4 gap-4 p-4 bg-primary/5 rounded-lg mb-6">
               <div className="text-center">
                 <div className="text-2xl font-bold text-primary">{day.macros.calories}</div>
-                <div className="text-xs text-muted-foreground">{t('exampleWeek.kcal')}</div>
+                <div className="text-xs text-muted-foreground">kcal</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-primary">{day.macros.protein}g</div>
-                <div className="text-xs text-muted-foreground">{t('exampleWeek.protein')}</div>
+                <div className="text-xs text-muted-foreground">Protéines</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-primary">{day.macros.carbs}g</div>
-                <div className="text-xs text-muted-foreground">{t('exampleWeek.carbs')}</div>
+                <div className="text-xs text-muted-foreground">Glucides</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-primary">{day.macros.fat}g</div>
-                <div className="text-xs text-muted-foreground">{t('exampleWeek.fat')}</div>
+                <div className="text-xs text-muted-foreground">Lipides</div>
               </div>
             </div>
 
@@ -210,12 +196,12 @@ export const ExampleWeek = () => {
               <DialogTrigger asChild>
                 <Button className="w-full hover:scale-[1.02] transition-tech" variant="outline">
                   <ShoppingCart className="w-4 h-4 mr-2" />
-                  {t('exampleWeek.shoppingList')}
+                  Voir la liste de courses
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>{t('exampleWeek.shoppingListTitle')}</DialogTitle>
+                  <DialogTitle>Liste de courses de la semaine</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-6">
                   {Object.entries(shoppingList).map(([category, items]) => (
@@ -237,7 +223,7 @@ export const ExampleWeek = () => {
           </Card>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
-            {t('exampleWeek.note')}
+            Les menus sont adaptés à tes objectifs et préférences. Tu peux changer chaque repas.
           </p>
         </div>
       </div>
