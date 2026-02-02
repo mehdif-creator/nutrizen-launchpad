@@ -7,16 +7,15 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
 import { requireAdmin } from '../_shared/auth.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { getCorsHeaders, SecurityError } from '../_shared/security.ts';
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders, status: 204 });
   }
 
   try {
@@ -39,17 +38,16 @@ Deno.serve(async (req) => {
     });
 
     // Verify JWT and get user
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
     
-    if (claimsError || !claimsData?.claims?.sub) {
+    if (userError || !user) {
       return new Response(
         JSON.stringify({ error: 'Invalid token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const userId = claimsData.claims.sub;
+    const userId = user.id;
 
     // Check admin role using the shared helper
     await requireAdmin(userClient, userId);
@@ -90,7 +88,17 @@ Deno.serve(async (req) => {
     );
 
   } catch (error: unknown) {
+    const origin = req.headers.get('origin');
+    const corsHeaders = getCorsHeaders(origin);
+    
     console.error('[admin-refresh-macros-mv] Error:', error);
+
+    if (error instanceof SecurityError) {
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { status: error.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const err = error as { statusCode?: number; message?: string };
     const status = err.statusCode || 500;

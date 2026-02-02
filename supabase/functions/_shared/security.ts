@@ -53,13 +53,27 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3000',
 ];
 
+// Match Lovable preview domains dynamically
+const LOVABLE_PREVIEW_PATTERN = /^https:\/\/[a-z0-9-]+--[a-f0-9-]+\.lovable\.app$/;
+
+/**
+ * Check if origin is allowed (includes Lovable preview domains)
+ */
+function isOriginAllowed(origin: string | null): boolean {
+  if (!origin) return false;
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  if (LOVABLE_PREVIEW_PATTERN.test(origin)) return true;
+  return false;
+}
+
 /**
  * Get CORS headers with strict origin validation
+ * Allows production domains, localhost, and Lovable preview domains
  */
 export function getCorsHeaders(origin: string | null): Record<string, string> {
-  const isAllowed = origin && ALLOWED_ORIGINS.includes(origin);
+  const allowed = isOriginAllowed(origin);
   return {
-    'Access-Control-Allow-Origin': isAllowed ? origin : ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Origin': allowed && origin ? origin : ALLOWED_ORIGINS[0],
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-request-id',
     'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
     'Access-Control-Max-Age': '86400',
