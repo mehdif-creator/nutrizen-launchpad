@@ -1,44 +1,38 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
-
-// SECURITY: Strict CORS allow-list
-const ALLOWED_ORIGINS = [
-  'https://mynutrizen.fr',
-  'https://app.mynutrizen.fr',
-  'http://localhost:5173',
-];
-
-function getCorsHeaders(origin: string | null): Record<string, string> {
-  const isAllowed = origin && ALLOWED_ORIGINS.includes(origin);
-  return {
-    "Access-Control-Allow-Origin": isAllowed ? origin : ALLOWED_ORIGINS[0],
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-  };
-}
+import { getCorsHeaders } from '../_shared/security.ts';
+import { PublicError, sanitizeDbError } from '../_shared/errors.ts';
+import { createLogger } from '../_shared/logging.ts';
 
 // Input validation schema
 const HandleReferralSchema = z.object({
-  referralCode: z.string().trim().min(1).max(50, { message: "Referral code too long" }),
-  newUserId: z.string().uuid({ message: "Invalid newUserId format" }),
+  referralCode: z.string()
+    .trim()
+    .min(1, { message: 'Referral code is required' })
+    .max(50, { message: 'Referral code too long' })
+    .regex(/^[a-zA-Z0-9_-]+$/, { message: 'Invalid referral code format' }),
+  newUserId: z.string().uuid({ message: 'Invalid newUserId format' }),
 }).strict();
 
-const logStep = (step: string, details?: any) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
-  console.log(`[HANDLE-REFERRAL] ${step}${detailsStr}`);
-};
+function calculateLevel(points: number): string {
+  if (points >= 300) return 'Platinum';
+  if (points >= 150) return 'Gold';
+  if (points >= 50) return 'Silver';
+  return 'Bronze';
+}
 
 serve(async (req) => {
   const origin = req.headers.get("origin");
   const corsHeaders = getCorsHeaders(origin);
+  const logger = createLogger('handle-referral');
 
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders, status: 204 });
   }
 
   try {
-    logStep("Function started");
+    logger.info('Function started');
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -48,10 +42,23 @@ serve(async (req) => {
 
     // Parse and validate input
     const body = await req.json();
-    const validatedInput = HandleReferralSchema.parse(body);
-    const { referralCode, newUserId } = validatedInput;
+    const parseResult = HandleReferralSchema.safeParse(body);
+    
+    if (!parseResult.success) {
+      const errorMessage = parseResult.error.errors
+        .map(e => `${e.path.join('.')}: ${e.message}`)
+        .join(', ');
+      throw new PublicError({
+        code: 'VALIDATION_ERROR',
+        userMessage: 'Invalid input data',
+        statusCode: 400,
+        internalDetails: { errors: parseResult.error.errors }
+      });
+    }
+    
+    const { referralCode, newUserId } = parseResult.data;
 
-    logStep("Processing referral", { referralCode, newUserId });
+    logger.info('Processing referral', { referralCode });
 
     // Find the referrer by referral code
     const { data: referrerData, error: referrerError } = await supabaseAdmin
@@ -61,11 +68,15 @@ serve(async (req) => {
       .is('referred_id', null)
       .maybeSingle();
 
-    if (referrerError || !referrerData) {
-      logStep("Referral code not found or already used", { referralCode });
+    if (referrerError) {
+      throw sanitizeDbError(referrerError, { operation: 'find_referrer' });
+    }
+
+    if (!referrerData) {
+      logger.info('Referral code not found or already used');
       return new Response(JSON.stringify({ 
         success: false, 
-        message: "Invalid or already used referral code" 
+        message: 'Code de parrainage invalide ou déjà utilisé' 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
@@ -73,7 +84,7 @@ serve(async (req) => {
     }
 
     const referrerId = referrerData.referrer_id;
-    logStep("Found referrer", { referrerId });
+    logger.info('Found referrer');
 
     // Update the referral record to link the new user
     const { error: updateError } = await supabaseAdmin
@@ -86,10 +97,10 @@ serve(async (req) => {
       .eq('id', referrerData.id);
 
     if (updateError) {
-      throw updateError;
+      throw sanitizeDbError(updateError, { operation: 'update_referral' });
     }
 
-    logStep("Referral updated successfully");
+    logger.info('Referral updated successfully');
 
     // Award points to the referrer
     const { data: userPoints, error: pointsError } = await supabaseAdmin
@@ -99,7 +110,8 @@ serve(async (req) => {
       .maybeSingle();
 
     if (pointsError && pointsError.code !== 'PGRST116') {
-      console.error("Error fetching user points:", pointsError);
+      logger.error('Error fetching user points', pointsError);
+      // Don't fail - referral was recorded, points can be handled separately
     } else {
       const pointsToAward = 5;
       const newTotalPoints = (userPoints?.total_points || 0) + pointsToAward;
@@ -127,43 +139,34 @@ serve(async (req) => {
           .eq('user_id', referrerId);
       }
 
-      logStep("Points awarded to referrer", { referrerId, pointsAwarded: pointsToAward });
+      logger.info('Points awarded to referrer', { pointsAwarded: pointsToAward });
     }
 
     return new Response(JSON.stringify({ 
       success: true,
-      message: "Referral processed successfully"
+      message: 'Parrainage traité avec succès'
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR", { message: errorMessage });
-    
-    // Handle validation errors
-    if (error instanceof z.ZodError) {
-      return new Response(
-        JSON.stringify({ 
-          success: false,
-          message: 'Validation error',
-          details: error.errors
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    const errorDetails = error instanceof Error 
+      ? { message: error.message, stack: error.stack }
+      : { message: String(error) };
+    logger.error('Operation failed', errorDetails);
+
+    // Handle PublicError instances
+    if (error instanceof PublicError) {
+      return error.toResponse(corsHeaders);
     }
     
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400,
-    });
+    // Return sanitized generic error
+    return new PublicError({
+      code: 'INTERNAL_ERROR',
+      userMessage: 'Une erreur est survenue. Veuillez réessayer.',
+      statusCode: 500,
+      internalDetails: error
+    }).toResponse(corsHeaders);
   }
 });
-
-function calculateLevel(points: number): string {
-  if (points >= 300) return 'Platinum';
-  if (points >= 150) return 'Gold';
-  if (points >= 50) return 'Silver';
-  return 'Bronze';
-}

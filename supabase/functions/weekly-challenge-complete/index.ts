@@ -1,35 +1,15 @@
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { getCorsHeaders, withSecurity, SecurityError } from '../_shared/security.ts';
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    );
-
-    const {
-      data: { user },
-      error: userError,
-    } = await supabaseClient.auth.getUser();
-
-    if (userError || !user) {
-      throw new Error('Unauthorized');
-    }
+  return await withSecurity(req, {
+    requireAuth: true,
+    rateLimit: { maxTokens: 30, refillRate: 60, cost: 1 },
+  }, async (context, _body, logger) => {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get current week's challenge (Monday-based, Europe/Paris)
     const now = new Date();
@@ -40,41 +20,60 @@ serve(async (req) => {
     monday.setDate(parisDate.getDate() + mondayOffset);
     const weekStart = monday.toISOString().split('T')[0];
 
+    logger.info('Fetching weekly challenge', { weekStart, userId: context.userId });
+
     const { data: challenge, error: challengeError } = await supabaseClient
       .from('weekly_challenges')
       .select('*')
       .eq('week_start', weekStart)
-      .single();
+      .maybeSingle();
 
-    if (challengeError || !challenge) {
-      throw new Error('No challenge found for this week');
+    if (challengeError) {
+      logger.error('Challenge fetch error', challengeError);
+      throw new SecurityError('Unable to fetch challenge', 'DB_ERROR', 500);
+    }
+
+    if (!challenge) {
+      logger.info('No challenge found for this week');
+      return { 
+        success: false, 
+        message: 'Aucun défi disponible cette semaine'
+      };
     }
 
     // Check if already completed
-    const { data: completion } = await supabaseClient
+    const { data: completion, error: completionError } = await supabaseClient
       .from('user_challenge_completions')
       .select('id')
-      .eq('user_id', user.id)
+      .eq('user_id', context.userId)
       .eq('challenge_id', challenge.id)
       .maybeSingle();
 
+    if (completionError) {
+      logger.error('Completion check error', completionError);
+      throw new SecurityError('Unable to check completion status', 'DB_ERROR', 500);
+    }
+
     if (completion) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: 'Challenge already completed this week'
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      logger.info('Challenge already completed', { challengeId: challenge.id });
+      return { 
+        success: false, 
+        message: 'Défi déjà complété cette semaine'
+      };
     }
 
     // Create completion record
-    await supabaseClient
+    const { error: insertError } = await supabaseClient
       .from('user_challenge_completions')
-      .insert({ user_id: user.id, challenge_id: challenge.id });
+      .insert({ user_id: context.userId, challenge_id: challenge.id });
+
+    if (insertError) {
+      logger.error('Completion insert error', insertError);
+      throw new SecurityError('Unable to record completion', 'DB_ERROR', 500);
+    }
 
     // Award points
-    await supabaseClient.rpc('fn_award_event', {
+    const { error: awardError } = await supabaseClient.rpc('fn_award_event', {
       p_event_type: 'WEEKLY_CHALLENGE_COMPLETED',
       p_points: challenge.points_reward,
       p_credits: 0,
@@ -85,33 +84,22 @@ serve(async (req) => {
       },
     });
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        points: challenge.points_reward,
-        challenge: challenge.title,
-        message: `🎉 Challenge completed! +${challenge.points_reward} points`
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  } catch (error) {
-    console.error('Weekly challenge error:', error);
-    
-    // Sanitize error - don't expose internal details
-    const message = (error as Error).message;
-    const isAuthError = message.includes('Unauthorized') || message.includes('JWT');
-    const isNotFound = message.includes('No challenge');
-    
-    return new Response(
-      JSON.stringify({ 
-        error: isAuthError ? 'Authentication required' : 
-               isNotFound ? 'No challenge available for this week' :
-               'Failed to complete challenge'
-      }),
-      { 
-        status: isAuthError ? 401 : isNotFound ? 404 : 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
-  }
+    if (awardError) {
+      logger.error('Award points error', awardError);
+      // Don't fail - completion was recorded, points can be awarded manually
+      logger.warn('Points not awarded, but challenge marked complete');
+    }
+
+    logger.info('Challenge completed successfully', { 
+      challengeId: challenge.id,
+      points: challenge.points_reward 
+    });
+
+    return { 
+      success: true, 
+      points: challenge.points_reward,
+      challenge: challenge.title,
+      message: `🎉 Défi complété ! +${challenge.points_reward} points`
+    };
+  });
 });
