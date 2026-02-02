@@ -104,11 +104,12 @@ export function useUserDashboard(userId: string | undefined) {
     queryKey: ['userDashboard', userId],
     queryFn: () => fetchUserDashboard(userId!),
     enabled: !!userId,
-    staleTime: 60 * 1000, // 1 minute
+    staleTime: 30 * 1000, // 30 seconds - more aggressive refresh
     gcTime: 5 * 60 * 1000, // 5 minutes
     placeholderData: (prev) => prev, // keepPreviousData equivalent
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
+    refetchInterval: 60 * 1000, // Auto-refetch every minute
   });
 
   // Subscribe to relevant table changes for realtime updates
@@ -150,7 +151,12 @@ export function useUserDashboard(userId: string | undefined) {
   }, [userId, queryClient]);
 
   const invalidate = () => {
+    // Invalidate all dashboard-related queries
     queryClient.invalidateQueries({ queryKey: ['userDashboard', userId] });
+    queryClient.invalidateQueries({ queryKey: ['weeklyRecipesByDay', userId] });
+    queryClient.invalidateQueries({ queryKey: ['weeklyMenu', userId] });
+    queryClient.invalidateQueries({ queryKey: ['shoppingList', userId] });
+    queryClient.invalidateQueries({ queryKey: ['gamification', userId] });
   };
 
   return {

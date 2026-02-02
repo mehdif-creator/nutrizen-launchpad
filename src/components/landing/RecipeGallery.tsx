@@ -1,9 +1,10 @@
 import { useRecipesGallery } from "@/hooks/useRecipesGallery";
 import { Spinner } from "@/components/common/Spinner";
 import { useLanguage } from '@/contexts/LanguageContext';
+import { getRecipeImageUrl, handleImageError } from '@/lib/images';
 
 export const RecipeGallery = () => {
-  const { data: recipes, isLoading } = useRecipesGallery();
+  const { data: recipes, isLoading, error } = useRecipesGallery();
   const { t } = useLanguage();
 
   if (isLoading) {
@@ -12,6 +13,19 @@ export const RecipeGallery = () => {
         <div className="container">
           <div className="text-center">
             <Spinner />
+            <p className="text-sm text-muted-foreground mt-2">Chargement des recettes...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="py-12 md:py-16 bg-gradient-to-b from-background to-[#FFF8F2]">
+        <div className="container">
+          <div className="text-center">
+            <p className="text-muted-foreground">Impossible de charger les recettes. Réessayez plus tard.</p>
           </div>
         </div>
       </section>
@@ -19,7 +33,15 @@ export const RecipeGallery = () => {
   }
 
   if (!recipes || recipes.length === 0) {
-    return null;
+    return (
+      <section className="py-12 md:py-16 bg-gradient-to-b from-background to-[#FFF8F2]">
+        <div className="container">
+          <div className="text-center">
+            <p className="text-muted-foreground">Aucune recette à afficher pour le moment.</p>
+          </div>
+        </div>
+      </section>
+    );
   }
 
   // Split recipes into two different sets and duplicate each for infinite scroll
@@ -49,10 +71,11 @@ export const RecipeGallery = () => {
                   className="flex-shrink-0 w-[200px] md:w-[250px] group relative overflow-hidden rounded-xl bg-muted aspect-[4/3]"
                 >
                   <img
-                    src={recipe.image_url || "/img/recipe-default.jpg"}
+                    src={getRecipeImageUrl(recipe)}
                     alt={recipe.title}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     loading="lazy"
+                    onError={handleImageError}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 text-white transform translate-y-2 group-hover:translate-y-0 transition-transform">
@@ -72,10 +95,11 @@ export const RecipeGallery = () => {
                   className="flex-shrink-0 w-[200px] md:w-[250px] group relative overflow-hidden rounded-xl bg-muted aspect-[4/3]"
                 >
                   <img
-                    src={recipe.image_url || "/img/recipe-default.jpg"}
+                    src={getRecipeImageUrl(recipe)}
                     alt={recipe.title}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     loading="lazy"
+                    onError={handleImageError}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 text-white transform translate-y-2 group-hover:translate-y-0 transition-transform">
