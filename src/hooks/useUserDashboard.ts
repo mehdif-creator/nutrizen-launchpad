@@ -8,10 +8,28 @@ export interface DashboardWallet {
   balance_lifetime: number;
 }
 
+export interface DashboardDayMeal {
+  recipe_id: string;
+  title: string;
+  image_url: string;
+  image_path: string;
+  prep_min: number;
+  calories: number;
+}
+
+export interface DashboardDay {
+  date: string;
+  day_name: string;
+  day_index: number;
+  lunch: DashboardDayMeal | null;
+  dinner: DashboardDayMeal | null;
+}
+
 export interface DashboardWeek {
   week_start: string;
   menu_exists: boolean;
   meals_count: number;
+  days: DashboardDay[];
 }
 
 export interface DashboardTodayMeal {
@@ -72,7 +90,7 @@ export interface UserDashboardData {
 
 const DEFAULT_DASHBOARD: UserDashboardData = {
   wallet: { balance_total: 0, balance_subscription: 0, balance_lifetime: 0 },
-  week: { week_start: new Date().toISOString(), menu_exists: false, meals_count: 0 },
+  week: { week_start: new Date().toISOString().split('T')[0], menu_exists: false, meals_count: 0, days: [] },
   today_meal: { exists: false, lunch_recipe_id: null, lunch_title: null, dinner_recipe_id: null, dinner_title: null },
   shopping_list_status: { exists: false, items_total: 0, items_checked: 0 },
   streaks: { current_days: 0, best_days: 0 },
