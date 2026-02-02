@@ -144,3 +144,10 @@ period = "1h"
 [functions.generate-grocery-list]
 verify_jwt = true
 
+[functions.admin-refresh-macros-mv]
+verify_jwt = false
+
+[functions.admin-refresh-macros-mv.rate_limit]
+limit = 10
+period = "1h"
+

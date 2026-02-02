@@ -1,0 +1,104 @@
+/**
+ * Admin Edge Function: Refresh Macros Materialized View
+ * 
+ * Securely refreshes the recipe_macros_mv2 materialized view.
+ * Requires admin role.
+ */
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { requireAdmin } from '../_shared/auth.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+Deno.serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    // Get authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Authorization required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create Supabase client with user's token for auth check
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    // Verify JWT and get user
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims?.sub) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userId = claimsData.claims.sub;
+
+    // Check admin role using the shared helper
+    await requireAdmin(userClient, userId);
+
+    // Use service role client to execute the refresh (needs elevated privileges)
+    const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Execute the materialized view refresh
+    const startTime = Date.now();
+    
+    const { error: refreshError } = await serviceClient.rpc('refresh_recipe_macros_mv2');
+
+    if (refreshError) {
+      // If RPC doesn't exist, try direct SQL via a dedicated function
+      console.warn('RPC refresh_recipe_macros_mv2 not found, trying alternative...');
+      
+      // Fallback: try to call it differently or report error
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `Refresh failed: ${refreshError.message}. Ensure refresh_recipe_macros_mv2() function exists.`
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const duration = Date.now() - startTime;
+
+    console.log(`[admin-refresh-macros-mv] MV2 refreshed in ${duration}ms by admin ${userId}`);
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: `Vue matérialisée actualisée en ${duration}ms`,
+        duration_ms: duration,
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error: unknown) {
+    console.error('[admin-refresh-macros-mv] Error:', error);
+
+    const err = error as { statusCode?: number; message?: string };
+    const status = err.statusCode || 500;
+    const message = err.message || 'Internal server error';
+
+    return new Response(
+      JSON.stringify({ success: false, error: message }),
+      { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});

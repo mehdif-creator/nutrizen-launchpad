@@ -39,6 +39,10 @@ import AdminTickets from "./pages/admin/AdminTickets";
 import AdminDiagnostics from "./pages/admin/AdminDiagnostics";
 import AdminReferrals from "./pages/admin/AdminReferrals";
 import AdminConversion from "./pages/admin/AdminConversion";
+import AdminMacrosMaintenance from "./pages/admin/AdminMacrosMaintenance";
+
+// Recipes
+import RecipeMacros from "./pages/recipes/RecipeMacros";
 
 // Blog
 import BlogIndex from "./pages/blog/BlogIndex";
@@ -103,6 +107,10 @@ const App = () => {
         <Route path="/admin/diagnostics" element={<ProtectedRoute requireAdmin><AdminDiagnostics /></ProtectedRoute>} />
         <Route path="/admin/referrals" element={<ProtectedRoute requireAdmin><AdminReferrals /></ProtectedRoute>} />
         <Route path="/admin/conversion" element={<ProtectedRoute requireAdmin><AdminConversion /></ProtectedRoute>} />
+        <Route path="/admin/macros-maintenance" element={<ProtectedRoute requireAdmin><AdminMacrosMaintenance /></ProtectedRoute>} />
+            
+            {/* Recipes */}
+            <Route path="/recipes/macros" element={<ProtectedRoute><RecipeMacros /></ProtectedRoute>} />
             
             {/* Blog */}
             <Route path="/blog" element={<BlogIndex />} />

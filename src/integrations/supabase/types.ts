@@ -1350,6 +1350,20 @@ export type Database = {
             foreignKeyName: "recipe_macro_audit_recipe_id_fkey"
             columns: ["recipe_id"]
             isOneToOne: false
+            referencedRelation: "recipe_macros_mv"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "recipe_macro_audit_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_macros_mv2"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "recipe_macro_audit_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
             referencedRelation: "recipe_macros_v"
             referencedColumns: ["recipe_id"]
           },
@@ -1361,6 +1375,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      recipe_macros_queue: {
+        Row: {
+          created_at: string
+          reason: string | null
+          recipe_id: string
+        }
+        Insert: {
+          created_at?: string
+          reason?: string | null
+          recipe_id: string
+        }
+        Update: {
+          created_at?: string
+          reason?: string | null
+          recipe_id?: string
+        }
+        Relationships: []
+      }
+      recipe_macros_store: {
+        Row: {
+          calories_kcal: number | null
+          carbs_g: number | null
+          computed_at: string
+          fats_g: number | null
+          fibers_g: number | null
+          proteins_g: number | null
+          recipe_id: string
+        }
+        Insert: {
+          calories_kcal?: number | null
+          carbs_g?: number | null
+          computed_at?: string
+          fats_g?: number | null
+          fibers_g?: number | null
+          proteins_g?: number | null
+          recipe_id: string
+        }
+        Update: {
+          calories_kcal?: number | null
+          carbs_g?: number | null
+          computed_at?: string
+          fats_g?: number | null
+          fibers_g?: number | null
+          proteins_g?: number | null
+          recipe_id?: string
+        }
+        Relationships: []
       }
       recipes: {
         Row: {
@@ -1568,6 +1630,20 @@ export type Database = {
           total_weight_g?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "recipes_nutrition_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: true
+            referencedRelation: "recipe_macros_mv"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "recipes_nutrition_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: true
+            referencedRelation: "recipe_macros_mv2"
+            referencedColumns: ["recipe_id"]
+          },
           {
             foreignKeyName: "recipes_nutrition_recipe_id_fkey"
             columns: ["recipe_id"]
@@ -1988,6 +2064,20 @@ export type Database = {
           suggested_fix?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "translation_issues_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_macros_mv"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "translation_issues_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_macros_mv2"
+            referencedColumns: ["recipe_id"]
+          },
           {
             foreignKeyName: "translation_issues_recipe_id_fkey"
             columns: ["recipe_id"]
@@ -2542,6 +2632,20 @@ export type Database = {
             foreignKeyName: "user_weekly_menu_items_recipe_id_fkey"
             columns: ["recipe_id"]
             isOneToOne: false
+            referencedRelation: "recipe_macros_mv"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "user_weekly_menu_items_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_macros_mv2"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "user_weekly_menu_items_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
             referencedRelation: "recipe_macros_v"
             referencedColumns: ["recipe_id"]
           },
@@ -2717,6 +2821,28 @@ export type Database = {
         }
         Relationships: []
       }
+      recipe_macros_mv: {
+        Row: {
+          calories_kcal: number | null
+          carbs_g: number | null
+          fats_g: number | null
+          fibers_g: number | null
+          proteins_g: number | null
+          recipe_id: string | null
+        }
+        Relationships: []
+      }
+      recipe_macros_mv2: {
+        Row: {
+          calories_kcal: number | null
+          carbs_g: number | null
+          fats_g: number | null
+          fibers_g: number | null
+          proteins_g: number | null
+          recipe_id: string | null
+        }
+        Relationships: []
+      }
       recipe_macros_v: {
         Row: {
           calories_kcal: number | null
@@ -2791,6 +2917,10 @@ export type Database = {
       }
       cleanup_expired_tokens: { Args: never; Returns: undefined }
       cleanup_old_checkout_sessions: { Args: never; Returns: undefined }
+      compute_recipe_macros: {
+        Args: { p_recipe_id: string }
+        Returns: undefined
+      }
       deduct_week_regeneration_credits: {
         Args: { p_month: string; p_user_id: string }
         Returns: Json
@@ -2887,6 +3017,17 @@ export type Database = {
           total_proteins: number
         }[]
       }
+      get_recipe_macros_page: {
+        Args: { p_last_recipe_id?: string; p_limit?: number }
+        Returns: {
+          calories_kcal: number
+          carbs_g: number
+          fats_g: number
+          fibers_g: number
+          proteins_g: number
+          recipe_id: string
+        }[]
+      }
       get_shopping_list_from_menu: {
         Args: {
           p_exclude?: string[]
@@ -2964,6 +3105,7 @@ export type Database = {
         Returns: boolean
       }
       household_portion_factor: { Args: { p_people: Json }; Returns: number }
+      is_admin: { Args: never; Returns: boolean }
       is_onboarding_complete: { Args: { p_user_id: string }; Returns: boolean }
       normalize_fraction: { Args: { p_text: string }; Returns: number }
       normalize_ingredient_line: {
@@ -2985,6 +3127,10 @@ export type Database = {
         }[]
       }
       parse_quantity_text: { Args: { raw_text: string }; Returns: number }
+      process_recipe_macros_queue: {
+        Args: { p_limit?: number }
+        Returns: number
+      }
       refresh_one_recipe:
         | {
             Args: { p_recipe_id: number }
@@ -3000,6 +3146,7 @@ export type Database = {
           }
       refresh_recipe_macros: { Args: never; Returns: undefined }
       refresh_recipe_macros_from_ciqual: { Args: never; Returns: undefined }
+      refresh_recipe_macros_mv2: { Args: never; Returns: undefined }
       refresh_some_recipes: { Args: { batch_size?: number }; Returns: number }
       rpc_admin_conversion_funnel: {
         Args: { p_date_from?: string; p_date_to?: string }
