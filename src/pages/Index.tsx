@@ -11,7 +11,7 @@ import { ExampleWeek } from '@/components/landing/ExampleWeek';
 import { Pricing } from '@/components/landing/Pricing';
 import { EconomicComparison } from '@/components/landing/EconomicComparison';
 import { FAQ } from '@/components/landing/FAQ';
-import { LeadMagnet } from '@/components/landing/LeadMagnet';
+import { ProfileQuiz } from '@/components/landing/ProfileQuiz';
 import { FinalCTA } from '@/components/landing/FinalCTA';
 import { Footer } from '@/components/landing/Footer';
 import { MobileStickyCTA } from '@/components/landing/MobileStickyCTA';
@@ -42,6 +42,7 @@ const Index = () => {
       <Header onCtaClick={handleCtaClick} />
       <Hero onCtaClick={handleCtaClick} onExampleClick={handleExampleClick} />
       <Benefits />
+      <ProfileQuiz />
       <HowItWorks />
       <ValueStack onCtaClick={handleCtaClick} />
       <Guarantee />
@@ -51,7 +52,6 @@ const Index = () => {
       <Pricing onCtaClick={handleCtaClick} />
       <EconomicComparison />
       <FAQ />
-      <LeadMagnet />
       <FinalCTA onCtaClick={handleCtaClick} />
       <Footer />
       <MobileStickyCTA onCtaClick={handleCtaClick} />

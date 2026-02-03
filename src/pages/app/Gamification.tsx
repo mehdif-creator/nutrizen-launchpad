@@ -3,9 +3,10 @@ import { AppFooter } from '@/components/app/AppFooter';
 import { WalletCard } from '@/components/gamification/WalletCard';
 import { StreakWidget } from '@/components/gamification/StreakWidget';
 import { BadgesCarousel } from '@/components/gamification/BadgesCarousel';
-import { WeeklyChallengeCard } from '@/components/gamification/WeeklyChallengeCard';
 import { ActivityFeed } from '@/components/gamification/ActivityFeed';
 import { ReferralWidget } from '@/components/gamification/ReferralWidget';
+import { ScoreZenWidget } from '@/components/gamification/ScoreZenWidget';
+import { WeeklyChallenges } from '@/components/gamification/WeeklyChallenges';
 import { useDashboard, useAwardAppOpen } from '@/hooks/useGamificationDashboard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect } from 'react';
@@ -23,7 +24,6 @@ export default function Gamification() {
   }, []);
 
   const handleBuyCredits = () => {
-    // Navigate to pricing or payment page
     navigate('/pricing');
   };
 
@@ -57,6 +57,17 @@ export default function Gamification() {
     );
   }
 
+  // Calculate Score Zen from dashboard data
+  const scoreZen = Math.min(100, Math.max(0, 
+    50 + 
+    (dashboard.streak.current_streak_days * 5) + 
+    (dashboard.badges.length * 3) +
+    Math.floor(dashboard.wallet.points_total / 50)
+  ));
+
+  // Get current week number
+  const weekNumber = Math.ceil((new Date().getTime() - new Date(new Date().getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
+
   return (
     <div className="min-h-screen flex flex-col">
       <AppHeader />
@@ -77,6 +88,27 @@ export default function Gamification() {
             </p>
           </div>
 
+          {/* Score Zen - NEW PROMINENT POSITION */}
+          <ScoreZenWidget
+            score={scoreZen}
+            weeklyChange={dashboard.streak.current_streak_days > 0 ? 12 : -5}
+            level={Math.min(4, Math.floor(dashboard.wallet.points_total / 250) + 1)}
+            levelName={
+              dashboard.wallet.points_total < 250 ? 'Apprenti Zen' :
+              dashboard.wallet.points_total < 500 ? 'Cuisinier Serein' :
+              dashboard.wallet.points_total < 1000 ? 'Maître Zen' : 'Zen Master'
+            }
+            nextLevelAt={
+              dashboard.wallet.points_total < 250 ? 250 :
+              dashboard.wallet.points_total < 500 ? 500 :
+              dashboard.wallet.points_total < 1000 ? 1000 : 2000
+            }
+            streak={dashboard.streak.current_streak_days}
+          />
+
+          {/* Weekly Challenges - NEW */}
+          <WeeklyChallenges weekNumber={weekNumber} />
+
           {/* Wallet */}
           <WalletCard
             points={dashboard.wallet.points_total}
@@ -93,9 +125,6 @@ export default function Gamification() {
 
           {/* Badges */}
           <BadgesCarousel earnedBadges={dashboard.badges} />
-
-          {/* Weekly Challenge */}
-          <WeeklyChallengeCard />
 
           {/* Two Column Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -30,6 +30,7 @@ import Gamification from "./pages/app/Gamification";
 import Onboarding from "./pages/app/Onboarding";
 import ShoppingList from "./pages/app/ShoppingList";
 import SupabaseDebug from "./pages/app/SupabaseDebug";
+import FamillePlus from "./pages/app/FamillePlus";
 
 // Admin
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -112,6 +113,8 @@ const App = () => {
           <Route path="/app/recipes/:id" element={<ProtectedRoute><RecipeDetail /></ProtectedRoute>} />
           <Route path="/app/shopping-list" element={<ProtectedRoute><ShoppingList /></ProtectedRoute>} />
           <Route path="/app/debug" element={<ProtectedRoute><SupabaseDebug /></ProtectedRoute>} />
+          <Route path="/app/famille-plus" element={<ProtectedRoute><FamillePlus /></ProtectedRoute>} />
+          <Route path="/pricing" element={<FamillePlus />} />
             
             {/* Admin (Protected + Admin Only) */}
         <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
