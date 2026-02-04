@@ -9,6 +9,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { CookieConsent } from '@/components/common/CookieConsent';
 
 interface AppProvidersProps {
   children: React.ReactNode;
@@ -21,6 +22,7 @@ interface AppProvidersProps {
  * - Router for navigation
  * - Auth context for user authentication
  * - UI providers (tooltips, toasts)
+ * - Cookie consent banner (GDPR/RGPD compliance)
  */
 export function AppProviders({ children }: AppProvidersProps) {
   return (
@@ -34,6 +36,7 @@ export function AppProviders({ children }: AppProvidersProps) {
                   {children}
                   <ShadcnToaster />
                   <Toaster />
+                  <CookieConsent />
                   {/* Only show React Query devtools in development */}
                   {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
                 </TooltipProvider>
