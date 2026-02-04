@@ -9,10 +9,10 @@ import { MobileSelect } from '@/components/ui/mobile-select';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { Check, ChevronRight, Users, Target, Utensils, AlertCircle } from 'lucide-react';
-import { completeOnboarding, updateOnboardingStatus } from '@/hooks/useOnboardingGuard';
 import { MenuGenerationProgress } from '@/components/app/MenuGenerationProgress';
 import { useAutoMenuGeneration } from '@/hooks/useAutoMenuGeneration';
 import { queryClient } from '@/lib/queryClient';
+import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 
 const TOTAL_STEPS = 4;
 
@@ -33,10 +33,16 @@ export default function Onboarding() {
   const { toast } = useToast();
   const menuGeneration = useAutoMenuGeneration();
   
+  // Use centralized onboarding status
+  const { 
+    loading: onboardingLoading, 
+    completed: isOnboardingComplete, 
+    completeOnboarding 
+  } = useOnboardingStatus(user?.id);
+  
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [isCompleted, setIsCompleted] = useState(false);
   const [showMenuGeneration, setShowMenuGeneration] = useState(false);
   
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -47,37 +53,21 @@ export default function Onboarding() {
     portion_strategy: 'household',
   });
 
-  // Check if already completed
+  // Redirect if already completed
+  useEffect(() => {
+    if (!onboardingLoading && isOnboardingComplete) {
+      console.log('[Onboarding] Already complete, redirecting to dashboard');
+      navigate('/app/dashboard', { replace: true });
+    }
+  }, [onboardingLoading, isOnboardingComplete, navigate]);
+
+  // Fetch existing profile data
   useEffect(() => {
     if (!user?.id) return;
 
-    const checkStatus = async () => {
+    const fetchProfileData = async () => {
       try {
-        const { data, error } = await supabase
-          .from('user_profiles')
-          .select('onboarding_status, onboarding_step, required_fields_ok, onboarding_completed')
-          .eq('id', user.id)
-          .single();
-
-        if (error) {
-          console.error('[Onboarding] Error:', error);
-          setLoading(false);
-          return;
-        }
-
-        // Check if already completed
-        if (data?.onboarding_status === 'completed' || data?.onboarding_completed === true) {
-          if (data?.required_fields_ok) {
-            setIsCompleted(true);
-          } else {
-            // Need to redo onboarding
-            setCurrentStep(data?.onboarding_step || 1);
-          }
-        } else if (data?.onboarding_step) {
-          setCurrentStep(Math.max(1, data.onboarding_step));
-        }
-
-        // Also fetch existing preferences
+        // Fetch existing preferences
         const { data: prefs } = await supabase
           .from('preferences')
           .select('objectif_principal, type_alimentation, allergies')
@@ -96,7 +86,7 @@ export default function Onboarding() {
         // Fetch profile data
         const { data: profile } = await supabase
           .from('user_profiles')
-          .select('household_adults, household_children, kid_portion_ratio, meals_per_day, portion_strategy')
+          .select('household_adults, household_children, kid_portion_ratio, meals_per_day, portion_strategy, onboarding_step')
           .eq('id', user.id)
           .single();
 
@@ -109,16 +99,21 @@ export default function Onboarding() {
             meals_per_day: profile.meals_per_day || 2,
             portion_strategy: profile.portion_strategy || 'household',
           }));
+          
+          // Resume from saved step
+          if (profile.onboarding_step && profile.onboarding_step > 0) {
+            setCurrentStep(Math.min(profile.onboarding_step, TOTAL_STEPS));
+          }
         }
 
         setLoading(false);
       } catch (error) {
-        console.error('[Onboarding] Exception:', error);
+        console.error('[Onboarding] Error loading profile:', error);
         setLoading(false);
       }
     };
 
-    checkStatus();
+    fetchProfileData();
   }, [user?.id]);
 
   const saveStep = async (step: number) => {
@@ -136,7 +131,7 @@ export default function Onboarding() {
           meals_per_day: profileData.meals_per_day,
           portion_strategy: profileData.portion_strategy,
           onboarding_step: step,
-          onboarding_status: step === 1 ? 'in_progress' : undefined,
+          onboarding_status: 'in_progress',
         })
         .eq('id', user.id);
 
@@ -153,11 +148,6 @@ export default function Onboarding() {
         }, { onConflict: 'user_id' });
 
       if (prefError) throw prefError;
-
-      // Mark status as in_progress after first save
-      if (step === 1) {
-        await updateOnboardingStatus(user.id, { status: 'in_progress', step: 1 });
-      }
     } catch (error) {
       console.error('[Onboarding] Save error:', error);
       toast({
@@ -176,7 +166,6 @@ export default function Onboarding() {
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Complete onboarding
       await handleCompleteOnboarding();
     }
   };
@@ -186,8 +175,8 @@ export default function Onboarding() {
 
     setSaving(true);
     try {
-      // Use the new completeOnboarding function which sets server truth
-      const success = await completeOnboarding(user.id);
+      // Use centralized completeOnboarding function
+      const success = await completeOnboarding();
       
       if (!success) {
         throw new Error('Failed to complete onboarding');
@@ -253,8 +242,17 @@ export default function Onboarding() {
     );
   }
 
-  // If already completed, show message
-  if (isCompleted) {
+  // Show loading while checking onboarding status
+  if (onboardingLoading || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Chargement...</div>
+      </div>
+    );
+  }
+
+  // If already completed, show message (guard will redirect)
+  if (isOnboardingComplete) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/20 p-4">
         <Card className="max-w-md w-full">
@@ -276,14 +274,6 @@ export default function Onboarding() {
             </Button>
           </CardContent>
         </Card>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Chargement...</div>
       </div>
     );
   }
@@ -501,16 +491,16 @@ function StepDiet({ data, onChange }: { data: ProfileData; onChange: (d: Profile
         </div>
         <div>
           <h2 className="font-semibold text-lg">Ton régime alimentaire</h2>
-          <p className="text-sm text-muted-foreground">Pour filtrer les recettes</p>
+          <p className="text-sm text-muted-foreground">Pour adapter les recettes</p>
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="grid sm:grid-cols-2 gap-3">
         {diets.map((diet) => (
           <button
             key={diet.value}
             onClick={() => onChange({ ...data, type_alimentation: diet.value })}
-            className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
+            className={`p-4 rounded-xl border-2 text-left transition-all ${
               data.type_alimentation === diet.value
                 ? 'border-primary bg-primary/5'
                 : 'border-border hover:border-primary/50'
@@ -525,53 +515,80 @@ function StepDiet({ data, onChange }: { data: ProfileData; onChange: (d: Profile
   );
 }
 
-// Step 4: Confirm
+// Step 4: Confirmation
 function StepConfirm({ data }: { data: ProfileData }) {
-  const effectivePortions = data.household_adults + (data.household_children * data.kid_portion_ratio);
+  const totalPortions = data.household_adults + (data.household_children * data.kid_portion_ratio);
+
+  const goalLabels: Record<string, string> = {
+    equilibre: 'Manger équilibré',
+    perte_poids: 'Perdre du poids',
+    gain_muscle: 'Prendre du muscle',
+    temps: 'Gagner du temps',
+    budget: 'Réduire mon budget',
+    decouverte: 'Découvrir de nouvelles recettes',
+  };
+
+  const dietLabels: Record<string, string> = {
+    omnivore: 'Omnivore',
+    flexitarien: 'Flexitarien',
+    vegetarien: 'Végétarien',
+    vegan: 'Vegan',
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-4">
-        <div className="p-2 bg-green-500/10 rounded-lg">
-          <Check className="h-5 w-5 text-green-600" />
+        <div className="p-2 bg-primary/10 rounded-lg">
+          <Check className="h-5 w-5 text-primary" />
         </div>
         <div>
           <h2 className="font-semibold text-lg">Récapitulatif</h2>
-          <p className="text-sm text-muted-foreground">Vérifie tes choix avant de terminer</p>
+          <p className="text-sm text-muted-foreground">Confirme tes informations</p>
         </div>
       </div>
 
-      <div className="space-y-4 bg-muted/30 rounded-xl p-4">
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Foyer</span>
-          <span className="font-medium">
+      <div className="space-y-4">
+        <div className="p-4 rounded-lg bg-muted/50">
+          <div className="text-sm text-muted-foreground mb-1">Foyer</div>
+          <div className="font-medium">
             {data.household_adults} adulte{data.household_adults > 1 ? 's' : ''}
-            {data.household_children > 0 && `, ${data.household_children} enfant${data.household_children > 1 ? 's' : ''}`}
-          </span>
+            {data.household_children > 0 && ` + ${data.household_children} enfant${data.household_children > 1 ? 's' : ''}`}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            ~{totalPortions.toFixed(1)} portions par repas
+          </div>
         </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Portions effectives</span>
-          <span className="font-medium">{effectivePortions.toFixed(1)} parts</span>
+
+        <div className="p-4 rounded-lg bg-muted/50">
+          <div className="text-sm text-muted-foreground mb-1">Repas par jour</div>
+          <div className="font-medium">{data.meals_per_day} repas</div>
         </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Repas/jour</span>
-          <span className="font-medium">{data.meals_per_day}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Objectif</span>
-          <span className="font-medium capitalize">{data.objectif_principal?.replace('_', ' ') || 'Non défini'}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Régime</span>
-          <span className="font-medium capitalize">{data.type_alimentation || 'Non défini'}</span>
-        </div>
+
+        {data.objectif_principal && (
+          <div className="p-4 rounded-lg bg-muted/50">
+            <div className="text-sm text-muted-foreground mb-1">Objectif</div>
+            <div className="font-medium">{goalLabels[data.objectif_principal] || data.objectif_principal}</div>
+          </div>
+        )}
+
+        {data.type_alimentation && (
+          <div className="p-4 rounded-lg bg-muted/50">
+            <div className="text-sm text-muted-foreground mb-1">Régime</div>
+            <div className="font-medium">{dietLabels[data.type_alimentation] || data.type_alimentation}</div>
+          </div>
+        )}
       </div>
 
-      <div className="flex items-start gap-2 p-3 bg-primary/5 rounded-lg text-sm">
-        <AlertCircle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-        <span className="text-muted-foreground">
-          Tu pourras modifier ces informations à tout moment dans les paramètres.
-        </span>
+      <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-medium text-primary">Prêt à démarrer !</p>
+            <p className="text-muted-foreground mt-1">
+              Clique sur "Terminer" pour générer ta première semaine de menus personnalisés.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
