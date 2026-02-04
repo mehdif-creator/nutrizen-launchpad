@@ -1428,6 +1428,7 @@ export type Database = {
         Row: {
           ai_keywords: string[] | null
           allergens: string[] | null
+          allowed_meals: string[] | null
           appliances: string[] | null
           badges: string[] | null
           base_servings: number
@@ -1481,6 +1482,7 @@ export type Database = {
         Insert: {
           ai_keywords?: string[] | null
           allergens?: string[] | null
+          allowed_meals?: string[] | null
           appliances?: string[] | null
           badges?: string[] | null
           base_servings?: number
@@ -1534,6 +1536,7 @@ export type Database = {
         Update: {
           ai_keywords?: string[] | null
           allergens?: string[] | null
+          allowed_meals?: string[] | null
           appliances?: string[] | null
           badges?: string[] | null
           base_servings?: number
