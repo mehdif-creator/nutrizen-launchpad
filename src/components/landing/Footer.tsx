@@ -1,5 +1,6 @@
-import { Shield, Lock, CreditCard } from 'lucide-react';
+import { Shield, Lock, CreditCard, Cookie } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { openCookieSettings } from '@/components/common/CookieConsent';
 
 export const Footer = () => {
   const { t } = useLanguage();
@@ -81,7 +82,7 @@ export const Footer = () => {
 
         {/* Payment & Security */}
         <div className="flex flex-wrap items-center justify-between gap-4 pt-8 border-t">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Shield className="w-4 h-4" />
               <span>RGPD</span>
@@ -94,6 +95,14 @@ export const Footer = () => {
               <CreditCard className="w-4 h-4" />
               <span>Stripe Secure</span>
             </div>
+            <button
+              onClick={openCookieSettings}
+              className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              aria-label="Paramètres des cookies"
+            >
+              <Cookie className="w-4 h-4" />
+              <span>Paramètres cookies</span>
+            </button>
           </div>
           <p className="text-xs text-muted-foreground">
             {t('footer.copyright')}
