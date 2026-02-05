@@ -1,168 +1,168 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-
-export interface OnboardingStep {
-  step: number;
-  title: string;
-  subtitle: string;
-  primaryCTA: string;
-  secondaryCTA: string;
-  primaryAction: () => void;
-  secondaryAction: () => void;
-  emoji: string;
-}
-
-interface OnboardingState {
-  currentStep: number;
-  completed: boolean;
-  loading: boolean;
-}
-
-export const useOnboarding = (userId: string | undefined) => {
-  const [state, setState] = useState<OnboardingState>({
-    currentStep: 0,
-    completed: false,
-    loading: true,
-  });
-  const [hasFetched, setHasFetched] = useState(false);
-  const { toast } = useToast();
-
-  // Fetch onboarding state from Supabase - only once
-  useEffect(() => {
-    if (!userId || hasFetched) {
-      if (!userId) {
-        setState({ currentStep: 0, completed: false, loading: false });
-      }
-      return;
-    }
-
-    const fetchOnboardingState = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('user_profiles')
-          .select('onboarding_step, onboarding_completed')
-          .eq('id', userId)
-          .single();
-
-        if (error) throw error;
-
-        const isCompleted = data?.onboarding_completed === true || data?.onboarding_step >= 4;
-        
-        setState({
-          currentStep: data?.onboarding_step || 0,
-          completed: isCompleted,
-          loading: false,
-        });
-        setHasFetched(true);
-      } catch (error) {
-        console.error('Error fetching onboarding state:', error);
-        setState({ currentStep: 0, completed: false, loading: false });
-        setHasFetched(true);
-      }
-    };
-
-    fetchOnboardingState();
-  }, [userId, hasFetched]);
-
-  // Update onboarding step in Supabase
-  const updateStep = async (step: number) => {
-    if (!userId) return;
-
-    try {
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({ onboarding_step: step })
-        .eq('id', userId);
-
-      if (error) throw error;
-
-      setState(prev => ({ ...prev, currentStep: step }));
-    } catch (error) {
-      console.error('Error updating onboarding step:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Impossible de sauvegarder ta progression.',
-      });
-    }
-  };
-
-  // Complete onboarding
-  const completeOnboarding = async () => {
-    if (!userId) return;
-
-    try {
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({ 
-          onboarding_step: 4,
-          onboarding_completed: true 
-        })
-        .eq('id', userId);
-
-      if (error) throw error;
-
-      setState({ currentStep: 4, completed: true, loading: false });
-      
-      toast({
-        title: '🎉 Bienvenue dans NutriZen !',
-        description: 'Tu es prêt(e) à profiter de tous les outils.',
-      });
-    } catch (error) {
-      console.error('Error completing onboarding:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Impossible de finaliser l\'onboarding.',
-      });
-    }
-  };
-
-  // Go to next step
-  const nextStep = async () => {
-    const next = state.currentStep + 1;
-    if (next >= 4) {
-      await completeOnboarding();
-    } else {
-      await updateStep(next);
-    }
-  };
-
-  // Skip current step (same as next)
-  const skipStep = async () => {
-    await nextStep();
-  };
-
-  // Reset onboarding (for testing)
-  const resetOnboarding = async () => {
-    if (!userId) return;
-
-    try {
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({ 
-          onboarding_step: 0,
-          onboarding_completed: false 
-        })
-        .eq('id', userId);
-
-      if (error) throw error;
-
-      setState({ currentStep: 0, completed: false, loading: false });
-    } catch (error) {
-      console.error('Error resetting onboarding:', error);
-    }
-  };
-
-  return {
-    currentStep: state.currentStep,
-    completed: state.completed,
-    loading: state.loading,
-    shouldShow: !state.loading && !state.completed && state.currentStep < 4,
-    nextStep,
-    skipStep,
-    completeOnboarding,
-    resetOnboarding,
-  };
-};
+ import { useState, useEffect, useCallback } from 'react';
+ import { supabase } from '@/integrations/supabase/client';
+ import { useToast } from '@/hooks/use-toast';
+ import { 
+   getOnboardingStatus, 
+   markOnboardingComplete,
+   clearOnboardingCache 
+ } from '@/lib/onboarding/status';
+ 
+ export interface OnboardingStep {
+   step: number;
+   title: string;
+   subtitle: string;
+   primaryCTA: string;
+   secondaryCTA: string;
+   primaryAction: () => void;
+   secondaryAction: () => void;
+   emoji: string;
+ }
+ 
+ interface OnboardingState {
+   currentStep: number;
+   completed: boolean;
+   loading: boolean;
+ }
+ 
+ /**
+  * Hook for OnboardingCoach component
+  * Uses centralized onboarding status
+  */
+ export const useOnboarding = (userId: string | undefined) => {
+   const [state, setState] = useState<OnboardingState>({
+     currentStep: 0,
+     completed: true, // Default to completed to prevent flash
+     loading: true,
+   });
+   const { toast } = useToast();
+ 
+   // Fetch onboarding state using centralized helper
+   useEffect(() => {
+     if (!userId) {
+       setState({ currentStep: 0, completed: true, loading: false });
+       return;
+     }
+ 
+     let mounted = true;
+ 
+     const fetchState = async () => {
+       const status = await getOnboardingStatus(userId);
+       
+       if (!mounted) return;
+ 
+       setState({
+         currentStep: status.step,
+         completed: status.state === 'onboarded',
+         loading: false,
+       });
+     };
+ 
+     fetchState();
+ 
+     return () => {
+       mounted = false;
+     };
+   }, [userId]);
+ 
+   // Update onboarding step in Supabase
+   const updateStep = useCallback(async (step: number) => {
+     if (!userId) return;
+ 
+     try {
+       const { error } = await supabase
+         .from('user_profiles')
+         .update({ onboarding_step: step })
+         .eq('id', userId);
+ 
+       if (error) throw error;
+ 
+       clearOnboardingCache(userId);
+       setState(prev => ({ ...prev, currentStep: step }));
+     } catch (error) {
+       console.error('Error updating onboarding step:', error);
+       toast({
+         variant: 'destructive',
+         title: 'Erreur',
+         description: 'Impossible de sauvegarder ta progression.',
+       });
+     }
+   }, [userId, toast]);
+ 
+   // Complete onboarding using centralized function
+   const completeOnboarding = useCallback(async () => {
+     if (!userId) return;
+ 
+     try {
+       const success = await markOnboardingComplete(userId);
+       
+       if (!success) {
+         throw new Error('Failed to complete onboarding');
+       }
+ 
+       setState({ currentStep: 4, completed: true, loading: false });
+       
+       toast({
+         title: '🎉 Bienvenue dans NutriZen !',
+         description: 'Tu es prêt(e) à profiter de tous les outils.',
+       });
+     } catch (error) {
+       console.error('Error completing onboarding:', error);
+       toast({
+         variant: 'destructive',
+         title: 'Erreur',
+         description: 'Impossible de finaliser l\'onboarding.',
+       });
+     }
+   }, [userId, toast]);
+ 
+   // Go to next step
+   const nextStep = useCallback(async () => {
+     const next = state.currentStep + 1;
+     if (next >= 4) {
+       await completeOnboarding();
+     } else {
+       await updateStep(next);
+     }
+   }, [state.currentStep, completeOnboarding, updateStep]);
+ 
+   // Skip current step (same as next)
+   const skipStep = useCallback(async () => {
+     await nextStep();
+   }, [nextStep]);
+ 
+   // Reset onboarding (for testing)
+   const resetOnboarding = useCallback(async () => {
+     if (!userId) return;
+ 
+     try {
+       const { error } = await supabase
+         .from('user_profiles')
+         .update({ 
+           onboarding_step: 0,
+           onboarding_completed: false,
+           onboarding_completed_at: null,
+           onboarding_status: 'not_started',
+         })
+         .eq('id', userId);
+ 
+       if (error) throw error;
+ 
+       clearOnboardingCache(userId);
+       setState({ currentStep: 0, completed: false, loading: false });
+     } catch (error) {
+       console.error('Error resetting onboarding:', error);
+     }
+   }, [userId]);
+ 
+   return {
+     currentStep: state.currentStep,
+     completed: state.completed,
+     loading: state.loading,
+     // Only show if not loading AND not completed AND step < 4
+     shouldShow: !state.loading && !state.completed && state.currentStep < 4,
+     nextStep,
+     skipStep,
+     completeOnboarding,
+     resetOnboarding,
+   };
+ };

@@ -99,7 +99,7 @@ const App = () => {
             {/* App (Protected) */}
           <Route path="/app" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/app/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/app/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+           <Route path="/app/onboarding" element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />
           <Route path="/app/meal-plan" element={<ProtectedRoute><MealPlan /></ProtectedRoute>} />
           <Route path="/app/menu-history" element={<ProtectedRoute><MenuHistory /></ProtectedRoute>} />
           <Route path="/app/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
