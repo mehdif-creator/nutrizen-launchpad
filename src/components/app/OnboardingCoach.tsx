@@ -86,14 +86,23 @@ const ONBOARDING_STEPS: StepConfig[] = [
   },
 ];
 
+ /**
+  * OnboardingCoach - Post-onboarding tips modal
+  * Only shows AFTER the main onboarding is completed (for returning users)
+  * This is separate from the main /app/onboarding flow
+  */
 export const OnboardingCoach = ({ userId }: OnboardingCoachProps) => {
   const navigate = useNavigate();
-  const { currentStep, shouldShow, nextStep, skipStep } = useOnboarding(userId);
+   const { currentStep, shouldShow, nextStep, skipStep, loading } = useOnboarding(userId);
   const [isOpen, setIsOpen] = useState(false);
 
   // Show modal when onboarding should be displayed
   useEffect(() => {
-    if (shouldShow && currentStep >= 0 && currentStep < 4) {
+     // Don't show while loading
+     if (loading) return;
+     
+     // Show if shouldShow is true and we have a valid step
+     if (shouldShow && currentStep >= 0 && currentStep < 4) {
       // Small delay to let the page render first
       const timer = setTimeout(() => setIsOpen(true), 500);
       return () => clearTimeout(timer);
@@ -101,12 +110,13 @@ export const OnboardingCoach = ({ userId }: OnboardingCoachProps) => {
       // Close modal when onboarding is completed or shouldn't show
       setIsOpen(false);
     }
-  }, [shouldShow, currentStep]);
+   }, [shouldShow, currentStep, loading]);
 
   // Get current step configuration
   const stepConfig = ONBOARDING_STEPS[currentStep];
 
-  if (!shouldShow || !stepConfig) {
+   // Don't render anything if loading, shouldn't show, or no step config
+   if (loading || !shouldShow || !stepConfig) {
     return null;
   }
 

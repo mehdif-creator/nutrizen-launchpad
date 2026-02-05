@@ -9,7 +9,7 @@ import { MobileSelect } from '@/components/ui/mobile-select';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { Check, ChevronRight, Users, Target, Utensils, AlertCircle } from 'lucide-react';
-import { completeOnboarding, updateOnboardingStatus } from '@/hooks/useOnboardingGuard';
+ import { completeOnboarding, updateOnboardingStatus, useOnboardingPageGuard } from '@/hooks/useOnboardingGuard';
 import { MenuGenerationProgress } from '@/components/app/MenuGenerationProgress';
 import { useAutoMenuGeneration } from '@/hooks/useAutoMenuGeneration';
 import { queryClient } from '@/lib/queryClient';
@@ -32,11 +32,13 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const menuGeneration = useAutoMenuGeneration();
+   
+   // Use the page guard - redirects to dashboard if already completed
+   const { state: onboardingState } = useOnboardingPageGuard(user?.id);
   
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [isCompleted, setIsCompleted] = useState(false);
   const [showMenuGeneration, setShowMenuGeneration] = useState(false);
   
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -47,33 +49,27 @@ export default function Onboarding() {
     portion_strategy: 'household',
   });
 
-  // Check if already completed
+   // Fetch profile data for the form (not status check - that's handled by guard)
   useEffect(() => {
     if (!user?.id) return;
+     if (onboardingState === 'onboarded') return; // Guard will redirect
 
     const checkStatus = async () => {
       try {
         const { data, error } = await supabase
           .from('user_profiles')
-          .select('onboarding_status, onboarding_step, required_fields_ok, onboarding_completed')
+           .select('onboarding_step, required_fields_ok')
           .eq('id', user.id)
-          .single();
+           .maybeSingle();
 
         if (error) {
-          console.error('[Onboarding] Error:', error);
+           console.error('[Onboarding] Error fetching profile:', error);
           setLoading(false);
           return;
         }
 
-        // Check if already completed
-        if (data?.onboarding_status === 'completed' || data?.onboarding_completed === true) {
-          if (data?.required_fields_ok) {
-            setIsCompleted(true);
-          } else {
-            // Need to redo onboarding
-            setCurrentStep(data?.onboarding_step || 1);
-          }
-        } else if (data?.onboarding_step) {
+         // Resume from saved step if exists
+         if (data?.onboarding_step && data.onboarding_step >= 1) {
           setCurrentStep(Math.max(1, data.onboarding_step));
         }
 
@@ -113,13 +109,13 @@ export default function Onboarding() {
 
         setLoading(false);
       } catch (error) {
-        console.error('[Onboarding] Exception:', error);
+         console.error('[Onboarding] Error:', error);
         setLoading(false);
       }
     };
 
     checkStatus();
-  }, [user?.id]);
+   }, [user?.id, onboardingState]);
 
   const saveStep = async (step: number) => {
     if (!user?.id) return;
@@ -253,8 +249,8 @@ export default function Onboarding() {
     );
   }
 
-  // If already completed, show message
-  if (isCompleted) {
+   // If guard says onboarded, show redirect message briefly
+   if (onboardingState === 'onboarded') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/20 p-4">
         <Card className="max-w-md w-full">
@@ -280,7 +276,8 @@ export default function Onboarding() {
     );
   }
 
-  if (loading) {
+   // Show loading while guard is checking or data is loading
+   if (loading || onboardingState === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">Chargement...</div>
