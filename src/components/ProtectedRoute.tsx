@@ -1,22 +1,14 @@
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
-import { OnboardingGuard } from '@/components/OnboardingGuard';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
-  /** Skip onboarding check (for onboarding page itself) */
-  skipOnboarding?: boolean;
 }
 
-export const ProtectedRoute = ({ 
-  children, 
-  requireAdmin = false,
-  skipOnboarding = false,
-}: ProtectedRouteProps) => {
+export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
   const { user, loading, isAdmin } = useAuth();
-  const location = useLocation();
 
   if (loading) {
     return (
@@ -31,7 +23,7 @@ export const ProtectedRoute = ({
   }
 
   // Redirect admin to admin dashboard if they try to access /app
-  if (!requireAdmin && isAdmin && location.pathname === '/app') {
+  if (!requireAdmin && isAdmin && window.location.pathname === '/app') {
     return <Navigate to="/admin" replace />;
   }
 
@@ -39,16 +31,5 @@ export const ProtectedRoute = ({
     return <Navigate to="/app" replace />;
   }
 
-  // Admin routes skip onboarding check
-  if (requireAdmin) {
-    return <>{children}</>;
-  }
-
-  // Onboarding page itself skips the guard
-  if (skipOnboarding || location.pathname.startsWith('/app/onboarding')) {
-    return <>{children}</>;
-  }
-
-  // Wrap protected content in onboarding guard
-  return <OnboardingGuard>{children}</OnboardingGuard>;
+  return <>{children}</>;
 };

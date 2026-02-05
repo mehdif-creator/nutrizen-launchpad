@@ -10,8 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
-import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
+import { useOnboarding } from '@/hooks/useOnboarding';
 
 interface OnboardingCoachProps {
   userId: string | undefined;
@@ -87,115 +86,27 @@ const ONBOARDING_STEPS: StepConfig[] = [
   },
 ];
 
-/**
- * OnboardingCoach - Post-onboarding walkthrough modal
- * 
- * NOTE: This is separate from the main onboarding flow. It shows AFTER
- * onboarding is complete to help users discover features.
- * 
- * Uses onboarding_step from user_profiles to track which coach step the user is on.
- * This is different from onboarding_completed_at which tracks onboarding completion.
- */
 export const OnboardingCoach = ({ userId }: OnboardingCoachProps) => {
   const navigate = useNavigate();
-  const { completed: onboardingComplete, loading: onboardingLoading } = useOnboardingStatus(userId);
-  
-  const [currentStep, setCurrentStep] = useState(0);
-  const [coachCompleted, setCoachCompleted] = useState(false);
+  const { currentStep, shouldShow, nextStep, skipStep } = useOnboarding(userId);
   const [isOpen, setIsOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
 
-  // Fetch coach step from user_profiles
+  // Show modal when onboarding should be displayed
   useEffect(() => {
-    if (!userId || onboardingLoading) return;
-    
-    // Coach only runs AFTER onboarding is complete
-    if (!onboardingComplete) {
-      setLoading(false);
-      return;
-    }
-
-    const fetchCoachStep = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('user_profiles')
-          .select('onboarding_step, onboarding_completed')
-          .eq('id', userId)
-          .single();
-
-        if (error) {
-          console.error('[OnboardingCoach] Error:', error);
-          setLoading(false);
-          return;
-        }
-
-        // Check if coach walkthrough is complete (step >= 4 or onboarding_completed is true)
-        // This uses the legacy fields for coach tracking
-        if (data?.onboarding_step >= 4 || data?.onboarding_completed === true) {
-          setCoachCompleted(true);
-        } else {
-          setCurrentStep(data?.onboarding_step || 0);
-        }
-
-        setLoading(false);
-      } catch (error) {
-        console.error('[OnboardingCoach] Exception:', error);
-        setLoading(false);
-      }
-    };
-
-    fetchCoachStep();
-  }, [userId, onboardingComplete, onboardingLoading]);
-
-  // Show modal when coach should be displayed
-  useEffect(() => {
-    if (!loading && onboardingComplete && !coachCompleted && currentStep >= 0 && currentStep < 4) {
+    if (shouldShow && currentStep >= 0 && currentStep < 4) {
       // Small delay to let the page render first
       const timer = setTimeout(() => setIsOpen(true), 500);
       return () => clearTimeout(timer);
     } else {
+      // Close modal when onboarding is completed or shouldn't show
       setIsOpen(false);
     }
-  }, [loading, onboardingComplete, coachCompleted, currentStep]);
+  }, [shouldShow, currentStep]);
 
   // Get current step configuration
   const stepConfig = ONBOARDING_STEPS[currentStep];
 
-  // Update step in database
-  const updateStep = async (step: number) => {
-    if (!userId) return;
-
-    try {
-      await supabase
-        .from('user_profiles')
-        .update({ onboarding_step: step })
-        .eq('id', userId);
-    } catch (error) {
-      console.error('[OnboardingCoach] Error updating step:', error);
-    }
-  };
-
-  // Complete the coach walkthrough
-  const completeCoach = async () => {
-    if (!userId) return;
-
-    try {
-      await supabase
-        .from('user_profiles')
-        .update({ 
-          onboarding_step: 4,
-          onboarding_completed: true,
-        })
-        .eq('id', userId);
-
-      setCoachCompleted(true);
-    } catch (error) {
-      console.error('[OnboardingCoach] Error completing coach:', error);
-    }
-  };
-
-  // Don't show if not ready
-  if (loading || !onboardingComplete || coachCompleted || !stepConfig) {
+  if (!shouldShow || !stepConfig) {
     return null;
   }
 
@@ -205,25 +116,13 @@ export const OnboardingCoach = ({ userId }: OnboardingCoachProps) => {
     stepConfig.primaryAction(navigate);
     // Wait a bit before moving to next step
     setTimeout(async () => {
-      const nextStep = currentStep + 1;
-      if (nextStep >= 4) {
-        await completeCoach();
-      } else {
-        await updateStep(nextStep);
-        setCurrentStep(nextStep);
-      }
+      await nextStep();
     }, 500);
   };
 
   const handleSecondaryAction = async () => {
     setIsOpen(false);
-    const nextStep = currentStep + 1;
-    if (nextStep >= 4) {
-      await completeCoach();
-    } else {
-      await updateStep(nextStep);
-      setCurrentStep(nextStep);
-    }
+    await skipStep();
   };
 
   return (
