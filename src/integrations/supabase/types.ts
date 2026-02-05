@@ -1870,6 +1870,54 @@ export type Database = {
         }
         Relationships: []
       }
+      social_queue: {
+        Row: {
+          asset_4x5_path: string | null
+          asset_9x16_path: string | null
+          attempts: number
+          created_at: string
+          error: string | null
+          id: string
+          image_path: string
+          locked_at: string | null
+          posted_at: string | null
+          recipe_id: string
+          rendered_at: string | null
+          status: string
+          title: string
+        }
+        Insert: {
+          asset_4x5_path?: string | null
+          asset_9x16_path?: string | null
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          id?: string
+          image_path: string
+          locked_at?: string | null
+          posted_at?: string | null
+          recipe_id: string
+          rendered_at?: string | null
+          status?: string
+          title: string
+        }
+        Update: {
+          asset_4x5_path?: string | null
+          asset_9x16_path?: string | null
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          id?: string
+          image_path?: string
+          locked_at?: string | null
+          posted_at?: string | null
+          recipe_id?: string
+          rendered_at?: string | null
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
       stripe_events: {
         Row: {
           created_at: string
