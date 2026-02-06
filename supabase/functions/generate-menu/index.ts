@@ -499,11 +499,11 @@ serve(async (req) => {
 
     // Insert one row per day into user_weekly_menu_items
     // For now, we generate DINNER only (7 recipes for 7 days)
-    // day_of_week: 0=Monday, 1=Tuesday, ..., 6=Sunday (matching RPC expectations)
+    // day_of_week: 1=Monday, 2=Tuesday, ..., 7=Sunday (matching DB constraint 1-7)
     const menuItems = days.map((day, index) => ({
       weekly_menu_id: menu.menu_id,
       recipe_id: day.recipe_id,
-      day_of_week: index, // 0-6 for Mon-Sun to match get_weekly_recipes_by_day RPC
+      day_of_week: index + 1, // 1-7 for Mon-Sun (DB constraint requires 1-7)
       meal_slot: 'dinner',
       target_servings: day.servings_used,
       scale_factor: day.portion_factor,

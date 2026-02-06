@@ -3,6 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 const RECIPE_IMAGES_BUCKET = 'recipe-images';
 const PLACEHOLDER_IMAGE = '/img/hero-default.png';
 
+// Supabase storage base URL for public bucket
+const STORAGE_BASE_URL = 'https://pghdaozgxkbtsxwydemd.supabase.co/storage/v1/object/public';
+
 // Configuration: set to true if bucket is public, false if private
 // This can be configured based on your Supabase Storage settings
 const IS_BUCKET_PUBLIC = true;
@@ -13,11 +16,35 @@ const SIGNED_URL_DURATION_SECONDS = 3600; // 1 hour
 const CACHE_BUFFER_SECONDS = 300; // Refresh 5 minutes before expiry
 
 /**
+ * Normalize an image path - handles double-prefixes and ensures correct format
+ */
+function normalizeImagePath(imagePath: string): string {
+  // Remove leading slashes
+  let path = imagePath.replace(/^\/+/, '');
+  
+  // Handle double bucket prefix (recipe-images/recipes/... or recipe-images/recipe-images/...)
+  if (path.startsWith('recipe-images/')) {
+    path = path.replace(/^recipe-images\//, '');
+  }
+  
+  return path;
+}
+
+/**
+ * Build a public URL for a given image path
+ */
+function buildPublicUrl(imagePath: string): string {
+  const normalizedPath = normalizeImagePath(imagePath);
+  return `${STORAGE_BASE_URL}/${RECIPE_IMAGES_BUCKET}/${normalizedPath}`;
+}
+
+/**
  * Get a signed URL from cache or generate a new one
  */
 async function getSignedUrl(imagePath: string): Promise<string | null> {
+  const normalizedPath = normalizeImagePath(imagePath);
   const now = Date.now();
-  const cached = signedUrlCache.get(imagePath);
+  const cached = signedUrlCache.get(normalizedPath);
   
   // Return cached URL if still valid (with buffer)
   if (cached && cached.expiresAt > now + CACHE_BUFFER_SECONDS * 1000) {
@@ -28,7 +55,7 @@ async function getSignedUrl(imagePath: string): Promise<string | null> {
   try {
     const { data, error } = await supabase.storage
       .from(RECIPE_IMAGES_BUCKET)
-      .createSignedUrl(imagePath, SIGNED_URL_DURATION_SECONDS);
+      .createSignedUrl(normalizedPath, SIGNED_URL_DURATION_SECONDS);
     
     if (error || !data?.signedUrl) {
       console.warn('Failed to create signed URL:', error?.message);
@@ -36,7 +63,7 @@ async function getSignedUrl(imagePath: string): Promise<string | null> {
     }
     
     // Cache the signed URL
-    signedUrlCache.set(imagePath, {
+    signedUrlCache.set(normalizedPath, {
       url: data.signedUrl,
       expiresAt: now + SIGNED_URL_DURATION_SECONDS * 1000,
     });
@@ -52,11 +79,8 @@ async function getSignedUrl(imagePath: string): Promise<string | null> {
  * Get public URL for an image path
  */
 function getPublicUrl(imagePath: string): string | null {
-  const { data } = supabase.storage
-    .from(RECIPE_IMAGES_BUCKET)
-    .getPublicUrl(imagePath);
-  
-  return data?.publicUrl || null;
+  // Use our own URL builder for consistency and to handle path normalization
+  return buildPublicUrl(imagePath);
 }
 
 /**
