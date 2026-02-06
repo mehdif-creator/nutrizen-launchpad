@@ -1875,10 +1875,15 @@ export type Database = {
           asset_4x5_path: string | null
           asset_9x16_path: string | null
           attempts: number
+          badges: Json | null
+          calories_kcal: number | null
           created_at: string
+          cuisine_type: string | null
           error: string | null
           id: string
-          image_path: string
+          image_path: string | null
+          ingredients: Json | null
+          instructions: Json | null
           locked_at: string | null
           posted_at: string | null
           recipe_id: string
@@ -1890,10 +1895,15 @@ export type Database = {
           asset_4x5_path?: string | null
           asset_9x16_path?: string | null
           attempts?: number
+          badges?: Json | null
+          calories_kcal?: number | null
           created_at?: string
+          cuisine_type?: string | null
           error?: string | null
           id?: string
-          image_path: string
+          image_path?: string | null
+          ingredients?: Json | null
+          instructions?: Json | null
           locked_at?: string | null
           posted_at?: string | null
           recipe_id: string
@@ -1905,10 +1915,15 @@ export type Database = {
           asset_4x5_path?: string | null
           asset_9x16_path?: string | null
           attempts?: number
+          badges?: Json | null
+          calories_kcal?: number | null
           created_at?: string
+          cuisine_type?: string | null
           error?: string | null
           id?: string
-          image_path?: string
+          image_path?: string | null
+          ingredients?: Json | null
+          instructions?: Json | null
           locked_at?: string | null
           posted_at?: string | null
           recipe_id?: string
@@ -3590,6 +3605,7 @@ export type Database = {
           quantity: number
         }[]
       }
+      normalize_storage_path: { Args: { p: string }; Returns: string }
       normalize_str: { Args: { p: string }; Returns: string }
       normalize_unit: { Args: { raw_unit: string }; Returns: string }
       parse_ingredient_line: {
@@ -3605,6 +3621,7 @@ export type Database = {
         Args: { p_limit?: number }
         Returns: number
       }
+      recipe_image_public_url: { Args: { p_path: string }; Returns: string }
       refresh_kpi_events_daily_mv: { Args: never; Returns: undefined }
       refresh_kpi_subscriptions_daily_mv: { Args: never; Returns: undefined }
       refresh_kpi_users_daily_mv: { Args: never; Returns: undefined }
