@@ -988,6 +988,36 @@ export type Database = {
         }
         Relationships: []
       }
+      menu_safety_reports: {
+        Row: {
+          created_at: string
+          detected_violations: string[] | null
+          id: string
+          menu_id: string | null
+          reason: string
+          recipe_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          detected_violations?: string[] | null
+          id?: string
+          menu_id?: string | null
+          reason: string
+          recipe_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          detected_violations?: string[] | null
+          id?: string
+          menu_id?: string | null
+          reason?: string
+          recipe_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payment_events_log: {
         Row: {
           amount_cents: number | null
@@ -1453,6 +1483,7 @@ export type Database = {
           id: string
           image_path: string | null
           image_url: string | null
+          ingredient_keys: string[] | null
           ingredient_keywords: string[] | null
           ingredients: Json | null
           ingredients_text: string | null
@@ -1507,6 +1538,7 @@ export type Database = {
           id?: string
           image_path?: string | null
           image_url?: string | null
+          ingredient_keys?: string[] | null
           ingredient_keywords?: string[] | null
           ingredients?: Json | null
           ingredients_text?: string | null
@@ -1561,6 +1593,7 @@ export type Database = {
           id?: string
           image_path?: string | null
           image_url?: string | null
+          ingredient_keys?: string[] | null
           ingredient_keywords?: string[] | null
           ingredients?: Json | null
           ingredients_text?: string | null
@@ -1810,6 +1843,33 @@ export type Database = {
           referrer_id?: string
           reward_points?: number | null
           status?: string
+        }
+        Relationships: []
+      }
+      restriction_dictionary: {
+        Row: {
+          created_at: string
+          id: number
+          key: string
+          kind: string
+          pattern: string
+          priority: number
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          key: string
+          kind?: string
+          pattern: string
+          priority?: number
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          key?: string
+          kind?: string
+          pattern?: string
+          priority?: number
         }
         Relationships: []
       }
@@ -3595,6 +3655,7 @@ export type Database = {
       household_portion_factor: { Args: { p_people: Json }; Returns: number }
       is_admin: { Args: never; Returns: boolean }
       is_onboarding_complete: { Args: { p_user_id: string }; Returns: boolean }
+      norm_txt: { Args: { input: string }; Returns: string }
       normalize_fraction: { Args: { p_text: string }; Returns: number }
       normalize_granularity: { Args: { _g: string }; Returns: string }
       normalize_ingredient_line: {
@@ -3622,6 +3683,10 @@ export type Database = {
         Returns: number
       }
       recipe_image_public_url: { Args: { p_path: string }; Returns: string }
+      recipe_ingredient_keys: {
+        Args: { ingredients: string }
+        Returns: string[]
+      }
       refresh_kpi_events_daily_mv: { Args: never; Returns: undefined }
       refresh_kpi_subscriptions_daily_mv: { Args: never; Returns: undefined }
       refresh_kpi_users_daily_mv: { Args: never; Returns: undefined }

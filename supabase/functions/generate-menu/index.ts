@@ -168,13 +168,104 @@ serve(async (req) => {
       }
     }
 
-    // Helper function to check if ingredient text contains excluded items
-    const buildExclusionCheck = (excludedIngredients: string[]) => {
-      if (!excludedIngredients || excludedIngredients.length === 0) return null;
-      
-      // Build a query that checks ingredients_text for any excluded ingredient
-      return excludedIngredients.map(ing => `ingredients_text.not.ilike.%${ing}%`).join(',');
+    // ============================================================
+    // SAFETY GATE: Build user restriction keys from dictionary
+    // This ensures synonym matching (porc -> jambon, lardon, bacon, etc.)
+    // ============================================================
+    
+    // Map user-facing allergen names to canonical keys
+    const allergenToKeyMap: Record<string, string> = {
+      "Gluten": "gluten",
+      "Lactose": "dairy",
+      "Fruits à coque": "nuts",
+      "Arachide": "peanuts",
+      "Œufs": "eggs",
+      "Fruits de mer": "shellfish",
+      "Soja": "soy",
+      "Sésame": "sesame",
+      "Poisson": "fish",
+      "Porc": "pork",
+      "Bœuf": "beef",
     };
+
+    // Collect all restriction keys the user wants to avoid
+    let userRestrictionKeys: string[] = [];
+    
+    // 1. From structured allergies array
+    if (preferences?.allergies && Array.isArray(preferences.allergies)) {
+      const allergyKeys = preferences.allergies
+        .map((a: string) => allergenToKeyMap[a] || a.toLowerCase().trim())
+        .filter((k: string) => k.length > 0);
+      userRestrictionKeys.push(...allergyKeys);
+      console.log(`[generate-menu] Allergen keys from preferences.allergies: ${allergyKeys.join(", ")}`);
+    }
+
+    // 2. From aliments_eviter array - need to map to canonical keys via dictionary
+    if (preferences?.aliments_eviter && Array.isArray(preferences.aliments_eviter)) {
+      const avoidItems = preferences.aliments_eviter
+        .map((ing: string) => (ing || '').toLowerCase().trim())
+        .filter((ing: string) => ing.length > 0);
+      
+      if (avoidItems.length > 0) {
+        // Query dictionary to find canonical keys for these items
+        const { data: dictMatches } = await supabaseClient
+          .from('restriction_dictionary')
+          .select('key, pattern')
+          .or(avoidItems.map(item => `pattern.ilike.%${item}%`).join(','));
+        
+        if (dictMatches && dictMatches.length > 0) {
+          const mappedKeys = dictMatches.map((d: any) => d.key);
+          userRestrictionKeys.push(...mappedKeys);
+          console.log(`[generate-menu] Mapped aliments_eviter to keys via dictionary: ${[...new Set(mappedKeys)].join(", ")}`);
+        }
+        
+        // Also add the raw items as keys (in case they're already canonical)
+        for (const item of avoidItems) {
+          if (allergenToKeyMap[item.charAt(0).toUpperCase() + item.slice(1)]) {
+            userRestrictionKeys.push(allergenToKeyMap[item.charAt(0).toUpperCase() + item.slice(1)]);
+          } else {
+            // Check if it's a known key directly (e.g., "pork", "dairy")
+            const { data: directMatch } = await supabaseClient
+              .from('restriction_dictionary')
+              .select('key')
+              .eq('key', item)
+              .limit(1);
+            if (directMatch && directMatch.length > 0) {
+              userRestrictionKeys.push(item);
+            } else {
+              // For "porc" specifically, map to "pork"
+              if (item === 'porc' || item === 'cochon') {
+                userRestrictionKeys.push('pork');
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // 3. From autres_allergies free text
+    if (preferences?.autres_allergies) {
+      const freeText = (preferences.autres_allergies || '').toLowerCase().trim();
+      if (freeText.length > 0) {
+        // Query dictionary to find canonical keys
+        const { data: textMatches } = await supabaseClient
+          .from('restriction_dictionary')
+          .select('key, pattern');
+        
+        if (textMatches) {
+          for (const match of textMatches) {
+            if (freeText.includes(match.pattern.toLowerCase())) {
+              userRestrictionKeys.push(match.key);
+            }
+          }
+        }
+        console.log(`[generate-menu] Extracted keys from autres_allergies text: ${freeText}`);
+      }
+    }
+
+    // Deduplicate restriction keys
+    userRestrictionKeys = [...new Set(userRestrictionKeys)];
+    console.log(`[generate-menu] 🛡️ SAFETY GATE: User restriction keys = [${userRestrictionKeys.join(", ")}]`);
 
     // Helper function to build query with filters
     const buildRecipeQuery = (
@@ -182,45 +273,29 @@ serve(async (req) => {
     ) => {
       let query = supabaseClient
         .from("recipes")
-        .select("id, title, prep_time_min, total_time_min, calories_kcal, proteins_g, carbs_g, fats_g, cuisine_type, meal_type, diet_type, allergens, difficulty_level, appliances, image_url, image_path, ingredients_text")
+        .select("id, title, prep_time_min, total_time_min, calories_kcal, proteins_g, carbs_g, fats_g, cuisine_type, meal_type, diet_type, allergens, difficulty_level, appliances, image_url, image_path, ingredients_text, ingredient_keys")
         .eq("published", true);
 
       console.log(`[generate-menu] Building query for fallback level: F${fallbackLevel}`);
 
-      if (preferences) {
-        // ALWAYS enforce allergens/exclusions at every fallback level
-        if (preferences.allergies && Array.isArray(preferences.allergies) && preferences.allergies.length > 0) {
-          const allergenMap: Record<string, string> = {
-            "Gluten": "gluten",
-            "Lactose": "lactose",
-            "Fruits à coque": "nuts",
-            "Arachide": "peanuts",
-            "Œufs": "eggs",
-            "Fruits de mer": "shellfish",
-            "Soja": "soy",
-            "Sésame": "sesame"
-          };
-          const userAllergens = preferences.allergies.map((a: string) => allergenMap[a] || a.toLowerCase());
-          query = query.not("allergens", "cs", `{${userAllergens.join(",")}}`);
-          console.log(`[generate-menu] Enforcing allergen exclusions: ${userAllergens.join(", ")}`);
-        }
+      // ============================================================
+      // CRITICAL: ALWAYS enforce restriction keys at EVERY fallback level
+      // This uses the ingredient_keys array which contains canonical keys
+      // derived from the restriction_dictionary (pork, dairy, gluten, etc.)
+      // ============================================================
+      if (userRestrictionKeys.length > 0) {
+        // Exclude any recipe whose ingredient_keys overlaps with user restrictions
+        // Using NOT overlap operator via filter
+        // Note: Supabase doesn't have a direct "not overlaps" so we filter post-query
+        console.log(`[generate-menu] Will filter out recipes with ingredient_keys overlapping: [${userRestrictionKeys.join(", ")}]`);
+      }
 
-        // ALWAYS enforce excluded ingredients (but allow recipes with no ingredients_text)
-        if (preferences.aliments_eviter && Array.isArray(preferences.aliments_eviter) && preferences.aliments_eviter.length > 0) {
-          // Clean up ingredients (trim spaces) and filter non-empty ones
-          const cleanedExclusions = preferences.aliments_eviter
-            .map((ing: string) => (ing || '').trim())
-            .filter((ing: string) => ing.length > 0);
-          
-          if (cleanedExclusions.length > 0) {
-            // Build a condition that allows null/empty OR doesn't contain any excluded ingredient
-            // For each ingredient, we want: NOT ILIKE '%ingredient%'
-            cleanedExclusions.forEach((ing: string) => {
-              // Simple negative filter - if ingredients_text contains this, exclude it
-              query = query.not("ingredients_text", "ilike", `%${ing}%`);
-            });
-            console.log(`[generate-menu] Enforcing ingredient exclusions: ${cleanedExclusions.join(", ")}`);
-          }
+      if (preferences) {
+        // Legacy allergen check (keep for recipes without ingredient_keys)
+        if (preferences.allergies && Array.isArray(preferences.allergies) && preferences.allergies.length > 0) {
+          const userAllergens = preferences.allergies.map((a: string) => allergenToKeyMap[a] || a.toLowerCase());
+          query = query.not("allergens", "cs", `{${userAllergens.join(",")}}`);
+          console.log(`[generate-menu] Legacy allergen exclusions: ${userAllergens.join(", ")}`);
         }
 
         // ALWAYS enforce appliance constraints (but allow recipes with no appliances specified)
@@ -376,20 +451,48 @@ serve(async (req) => {
         continue;
       }
 
-      const recipeCount = levelRecipes?.length || 0;
-      console.log(`[generate-menu] F${level} yielded ${recipeCount} recipes`);
+      // ============================================================
+      // SAFETY GATE: Filter out recipes that violate user restrictions
+      // This is the CRITICAL safety layer using ingredient_keys
+      // ============================================================
+      let safeRecipes = levelRecipes || [];
+      
+      if (userRestrictionKeys.length > 0 && safeRecipes.length > 0) {
+        const beforeCount = safeRecipes.length;
+        
+        safeRecipes = safeRecipes.filter((recipe: any) => {
+          const recipeKeys = recipe.ingredient_keys || [];
+          
+          // Check if ANY user restriction key is in the recipe's ingredient_keys
+          const violations = userRestrictionKeys.filter(restrictionKey => 
+            recipeKeys.includes(restrictionKey)
+          );
+          
+          if (violations.length > 0) {
+            console.log(`[generate-menu] 🚫 BLOCKED: "${recipe.title}" - contains: [${violations.join(", ")}]`);
+            return false;
+          }
+          return true;
+        });
+        
+        const afterCount = safeRecipes.length;
+        console.log(`[generate-menu] Safety filter: ${beforeCount} → ${afterCount} recipes (blocked ${beforeCount - afterCount})`);
+      }
 
-      if (levelRecipes && recipeCount >= 7) {
-        recipes = levelRecipes;
+      const recipeCount = safeRecipes.length;
+      console.log(`[generate-menu] F${level} yielded ${recipeCount} SAFE recipes`);
+
+      if (recipeCount >= 7) {
+        recipes = safeRecipes;
         fallbackLevel = level;
         usedFallback = level > 0 ? `F${level}` : null;
-        console.log(`[generate-menu] SUCCESS: Using F${level} with ${recipeCount} candidates`);
+        console.log(`[generate-menu] SUCCESS: Using F${level} with ${recipeCount} safe candidates`);
         break;
       }
       
       // If we have some recipes but not enough, save them and continue
-      if (levelRecipes && recipeCount > recipes.length) {
-        recipes = levelRecipes;
+      if (recipeCount > recipes.length) {
+        recipes = safeRecipes;
         fallbackLevel = level;
         usedFallback = `F${level}`;
         console.log(`[generate-menu] F${level} has ${recipeCount} recipes, continuing to next level...`);
@@ -397,14 +500,24 @@ serve(async (req) => {
     }
 
     if (!recipes || recipes.length === 0) {
-      console.error("[generate-menu] CRITICAL: No recipes found after all fallback attempts (F0-F4)");
-      console.error("[generate-menu] Total published recipes in DB:", await supabaseClient.from("recipes").select("id", { count: "exact", head: true }));
+      console.error("[generate-menu] CRITICAL: No safe recipes found after all fallback attempts (F0-F4)");
+      console.error("[generate-menu] User restrictions:", userRestrictionKeys);
+      
+      // Count total published recipes for diagnostics
+      const { count: totalRecipes } = await supabaseClient
+        .from("recipes")
+        .select("id", { count: "exact", head: true })
+        .eq("published", true);
+      
+      console.error("[generate-menu] Total published recipes in DB:", totalRecipes);
+      
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: "Aucune recette disponible dans la base de données. Contacte le support.",
+          message: `Impossible de trouver des recettes compatibles avec tes restrictions (${userRestrictionKeys.join(", ")}). Essaie de modifier tes préférences ou contacte le support.`,
           usedFallback: null,
-          error: "NO_RECIPES_IN_DB"
+          error: "NO_SAFE_RECIPES",
+          restrictions: userRestrictionKeys
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
@@ -412,7 +525,7 @@ serve(async (req) => {
 
     // Select 7 distinct recipes for the week
     const shuffled = [...recipes].sort(() => Math.random() - 0.5);
-    const selectedRecipes = shuffled.slice(0, Math.min(7, recipes.length));
+    let selectedRecipes = shuffled.slice(0, Math.min(7, recipes.length));
 
     // Fill remaining days if less than 7 recipes available (allow repeats)
     while (selectedRecipes.length < 7) {
@@ -420,7 +533,83 @@ serve(async (req) => {
       selectedRecipes.push(shuffled[nextIndex]);
     }
 
-    console.log(`[generate-menu] Selected ${selectedRecipes.length} recipes for the week`);
+    // ============================================================
+    // POST-SELECTION VALIDATION (Defense in Depth)
+    // Double-check that NO selected recipe violates restrictions
+    // ============================================================
+    const validationResults = selectedRecipes.map((recipe: any) => {
+      const recipeKeys = recipe.ingredient_keys || [];
+      const violations = userRestrictionKeys.filter(k => recipeKeys.includes(k));
+      return { 
+        recipe_id: recipe.id, 
+        title: recipe.title, 
+        violations,
+        safe: violations.length === 0
+      };
+    });
+
+    const unsafeRecipes = validationResults.filter(r => !r.safe);
+    
+    if (unsafeRecipes.length > 0) {
+      console.error("[generate-menu] 🚨 POST-VALIDATION FAILED: Unsafe recipes detected after selection!");
+      for (const unsafe of unsafeRecipes) {
+        console.error(`[generate-menu] - ${unsafe.title}: violates [${unsafe.violations.join(", ")}]`);
+      }
+      
+      // AUTO-REPAIR: Try to swap unsafe recipes with safe alternatives
+      let repairAttempts = 0;
+      const maxRepairAttempts = 10;
+      
+      while (unsafeRecipes.length > 0 && repairAttempts < maxRepairAttempts) {
+        repairAttempts++;
+        console.log(`[generate-menu] Repair attempt ${repairAttempts}/${maxRepairAttempts}...`);
+        
+        for (const unsafe of unsafeRecipes) {
+          // Find a safe alternative not already in selection
+          const selectedIds = selectedRecipes.map((r: any) => r.id);
+          const safeAlternative = shuffled.find((r: any) => 
+            !selectedIds.includes(r.id) && 
+            !(r.ingredient_keys || []).some((k: string) => userRestrictionKeys.includes(k))
+          );
+          
+          if (safeAlternative) {
+            const index = selectedRecipes.findIndex((r: any) => r.id === unsafe.recipe_id);
+            if (index !== -1) {
+              console.log(`[generate-menu] ✅ Swapped "${unsafe.title}" → "${safeAlternative.title}"`);
+              selectedRecipes[index] = safeAlternative;
+            }
+          }
+        }
+        
+        // Re-validate
+        const recheck = selectedRecipes.map((recipe: any) => {
+          const recipeKeys = recipe.ingredient_keys || [];
+          const violations = userRestrictionKeys.filter(k => recipeKeys.includes(k));
+          return { recipe_id: recipe.id, title: recipe.title, violations, safe: violations.length === 0 };
+        });
+        
+        unsafeRecipes.length = 0;
+        unsafeRecipes.push(...recheck.filter(r => !r.safe));
+      }
+      
+      if (unsafeRecipes.length > 0) {
+        console.error("[generate-menu] 🚨 REPAIR EXHAUSTED: Could not find safe alternatives for all recipes");
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: `Impossible de générer un menu sûr avec tes restrictions. Certaines recettes contiennent des aliments interdits. Contacte le support.`,
+            error: "SAFETY_VALIDATION_FAILED",
+            restrictions: userRestrictionKeys,
+            violations: unsafeRecipes
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+        );
+      }
+    }
+
+    console.log(`[generate-menu] ✅ POST-VALIDATION PASSED: All ${selectedRecipes.length} recipes are safe`);
+    console.log(`[generate-menu] Selected recipes: ${selectedRecipes.map((r: any) => r.title).join(", ")}`);
+
 
     // Build weekly menu with portion factors
     const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
