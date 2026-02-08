@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Flame, Sun, Moon, Users, Plus, ImageOff } from 'lucide-react';
+import { Clock, Flame, Sun, Moon, Users, Plus, ImageOff, CalendarDays } from 'lucide-react';
 import { RecipeMacrosBadge } from '@/components/app/RecipeMacrosBadge';
 import { useNavigate } from 'react-router-dom';
 import { getRecipeImageUrl, handleImageError } from '@/lib/images';
@@ -24,6 +24,7 @@ interface Recipe {
 
 interface DayCardWithRecipesProps {
   day: string;
+  date?: string; // YYYY-MM-DD format for linking to day menu
   lunchRecipe?: Recipe | null;
   dinnerRecipe?: Recipe | null;
   onValidate?: (recipeId: string, mealType: 'lunch' | 'dinner') => void;
@@ -146,7 +147,7 @@ function MealSlot({
         onClick={() => navigate(`/app/recipes/${recipe.recipe_id}`)}
         size="sm"
         variant="ghost"
-        className="w-full text-xs"
+        className="w-full text-xs mt-1"
       >
         Voir la recette →
       </Button>
@@ -156,6 +157,7 @@ function MealSlot({
 
 export function DayCardWithRecipes({
   day,
+  date,
   lunchRecipe,
   dinnerRecipe,
   onValidate,
@@ -190,6 +192,21 @@ export function DayCardWithRecipes({
           </Badge>
         )}
       </div>
+
+      {/* Day Menu CTA */}
+      {date && (
+        <div className="px-4 pb-4">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full text-xs"
+            onClick={() => navigate(`/app/day-menu/${date}`)}
+          >
+            <CalendarDays className="h-3.5 w-3.5 mr-1" />
+            Voir le menu du jour
+          </Button>
+        </div>
+      )}
 
       {/* Two meal slots: Lunch + Dinner */}
       <div className="p-4 space-y-4">
