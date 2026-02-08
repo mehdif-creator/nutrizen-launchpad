@@ -31,6 +31,7 @@ import Onboarding from "./pages/app/Onboarding";
 import ShoppingList from "./pages/app/ShoppingList";
 import SupabaseDebug from "./pages/app/SupabaseDebug";
 import FamillePlus from "./pages/app/FamillePlus";
+import DayMenu from "./pages/app/DayMenu";
 
 // Admin
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -114,6 +115,7 @@ const App = () => {
           <Route path="/app/shopping-list" element={<ProtectedRoute><ShoppingList /></ProtectedRoute>} />
           <Route path="/app/debug" element={<ProtectedRoute><SupabaseDebug /></ProtectedRoute>} />
           <Route path="/app/famille-plus" element={<ProtectedRoute><FamillePlus /></ProtectedRoute>} />
+          <Route path="/app/day-menu/:date" element={<ProtectedRoute><DayMenu /></ProtectedRoute>} />
           <Route path="/pricing" element={<FamillePlus />} />
             
             {/* Admin (Protected + Admin Only) */}

@@ -523,21 +523,27 @@ serve(async (req) => {
       );
     }
 
-    // Select 7 distinct recipes for the week
+    // Select 14 distinct recipes for the week (7 lunch + 7 dinner)
     const shuffled = [...recipes].sort(() => Math.random() - 0.5);
-    let selectedRecipes = shuffled.slice(0, Math.min(7, recipes.length));
+    let selectedRecipes = shuffled.slice(0, Math.min(14, recipes.length));
 
-    // Fill remaining days if less than 7 recipes available (allow repeats)
-    while (selectedRecipes.length < 7) {
+    // Fill remaining slots if less than 14 recipes available (allow repeats)
+    while (selectedRecipes.length < 14) {
       const nextIndex = selectedRecipes.length % shuffled.length;
       selectedRecipes.push(shuffled[nextIndex]);
     }
+    
+    // Split into lunch (first 7) and dinner (last 7)
+    const lunchRecipes = selectedRecipes.slice(0, 7);
+    const dinnerRecipes = selectedRecipes.slice(7, 14);
 
     // ============================================================
     // POST-SELECTION VALIDATION (Defense in Depth)
     // Double-check that NO selected recipe violates restrictions
+    // Validate ALL recipes (both lunch and dinner)
     // ============================================================
-    const validationResults = selectedRecipes.map((recipe: any) => {
+    const allSelectedRecipes = [...lunchRecipes, ...dinnerRecipes];
+    const validationResults = allSelectedRecipes.map((recipe: any) => {
       const recipeKeys = recipe.ingredient_keys || [];
       const violations = userRestrictionKeys.filter(k => recipeKeys.includes(k));
       return { 
@@ -566,23 +572,30 @@ serve(async (req) => {
         
         for (const unsafe of unsafeRecipes) {
           // Find a safe alternative not already in selection
-          const selectedIds = selectedRecipes.map((r: any) => r.id);
+          const allSelectedIds = allSelectedRecipes.map((r: any) => r.id);
           const safeAlternative = shuffled.find((r: any) => 
-            !selectedIds.includes(r.id) && 
+            !allSelectedIds.includes(r.id) && 
             !(r.ingredient_keys || []).some((k: string) => userRestrictionKeys.includes(k))
           );
           
           if (safeAlternative) {
-            const index = selectedRecipes.findIndex((r: any) => r.id === unsafe.recipe_id);
-            if (index !== -1) {
-              console.log(`[generate-menu] ✅ Swapped "${unsafe.title}" → "${safeAlternative.title}"`);
-              selectedRecipes[index] = safeAlternative;
+            // Check if it's in lunch or dinner
+            let lunchIdx = lunchRecipes.findIndex((r: any) => r.id === unsafe.recipe_id);
+            let dinnerIdx = dinnerRecipes.findIndex((r: any) => r.id === unsafe.recipe_id);
+            
+            if (lunchIdx !== -1) {
+              console.log(`[generate-menu] ✅ Swapped lunch "${unsafe.title}" → "${safeAlternative.title}"`);
+              lunchRecipes[lunchIdx] = safeAlternative;
+            } else if (dinnerIdx !== -1) {
+              console.log(`[generate-menu] ✅ Swapped dinner "${unsafe.title}" → "${safeAlternative.title}"`);
+              dinnerRecipes[dinnerIdx] = safeAlternative;
             }
           }
         }
         
-        // Re-validate
-        const recheck = selectedRecipes.map((recipe: any) => {
+        // Re-validate all recipes
+        const allRechecked = [...lunchRecipes, ...dinnerRecipes];
+        const recheck = allRechecked.map((recipe: any) => {
           const recipeKeys = recipe.ingredient_keys || [];
           const violations = userRestrictionKeys.filter(k => recipeKeys.includes(k));
           return { recipe_id: recipe.id, title: recipe.title, violations, safe: violations.length === 0 };
@@ -607,34 +620,45 @@ serve(async (req) => {
       }
     }
 
-    console.log(`[generate-menu] ✅ POST-VALIDATION PASSED: All ${selectedRecipes.length} recipes are safe`);
-    console.log(`[generate-menu] Selected recipes: ${selectedRecipes.map((r: any) => r.title).join(", ")}`);
+    console.log(`[generate-menu] ✅ POST-VALIDATION PASSED: All ${lunchRecipes.length + dinnerRecipes.length} recipes are safe`);
+    console.log(`[generate-menu] Lunch recipes: ${lunchRecipes.map((r: any) => r.title).join(", ")}`);
+    console.log(`[generate-menu] Dinner recipes: ${dinnerRecipes.map((r: any) => r.title).join(", ")}`);
 
 
-    // Build weekly menu with portion factors
+    // Build weekly menu with portion factors for BOTH lunch and dinner
     const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
     const roundedServings = Math.max(1, Math.round(effectiveHouseholdSize));
     
-    const days = selectedRecipes.map((recipe, index) => {
-      const baseServings = recipe.base_servings || recipe.servings || 2; // Default to 2 if not set
+    // Helper to build a meal entry
+    const buildMealEntry = (recipe: any, dayIndex: number, mealType: 'lunch' | 'dinner') => {
+      const baseServings = recipe.base_servings || recipe.servings || 2;
       const portionFactor = roundedServings / baseServings;
       
       return {
-        day: weekdays[index],
         recipe_id: recipe.id,
         title: recipe.title,
         image_url: recipe.image_url || recipe.image_path || null,
         prep_min: recipe.prep_time_min || 0,
         total_min: recipe.total_time_min || 0,
         calories: Math.round((recipe.calories_kcal || 0) * portionFactor),
-        macros: {
-          proteins_g: Math.round((recipe.proteins_g || 0) * portionFactor),
-          carbs_g: Math.round((recipe.carbs_g || 0) * portionFactor),
-          fats_g: Math.round((recipe.fats_g || 0) * portionFactor)
-        },
+        proteins_g: Math.round((recipe.proteins_g || 0) * portionFactor),
+        carbs_g: Math.round((recipe.carbs_g || 0) * portionFactor),
+        fats_g: Math.round((recipe.fats_g || 0) * portionFactor),
         portion_factor: portionFactor,
-        servings_used: roundedServings, // Store the effective servings for consistency
-        base_servings: baseServings
+        servings_used: roundedServings,
+        base_servings: baseServings,
+      };
+    };
+    
+    // Build days with both lunch and dinner
+    const days = weekdays.map((dayName, index) => {
+      const lunchRecipe = lunchRecipes[index];
+      const dinnerRecipe = dinnerRecipes[index];
+      
+      return {
+        day: dayName,
+        lunch: buildMealEntry(lunchRecipe, index, 'lunch'),
+        dinner: buildMealEntry(dinnerRecipe, index, 'dinner'),
       };
     });
 
@@ -670,7 +694,7 @@ serve(async (req) => {
 
     // ========================================
     // POPULATE user_weekly_menu_items table
-    // This enables the shopping list generation function
+    // Insert BOTH lunch AND dinner for each day
     // ========================================
     
     // First, delete any existing items for this menu (in case of regeneration)
@@ -681,23 +705,39 @@ serve(async (req) => {
 
     if (deleteError) {
       console.error("[generate-menu] Error deleting old menu items:", deleteError);
-      // Continue anyway - this is not critical
     } else {
       console.log(`[generate-menu] Cleared existing menu items for menu ${menu.menu_id}`);
     }
 
-    // Insert one row per day into user_weekly_menu_items
-    // For now, we generate DINNER only (7 recipes for 7 days)
+    // Build menu items for both lunch and dinner
     // day_of_week: 1=Monday, 2=Tuesday, ..., 7=Sunday (matching DB constraint 1-7)
-    const menuItems = days.map((day, index) => ({
-      weekly_menu_id: menu.menu_id,
-      recipe_id: day.recipe_id,
-      day_of_week: index + 1, // 1-7 for Mon-Sun (DB constraint requires 1-7)
-      meal_slot: 'dinner',
-      target_servings: day.servings_used,
-      scale_factor: day.portion_factor,
-      portion_factor: day.portion_factor
-    }));
+    const menuItems: any[] = [];
+    
+    days.forEach((day, index) => {
+      const dayOfWeek = index + 1; // 1-7 for Mon-Sun
+      
+      // Add lunch item
+      menuItems.push({
+        weekly_menu_id: menu.menu_id,
+        recipe_id: day.lunch.recipe_id,
+        day_of_week: dayOfWeek,
+        meal_slot: 'lunch',
+        target_servings: day.lunch.servings_used,
+        scale_factor: day.lunch.portion_factor,
+        portion_factor: day.lunch.portion_factor
+      });
+      
+      // Add dinner item
+      menuItems.push({
+        weekly_menu_id: menu.menu_id,
+        recipe_id: day.dinner.recipe_id,
+        day_of_week: dayOfWeek,
+        meal_slot: 'dinner',
+        target_servings: day.dinner.servings_used,
+        scale_factor: day.dinner.portion_factor,
+        portion_factor: day.dinner.portion_factor
+      });
+    });
 
     const { error: itemsError } = await supabaseClient
       .from("user_weekly_menu_items")
@@ -728,17 +768,15 @@ serve(async (req) => {
       console.error("[generate-menu] Error deleting old daily recipes:", deleteRecipesError);
     }
 
-    // Insert one row per day into user_daily_recipes with both lunch and dinner
-    // For now, since we only generate 7 recipes, we'll use the same recipe for dinner
-    // and leave lunch empty (null) - lunch support can be added later
+    // Insert one row per day into user_daily_recipes with BOTH lunch and dinner
     const dailyRecipes = days.map((day, index) => {
       const dayDate = new Date(weekStartStr);
       dayDate.setDate(dayDate.getDate() + index);
       return {
         user_id: user.id,
         date: dayDate.toISOString().split('T')[0],
-        lunch_recipe_id: null, // No lunch recipes for now
-        dinner_recipe_id: day.recipe_id,
+        lunch_recipe_id: day.lunch.recipe_id,
+        dinner_recipe_id: day.dinner.recipe_id,
         day_of_week: index, // 0=Monday
       };
     });

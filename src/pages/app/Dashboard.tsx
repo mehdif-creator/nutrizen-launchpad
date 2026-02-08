@@ -452,6 +452,7 @@ export default function Dashboard() {
                   <DayCardWithRecipes
                     key={`${dayData.day_name}-${i}`}
                     day={dayData.day_name}
+                    date={dayData.date}
                     lunchRecipe={dayData.lunch ? {
                       recipe_id: dayData.lunch.recipe_id,
                       title: dayData.lunch.title,

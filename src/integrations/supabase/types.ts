@@ -3135,6 +3135,10 @@ export type Database = {
         Returns: Json
       }
       get_dashboard_stats: { Args: { p_user_id: string }; Returns: Json }
+      get_day_menu: {
+        Args: { p_date: string; p_user_id: string }
+        Returns: Json
+      }
       get_kpi_activation_rate_timeseries: {
         Args: { _from?: string; _granularity?: string; _to?: string }
         Returns: {
