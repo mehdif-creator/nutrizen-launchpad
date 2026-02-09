@@ -263,6 +263,29 @@ serve(async (req) => {
       }
     }
 
+    // 4. Diet type hard constraints
+    const DIET_EXCLUSIONS: Record<string, string[]> = {
+      'vegetarien': ['meat', 'pork', 'beef', 'fish', 'shellfish'],
+      'végétarien': ['meat', 'pork', 'beef', 'fish', 'shellfish'],
+      'vegetarian': ['meat', 'pork', 'beef', 'fish', 'shellfish'],
+      'vegan': ['meat', 'pork', 'beef', 'fish', 'shellfish', 'dairy', 'eggs', 'honey'],
+      'végétalien': ['meat', 'pork', 'beef', 'fish', 'shellfish', 'dairy', 'eggs', 'honey'],
+      'pescatarien': ['meat', 'pork', 'beef'],
+      'pescatarian': ['meat', 'pork', 'beef'],
+      'halal': ['pork', 'alcohol'],
+      'casher': ['pork', 'shellfish'],
+      'kosher': ['pork', 'shellfish'],
+    };
+
+    if (preferences?.type_alimentation) {
+      const dietKey = preferences.type_alimentation.toLowerCase().trim();
+      const dietExclusions = DIET_EXCLUSIONS[dietKey];
+      if (dietExclusions) {
+        userRestrictionKeys.push(...dietExclusions);
+        console.log(`[generate-menu] Diet "${dietKey}" adds hard exclusions: ${dietExclusions.join(', ')}`);
+      }
+    }
+
     // Deduplicate restriction keys
     userRestrictionKeys = [...new Set(userRestrictionKeys)];
     console.log(`[generate-menu] 🛡️ SAFETY GATE: User restriction keys = [${userRestrictionKeys.join(", ")}]`);
