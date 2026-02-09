@@ -3687,10 +3687,12 @@ export type Database = {
         Returns: number
       }
       recipe_image_public_url: { Args: { p_path: string }; Returns: string }
-      recipe_ingredient_keys: {
-        Args: { ingredients: string }
-        Returns: string[]
-      }
+      recipe_ingredient_keys:
+        | { Args: { ingredients: string }; Returns: string[] }
+        | {
+            Args: { r: Database["public"]["Tables"]["recipes"]["Row"] }
+            Returns: string[]
+          }
       refresh_kpi_events_daily_mv: { Args: never; Returns: undefined }
       refresh_kpi_subscriptions_daily_mv: { Args: never; Returns: undefined }
       refresh_kpi_users_daily_mv: { Args: never; Returns: undefined }
