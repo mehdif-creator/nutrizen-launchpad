@@ -79,6 +79,7 @@ import Affiliate from "./pages/Affiliate";
 import PostCheckout from "./pages/PostCheckout";
 import PostCheckoutProfile from "./pages/PostCheckoutProfile";
 import Credits from "./pages/Credits";
+import About from "./pages/About";
 
 const App = () => {
   // Track referral codes from URL
@@ -163,6 +164,8 @@ const App = () => {
             <Route path="/affiliate" element={<Affiliate />} />
             <Route path="/post-checkout" element={<PostCheckout />} />
             <Route path="/credits" element={<Credits />} />
+            <Route path="/a-propos" element={<About />} />
+            <Route path="/about" element={<About />} />
             
     <Route path="*" element={<NotFound />} />
   </Routes>
