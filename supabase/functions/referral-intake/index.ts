@@ -15,6 +15,23 @@ serve(async (req) => {
     const body = await req.json();
     const { referralCode, action, ip_hash, user_agent } = body;
 
+    // Validate action is one of the allowed values
+    const allowedActions = ['track_click', 'apply_attribution', 'CLICKED', 'SIGNED_UP'];
+    if (!action || !allowedActions.includes(action)) {
+      return new Response(
+        JSON.stringify({ success: false, message: 'Invalid action' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate referralCode format (alphanumeric, max 20 chars)
+    if (referralCode && (typeof referralCode !== 'string' || !/^[A-Za-z0-9]{1,20}$/.test(referralCode))) {
+      return new Response(
+        JSON.stringify({ success: false, message: 'Invalid referral code format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''

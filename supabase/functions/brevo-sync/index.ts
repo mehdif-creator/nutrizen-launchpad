@@ -24,9 +24,21 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Authenticate: only service role calls allowed
+  const authHeader = req.headers.get('Authorization');
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const token = authHeader?.replace('Bearer ', '');
+
+  if (token !== serviceRoleKey) {
+    console.warn('[brevo-sync] Unauthorized call attempt');
+    return new Response(
+      JSON.stringify({ success: false, error: 'Unauthorized' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const brevoApiKey = Deno.env.get('BREVO_API_KEY');
     const brevoListId = Deno.env.get('BREVO_LIST_ID');
 
@@ -38,7 +50,7 @@ serve(async (req) => {
       );
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     // Parse request body
     const body = await req.json();
