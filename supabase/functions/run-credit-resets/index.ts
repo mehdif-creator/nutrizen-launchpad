@@ -23,13 +23,26 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Authenticate: only service role or cron secret allowed
+  const authHeader = req.headers.get('Authorization');
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const cronSecret = Deno.env.get('CRON_SECRET');
+  const token = authHeader?.replace('Bearer ', '');
+
+  if (token !== serviceRoleKey && (!cronSecret || token !== cronSecret)) {
+    console.warn('[run-credit-resets] Unauthorized call attempt');
+    return new Response(
+      JSON.stringify({ success: false, error: 'Unauthorized' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   const runId = crypto.randomUUID();
   let supabase: any;
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    supabase = createClient(supabaseUrl, supabaseKey);
+    supabase = createClient(supabaseUrl, serviceRoleKey);
 
     // Parse optional parameters
     const body = await req.json().catch(() => ({}));
