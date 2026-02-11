@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { t } from '@/i18n/translations';
+import { queryClient } from '@/lib/queryClient';
 
 export interface MenuGenerationResult {
   success: boolean;
@@ -82,6 +83,13 @@ export function useMenuGeneration() {
         
         return errorResult;
       }
+
+      // Invalidate all dashboard queries for immediate reactivity
+      queryClient.invalidateQueries({ queryKey: ['weeklyMenu'] });
+      queryClient.invalidateQueries({ queryKey: ['weeklyRecipesByDay'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
+      queryClient.invalidateQueries({ queryKey: ['userDashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['shoppingList'] });
 
       toast({
         title: t('menu.generated'),
