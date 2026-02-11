@@ -62,8 +62,8 @@ export function useWeeklyRecipesByDay(userId: string | undefined) {
     queryKey: ['weeklyRecipesByDay', userId],
     queryFn: () => fetchWeeklyRecipesByDay(userId!),
     enabled: !!userId,
-    staleTime: 5 * 60 * 1000,
-    refetchOnMount: true,
+    staleTime: 30 * 1000, // 30 seconds
+    refetchOnMount: 'always',
     refetchOnWindowFocus: true,
   });
 

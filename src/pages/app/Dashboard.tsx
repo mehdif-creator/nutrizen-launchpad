@@ -1,6 +1,7 @@
 import { AppHeader } from "@/components/app/AppHeader";
 import { AppFooter } from "@/components/app/AppFooter";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Clock, Sparkles, Flame, Users, ShoppingCart, Share2, Copy, Brain, Trophy, Info } from "lucide-react";
@@ -35,6 +36,18 @@ export default function Dashboard() {
   const { user, subscription, refreshSubscription, isAdmin } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  /** Invalidate all dashboard-related queries at once */
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: ['weeklyMenu'] });
+    queryClient.invalidateQueries({ queryKey: ['weeklyRecipesByDay'] });
+    queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
+    queryClient.invalidateQueries({ queryKey: ['userDashboard'] });
+    queryClient.invalidateQueries({ queryKey: ['gamification'] });
+    queryClient.invalidateQueries({ queryKey: ['shoppingList'] });
+    queryClient.invalidateQueries({ queryKey: ['effectivePortions'] });
+  };
 
   // Use custom hooks for data fetching with realtime
   const { stats, isLoading: statsLoading } = useDashboardStats(user?.id);
@@ -91,9 +104,14 @@ export default function Dashboard() {
     // Check for successful credit purchase
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('credits_purchased') === 'true') {
+      // Force refresh credits after purchase
+      invalidateAll();
+      const packParam = urlParams.get('pack');
       toast({
         title: "Bravo 🎉",
-        description: "Tu viens d'ajouter 15 Crédits Zen non expirants à ton compte !",
+        description: packParam 
+          ? `Tes Crédits Zen ont été ajoutés à ton compte !`
+          : "Tu viens d'ajouter des Crédits Zen non expirants à ton compte !",
       });
       window.history.replaceState({}, '', '/app/dashboard');
     }
@@ -180,7 +198,8 @@ export default function Dashboard() {
           title: "Recette changée !",
           description: `Il te reste ${data.creditsRemaining} Crédits Zen.`,
         });
-        // Realtime will auto-update
+        // Explicitly invalidate all queries for immediate UI update
+        invalidateAll();
       } else if (data.error_code === 'INSUFFICIENT_CREDITS') {
         // Show credits modal
         setCreditsError({
@@ -218,6 +237,8 @@ export default function Dashboard() {
         title: "Repas validé ✅",
         description: "+2 points gagnés !",
       });
+      // Explicitly invalidate queries for immediate UI update
+      invalidateAll();
     } catch (error: any) {
       console.error('Validate meal error:', error);
       toast({
@@ -251,7 +272,8 @@ export default function Dashboard() {
         toast({
           title: "Menus générés avec succès",
         });
-        // Realtime will auto-update the UI
+        // Explicitly invalidate all queries for immediate UI update
+        invalidateAll();
       } else {
         toast({
           title: "Génération impossible",

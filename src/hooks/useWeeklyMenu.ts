@@ -102,8 +102,8 @@ export function useWeeklyMenu(userId: string | undefined) {
     queryKey: ['weeklyMenu', userId],
     queryFn: () => fetchWeeklyMenu(userId!),
     enabled: !!userId,
-    staleTime: 5 * 60 * 1000,
-    refetchOnMount: true,
+    staleTime: 30 * 1000, // 30 seconds
+    refetchOnMount: 'always',
     refetchOnWindowFocus: true,
   });
 

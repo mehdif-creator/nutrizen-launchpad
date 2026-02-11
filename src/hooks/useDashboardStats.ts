@@ -56,7 +56,8 @@ export function useDashboardStats(userId: string | undefined) {
     queryKey: ['dashboardStats', userId],
     queryFn: () => fetchDashboardStats(userId!),
     enabled: !!userId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 10 * 1000, // 10 seconds - aggressive for credit/stat freshness
+    refetchOnMount: 'always',
     placeholderData: DEFAULT_STATS, // Show defaults immediately
   });
 
