@@ -151,3 +151,10 @@ verify_jwt = false
 limit = 10
 period = "1h"
 
+[functions.health-check]
+verify_jwt = true
+
+[functions.health-check.rate_limit]
+limit = 10
+period = "1h"
+
