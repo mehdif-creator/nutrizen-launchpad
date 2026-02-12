@@ -780,6 +780,36 @@ export type Database = {
         }
         Relationships: []
       }
+      health_checks: {
+        Row: {
+          admin_user_id: string | null
+          check_name: string
+          details: Json | null
+          id: string
+          message: string | null
+          run_at: string
+          status: string
+        }
+        Insert: {
+          admin_user_id?: string | null
+          check_name: string
+          details?: Json | null
+          id?: string
+          message?: string | null
+          run_at?: string
+          status: string
+        }
+        Update: {
+          admin_user_id?: string | null
+          check_name?: string
+          details?: Json | null
+          id?: string
+          message?: string | null
+          run_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
       ingredient_substitutions_cache: {
         Row: {
           constraints: Json | null
@@ -2131,6 +2161,39 @@ export type Database = {
           },
         ]
       }
+      system_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          id: string
+          message: string
+          metadata: Json | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          id?: string
+          message: string
+          metadata?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          id?: string
+          message?: string
+          metadata?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+        }
+        Relationships: []
+      }
       translation_glossary: {
         Row: {
           context: string
@@ -3015,6 +3078,49 @@ export type Database = {
         }
         Relationships: []
       }
+      v_menu_safety_violations: {
+        Row: {
+          day_of_week: number | null
+          meal_slot: string | null
+          recipe_id: string | null
+          recipe_ingredient_keys: string[] | null
+          recipe_title: string | null
+          user_allergies: string[] | null
+          user_avoid_foods: string[] | null
+          user_id: string | null
+          week_start: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_weekly_menu_items_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_macros_mv"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "user_weekly_menu_items_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_macros_mv2"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "user_weekly_menu_items_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_macros_v"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "user_weekly_menu_items_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_ri_qc: {
         Row: {
           alim_nom_fr: string | null
@@ -3076,6 +3182,9 @@ export type Database = {
         Args: { p_cost?: number; p_feature: string; p_user_id: string }
         Returns: Json
       }
+      check_credit_consistency: { Args: never; Returns: Json }
+      check_images_integrity: { Args: never; Returns: Json }
+      check_stuck_jobs: { Args: { p_minutes?: number }; Returns: Json }
       cleanup_expired_tokens: { Args: never; Returns: undefined }
       cleanup_old_checkout_sessions: { Args: never; Returns: undefined }
       compute_recipe_macros: {
@@ -3125,6 +3234,25 @@ export type Database = {
       generate_week_menu: {
         Args: { p_user: string; p_week_start: string }
         Returns: Json
+      }
+      get_active_alerts: {
+        Args: never
+        Returns: {
+          alert_type: string
+          created_at: string
+          id: string
+          message: string
+          metadata: Json | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "system_alerts"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_active_referrals_count: {
         Args: { p_user_id: string }
@@ -3578,6 +3706,20 @@ export type Database = {
           fibers_g: number
           proteins_g: number
           recipe_id: string
+        }[]
+      }
+      get_safety_violations: {
+        Args: { p_limit?: number }
+        Returns: {
+          day_of_week: number
+          meal_slot: string
+          recipe_id: string
+          recipe_ingredient_keys: string[]
+          recipe_title: string
+          user_allergies: string[]
+          user_avoid_foods: string[]
+          user_id: string
+          week_start: string
         }[]
       }
       get_shopping_list_from_menu: {
