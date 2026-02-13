@@ -1090,6 +1090,33 @@ export type Database = {
         }
         Relationships: []
       }
+      pinterest_board_map: {
+        Row: {
+          board_slug: string
+          created_at: string
+          cuisine_key: string
+          destination_path: string
+          is_active: boolean
+          pinterest_board_id: string | null
+        }
+        Insert: {
+          board_slug: string
+          created_at?: string
+          cuisine_key: string
+          destination_path: string
+          is_active?: boolean
+          pinterest_board_id?: string | null
+        }
+        Update: {
+          board_slug?: string
+          created_at?: string
+          cuisine_key?: string
+          destination_path?: string
+          is_active?: boolean
+          pinterest_board_id?: string | null
+        }
+        Relationships: []
+      }
       preferences: {
         Row: {
           age: number | null
@@ -1962,64 +1989,109 @@ export type Database = {
       }
       social_queue: {
         Row: {
+          alt_text: string | null
           asset_4x5_path: string | null
           asset_9x16_path: string | null
           attempts: number
           badges: Json | null
+          board_slug: string | null
           calories_kcal: number | null
           created_at: string
           cuisine_type: string | null
+          destination_url: string | null
           error: string | null
+          external_post_id: string | null
+          external_post_url: string | null
           id: string
           image_path: string | null
           ingredients: Json | null
           instructions: Json | null
           locked_at: string | null
+          pin_description: string | null
+          pin_title: string | null
+          platform: string | null
           posted_at: string | null
+          publish_error: string | null
+          published_at: string | null
           recipe_id: string
           rendered_at: string | null
+          scheduled_at: string | null
           status: string
           title: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
         }
         Insert: {
+          alt_text?: string | null
           asset_4x5_path?: string | null
           asset_9x16_path?: string | null
           attempts?: number
           badges?: Json | null
+          board_slug?: string | null
           calories_kcal?: number | null
           created_at?: string
           cuisine_type?: string | null
+          destination_url?: string | null
           error?: string | null
+          external_post_id?: string | null
+          external_post_url?: string | null
           id?: string
           image_path?: string | null
           ingredients?: Json | null
           instructions?: Json | null
           locked_at?: string | null
+          pin_description?: string | null
+          pin_title?: string | null
+          platform?: string | null
           posted_at?: string | null
+          publish_error?: string | null
+          published_at?: string | null
           recipe_id: string
           rendered_at?: string | null
+          scheduled_at?: string | null
           status?: string
           title: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Update: {
+          alt_text?: string | null
           asset_4x5_path?: string | null
           asset_9x16_path?: string | null
           attempts?: number
           badges?: Json | null
+          board_slug?: string | null
           calories_kcal?: number | null
           created_at?: string
           cuisine_type?: string | null
+          destination_url?: string | null
           error?: string | null
+          external_post_id?: string | null
+          external_post_url?: string | null
           id?: string
           image_path?: string | null
           ingredients?: Json | null
           instructions?: Json | null
           locked_at?: string | null
+          pin_description?: string | null
+          pin_title?: string | null
+          platform?: string | null
           posted_at?: string | null
+          publish_error?: string | null
+          published_at?: string | null
           recipe_id?: string
           rendered_at?: string | null
+          scheduled_at?: string | null
           status?: string
           title?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Relationships: []
       }
@@ -3770,6 +3842,7 @@ export type Database = {
           unit: string
         }[]
       }
+      get_user_forbidden_text: { Args: { p_user_id: string }; Returns: string }
       get_user_household_info: { Args: { p_user_id: string }; Returns: Json }
       get_weekly_recipes_by_day: {
         Args: { p_user_id: string; p_week_start?: string }
