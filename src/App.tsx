@@ -115,7 +115,7 @@ const App = () => {
           <Route path="/app/inspi-frigo" element={<ProtectedRoute><InspiFrigo /></ProtectedRoute>} />
           <Route path="/app/recipes/:id" element={<ProtectedRoute><RecipeDetail /></ProtectedRoute>} />
           <Route path="/app/shopping-list" element={<ProtectedRoute><ShoppingList /></ProtectedRoute>} />
-          <Route path="/app/debug" element={<ProtectedRoute><SupabaseDebug /></ProtectedRoute>} />
+          <Route path="/app/debug" element={<ProtectedRoute requireAdmin><SupabaseDebug /></ProtectedRoute>} />
           <Route path="/app/famille-plus" element={<ProtectedRoute><FamillePlus /></ProtectedRoute>} />
           <Route path="/app/day-menu/:date" element={<ProtectedRoute><DayMenu /></ProtectedRoute>} />
           <Route path="/pricing" element={<FamillePlus />} />

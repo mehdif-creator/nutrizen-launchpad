@@ -12,13 +12,12 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CREATE-CREDITS-CHECKOUT] ${step}${detailsStr}`);
 };
 
-// Credit pack configurations
+// Credit pack configurations — price IDs from env, never hardcoded
 const CREDIT_PACKS: Record<string, { credits: number; priceEnvKey: string; name: string }> = {
   pack_s: { credits: 50, priceEnvKey: 'STRIPE_PRICE_CREDITS_50', name: 'Pack S' },
   pack_m: { credits: 120, priceEnvKey: 'STRIPE_PRICE_CREDITS_120', name: 'Pack M' },
   pack_l: { credits: 300, priceEnvKey: 'STRIPE_PRICE_CREDITS_300', name: 'Pack L' },
   pack_xl: { credits: 700, priceEnvKey: 'STRIPE_PRICE_CREDITS_700', name: 'Pack XL' },
-  // Legacy pack
   zen_15: { credits: 15, priceEnvKey: 'ZEN_CREDITS_PRICE_ID', name: 'Crédits Zen x15' },
 };
 
@@ -93,15 +92,27 @@ serve(async (req) => {
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
       logStep("Found existing Stripe customer", { customerId: (customerId || "").substring(0, 10) + "***" });
+      
+      // Persist stripe_customer_id on profile for future webhook lookups
+      const supabaseAdmin = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+        { auth: { persistSession: false } }
+      );
+      await supabaseAdmin
+        .from('profiles')
+        .update({ stripe_customer_id: customerId })
+        .eq('id', user.id);
     }
 
     // Generate idempotency key for checkout creation
     const idempotencyKey = `checkout:${user.id}:${packId}:${Date.now()}`;
     
-    // Create checkout session
+    // Create checkout session with user_id in metadata and client_reference_id
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
+      client_reference_id: user.id,
       line_items: [
         {
           price: priceId,
@@ -113,6 +124,8 @@ serve(async (req) => {
       cancel_url: `${req.headers.get("origin")}/credits`,
       metadata: {
         supabase_user_id: user.id,
+        user_id: user.id,
+        app: "nutrizen",
         credits_type: "lifetime",
         credits_amount: String(pack.credits),
         pack_id: packId,

@@ -1330,6 +1330,7 @@ export type Database = {
           id: string
           last_diagnostics_at: string | null
           locale: string | null
+          stripe_customer_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1341,6 +1342,7 @@ export type Database = {
           id: string
           last_diagnostics_at?: string | null
           locale?: string | null
+          stripe_customer_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1352,6 +1354,7 @@ export type Database = {
           id?: string
           last_diagnostics_at?: string | null
           locale?: string | null
+          stripe_customer_id?: string | null
           updated_at?: string | null
         }
         Relationships: []
