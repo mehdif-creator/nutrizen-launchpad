@@ -23,6 +23,13 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CREATE-CHECKOUT] ${step}${detailsStr}`);
 };
 
+// Plan key → env var mapping (no hardcoded price IDs)
+const PLAN_ENV_KEYS: Record<string, string> = {
+  essentiel: "STRIPE_PRICE_ESSENTIEL",
+  equilibre: "STRIPE_PRICE_EQUILIBRE",
+  premium: "STRIPE_PRICE_PREMIUM",
+};
+
 serve(async (req) => {
   const origin = req.headers.get("origin");
   const corsHeaders = getCorsHeaders(origin);
@@ -34,33 +41,69 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    // Parse request body to get priceId and email
-    const { priceId, email } = await req.json();
+    const body = await req.json();
+    // Accept plan key (e.g. "equilibre") OR legacy priceId
+    const planKey = body.plan || body.planKey || 'equilibre';
+    const email = body.email;
     
-    if (!priceId) throw new Error("priceId is required");
     if (!email) throw new Error("email is required");
     
-    logStep("Request received", { priceId, email });
+    // Resolve price ID from env, falling back to legacy priceId if provided
+    const envKey = PLAN_ENV_KEYS[planKey];
+    let priceId = envKey ? Deno.env.get(envKey) : null;
+    
+    // Legacy fallback: if frontend still sends priceId directly
+    if (!priceId && body.priceId) {
+      logStep("WARN: Frontend sent raw priceId, using as fallback");
+      priceId = body.priceId;
+    }
+    
+    if (!priceId) {
+      throw new Error(`No price configured for plan "${planKey}". Set ${envKey || 'STRIPE_PRICE_*'} in secrets.`);
+    }
+    
+    logStep("Request received", { plan: planKey, email });
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
       apiVersion: "2025-08-27.basil" 
     });
 
+    // Authenticate user if auth header present
+    let userId: string | null = null;
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader) {
+      const supabaseClient = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+      );
+      const token = authHeader.replace("Bearer ", "");
+      const { data: userData } = await supabaseClient.auth.getUser(token);
+      userId = userData.user?.id || null;
+    }
+
     logStep("Checking for existing customer", { email });
     const customers = await stripe.customers.list({ email, limit: 1 });
-    let customerId;
+    let customerId: string | undefined;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
       logStep("Existing customer found", { customerId });
-    } else {
-      logStep("No existing customer, will create during checkout");
+      
+      // Persist stripe_customer_id on profile
+      if (userId) {
+        const supabaseAdmin = createClient(
+          Deno.env.get("SUPABASE_URL") ?? "",
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+          { auth: { persistSession: false } }
+        );
+        await supabaseAdmin
+          .from('profiles')
+          .update({ stripe_customer_id: customerId })
+          .eq('id', userId);
+      }
     }
 
     const requestOrigin = req.headers.get("origin") || "http://localhost:3000";
     const supabaseProjectRef = Deno.env.get("SUPABASE_URL")?.match(/https:\/\/([^.]+)/)?.[1] || "";
-    
-    // Single plan: Équilibre
-    const planName = 'equilibre';
     
     // Get referral code from query params if present
     const url = new URL(req.url);
@@ -73,10 +116,11 @@ serve(async (req) => {
       ? `https://${supabaseProjectRef}.supabase.co/functions/v1/post-checkout-login?session_id={CHECKOUT_SESSION_ID}`
       : `${appBaseUrl}/auth/callback?from_checkout=true`;
     
-    logStep("Creating checkout session", { priceId, email, plan: planName, referralCode, affiliateCode, successUrl });
+    logStep("Creating checkout session", { plan: planKey, email, referralCode, affiliateCode, successUrl });
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : email,
+      client_reference_id: userId || undefined,
       line_items: [
         {
           price: priceId,
@@ -88,7 +132,9 @@ serve(async (req) => {
         trial_period_days: 7,
       },
       metadata: {
-        plan: planName,
+        plan: planKey,
+        user_id: userId || '',
+        app: 'nutrizen',
         referral_code: referralCode || '',
         affiliate_code: affiliateCode || '',
         from_checkout: 'true',

@@ -20,6 +20,81 @@ const logStep = (step: string, details?: any) => {
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
 
+// ── Price-to-plan mapping from env (no hardcoded price IDs) ──
+function buildPriceMap(): Record<string, string> {
+  const map: Record<string, string> = {};
+  const essentiel = Deno.env.get("STRIPE_PRICE_ESSENTIEL");
+  const equilibre = Deno.env.get("STRIPE_PRICE_EQUILIBRE");
+  const premium = Deno.env.get("STRIPE_PRICE_PREMIUM");
+  if (essentiel) map[essentiel] = "essentiel";
+  if (equilibre) map[equilibre] = "equilibre";
+  if (premium) map[premium] = "premium";
+  return map;
+}
+
+// ── Resolve user WITHOUT listUsers ──
+async function resolveUserId(
+  supabaseAdmin: any,
+  opts: {
+    metadataUserId?: string | null;
+    clientReferenceId?: string | null;
+    stripeCustomerId?: string | null;
+    customerEmail?: string | null;
+  }
+): Promise<string | null> {
+  // 1) metadata.user_id or client_reference_id (fastest)
+  const directId = opts.metadataUserId || opts.clientReferenceId;
+  if (directId) {
+    logStep("Resolved user via metadata/client_reference_id", { userId: redactId(directId) });
+    return directId;
+  }
+
+  // 2) Lookup by stripe_customer_id in subscriptions table
+  if (opts.stripeCustomerId) {
+    const { data: sub } = await supabaseAdmin
+      .from('subscriptions')
+      .select('user_id')
+      .eq('stripe_customer_id', opts.stripeCustomerId)
+      .limit(1)
+      .maybeSingle();
+    if (sub?.user_id) {
+      logStep("Resolved user via subscriptions.stripe_customer_id", { userId: redactId(sub.user_id) });
+      return sub.user_id;
+    }
+    // Also check profiles
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('stripe_customer_id', opts.stripeCustomerId)
+      .limit(1)
+      .maybeSingle();
+    if (profile?.id) {
+      logStep("Resolved user via profiles.stripe_customer_id", { userId: redactId(profile.id) });
+      return profile.id;
+    }
+  }
+
+  // 3) Fallback: lookup by email in profiles
+  if (opts.customerEmail) {
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('email', opts.customerEmail)
+      .limit(1)
+      .maybeSingle();
+    if (profile?.id) {
+      logStep("Resolved user via profiles.email", { userId: redactId(profile.id) });
+      return profile.id;
+    }
+  }
+
+  logStep("WARN: Could not resolve user", {
+    hasCustomerId: !!opts.stripeCustomerId,
+    hasEmail: !!opts.customerEmail,
+  });
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -116,7 +191,9 @@ serve(async (req) => {
         event_type: event.type,
       });
 
-    // Handle checkout.session.completed - Credits purchase OR Subscription
+    // =========================================
+    // Handle checkout.session.completed
+    // =========================================
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
       const customerEmail = session.customer_email || session.customer_details?.email;
@@ -128,7 +205,7 @@ serve(async (req) => {
                                session.metadata?.credits_type === 'lifetime' ||
                                session.metadata?.pack_id;
       const creditsAmount = session.metadata?.credits_amount ? parseInt(session.metadata.credits_amount) : null;
-      const supabaseUserId = session.metadata?.supabase_user_id;
+      const supabaseUserId = session.metadata?.supabase_user_id || session.metadata?.user_id || session.client_reference_id;
       const packId = session.metadata?.pack_id;
       
       if (isCreditPurchase && creditsAmount && supabaseUserId) {
@@ -141,6 +218,14 @@ serve(async (req) => {
           packId,
           sessionId: session.id.substring(0, 8) + "***"
         });
+        
+        // Persist stripe_customer_id on profile for future lookups
+        if (customerId) {
+          await supabaseAdmin
+            .from('profiles')
+            .update({ stripe_customer_id: customerId })
+            .eq('id', supabaseUserId);
+        }
         
         // Build stable idempotency key
         const idempotencyKey = `stripe:checkout_session:${session.id}`;
@@ -176,7 +261,7 @@ serve(async (req) => {
           
           // Check if this was an idempotent hit (already processed)
           if (creditsResult?.idempotent_hit) {
-          logStep("Idempotent hit - transaction already processed", { 
+            logStep("Idempotent hit - transaction already processed", { 
               transactionId: creditsResult.transaction_id 
             });
             return new Response(JSON.stringify({ received: true, idempotent: true }), {
@@ -211,7 +296,6 @@ serve(async (req) => {
           // =========================================
           // REFERRAL QUALIFICATION - First credits purchase
           // =========================================
-          // Check if this user was referred and trigger qualification
           try {
             const { data: qualResult, error: qualError } = await supabaseAdmin.rpc('handle_referral_qualification', {
               p_referred_user_id: supabaseUserId,
@@ -242,7 +326,7 @@ serve(async (req) => {
       }
       
       // =========================================
-      // SUBSCRIPTION HANDLING (legacy, when enabled)
+      // SUBSCRIPTION HANDLING - NO listUsers
       // =========================================
       const referralCode = session.metadata?.referral_code;
       const fromCheckout = session.metadata?.from_checkout === 'true';
@@ -259,68 +343,53 @@ serve(async (req) => {
         fromCheckout 
       });
 
-      const randomPassword = crypto.randomUUID();
+      // Resolve user via metadata or DB lookup — NO listUsers
+      let userId = await resolveUserId(supabaseAdmin, {
+        metadataUserId: session.metadata?.user_id,
+        clientReferenceId: session.client_reference_id,
+        stripeCustomerId: customerId,
+        customerEmail,
+      });
 
-      let userId: string | null = null;
-      logStep("Checking for existing user");
-      const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-      
-      if (listError) {
-        logStep("ERROR listing users", { error: listError.message });
-        throw listError;
-      }
-      
-      const existingUser = existingUsers.users.find(u => u.email === customerEmail);
-      
-      if (existingUser) {
-        logStep("User already exists", { email: redactEmail(customerEmail), userId: redactId(existingUser.id) });
-        userId = existingUser.id;
-        logStep("Updating subscription for existing user");
-        await updateSubscriptionRecord(supabaseAdmin, userId, customerId, subscriptionId, session, stripe);
-      } else {
+      if (!userId) {
+        // Create new user as last resort
         logStep("Creating new user in Supabase Auth", { email: redactEmail(customerEmail) });
+        const randomPassword = crypto.randomUUID();
         
-        try {
-          const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-            email: customerEmail,
-            password: randomPassword,
-            email_confirm: true,
-            user_metadata: {
-              stripe_customer_id: customerId,
-              created_via_stripe: true,
-            },
-          });
+        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+          email: customerEmail,
+          password: randomPassword,
+          email_confirm: true,
+          user_metadata: {
+            stripe_customer_id: customerId,
+            created_via_stripe: true,
+          },
+        });
 
-          if (authError) {
-            logStep("ERROR creating user in Supabase Auth", { 
-              error: authError.message,
-              code: authError.status,
-            });
-            throw authError;
-          }
-          
-          if (!authData.user) {
-            logStep("ERROR: User creation returned no user data");
-            throw new Error("User creation failed - no user data returned");
-          }
-          
-          userId = authData.user.id;
-          logStep("User created successfully in Supabase Auth", { userId: redactId(userId) });
-          
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          logStep("Creating subscription record");
-          await updateSubscriptionRecord(supabaseAdmin, userId, customerId, subscriptionId, session, stripe);
-          
-        } catch (createError) {
-          logStep("CRITICAL ERROR during user creation", {
-            error: String(createError),
-            email: redactEmail(customerEmail),
-            customerId: redactId(customerId)
-          });
-          throw createError;
+        if (authError) {
+          logStep("ERROR creating user", { error: authError.message });
+          throw authError;
         }
+        
+        if (!authData.user) {
+          throw new Error("User creation failed - no user data returned");
+        }
+        
+        userId = authData.user.id;
+        logStep("User created successfully", { userId: redactId(userId) });
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
+      
+      // Persist stripe_customer_id on profiles for future lookups
+      if (customerId && userId) {
+        await supabaseAdmin
+          .from('profiles')
+          .update({ stripe_customer_id: customerId })
+          .eq('id', userId);
+      }
+
+      logStep("Updating subscription record");
+      await updateSubscriptionRecord(supabaseAdmin, userId, customerId, subscriptionId, session, stripe);
       
       // Create one-time login token
       if (userId && session.id) {
@@ -348,7 +417,6 @@ serve(async (req) => {
       }
         
       // Handle referral
-      const refCode = session.metadata?.referral_code;
       const affCode = session.metadata?.affiliate_code;
       
       if (referralCode && userId) {
@@ -429,17 +497,12 @@ serve(async (req) => {
       const refunds = charge.refunds?.data || [];
       
       for (const refund of refunds) {
-        const idempotencyKey = `stripe:refund:${refund.id}`;
-        
-        // Check if this was a credits purchase refund via payment intent metadata
-        // Note: You may need to look up the original transaction
         logStep("Processing refund", { 
           refundId: refund.id, 
           amount: refund.amount,
           chargeId: charge.id 
         });
         
-        // Log refund event for admin review
         await logPaymentEvent(
           'refund_received',
           event.id,
@@ -458,16 +521,21 @@ serve(async (req) => {
       }
     }
 
-    // Handle subscription updates
+    // =========================================
+    // Handle subscription updates - NO listUsers
+    // =========================================
     if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
       const subscription = event.data.object as Stripe.Subscription;
       const customerId = subscription.customer as string;
 
-      const { data: users } = await supabaseAdmin.auth.admin.listUsers();
-      const user = users.users.find(u => u.user_metadata?.stripe_customer_id === customerId);
+      const userId = await resolveUserId(supabaseAdmin, {
+        stripeCustomerId: customerId,
+      });
 
-      if (user) {
-        await updateSubscriptionRecord(supabaseAdmin, user.id, customerId, subscription.id, null, stripe);
+      if (userId) {
+        await updateSubscriptionRecord(supabaseAdmin, userId, customerId, subscription.id, null, stripe);
+      } else {
+        logStep("WARN: Could not resolve user for subscription event", { customerId: redactId(customerId) });
       }
     }
 
@@ -493,6 +561,9 @@ async function updateSubscriptionRecord(
   session: Stripe.Checkout.Session | null,
   stripe: Stripe
 ) {
+  // Build price-to-plan map from env
+  const priceMap = buildPriceMap();
+
   let subscription = null;
   let plan = null;
   let status = 'trialing';
@@ -517,10 +588,8 @@ async function updateSubscriptionRecord(
     status = subscription.status;
     const priceId = subscription.items.data[0]?.price.id;
     
-    if (priceId === 'price_1SIWDPEl2hJeGlFp14plp0D5') plan = 'essentiel';
-    else if (priceId === 'price_1SIWFyEl2hJeGlFp8pQyEMQC') plan = 'equilibre';
-    else if (priceId === 'price_1SIWGdEl2hJeGlFp1e1pekfL') plan = 'premium';
-    else plan = priceId;
+    // Map price ID to plan name using env-based config
+    plan = priceMap[priceId] || priceId;
 
     logStep("Subscription details", { 
       status, 

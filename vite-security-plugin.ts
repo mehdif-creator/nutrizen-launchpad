@@ -11,20 +11,30 @@ export function securityHeadersPlugin(): Plugin {
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const isDev = process.env.NODE_ENV !== 'production';
+        const url = req.url || '';
+
+        // Cache-Control: no-store for authenticated app/admin routes
+        if (url.startsWith('/app') || url.startsWith('/admin')) {
+          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+          res.setHeader('Pragma', 'no-cache');
+          res.setHeader('Expires', '0');
+        }
         
-        // Content Security Policy - allow iframe in development
+        // Content Security Policy — NO unsafe-eval
         res.setHeader(
           'Content-Security-Policy',
           [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co",
-            "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com",
-            "img-src 'self' https://*.supabase.co data: blob:",
+            "script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.googletagmanager.com",
+            "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.google-analytics.com https://*.googletagmanager.com",
+            "img-src 'self' https://*.supabase.co https://storage.googleapis.com data: blob: https:",
             "style-src 'self' 'unsafe-inline'",
             "font-src 'self' data:",
+            "frame-src https://js.stripe.com https://*.googletagmanager.com",
             isDev ? "frame-ancestors *" : "frame-ancestors 'none'",
             "base-uri 'self'",
             "form-action 'self'",
+            "object-src 'none'",
             isDev ? "" : "upgrade-insecure-requests",
           ].filter(Boolean).join('; ')
         );
@@ -46,7 +56,7 @@ export function securityHeadersPlugin(): Plugin {
         // Permissions Policy
         res.setHeader(
           'Permissions-Policy',
-          'geolocation=(), camera=(), microphone=(), payment=()'
+          'camera=(), microphone=(), geolocation=()'
         );
 
         // Cross-Origin Policies - relaxed in development
