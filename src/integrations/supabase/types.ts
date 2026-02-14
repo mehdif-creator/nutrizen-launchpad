@@ -1117,6 +1117,39 @@ export type Database = {
         }
         Relationships: []
       }
+      pinterest_oauth: {
+        Row: {
+          access_token_enc: string
+          account_label: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          refresh_token_enc: string | null
+          scope: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token_enc: string
+          account_label?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          refresh_token_enc?: string | null
+          scope?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token_enc?: string
+          account_label?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          refresh_token_enc?: string | null
+          scope?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       preferences: {
         Row: {
           age: number | null
@@ -3270,6 +3303,94 @@ export type Database = {
         Args: { p_month: string; p_user_id: string }
         Returns: Json
       }
+      dequeue_pinterest_jobs: {
+        Args: { p_limit?: number }
+        Returns: {
+          alt_text: string | null
+          asset_4x5_path: string | null
+          asset_9x16_path: string | null
+          attempts: number
+          badges: Json | null
+          board_slug: string | null
+          calories_kcal: number | null
+          created_at: string
+          cuisine_type: string | null
+          destination_url: string | null
+          error: string | null
+          external_post_id: string | null
+          external_post_url: string | null
+          id: string
+          image_path: string | null
+          ingredients: Json | null
+          instructions: Json | null
+          locked_at: string | null
+          pin_description: string | null
+          pin_title: string | null
+          platform: string | null
+          posted_at: string | null
+          publish_error: string | null
+          published_at: string | null
+          recipe_id: string
+          rendered_at: string | null
+          scheduled_at: string | null
+          status: string
+          title: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "social_queue"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      dequeue_social_jobs: {
+        Args: { p_limit?: number; p_platform: string }
+        Returns: {
+          alt_text: string | null
+          asset_4x5_path: string | null
+          asset_9x16_path: string | null
+          attempts: number
+          badges: Json | null
+          board_slug: string | null
+          calories_kcal: number | null
+          created_at: string
+          cuisine_type: string | null
+          destination_url: string | null
+          error: string | null
+          external_post_id: string | null
+          external_post_url: string | null
+          id: string
+          image_path: string | null
+          ingredients: Json | null
+          instructions: Json | null
+          locked_at: string | null
+          pin_description: string | null
+          pin_title: string | null
+          platform: string | null
+          posted_at: string | null
+          publish_error: string | null
+          published_at: string | null
+          recipe_id: string
+          rendered_at: string | null
+          scheduled_at: string | null
+          status: string
+          title: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "social_queue"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       extract_name: { Args: { line: string }; Returns: string }
       extract_qty_g: { Args: { line: string }; Returns: number }
       fn_award_event: {
@@ -3875,7 +3996,9 @@ export type Database = {
         Returns: boolean
       }
       household_portion_factor: { Args: { p_people: Json }; Returns: number }
-      is_admin: { Args: never; Returns: boolean }
+      is_admin:
+        | { Args: never; Returns: boolean }
+        | { Args: { uid: string }; Returns: boolean }
       is_onboarding_complete: { Args: { p_user_id: string }; Returns: boolean }
       norm_txt: { Args: { input: string }; Returns: string }
       normalize_fraction: { Args: { p_text: string }; Returns: number }
