@@ -1,6 +1,6 @@
 import { AppFooter } from '@/components/app/AppFooter';
 import { Card } from '@/components/ui/card';
-import { Users, Ticket, TrendingUp, Crown, Star, Calendar, Activity, Percent, Euro, UserMinus, UserPlus, BarChart3, Stethoscope } from 'lucide-react';
+import { Users, Ticket, TrendingUp, Crown, Star, Calendar, Activity, Percent, Euro, UserMinus, UserPlus, BarChart3, Stethoscope, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
@@ -161,6 +161,7 @@ export default function AdminDashboard() {
               <Link to="/admin/diagnostics"><Button variant="outline" className="w-full justify-start"><Stethoscope className="mr-2 h-4 w-4" />Diagnostics QA</Button></Link>
               <Link to="/admin/referrals"><Button variant="outline" className="w-full justify-start"><Users className="mr-2 h-4 w-4" />Parrainage</Button></Link>
               <Link to="/admin/conversion"><Button variant="outline" className="w-full justify-start"><TrendingUp className="mr-2 h-4 w-4" />Funnel de conversion</Button></Link>
+              <Link to="/admin/automation"><Button variant="outline" className="w-full justify-start"><Zap className="mr-2 h-4 w-4" />NutriZen Automation</Button></Link>
             </div>
           </Card>
           <Card className="p-6">
