@@ -43,6 +43,7 @@ import AdminReferrals from "./pages/admin/AdminReferrals";
 import AdminConversion from "./pages/admin/AdminConversion";
 import AdminMacrosMaintenance from "./pages/admin/AdminMacrosMaintenance";
 import AdminHealth from "./pages/admin/AdminHealth";
+import AutomationIndex from "./pages/admin/AutomationIndex";
 
 // KPI Detail Pages
 import KpiMrr from "./pages/admin/kpis/KpiMrr";
@@ -130,6 +131,7 @@ const App = () => {
         <Route path="/admin/conversion" element={<ProtectedRoute requireAdmin><AdminConversion /></ProtectedRoute>} />
         <Route path="/admin/macros-maintenance" element={<ProtectedRoute requireAdmin><AdminMacrosMaintenance /></ProtectedRoute>} />
         <Route path="/admin/health" element={<ProtectedRoute requireAdmin><AdminHealth /></ProtectedRoute>} />
+        <Route path="/admin/automation/*" element={<ProtectedRoute requireAdmin><AutomationIndex /></ProtectedRoute>} />
         
         {/* Admin KPI Detail Pages */}
         <Route path="/admin/kpis/mrr" element={<ProtectedRoute requireAdmin><KpiMrr /></ProtectedRoute>} />
