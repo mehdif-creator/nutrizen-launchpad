@@ -1,9 +1,8 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { withSecurity } from '../_shared/security.ts';
 import { validate, UserIdSchema } from '../_shared/validation.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { createClient } from '../_shared/deps.ts';
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   return await withSecurity(req, {
     requireAuth: true,
     validateUserIdMatch: true,

@@ -1,5 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { createClient } from '../_shared/deps.ts';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { createHmac } from "https://deno.land/std@0.168.0/node/crypto.ts";
 
@@ -36,7 +35,7 @@ function verifySignature(payload: string, signature: string | null, secret: stri
   }
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }

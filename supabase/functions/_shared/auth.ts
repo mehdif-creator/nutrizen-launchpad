@@ -3,7 +3,7 @@
  * Server-side admin verification and role checking
  */
 
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { SupabaseClient } from './deps.ts';
 import { SecurityError } from './security.ts';
 
 /**

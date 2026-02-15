@@ -77,13 +77,14 @@ export const LEVEL_THRESHOLDS = {
 export const ZEN_POINTS_PER_MINUTE = 0.1; // 10 minutes = 1 zen point
 
 /**
- * API routes
+ * API routes — edge function names only.
+ * Build full URLs via supabase.functions.invoke() or functionsBaseUrl().
  */
-export const API_ROUTES = {
-  GENERATE_MENU: '/functions/v1/generate-menu',
-  INIT_USER: '/functions/v1/init-user-rows',
-  USE_SWAP: '/functions/v1/use-swap',
-  HANDLE_REFERRAL: '/functions/v1/handle-referral',
+export const EDGE_FUNCTIONS = {
+  GENERATE_MENU: 'generate-menu',
+  INIT_USER: 'init-user-rows',
+  USE_SWAP: 'use-swap',
+  HANDLE_REFERRAL: 'handle-referral',
 } as const;
 
 /**

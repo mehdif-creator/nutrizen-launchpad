@@ -10,7 +10,7 @@
  * - Input sanitization helpers
  */
 
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { createClient, SupabaseClient } from './deps.ts';
 
 // =============================================================================
 // TYPES

@@ -1,10 +1,11 @@
 import { supabase } from '@/integrations/supabase/client';
+import { storagePublicBaseUrl } from '@/lib/supabaseUrls';
 
 const RECIPE_IMAGES_BUCKET = 'recipe-images';
 const PLACEHOLDER_IMAGE = '/img/hero-default.png';
 
-// Supabase storage base URL for public bucket
-const STORAGE_BASE_URL = 'https://pghdaozgxkbtsxwydemd.supabase.co/storage/v1/object/public';
+// Derived at runtime from VITE_SUPABASE_URL — no hardcoded project ID
+const STORAGE_BASE_URL = storagePublicBaseUrl();
 
 // Configuration: set to true if bucket is public, false if private
 // This can be configured based on your Supabase Storage settings

@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+// submit-contact: no createClient needed, uses validation + HMAC only
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 // HMAC signature validation
@@ -72,7 +72,7 @@ function checkRateLimit(identifier: string): boolean {
   return true;
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
 
