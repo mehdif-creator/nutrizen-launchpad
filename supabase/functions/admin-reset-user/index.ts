@@ -30,15 +30,11 @@ Deno.serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    // Check if user is admin - filter for admin role specifically
-    const { data: roles, error: roleError } = await supabaseAdmin
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .maybeSingle();
+    // Check if user is admin using secure has_role() RPC
+    const { data: isAdmin, error: roleError } = await supabaseAdmin
+      .rpc('has_role', { _user_id: user.id, _role: 'admin' });
 
-    if (roleError || !roles) {
+    if (roleError || !isAdmin) {
       throw new Error('Insufficient permissions');
     }
 
