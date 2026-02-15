@@ -1,6 +1,6 @@
 import { createClient } from '../_shared/deps.ts';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
-import { createHmac } from "https://deno.land/std@0.168.0/node/crypto.ts";
+import { createHmac } from "node:crypto";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
