@@ -1048,6 +1048,21 @@ export type Database = {
         }
         Relationships: []
       }
+      oauth_states: {
+        Row: {
+          created_at: string
+          state: string
+        }
+        Insert: {
+          created_at?: string
+          state: string
+        }
+        Update: {
+          created_at?: string
+          state?: string
+        }
+        Relationships: []
+      }
       payment_events_log: {
         Row: {
           amount_cents: number | null
@@ -1119,32 +1134,44 @@ export type Database = {
       }
       pinterest_oauth: {
         Row: {
-          access_token_enc: string
+          access_token: string | null
+          access_token_enc: string | null
+          access_token_secret_id: string | null
           account_label: string
           created_at: string
           expires_at: string | null
           id: string
+          refresh_token: string | null
           refresh_token_enc: string | null
+          refresh_token_secret_id: string | null
           scope: string | null
           updated_at: string
         }
         Insert: {
-          access_token_enc: string
+          access_token?: string | null
+          access_token_enc?: string | null
+          access_token_secret_id?: string | null
           account_label?: string
           created_at?: string
           expires_at?: string | null
           id?: string
+          refresh_token?: string | null
           refresh_token_enc?: string | null
+          refresh_token_secret_id?: string | null
           scope?: string | null
           updated_at?: string
         }
         Update: {
-          access_token_enc?: string
+          access_token?: string | null
+          access_token_enc?: string | null
+          access_token_secret_id?: string | null
           account_label?: string
           created_at?: string
           expires_at?: string | null
           id?: string
+          refresh_token?: string | null
           refresh_token_enc?: string | null
+          refresh_token_secret_id?: string | null
           scope?: string | null
           updated_at?: string
         }
@@ -3294,10 +3321,15 @@ export type Database = {
       check_images_integrity: { Args: never; Returns: Json }
       check_stuck_jobs: { Args: { p_minutes?: number }; Returns: Json }
       cleanup_expired_tokens: { Args: never; Returns: undefined }
+      cleanup_oauth_states: { Args: { p_ttl?: unknown }; Returns: number }
       cleanup_old_checkout_sessions: { Args: never; Returns: undefined }
       compute_recipe_macros: {
         Args: { p_recipe_id: string }
         Returns: undefined
+      }
+      consume_oauth_state: {
+        Args: { p_state: string; p_ttl?: unknown }
+        Returns: boolean
       }
       deduct_week_regeneration_credits: {
         Args: { p_month: string; p_user_id: string }
@@ -4153,6 +4185,10 @@ export type Database = {
           p_user_id: string
         }
         Returns: Json
+      }
+      vault_upsert_secret: {
+        Args: { p_name: string; p_secret: string }
+        Returns: string
       }
     }
     Enums: {
