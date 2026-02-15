@@ -54,7 +54,8 @@ Deno.serve(async (req) => {
     });
 
     if (createError) {
-      throw new Error(`Failed to create user: ${createError.message}`);
+      console.error('[admin-create-user] Auth creation error:', createError.message);
+      throw new Error('Failed to create user');
     }
 
     console.log(`[admin-create-user] Auth user created: ${newUser.user.id}`);
@@ -171,14 +172,17 @@ Deno.serve(async (req) => {
       console.error('[admin-create-user] Audit log failed:', auditError);
     }
     
+    const isAuthError = error instanceof Error && 
+      (error.message === 'Unauthorized' || error.message === 'No authorization header');
+    
     return new Response(
       JSON.stringify({
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: isAuthError ? 'Unauthorized' : 'An error occurred. Please try again.',
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: error instanceof Error && error.message === 'Unauthorized' ? 401 : 500,
+        status: isAuthError ? 401 : 500,
       }
     );
   }
