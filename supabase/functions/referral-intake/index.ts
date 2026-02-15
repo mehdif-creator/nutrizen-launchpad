@@ -1,12 +1,11 @@
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { getCorsHeaders } from '../_shared/security.ts';
 
 serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -54,7 +53,6 @@ serve(async (req) => {
 
     // Handle click tracking (public, no auth required)
     if (action === 'track_click' && referralCode) {
-      // Find referrer by code in the new referral_codes table
       const { data: codeData, error: codeError } = await supabaseAdmin
         .from('referral_codes')
         .select('user_id')
@@ -68,7 +66,6 @@ serve(async (req) => {
         );
       }
 
-      // Record click
       await supabaseAdmin
         .from('referral_clicks')
         .insert({
@@ -152,6 +149,8 @@ serve(async (req) => {
   } catch (error) {
     console.error('Referral intake error:', error);
     
+    const origin = req.headers.get('origin');
+    const corsHeaders = getCorsHeaders(origin);
     const message = (error as Error).message;
     const isInvalidCode = message.includes('Invalid referral code');
     

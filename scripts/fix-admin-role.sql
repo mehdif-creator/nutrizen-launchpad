@@ -1,14 +1,17 @@
--- Fix admin role for appnutrizen@gmail.com user
--- This script adds the admin role to the user who is missing it
+-- Fix admin role for a specific user
+-- USAGE: Replace 'admin@example.com' with the actual email before running.
+-- NEVER commit real emails to this file.
 
--- Add admin role to appnutrizen@gmail.com
+-- Add admin role by email
 INSERT INTO public.user_roles (user_id, role) 
-VALUES ('55866f59-de43-4cdf-b5a0-59165de6cbc5', 'admin')
+SELECT id, 'admin'::app_role
+FROM auth.users
+WHERE email = 'admin@example.com' -- ← REPLACE with real email before running
 ON CONFLICT (user_id, role) DO NOTHING;
 
--- Verify the admin roles
+-- Verify the admin roles (replace emails as needed)
 SELECT u.id, u.email, ur.role 
 FROM auth.users u
 LEFT JOIN public.user_roles ur ON u.id = ur.user_id
-WHERE u.email IN ('appnutrizen@gmail.com', 'mouldi493@gmail.com', 'contact.mehdif@gmail.com')
+WHERE ur.role = 'admin'
 ORDER BY u.email, ur.role;

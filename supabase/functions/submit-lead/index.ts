@@ -1,49 +1,13 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
-
-// SECURITY: Strict CORS allow-list
-const ALLOWED_ORIGINS = [
-  'https://mynutrizen.fr',
-  'https://app.mynutrizen.fr',
-  'http://localhost:5173',
-];
-
-function getCorsHeaders(origin: string | null): Record<string, string> {
-  const isAllowed = origin && ALLOWED_ORIGINS.includes(origin);
-  return {
-    'Access-Control-Allow-Origin': isAllowed ? origin : ALLOWED_ORIGINS[0],
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  };
-}
-
-// Simple in-memory rate limiting
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour
-const RATE_LIMIT_MAX = 5; // 5 submissions per hour
+import { getCorsHeaders, getClientIp } from "../_shared/security.ts";
 
 const leadSchema = z.object({
   email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
   source: z.string().trim().min(1, "Source is required").max(100, "Source must be less than 100 characters"),
   timestamp: z.string().optional()
 });
-
-function checkRateLimit(identifier: string): boolean {
-  const now = Date.now();
-  const record = rateLimitMap.get(identifier);
-
-  if (!record || now > record.resetAt) {
-    rateLimitMap.set(identifier, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
-    return true;
-  }
-
-  if (record.count >= RATE_LIMIT_MAX) {
-    return false;
-  }
-
-  record.count++;
-  return true;
-}
 
 serve(async (req) => {
   const origin = req.headers.get('origin');
@@ -54,10 +18,25 @@ serve(async (req) => {
   }
 
   try {
-    // Rate limiting based on IP
-    const identifier = req.headers.get('CF-Connecting-IP') || req.headers.get('X-Forwarded-For') || 'anonymous';
-    if (!checkRateLimit(identifier)) {
-      return new Response(JSON.stringify({ error: 'Too many requests. Please try again later.' }), {
+    // DB-backed rate limiting via shared RPC
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const clientIp = getClientIp(req);
+    const identifier = `ip:${clientIp}`;
+
+    const { data: rlResult, error: rlError } = await supabaseAdmin.rpc('check_rate_limit', {
+      p_identifier: identifier,
+      p_endpoint: 'submit-lead',
+      p_max_tokens: 5,
+      p_refill_rate: 5, // 5 per minute ≈ 5 per hour with cost 60
+      p_cost: 60,
+    });
+
+    if (!rlError && rlResult && !rlResult.allowed) {
+      return new Response(JSON.stringify({ error: 'rate_limited' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 429,
       });
@@ -104,10 +83,8 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
-    // Log full error details server-side
     console.error('Error in submit-lead:', error);
     
-    // Return generic error message to client
     const userMessage = error instanceof z.ZodError 
       ? error.errors[0]?.message || 'Invalid form data'
       : 'Unable to submit form. Please try again.';
