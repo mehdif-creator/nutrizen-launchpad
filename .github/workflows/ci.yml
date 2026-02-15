@@ -24,7 +24,7 @@ jobs:
         run: npm ci
       
       - name: Format check
-        run: npx prettier --check "src/**/*.{ts,tsx,css}" || true
+        run: npx prettier --check "src/**/*.{ts,tsx,css}"
       
       - name: Lint
         run: npm run lint
