@@ -165,3 +165,10 @@ verify_jwt = false
 limit = 5
 period = "1h"
 
+[functions.admin-analytics]
+verify_jwt = true
+
+[functions.admin-analytics.rate_limit]
+limit = 120
+period = "1h"
+
