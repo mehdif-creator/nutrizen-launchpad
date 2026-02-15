@@ -60,11 +60,15 @@ export default function Callback() {
         if (data.session) {
           console.log('[AUTH-CALLBACK] Session created successfully:', data.session.user.email);
           
-          // Check if user came from post-checkout flow
+          // Check for redirect param (e.g. from credits page login flow)
           const urlParams = new URLSearchParams(window.location.search);
+          const redirectPath = urlParams.get('redirect');
           const fromCheckout = urlParams.get('from_checkout') === 'true';
           
-          if (fromCheckout) {
+          if (redirectPath && redirectPath.startsWith('/')) {
+            console.log('[AUTH-CALLBACK] Redirecting to:', redirectPath);
+            navigate(redirectPath, { replace: true });
+          } else if (fromCheckout) {
             console.log('[AUTH-CALLBACK] Redirecting to app from checkout');
             navigate('/app', { replace: true });
           } else {
