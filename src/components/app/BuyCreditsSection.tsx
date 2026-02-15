@@ -4,9 +4,11 @@ import { Sparkles, ShoppingCart, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export function BuyCreditsSection() {
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleBuyCredits = async () => {
     setLoading(true);
@@ -14,36 +16,31 @@ export function BuyCreditsSection() {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        toast.error('Tu dois être connecté pour acheter des crédits');
+        toast.info('Connecte-toi pour acheter des crédits');
+        navigate('/credits');
         return;
       }
 
+      console.log('[BuyCredits] Creating checkout for pack_m');
       const { data, error } = await supabase.functions.invoke('create-credits-checkout', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
+        body: { pack_id: 'pack_m' },
       });
 
       if (error) {
-        console.error('Checkout error:', error);
-        // More specific error message
-        if (error.message?.includes('price')) {
-          toast.error('Configuration Stripe en cours. Contacte le support si le problème persiste.');
-        } else {
-          toast.error('Erreur lors de la création de la session de paiement');
-        }
+        console.error('[BuyCredits] Checkout error:', error);
+        toast.error('Erreur lors de la création du paiement. Réessaie.');
         return;
       }
 
       if (data?.url) {
-        // Redirect in same tab for better UX
         window.location.href = data.url;
       } else {
-        toast.error('URL de paiement non reçue');
+        console.error('[BuyCredits] No URL in response:', data);
+        toast.error('URL de paiement non reçue. Réessaie.');
       }
     } catch (error) {
-      console.error('Error creating checkout:', error);
-      toast.error('Erreur lors de la création de la session de paiement');
+      console.error('[BuyCredits] Unexpected error:', error);
+      toast.error('Erreur réseau. Vérifie ta connexion.');
     } finally {
       setLoading(false);
     }

@@ -12,6 +12,10 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Support redirect after login (e.g. from /credits)
+  const searchParams = new URLSearchParams(window.location.search);
+  const redirectTo = searchParams.get('redirect');
 
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +25,7 @@ export default function Login() {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/verify`,
+          emailRedirectTo: `${window.location.origin}/auth/callback${redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`,
         },
       });
 
@@ -47,7 +51,7 @@ export default function Login() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback${redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`,
       },
     });
 

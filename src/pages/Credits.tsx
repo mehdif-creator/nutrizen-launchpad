@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, Sparkles, Shield, Zap, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, Sparkles, Shield, Zap, HelpCircle, ChevronDown, ChevronUp, LogIn } from 'lucide-react';
 import { useCreditPacks } from '@/hooks/useCreditPacks';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -43,39 +44,47 @@ const FAQ_ITEMS = [
 
 export default function CreditsPage() {
   const { packs, loading, formatPrice, getPricePerCredit } = useCreditPacks();
-  const { user, session } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [purchaseLoading, setPurchaseLoading] = useState<string | null>(null);
 
   const handlePurchase = async (packId: string) => {
+    // If not logged in, redirect to login with return URL
     if (!user || !session) {
-      toast.error('Tu dois être connecté pour acheter des crédits');
+      toast.info('Connecte-toi pour acheter des crédits');
+      navigate(`/auth/login?redirect=${encodeURIComponent('/credits')}`);
       return;
     }
 
     setPurchaseLoading(packId);
+    console.log('[Credits] Starting checkout', { packId, userId: user.id.substring(0, 8) });
     
     try {
       const { data, error } = await supabase.functions.invoke('create-credits-checkout', {
         body: { pack_id: packId },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
       });
 
       if (error) {
-        console.error('Checkout error:', error);
-        toast.error('Erreur lors de la création de la session de paiement');
+        console.error('[Credits] Checkout creation failed:', error);
+        const msg = error.message?.includes('price')
+          ? 'Configuration de paiement en cours. Réessaie dans quelques minutes.'
+          : error.message?.includes('401') || error.message?.includes('auth')
+          ? 'Session expirée. Reconnecte-toi et réessaie.'
+          : 'Erreur lors de la création du paiement. Réessaie.';
+        toast.error(msg);
         return;
       }
 
       if (data?.url) {
+        console.log('[Credits] Redirecting to Stripe Checkout');
         window.location.href = data.url;
       } else {
-        toast.error('URL de paiement non reçue');
+        console.error('[Credits] No URL in response:', data);
+        toast.error('URL de paiement non reçue. Réessaie.');
       }
     } catch (error) {
-      console.error('Error creating checkout:', error);
-      toast.error('Erreur lors de la création de la session de paiement');
+      console.error('[Credits] Unexpected error:', error);
+      toast.error('Erreur réseau. Vérifie ta connexion et réessaie.');
     } finally {
       setPurchaseLoading(null);
     }
@@ -193,11 +202,17 @@ export default function CreditsPage() {
                     
                     <Button
                       onClick={() => handlePurchase(pack.id)}
-                      disabled={purchaseLoading === pack.id || loading}
+                      disabled={purchaseLoading === pack.id || loading || authLoading}
                       className={isPopular ? 'bg-primary hover:bg-primary/90' : ''}
                       variant={isPopular ? 'default' : 'outline'}
                     >
-                      {purchaseLoading === pack.id ? 'Chargement...' : 'Acheter'}
+                      {purchaseLoading === pack.id ? (
+                        'Redirection…'
+                      ) : !user ? (
+                        <><LogIn className="w-4 h-4 mr-1" /> Se connecter pour acheter</>
+                      ) : (
+                        'Acheter'
+                      )}
                     </Button>
                   </Card>
                 );

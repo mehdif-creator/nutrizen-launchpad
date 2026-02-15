@@ -158,3 +158,10 @@ verify_jwt = true
 limit = 10
 period = "1h"
 
+[functions.stripe-health]
+verify_jwt = false
+
+[functions.stripe-health.rate_limit]
+limit = 5
+period = "1h"
+
