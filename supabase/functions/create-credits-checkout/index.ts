@@ -1,6 +1,5 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@18.5.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import Stripe from "https://esm.sh/stripe@18.5.0?target=deno";
+import { createClient } from '../_shared/deps.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,7 +20,7 @@ const CREDIT_PACKS: Record<string, { credits: number; priceEnvKey: string; name:
   zen_15: { credits: 15, priceEnvKey: 'ZEN_CREDITS_PRICE_ID', name: 'Crédits Zen x15' },
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }

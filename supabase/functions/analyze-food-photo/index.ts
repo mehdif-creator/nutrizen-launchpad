@@ -1,6 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { createClient } from '../_shared/deps.ts';
 import { ImageUploadSchema, validate } from '../_shared/validation.ts';
 
 const ALLOWED_ORIGINS = [
@@ -20,7 +19,7 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
   };
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
   

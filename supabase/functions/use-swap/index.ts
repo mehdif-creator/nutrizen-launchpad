@@ -1,5 +1,4 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from '../_shared/deps.ts';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 
 const ALLOWED_ORIGINS = [
@@ -55,7 +54,7 @@ const UseSwapSchema = z.object({
   day: z.number().int().min(0).max(6).optional(),
 }).strict();
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
   

@@ -5,7 +5,7 @@
  * Requires admin role.
  */
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { createClient } from '../_shared/deps.ts';
 import { requireAdmin } from '../_shared/auth.ts';
 import { getCorsHeaders, SecurityError } from '../_shared/security.ts';
 

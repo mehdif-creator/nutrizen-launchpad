@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { createClient } from '../_shared/deps.ts';
 import { getCorsHeaders } from '../_shared/security.ts';
 import { validate, AdminManageCreditsSchema } from '../_shared/validation.ts';
 import { createLogger, redactId } from '../_shared/logging.ts';

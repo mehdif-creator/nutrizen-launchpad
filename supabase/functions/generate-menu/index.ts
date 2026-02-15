@@ -1,5 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { createClient } from '../_shared/deps.ts';
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const ALLOWED_ORIGINS = [
@@ -28,7 +27,7 @@ const GenerateMenuSchema = z.object({
 const redactId = (id: string): string => id ? id.substring(0, 8) + '***' : 'null';
 const redactEmail = (email: string): string => email ? email.split('@')[0] + '@***' : 'null';
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
   

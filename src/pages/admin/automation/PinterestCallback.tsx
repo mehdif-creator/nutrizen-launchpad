@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { functionsBaseUrl } from '@/lib/supabaseUrls';
 
 const PinterestCallback: React.FC = () => {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -20,7 +21,7 @@ const PinterestCallback: React.FC = () => {
 
     const callEdgeFunction = async () => {
       try {
-        const url = `https://pghdaozgxkbtsxwydemd.supabase.co/functions/v1/pinterest-oauth-callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`;
+        const url = `${functionsBaseUrl()}/pinterest-oauth-callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`;
         const res = await fetch(url, { method: 'GET' });
         const data = await res.json();
 

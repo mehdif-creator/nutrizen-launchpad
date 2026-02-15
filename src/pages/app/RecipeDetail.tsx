@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { Clock, Users, Flame, ChefHat, ArrowLeft, Utensils, BarChart3, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { storagePublicBaseUrl } from '@/lib/supabaseUrls';
 import { RecipeMacrosCard } from '@/components/app/RecipeMacrosCard';
 import { SubstitutionsTab } from '@/components/recipe/SubstitutionsTab';
 import { useAwardXp } from '@/hooks/useAwardXp';
@@ -105,7 +106,7 @@ export default function RecipeDetail() {
     );
   }
 
-  const imageUrl = recipe.image_url || (recipe.image_path ? `https://pghdaozgxkbtsxwydemd.supabase.co/storage/v1/object/public/${recipe.image_path}` : null);
+  const imageUrl = recipe.image_url || (recipe.image_path ? `${storagePublicBaseUrl()}/${recipe.image_path}` : null);
   const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
   const instructions = Array.isArray(recipe.instructions) ? recipe.instructions : [];
 
