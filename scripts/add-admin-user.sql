@@ -1,16 +1,15 @@
 -- Script pour donner le rôle admin à un utilisateur
 -- Usage: Exécutez ce script dans Supabase SQL Editor
--- https://supabase.com/dashboard/project/pghdaozgxkbtsxwydemd/sql/new
+-- IMPORTANT: Remplacez 'admin@example.com' par l'email réel AVANT d'exécuter.
+-- NE JAMAIS committer d'emails réels dans ce fichier.
 
 -- ============================================
--- OPTION 1: Donner le rôle admin à l'utilisateur actuellement connecté
+-- OPTION 1: Donner le rôle admin à un utilisateur par email
 -- ============================================
 
--- Identifier l'utilisateur qui essaye d'utiliser le dashboard admin
--- Remplacez l'email ci-dessous par l'email de l'utilisateur
 DO $$
 DECLARE
-  target_email TEXT := 'appnutrizen@gmail.com'; -- CHANGEZ CET EMAIL SI NÉCESSAIRE
+  target_email TEXT := 'admin@example.com'; -- ← REMPLACER par l'email réel
   target_user_id UUID;
 BEGIN
   -- Récupérer l'ID de l'utilisateur
@@ -50,5 +49,5 @@ ORDER BY u.email;
 
 -- Décommentez et modifiez l'email pour retirer un admin
 -- DELETE FROM public.user_roles 
--- WHERE user_id = (SELECT id FROM auth.users WHERE email = 'email@example.com')
+-- WHERE user_id = (SELECT id FROM auth.users WHERE email = 'admin@example.com')
 --   AND role = 'admin';

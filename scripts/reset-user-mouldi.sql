@@ -1,11 +1,14 @@
 -- ============================================================================
--- Script de réinitialisation complète du compte mouldi493@gmail.com
+-- Script de réinitialisation complète d'un compte utilisateur
 -- À exécuter dans le SQL Editor de Supabase
+-- USAGE: Remplacez 'user@example.com' par l'email réel avant exécution.
+-- NE JAMAIS committer d'emails réels dans ce fichier.
 -- ============================================================================
 
 -- Variables
 DO $$
 DECLARE
+  v_target_email TEXT := 'user@example.com'; -- ← REMPLACER par l'email réel
   v_user_id uuid;
   v_current_month date;
   v_new_trial_end timestamp with time zone;
@@ -13,10 +16,10 @@ BEGIN
   -- Récupérer l'ID utilisateur
   SELECT id INTO v_user_id
   FROM profiles
-  WHERE email = 'mouldi493@gmail.com';
+  WHERE email = v_target_email;
 
   IF v_user_id IS NULL THEN
-    RAISE EXCEPTION 'User not found: mouldi493@gmail.com';
+    RAISE EXCEPTION 'User not found: %', v_target_email;
   END IF;
 
   -- Date du mois en cours
@@ -25,7 +28,7 @@ BEGIN
   -- Nouvelle date de fin de trial (30 jours)
   v_new_trial_end := NOW() + INTERVAL '30 days';
 
-  RAISE NOTICE 'Resetting user: % (ID: %)', 'mouldi493@gmail.com', v_user_id;
+  RAISE NOTICE 'Resetting user: % (ID: %)', v_target_email, v_user_id;
 
   -- 1. Réinitialiser les swaps du mois en cours
   INSERT INTO swaps (user_id, month, used, quota)
@@ -110,7 +113,7 @@ BEGIN
   -- Résumé final
   RAISE NOTICE '═══════════════════════════════════════════════════════';
   RAISE NOTICE 'RESET COMPLETED SUCCESSFULLY';
-  RAISE NOTICE 'User: mouldi493@gmail.com';
+  RAISE NOTICE 'User: %', v_target_email;
   RAISE NOTICE 'User ID: %', v_user_id;
   RAISE NOTICE 'New trial end: %', v_new_trial_end;
   RAISE NOTICE '═══════════════════════════════════════════════════════';
