@@ -10,84 +10,85 @@ export default function Callback() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const handleCallback = async () => {
-      try {
-        console.log('[AUTH-CALLBACK] Processing authentication callback...');
-        
-        // Check if we have the hash params (for implicit flow) or search params (for PKCE)
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const searchParams = new URLSearchParams(window.location.search);
-        
-        // Get code from either hash or search params
-        const code = searchParams.get('code') || hashParams.get('code');
-        
-        console.log('[AUTH-CALLBACK] Auth code present:', !!code);
-        console.log('[AUTH-CALLBACK] Hash:', window.location.hash);
-        console.log('[AUTH-CALLBACK] Search:', window.location.search);
+    let handled = false;
 
-        // If we have hash params (implicit flow from OAuth), try to get session directly
-        if (hashParams.has('access_token')) {
-          console.log('[AUTH-CALLBACK] Using implicit flow (access token in hash)');
-          const { error: sessionError } = await supabase.auth.getSession();
-          if (sessionError) {
-            console.error('[AUTH-CALLBACK] Session error:', sessionError);
-            throw sessionError;
-          }
-          navigate('/app', { replace: true });
-          return;
-        }
-
-        // Otherwise use PKCE flow
-        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(window.location.href);
-        
-        if (exchangeError) {
-          console.error('[AUTH-CALLBACK] Exchange error:', exchangeError);
-          
-          // Handle specific error types
-          if (exchangeError.message.includes('expired')) {
-            setError('Le lien a expiré. Veuillez demander un nouveau lien de connexion.');
-          } else if (exchangeError.message.includes('already been consumed')) {
-            setError('Ce lien a déjà été utilisé. Veuillez demander un nouveau lien.');
-          } else if (exchangeError.message.includes('URL not allowed')) {
-            setError('URL de redirection non autorisée. Veuillez contacter le support.');
-          } else {
-            setError('Erreur d\'authentification. Veuillez réessayer.');
-          }
-          setLoading(false);
-          return;
-        }
-
-        if (data.session) {
-          console.log('[AUTH-CALLBACK] Session created successfully:', data.session.user.email);
-          
-          // Check for redirect param (e.g. from credits page login flow)
-          const urlParams = new URLSearchParams(window.location.search);
-          const redirectPath = urlParams.get('redirect');
-          const fromCheckout = urlParams.get('from_checkout') === 'true';
-          
-          if (redirectPath && redirectPath.startsWith('/')) {
-            console.log('[AUTH-CALLBACK] Redirecting to:', redirectPath);
-            navigate(redirectPath, { replace: true });
-          } else if (fromCheckout) {
-            console.log('[AUTH-CALLBACK] Redirecting to app from checkout');
-            navigate('/app', { replace: true });
-          } else {
-            console.log('[AUTH-CALLBACK] Redirecting to app');
-            navigate('/app', { replace: true });
-          }
-        } else {
-          console.error('[AUTH-CALLBACK] No session created');
-          setError('Impossible de créer la session. Veuillez réessayer.');
-          setLoading(false);
-        }
-      } catch (err) {
-        console.error('[AUTH-CALLBACK] Unexpected error:', err);
-        setError('Une erreur inattendue s\'est produite.');
-        setLoading(false);
-      }
+    const getRedirectPath = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectPath = urlParams.get('redirect');
+      if (redirectPath && redirectPath.startsWith('/')) return redirectPath;
+      if (urlParams.get('from_checkout') === 'true') return '/app';
+      return '/app';
     };
 
-    handleCallback();
+    // Listen for auth state change — this fires when Supabase processes
+    // the access_token from the URL hash (implicit OAuth flow)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (handled) return;
+        console.log('[AUTH-CALLBACK] Auth state change:', event);
+
+        if (event === 'SIGNED_IN' && session) {
+          handled = true;
+          console.log('[AUTH-CALLBACK] Session established for:', session.user.email);
+          navigate(getRedirectPath(), { replace: true });
+        }
+      }
+    );
+
+    // Also handle PKCE flow (code in search params, no hash token)
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const hasAccessToken = hashParams.has('access_token');
+
+    if (!hasAccessToken) {
+      // PKCE flow: exchange code for session
+      const handlePKCE = async () => {
+        try {
+          console.log('[AUTH-CALLBACK] Attempting PKCE code exchange...');
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(window.location.href);
+
+          if (exchangeError) {
+            console.error('[AUTH-CALLBACK] Exchange error:', exchangeError);
+            if (exchangeError.message.includes('expired')) {
+              setError('Le lien a expiré. Veuillez demander un nouveau lien de connexion.');
+            } else if (exchangeError.message.includes('already been consumed')) {
+              setError('Ce lien a déjà été utilisé. Veuillez demander un nouveau lien.');
+            } else {
+              setError('Erreur d\'authentification. Veuillez réessayer.');
+            }
+            setLoading(false);
+            return;
+          }
+
+          if (data.session) {
+            handled = true;
+            console.log('[AUTH-CALLBACK] PKCE session created:', data.session.user.email);
+            navigate(getRedirectPath(), { replace: true });
+          } else {
+            setError('Impossible de créer la session. Veuillez réessayer.');
+            setLoading(false);
+          }
+        } catch (err) {
+          console.error('[AUTH-CALLBACK] Unexpected error:', err);
+          setError('Une erreur inattendue s\'est produite.');
+          setLoading(false);
+        }
+      };
+      handlePKCE();
+    }
+
+    // Timeout: if nothing happens after 10s, show error
+    const timeout = setTimeout(() => {
+      if (!handled) {
+        console.error('[AUTH-CALLBACK] Timeout — session never established');
+        setError('La connexion a pris trop de temps. Veuillez réessayer.');
+        setLoading(false);
+      }
+    }, 10000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, [navigate]);
 
   if (loading) {
