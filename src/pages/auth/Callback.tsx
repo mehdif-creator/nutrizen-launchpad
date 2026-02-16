@@ -7,56 +7,47 @@ import { Button } from '@/components/ui/button';
 export default function Callback() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let handled = false;
-    let timeoutId: ReturnType<typeof setTimeout>;
-
-    const getRedirectPath = () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const redirectPath = urlParams.get('redirect');
-      if (redirectPath && redirectPath.startsWith('/')) return redirectPath;
-      if (urlParams.get('from_checkout') === 'true') return '/app';
-      return '/app';
-    };
 
     const succeed = () => {
       if (handled) return;
       handled = true;
-      clearTimeout(timeoutId);
-      console.log('[AUTH-CALLBACK] Session established, redirecting');
-      navigate(getRedirectPath(), { replace: true });
+      clearTimeout(hardTimeout);
+      console.log('[AUTH-CALLBACK] Session established, redirecting to /app');
+      navigate('/app', { replace: true });
     };
 
     const fail = (msg: string) => {
       if (handled) return;
       handled = true;
-      clearTimeout(timeoutId);
+      clearTimeout(hardTimeout);
       console.error('[AUTH-CALLBACK] Error:', msg);
       setError(msg);
-      setLoading(false);
     };
 
-    // Check for error params in URL
-    const urlParams = new URLSearchParams(window.location.search);
+    // Check for errors in URL hash or query params
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const errorParam = urlParams.get('error') || hashParams.get('error');
-    
+    const searchParams = new URLSearchParams(window.location.search);
+
+    const errorParam = searchParams.get('error') || hashParams.get('error');
     if (errorParam) {
-      const desc = urlParams.get('error_description') 
-        || hashParams.get('error_description') 
+      const desc = searchParams.get('error_description')
+        || hashParams.get('error_description')
         || errorParam;
       fail(desc);
       return;
     }
 
-    // Hard timeout
-    timeoutId = setTimeout(() => {
+    // Hard timeout — 12 seconds
+    const hardTimeout = setTimeout(() => {
       fail('La connexion a pris trop de temps. Veuillez réessayer.');
-    }, 10000);
+    }, 12000);
 
-    // Listen for auth state change (catches both hash and PKCE flows)
+    // With flowType: "implicit" + detectSessionInUrl: true,
+    // Supabase JS automatically extracts #access_token from the URL hash
+    // and fires onAuthStateChange with SIGNED_IN.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log('[AUTH-CALLBACK] Auth event:', event);
@@ -66,87 +57,26 @@ export default function Callback() {
       }
     );
 
-    // Determine flow type
-    const hasAccessToken = hashParams.has('access_token');
-    const hasCode = urlParams.has('code');
-
-    const handleAuth = async () => {
+    // Fallback: session may already be set if Supabase parsed the hash
+    // before our listener was attached (race condition)
+    const fallbackTimer = setTimeout(async () => {
       try {
-        if (hasCode) {
-          // PKCE flow: exchange code for session
-          console.log('[AUTH-CALLBACK] PKCE flow detected, exchanging code...');
-          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(window.location.href);
-          
-          if (exchangeError) {
-            if (exchangeError.message.includes('expired')) {
-              fail('Le lien a expiré. Veuillez demander un nouveau lien de connexion.');
-            } else if (exchangeError.message.includes('already been consumed')) {
-              fail('Ce lien a déjà été utilisé. Veuillez demander un nouveau lien.');
-            } else {
-              fail(exchangeError.message);
-            }
-            return;
-          }
-          
-          if (data.session) {
-            succeed();
-          }
-          return;
-        }
-
-        if (hasAccessToken) {
-          // Hash/implicit flow: Supabase auto-processes the hash.
-          // The onAuthStateChange listener above should catch SIGNED_IN.
-          // But if it already fired before our listener was attached,
-          // we need to check getSession() as a fallback.
-          console.log('[AUTH-CALLBACK] Hash flow detected, checking session...');
-        }
-
-        // Fallback: check if session already exists (race condition fix)
-        // Give Supabase a moment to process the hash
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-          console.log('[AUTH-CALLBACK] Session already exists (fallback)');
+          console.log('[AUTH-CALLBACK] Session found via fallback check');
           succeed();
-          return;
         }
-
-        // If no hash and no code, try once more after a delay
-        if (!hasAccessToken && !hasCode) {
-          // Maybe direct navigation or already processed
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          const { data: { session: retrySession } } = await supabase.auth.getSession();
-          if (retrySession) {
-            succeed();
-          }
-        }
-      } catch (err) {
-        console.error('[AUTH-CALLBACK] Unexpected error:', err);
-        fail('Une erreur inattendue s\'est produite.');
+      } catch (e) {
+        console.error('[AUTH-CALLBACK] Fallback check error:', e);
       }
-    };
-
-    handleAuth();
+    }, 800);
 
     return () => {
+      clearTimeout(hardTimeout);
+      clearTimeout(fallbackTimer);
       subscription.unsubscribe();
-      clearTimeout(timeoutId);
     };
   }, [navigate]);
-
-  if (loading && !error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-accent/10 to-primary/10 dark:from-accent/5 dark:to-primary/5">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-          <h2 className="text-xl font-semibold text-foreground">Connexion en cours...</h2>
-          <p className="text-muted-foreground">Veuillez patienter</p>
-        </div>
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -177,5 +107,13 @@ export default function Callback() {
     );
   }
 
-  return null;
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-accent/10 to-primary/10 dark:from-accent/5 dark:to-primary/5">
+      <div className="text-center space-y-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+        <h2 className="text-xl font-semibold text-foreground">Connexion en cours...</h2>
+        <p className="text-muted-foreground">Veuillez patienter</p>
+      </div>
+    </div>
+  );
 }
