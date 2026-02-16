@@ -32,17 +32,17 @@ export const ProtectedRoute = ({
     return () => clearTimeout(timer);
   }, []);
 
-  // Reset timeout when route changes
+  // Only reset timeout if auth is genuinely still loading
   useEffect(() => {
     if (loading || adminLoading) {
       setTimedOut(false);
     }
   }, [location.pathname, loading, adminLoading]);
 
-  const isStillLoading = loading || (requireAdmin ? adminLoading : false);
+  // Wait for initial auth loading
+  const isAuthLoading = loading || (requireAdmin ? adminLoading : false);
 
-  // Wait for auth, but respect timeout
-  if (isStillLoading && !timedOut) {
+  if (isAuthLoading && !timedOut) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -50,12 +50,12 @@ export const ProtectedRoute = ({
     );
   }
 
-  // After timeout, if still no user, redirect to login
+  // No user at all → login
   if (!user) {
     return <Navigate to="/auth/login" replace />;
   }
 
-  // Wait for onboarding check, but respect timeout
+  // Wait for onboarding check
   if (shouldCheckOnboarding && onboardingStatus.state === 'loading' && !timedOut) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -69,7 +69,9 @@ export const ProtectedRoute = ({
     return <Navigate to="/admin" replace />;
   }
 
-  if (requireAdmin && !isAdmin) {
+  // For admin routes: only redirect if adminLoading is fully done AND user is not admin
+  // Never redirect while adminLoading is still true
+  if (requireAdmin && !adminLoading && !isAdmin) {
     return <Navigate to="/app" replace />;
   }
 
