@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Header } from '@/components/landing/Header';
 import { Footer } from '@/components/landing/Footer';
 import { Button } from '@/components/ui/button';
@@ -10,11 +10,13 @@ import { z } from 'zod';
 import { toParisISO } from '@/lib/date-utils';
 import { supabase } from '@/integrations/supabase/client';
 
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined;
+
 const contactSchema = z.object({
-  name: z.string().trim().min(2, 'Le nom doit contenir au moins 2 caractères').max(100, 'Le nom ne peut pas dépasser 100 caractères'),
-  email: z.string().trim().email('Adresse email invalide').max(255, 'L\'email ne peut pas dépasser 255 caractères'),
-  subject: z.string().trim().min(5, 'Le sujet doit contenir au moins 5 caractères').max(200, 'Le sujet ne peut pas dépasser 200 caractères'),
-  message: z.string().trim().min(20, 'Le message doit contenir au moins 20 caractères').max(5000, 'Le message ne peut pas dépasser 5000 caractères')
+  name: z.string().trim().min(2, 'Le nom doit contenir au moins 2 caractères').max(100),
+  email: z.string().trim().email('Adresse email invalide').max(255),
+  subject: z.string().trim().min(5, 'Le sujet doit contenir au moins 5 caractères').max(200),
+  message: z.string().trim().min(20, 'Le message doit contenir au moins 20 caractères').max(5000),
 });
 
 export default function Contact() {
@@ -25,22 +27,36 @@ export default function Contact() {
     name: '',
     email: '',
     subject: '',
-    message: ''
+    message: '',
   });
+  // Honeypot state — invisible to humans
+  const [honeypot, setHoneypot] = useState('');
+  const turnstileRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Validate input data
       const validatedData = contactSchema.parse(formData);
-      
-      // Submit via secure edge function
-      const { error } = await supabase.functions.invoke('submit-contact', {
+
+      // Collect optional Turnstile token
+      let turnstileToken: string | undefined;
+      if (TURNSTILE_SITE_KEY && window.turnstile) {
+        const widgetId = turnstileRef.current?.dataset.widgetId;
+        if (widgetId) {
+          turnstileToken = window.turnstile.getResponse(widgetId);
+        }
+      }
+
+      const { data, error } = await supabase.functions.invoke('submit-contact', {
         body: {
           ...validatedData,
           timestamp: toParisISO(),
+          // Honeypot field — bots fill this, humans don't see it
+          website: honeypot,
+          // Optional Turnstile token
+          ...(turnstileToken ? { turnstileToken } : {}),
         },
       });
 
@@ -52,6 +68,13 @@ export default function Contact() {
       });
 
       setFormData({ name: '', email: '', subject: '', message: '' });
+      setHoneypot('');
+
+      // Reset Turnstile widget if present
+      if (TURNSTILE_SITE_KEY && window.turnstile) {
+        const widgetId = turnstileRef.current?.dataset.widgetId;
+        if (widgetId) window.turnstile.reset(widgetId);
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast({
@@ -62,7 +85,7 @@ export default function Contact() {
       } else {
         toast({
           title: 'Erreur',
-          description: 'Impossible d\'envoyer le message. Réessaye plus tard.',
+          description: "Impossible d'envoyer le message. Réessaye plus tard.",
           variant: 'destructive',
         });
       }
@@ -128,6 +151,30 @@ export default function Contact() {
               />
             </div>
 
+            {/* Honeypot — hidden from humans, bots fill it */}
+            <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', top: '-9999px', opacity: 0, height: 0, overflow: 'hidden' }}>
+              <label htmlFor="website">Website</label>
+              <input
+                id="website"
+                name="website"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+              />
+            </div>
+
+            {/* Optional Turnstile widget */}
+            {TURNSTILE_SITE_KEY && (
+              <div
+                ref={turnstileRef}
+                className="cf-turnstile"
+                data-sitekey={TURNSTILE_SITE_KEY}
+                data-theme="auto"
+              />
+            )}
+
             <Button
               type="submit"
               disabled={loading}
@@ -153,4 +200,14 @@ export default function Contact() {
       <Footer />
     </div>
   );
+}
+
+// Turnstile type declarations
+declare global {
+  interface Window {
+    turnstile?: {
+      getResponse: (widgetId: string) => string;
+      reset: (widgetId: string) => void;
+    };
+  }
 }
