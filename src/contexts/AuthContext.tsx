@@ -144,8 +144,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(newSession?.user ?? null);
         
         if (newSession?.user) {
-          await checkAdminRole(newSession.user.id);
-          refreshSubscription();
+          if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+            await checkAdminRole(newSession.user.id);
+            refreshSubscription();
+          }
+          // For TOKEN_REFRESHED: update session silently, no adminLoading flip
         } else {
           setIsAdmin(false);
           setAdminLoading(false);
