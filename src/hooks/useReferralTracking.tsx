@@ -2,6 +2,9 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('ReferralTracking');
 
 /**
  * Hook to track referral codes from URL parameters
@@ -19,7 +22,7 @@ export function useReferralTracking() {
     if (refCode) {
       // Store referral code in localStorage
       localStorage.setItem('nutrizen_referral_code', refCode);
-      console.log('[Referral] Code captured:', refCode);
+      logger.info('Code captured', { refCode });
 
       // Track click (anonymous, non-blocking)
       supabase.functions.invoke('referral-intake', {
@@ -27,7 +30,7 @@ export function useReferralTracking() {
           referralCode: refCode, 
           action: 'track_click',
         },
-      }).catch(err => console.log('[Referral] Click tracking error:', err));
+      }).catch(err => logger.debug('Click tracking error', { error: String(err) }));
     }
   }, [location]);
 
@@ -39,7 +42,7 @@ export function useReferralTracking() {
     const processedFlag = localStorage.getItem('nutrizen_referral_processed');
 
     if (storedRefCode && !processedFlag) {
-      console.log('[Referral] Processing referral code for user:', storedRefCode);
+      logger.info('Processing referral code for user', { refCode: storedRefCode });
       
       // Apply attribution via edge function
       const applyAttribution = async () => {
@@ -58,17 +61,17 @@ export function useReferralTracking() {
           });
 
           if (error) {
-            console.error('[Referral] Attribution error:', error);
+            logger.error('Attribution error', error);
             return;
           }
 
           if (data?.success) {
-            console.log('[Referral] Attribution successful:', data.message);
+            logger.info('Attribution successful', { message: data.message });
             // Mark as processed
             localStorage.setItem('nutrizen_referral_processed', 'true');
             localStorage.removeItem('nutrizen_referral_code');
           } else {
-            console.log('[Referral] Attribution response:', data?.message);
+            logger.debug('Attribution response', { message: data?.message });
             // Still mark as processed to avoid retrying invalid codes
             if (data?.message?.includes('invalide') || data?.already_attributed) {
               localStorage.setItem('nutrizen_referral_processed', 'true');
@@ -76,7 +79,7 @@ export function useReferralTracking() {
             }
           }
         } catch (err) {
-          console.error('[Referral] Attribution error:', err);
+          logger.error('Attribution error', err instanceof Error ? err : new Error(String(err)));
         }
       };
 

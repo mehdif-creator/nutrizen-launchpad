@@ -3,6 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
 import { subscribeToGamification } from '@/lib/realtime';
 import { queryClient } from '@/lib/queryClient';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('useGamification');
 
 export interface Gamification {
   points: number;
@@ -41,7 +44,6 @@ function computeLevelInfo(points: number): { level: number; xpToNext: number } {
 }
 
 async function fetchGamification(userId: string): Promise<Gamification> {
-  // Get gamification data
   const { data, error } = await supabase
     .from('user_gamification')
     .select('points, level, streak_days, badges_count')
@@ -49,12 +51,12 @@ async function fetchGamification(userId: string): Promise<Gamification> {
     .maybeSingle();
 
   if (error) {
-    console.error('[useGamification] Error fetching gamification:', error);
+    logger.error('Error fetching gamification', error);
     throw error;
   }
 
   if (!data) {
-    console.warn('[useGamification] No gamification found, returning defaults');
+    logger.warn('No gamification found, returning defaults');
     return DEFAULT_GAMIFICATION;
   }
 

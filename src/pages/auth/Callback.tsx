@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('AuthCallback');
 
 export default function Callback() {
   const navigate = useNavigate();
@@ -13,14 +16,14 @@ export default function Callback() {
     const resolve = (path: string) => {
       if (resolvedRef.current) return;
       resolvedRef.current = true;
-      console.log('[AuthCallback] ✅ Resolving to:', path);
+      logger.info('Resolving to', { path });
       navigate(path, { replace: true });
     };
 
     const fail = (msg: string) => {
       if (resolvedRef.current) return;
       resolvedRef.current = true;
-      console.error('[AuthCallback] ❌ Failed:', msg);
+      logger.error('Failed', new Error(msg));
       setError(msg);
     };
 
@@ -38,7 +41,7 @@ export default function Callback() {
       return;
     }
 
-    console.log('[AuthCallback] Has access_token in hash:', hashParams.has('access_token'));
+    logger.debug('Has access_token in hash', { hasToken: hashParams.has('access_token') });
 
     // Step 2: Hard timeout — 15 seconds
     const hardTimeout = setTimeout(() => {
@@ -48,7 +51,7 @@ export default function Callback() {
     // Step 3: CRITICAL — Check session IMMEDIATELY (0ms)
     // Supabase may have already parsed the hash during createClient()
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('[AuthCallback] getSession() immediate:', !!session);
+      logger.debug('getSession() immediate', { hasSession: !!session });
       if (session) {
         clearTimeout(hardTimeout);
         resolve('/app');
@@ -58,7 +61,7 @@ export default function Callback() {
     // Step 4: Listen for ALL auth events including INITIAL_SESSION
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('[AuthCallback] Auth event:', event, 'has session:', !!session);
+        logger.debug('Auth event', { event, hasSession: !!session });
         if (session && (
           event === 'INITIAL_SESSION' ||
           event === 'SIGNED_IN' ||

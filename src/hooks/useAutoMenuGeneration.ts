@@ -1,6 +1,9 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { queryClient } from '@/lib/queryClient';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('useAutoMenuGeneration');
 
 export interface MenuGenerationState {
   status: 'idle' | 'generating' | 'success' | 'error';
@@ -29,7 +32,7 @@ export function useAutoMenuGeneration() {
         return false;
       }
 
-      console.log('[useAutoMenuGeneration] Starting menu generation...');
+      logger.info('Starting menu generation...');
 
       const { data, error } = await supabase.functions.invoke('generate-menu', {
         headers: {
@@ -38,7 +41,7 @@ export function useAutoMenuGeneration() {
       });
 
       if (error) {
-        console.error('[useAutoMenuGeneration] Error:', error);
+        logger.error('Error', error);
         setState({ 
           status: 'error', 
           errorMessage: error.message || 'Erreur lors de la génération du menu.' 
@@ -47,7 +50,7 @@ export function useAutoMenuGeneration() {
       }
 
       if (data?.success === false) {
-        console.error('[useAutoMenuGeneration] Generation failed:', data.message);
+        logger.error('Generation failed', new Error(data.message));
         setState({ 
           status: 'error', 
           errorMessage: data.message || 'Impossible de générer un menu avec vos préférences.' 
@@ -55,7 +58,7 @@ export function useAutoMenuGeneration() {
         return false;
       }
 
-      console.log('[useAutoMenuGeneration] Success:', data);
+      logger.debug('Success', { data });
 
       // Invalidate queries to refresh data
       if (session.session.user?.id) {
@@ -74,7 +77,7 @@ export function useAutoMenuGeneration() {
       
       return true;
     } catch (error) {
-      console.error('[useAutoMenuGeneration] Exception:', error);
+      logger.error('Exception', error instanceof Error ? error : new Error(String(error)));
       setState({ 
         status: 'error', 
         errorMessage: error instanceof Error ? error.message : 'Une erreur inattendue est survenue.' 

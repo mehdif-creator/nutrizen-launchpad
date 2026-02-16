@@ -1,5 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { queryClient } from '@/lib/queryClient';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('generateMenu');
 
 export interface GenerateMenuResult {
   success: boolean;
@@ -7,7 +10,7 @@ export interface GenerateMenuResult {
   menu_id?: string;
   usedFallback?: boolean;
   fallbackLevel?: number;
-  days?: any[];
+  days?: Record<string, unknown>[];
 }
 
 /**
@@ -23,7 +26,7 @@ export async function generateMenuForUser(): Promise<GenerateMenuResult> {
       throw new Error('No active session');
     }
 
-    console.log('[generateMenu] Calling generate-menu edge function');
+    logger.info('Calling generate-menu edge function');
 
     // Call Edge Function
     const { data, error } = await supabase.functions.invoke('generate-menu', {
@@ -33,11 +36,11 @@ export async function generateMenuForUser(): Promise<GenerateMenuResult> {
     });
 
     if (error) {
-      console.error('[generateMenu] Edge function error:', error);
+      logger.error('Edge function error', error);
       throw error;
     }
 
-    console.log('[generateMenu] Success:', data);
+    logger.debug('Success', { data });
 
     // Invalidate weekly menu query to refetch
     if (session.session.user?.id) {
@@ -55,7 +58,7 @@ export async function generateMenuForUser(): Promise<GenerateMenuResult> {
       days: data.days,
     };
   } catch (error) {
-    console.error('[generateMenu] Error:', error);
+    logger.error('Error', error instanceof Error ? error : new Error(String(error)));
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Unknown error',

@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('useShoppingList');
 
 interface ShoppingListItem {
   ingredient_name: string;
@@ -43,7 +46,7 @@ export function useShoppingList(userId: string | undefined) {
 
         setItems(data || []);
       } catch (err) {
-        console.error('[useShoppingList] Error fetching shopping list:', err);
+        logger.error('Error fetching shopping list', err instanceof Error ? err : new Error(String(err)));
         setError(err as Error);
         setItems([]);
       } finally {

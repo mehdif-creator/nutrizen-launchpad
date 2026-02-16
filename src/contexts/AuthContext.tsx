@@ -3,6 +3,9 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { trackDailyLogin } from '@/utils/gamification';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('AuthContext');
 
 interface SubscriptionInfo {
   subscribed: boolean;
@@ -55,7 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       setIsAdmin(!!data);
     } catch (error) {
-      console.error('Error checking admin role:', error);
+      logger.error('Error checking admin role', error instanceof Error ? error : new Error(String(error)));
       setIsAdmin(false);
     } finally {
       setAdminLoading(false);
@@ -77,13 +80,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (error) {
-        console.error('Error checking subscription:', error);
+        logger.error('Error checking subscription', error);
         return;
       }
 
       setSubscription(data);
     } catch (error) {
-      console.error('Error refreshing subscription:', error);
+      logger.error('Error refreshing subscription', error instanceof Error ? error : new Error(String(error)));
     }
   }, [session]);
 
@@ -93,7 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Timeout fallback: ensure loading states resolve within 8 seconds
     const loadingTimeout = setTimeout(() => {
       if (mounted) {
-        console.warn('[AuthContext] Loading timeout reached, forcing loading=false');
+        logger.warn('Loading timeout reached, forcing loading=false');
         setLoading(false);
         setAdminLoading(false);
       }
@@ -111,7 +114,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
           await checkAdminRole(currentSession.user.id);
         } catch (e) {
-          console.error('[AuthContext] Admin check failed:', e);
+          logger.error('Admin check failed', e instanceof Error ? e : new Error(String(e)));
           setAdminLoading(false);
         }
         if (mounted) {
@@ -124,7 +127,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (mounted) setLoading(false);
     }).catch((err) => {
-      console.error('[AuthContext] getSession failed:', err);
+      logger.error('getSession failed', err instanceof Error ? err : new Error(String(err)));
       if (mounted) {
         setLoading(false);
         setAdminLoading(false);

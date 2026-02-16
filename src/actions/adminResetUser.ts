@@ -1,4 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('adminResetUser');
 
 export interface ResetUserResult {
   success: boolean;
@@ -24,7 +27,7 @@ export async function resetUserAccount(
       throw new Error('No active session');
     }
 
-    console.log(`[adminResetUser] Resetting user: ${email}`);
+    logger.info(`Resetting user: ${email}`);
 
     // Call Edge Function
     const { data, error } = await supabase.functions.invoke('admin-reset-user', {
@@ -38,11 +41,11 @@ export async function resetUserAccount(
     });
 
     if (error) {
-      console.error('[adminResetUser] Edge function error:', error);
+      logger.error('Edge function error', error);
       throw error;
     }
 
-    console.log('[adminResetUser] Success:', data);
+    logger.debug('Success', { data });
 
     return {
       success: data.success ?? false,
@@ -51,7 +54,7 @@ export async function resetUserAccount(
       new_trial_end: data.new_trial_end,
     };
   } catch (error) {
-    console.error('[adminResetUser] Error:', error);
+    logger.error('Error', error instanceof Error ? error : new Error(String(error)));
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Unknown error',

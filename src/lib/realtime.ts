@@ -1,5 +1,10 @@
 import { supabase } from '@/integrations/supabase/client';
-import { RealtimeChannel } from '@supabase/supabase-js';
+import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('Realtime');
+
+type RealtimePayload = RealtimePostgresChangesPayload<Record<string, unknown>>;
 
 /**
  * Subscribe to user_weekly_menus changes for a specific user
@@ -7,7 +12,7 @@ import { RealtimeChannel } from '@supabase/supabase-js';
  */
 export function subscribeToUserMenu(
   userId: string,
-  onUpdate: (payload: any) => void
+  onUpdate: (payload: RealtimePayload) => void
 ): () => void {
   const channel = supabase
     .channel(`user-menu-${userId}`)
@@ -20,17 +25,17 @@ export function subscribeToUserMenu(
         filter: `user_id=eq.${userId}`,
       },
       (payload) => {
-        console.log('[Realtime] Menu update:', payload.eventType);
+        logger.debug('Menu update', { eventType: payload.eventType });
         onUpdate(payload);
       }
     )
     .subscribe((status) => {
-      console.log('[Realtime] Subscription status:', status);
+      logger.debug('Subscription status', { status });
     });
 
   // Return cleanup function
   return () => {
-    console.log('[Realtime] Unsubscribing from menu updates');
+    logger.debug('Unsubscribing from menu updates');
     supabase.removeChannel(channel);
   };
 }
@@ -40,7 +45,7 @@ export function subscribeToUserMenu(
  */
 export function subscribeToUserStats(
   userId: string,
-  onUpdate: (payload: any) => void
+  onUpdate: (payload: RealtimePayload) => void
 ): () => void {
   const channel = supabase
     .channel(`user-stats-${userId}`)
@@ -53,7 +58,7 @@ export function subscribeToUserStats(
         filter: `user_id=eq.${userId}`,
       },
       (payload) => {
-        console.log('[Realtime] Stats update:', payload.eventType);
+        logger.debug('Stats update', { eventType: payload.eventType });
         onUpdate(payload);
       }
     )
@@ -69,7 +74,7 @@ export function subscribeToUserStats(
  */
 export function subscribeToGamification(
   userId: string,
-  onUpdate: (payload: any) => void
+  onUpdate: (payload: RealtimePayload) => void
 ): () => void {
   const channel = supabase
     .channel(`user-gamification-${userId}`)
@@ -82,7 +87,7 @@ export function subscribeToGamification(
         filter: `user_id=eq.${userId}`,
       },
       (payload) => {
-        console.log('[Realtime] Gamification update:', payload.eventType);
+        logger.debug('Gamification update', { eventType: payload.eventType });
         onUpdate(payload);
       }
     )
