@@ -474,7 +474,7 @@ Deno.serve(async (req) => {
         logStep("Processing affiliate conversion", { affiliateCode: redactId(affCode) });
         try {
           const { data: affiliateProfile } = await supabaseAdmin
-            .from('user_profiles')
+            .from('profiles')
             .select('id')
             .eq('affiliate_code', affCode)
             .eq('is_affiliate', true)

@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
     // Fetch additional user data
     const [walletRes, prefsRes, gamificationRes] = await Promise.all([
       supabase.from('user_wallets').select('balance_purchased, balance_allowance, reset_cadence').eq('user_id', user_id).maybeSingle(),
-      supabase.from('user_profiles').select('onboarding_status, household_adults, household_children').eq('id', user_id).maybeSingle(),
+      supabase.from('profiles').select('onboarding_status, household_adults, household_children').eq('id', user_id).maybeSingle(),
       supabase.from('user_gamification').select('level, points, streak_days').eq('user_id', user_id).maybeSingle(),
     ]);
 

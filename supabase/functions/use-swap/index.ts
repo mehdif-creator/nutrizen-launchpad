@@ -299,7 +299,7 @@ Deno.serve(async (req) => {
         
         // Get household info
         const { data: profileData } = await supabaseClient
-          .from('user_profiles')
+          .from('profiles')
           .select('household_adults, household_children')
           .eq('id', user.id)
           .single();
