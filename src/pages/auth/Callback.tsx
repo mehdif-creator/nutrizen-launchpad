@@ -11,6 +11,7 @@ export default function Callback() {
 
   useEffect(() => {
     let handled = false;
+    let timeoutId: ReturnType<typeof setTimeout>;
 
     const getRedirectPath = () => {
       const urlParams = new URLSearchParams(window.location.search);
@@ -20,78 +21,122 @@ export default function Callback() {
       return '/app';
     };
 
-    // Listen for auth state change — this fires when Supabase processes
-    // the access_token from the URL hash (implicit OAuth flow)
+    const succeed = () => {
+      if (handled) return;
+      handled = true;
+      clearTimeout(timeoutId);
+      console.log('[AUTH-CALLBACK] Session established, redirecting');
+      navigate(getRedirectPath(), { replace: true });
+    };
+
+    const fail = (msg: string) => {
+      if (handled) return;
+      handled = true;
+      clearTimeout(timeoutId);
+      console.error('[AUTH-CALLBACK] Error:', msg);
+      setError(msg);
+      setLoading(false);
+    };
+
+    // Check for error params in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const errorParam = urlParams.get('error') || hashParams.get('error');
+    
+    if (errorParam) {
+      const desc = urlParams.get('error_description') 
+        || hashParams.get('error_description') 
+        || errorParam;
+      fail(desc);
+      return;
+    }
+
+    // Hard timeout
+    timeoutId = setTimeout(() => {
+      fail('La connexion a pris trop de temps. Veuillez réessayer.');
+    }, 10000);
+
+    // Listen for auth state change (catches both hash and PKCE flows)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        if (handled) return;
-        console.log('[AUTH-CALLBACK] Auth state change:', event);
-
-        if (event === 'SIGNED_IN' && session) {
-          handled = true;
-          console.log('[AUTH-CALLBACK] Session established for:', session.user.email);
-          navigate(getRedirectPath(), { replace: true });
+        console.log('[AUTH-CALLBACK] Auth event:', event);
+        if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+          succeed();
         }
       }
     );
 
-    // Also handle PKCE flow (code in search params, no hash token)
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    // Determine flow type
     const hasAccessToken = hashParams.has('access_token');
+    const hasCode = urlParams.has('code');
 
-    if (!hasAccessToken) {
-      // PKCE flow: exchange code for session
-      const handlePKCE = async () => {
-        try {
-          console.log('[AUTH-CALLBACK] Attempting PKCE code exchange...');
+    const handleAuth = async () => {
+      try {
+        if (hasCode) {
+          // PKCE flow: exchange code for session
+          console.log('[AUTH-CALLBACK] PKCE flow detected, exchanging code...');
           const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(window.location.href);
-
+          
           if (exchangeError) {
-            console.error('[AUTH-CALLBACK] Exchange error:', exchangeError);
             if (exchangeError.message.includes('expired')) {
-              setError('Le lien a expiré. Veuillez demander un nouveau lien de connexion.');
+              fail('Le lien a expiré. Veuillez demander un nouveau lien de connexion.');
             } else if (exchangeError.message.includes('already been consumed')) {
-              setError('Ce lien a déjà été utilisé. Veuillez demander un nouveau lien.');
+              fail('Ce lien a déjà été utilisé. Veuillez demander un nouveau lien.');
             } else {
-              setError('Erreur d\'authentification. Veuillez réessayer.');
+              fail(exchangeError.message);
             }
-            setLoading(false);
             return;
           }
-
+          
           if (data.session) {
-            handled = true;
-            console.log('[AUTH-CALLBACK] PKCE session created:', data.session.user.email);
-            navigate(getRedirectPath(), { replace: true });
-          } else {
-            setError('Impossible de créer la session. Veuillez réessayer.');
-            setLoading(false);
+            succeed();
           }
-        } catch (err) {
-          console.error('[AUTH-CALLBACK] Unexpected error:', err);
-          setError('Une erreur inattendue s\'est produite.');
-          setLoading(false);
+          return;
         }
-      };
-      handlePKCE();
-    }
 
-    // Timeout: if nothing happens after 10s, show error
-    const timeout = setTimeout(() => {
-      if (!handled) {
-        console.error('[AUTH-CALLBACK] Timeout — session never established');
-        setError('La connexion a pris trop de temps. Veuillez réessayer.');
-        setLoading(false);
+        if (hasAccessToken) {
+          // Hash/implicit flow: Supabase auto-processes the hash.
+          // The onAuthStateChange listener above should catch SIGNED_IN.
+          // But if it already fired before our listener was attached,
+          // we need to check getSession() as a fallback.
+          console.log('[AUTH-CALLBACK] Hash flow detected, checking session...');
+        }
+
+        // Fallback: check if session already exists (race condition fix)
+        // Give Supabase a moment to process the hash
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          console.log('[AUTH-CALLBACK] Session already exists (fallback)');
+          succeed();
+          return;
+        }
+
+        // If no hash and no code, try once more after a delay
+        if (!hasAccessToken && !hasCode) {
+          // Maybe direct navigation or already processed
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          const { data: { session: retrySession } } = await supabase.auth.getSession();
+          if (retrySession) {
+            succeed();
+          }
+        }
+      } catch (err) {
+        console.error('[AUTH-CALLBACK] Unexpected error:', err);
+        fail('Une erreur inattendue s\'est produite.');
       }
-    }, 10000);
+    };
+
+    handleAuth();
 
     return () => {
       subscription.unsubscribe();
-      clearTimeout(timeout);
+      clearTimeout(timeoutId);
     };
   }, [navigate]);
 
-  if (loading) {
+  if (loading && !error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-accent/10 to-primary/10 dark:from-accent/5 dark:to-primary/5">
         <div className="text-center space-y-4">
