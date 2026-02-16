@@ -2,7 +2,6 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { queryClient } from '@/lib/queryClient';
 import { Toaster } from '@/components/ui/sonner';
-import { Toaster as ShadcnToaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -34,7 +33,6 @@ export function AppProviders({ children }: AppProvidersProps) {
               <AuthProvider>
                 <TooltipProvider>
                   {children}
-                  <ShadcnToaster />
                   <Toaster />
                   <CookieConsent />
                   {/* Only show React Query devtools in development */}
