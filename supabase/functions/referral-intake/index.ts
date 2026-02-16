@@ -1,5 +1,14 @@
+/**
+ * referral-intake: Public referral click tracking + authenticated attribution
+ * 
+ * Security:
+ * - Click tracking: public, no auth needed, server extracts IP
+ * - Attribution: requires authenticated user, uses auth.uid() not client data
+ * - Client-provided ip_hash/user_agent are IGNORED (server extracts them)
+ */
 import { createClient } from '../_shared/deps.ts';
-import { getCorsHeaders } from '../_shared/security.ts';
+import { getCorsHeaders, getClientIp } from '../_shared/security.ts';
+import { createHmac } from "node:crypto";
 
 Deno.serve(async (req) => {
   const origin = req.headers.get('origin');
@@ -11,7 +20,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { referralCode, action, ip_hash, user_agent } = body;
+    const { referralCode, action } = body;
 
     // Validate action is one of the allowed values
     const allowedActions = ['track_click', 'apply_attribution', 'CLICKED', 'SIGNED_UP'];
@@ -35,9 +44,18 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // SECURITY: Extract IP and UA server-side — never trust client-provided values
+    const clientIp = getClientIp(req);
+    const userAgent = req.headers.get('user-agent') || null;
+    // Hash IP for privacy
+    const ipHash = createHmac('sha256', Deno.env.get('HMAC_SECRET') || 'referral-salt')
+      .update(clientIp)
+      .digest('hex')
+      .substring(0, 16);
+
     // Get current user if authenticated
-    const authHeader = req.headers.get('Authorization');
     let currentUser = null;
+    const authHeader = req.headers.get('Authorization');
     
     if (authHeader) {
       const supabaseClient = createClient(
@@ -70,8 +88,8 @@ Deno.serve(async (req) => {
         .insert({
           referral_code: referralCode.toUpperCase(),
           referrer_user_id: codeData.user_id,
-          ip_hash: ip_hash || null,
-          user_agent: user_agent || null,
+          ip_hash: ipHash,
+          user_agent: userAgent,
         });
 
       return new Response(
@@ -82,6 +100,7 @@ Deno.serve(async (req) => {
 
     // Handle signup attribution (requires authenticated user)
     if (action === 'apply_attribution' && referralCode && currentUser) {
+      // SECURITY: Always use currentUser.id from the JWT, never from client body
       const { data, error } = await supabaseAdmin.rpc('handle_referral_signup', {
         p_referral_code: referralCode,
         p_new_user_id: currentUser.id,
@@ -115,6 +134,8 @@ Deno.serve(async (req) => {
           .insert({
             referral_code: referralCode.toUpperCase(),
             referrer_user_id: codeData.user_id,
+            ip_hash: ipHash,
+            user_agent: userAgent,
           });
       }
 
@@ -126,6 +147,7 @@ Deno.serve(async (req) => {
 
     // Legacy action support: SIGNED_UP
     if (action === 'SIGNED_UP' && currentUser && referralCode) {
+      // SECURITY: Always use currentUser.id from the JWT
       const { data, error } = await supabaseAdmin.rpc('handle_referral_signup', {
         p_referral_code: referralCode,
         p_new_user_id: currentUser.id,

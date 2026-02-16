@@ -167,28 +167,27 @@ Deno.serve(async (req) => {
 
     logStep("Event type", { type: event.type, eventId: event.id });
 
-    // IDEMPOTENCY CHECK: prevent duplicate processing
-    const { data: existingEvent } = await supabaseAdmin
-      .from('stripe_events')
-      .select('id')
-      .eq('event_id', event.id)
-      .maybeSingle();
-
-    if (existingEvent) {
-      logStep("Event already processed, skipping", { eventId: event.id });
-      return new Response(JSON.stringify({ received: true, skipped: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    }
-
-    // Record event as processed
-    await supabaseAdmin
+    // IDEMPOTENCY CHECK: Atomic insert with conflict detection
+    // Uses unique constraint on event_id to prevent race conditions
+    const { error: idempotencyError } = await supabaseAdmin
       .from('stripe_events')
       .insert({
         event_id: event.id,
         event_type: event.type,
       });
+
+    if (idempotencyError) {
+      // Unique violation = already processed (23505 is PG unique_violation)
+      if (idempotencyError.code === '23505') {
+        logStep("Event already processed (conflict), skipping", { eventId: event.id });
+        return new Response(JSON.stringify({ received: true, skipped: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+      // Other DB error — log but continue processing (fail open for webhooks)
+      logStep("WARN: Idempotency check DB error, proceeding", { error: idempotencyError.message });
+    }
 
     // =========================================
     // Handle checkout.session.completed

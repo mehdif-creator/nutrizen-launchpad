@@ -1,18 +1,18 @@
+/**
+ * job-callback: Webhook callback from n8n for job completion
+ * 
+ * Security: HMAC signature verification, strict CORS, Zod validation
+ */
 import { createClient } from '../_shared/deps.ts';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { createHmac } from "node:crypto";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-n8n-signature',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+import { getCorsHeaders } from '../_shared/security.ts';
 
 // Callback payload schema
 const CallbackSchema = z.object({
   job_id: z.string().uuid(),
   status: z.enum(['success', 'error']),
-  result: z.record(z.any()).optional(),
+  result: z.record(z.unknown()).optional(),
   error: z.string().optional(),
   idempotency_key: z.string(),
 });
@@ -36,6 +36,9 @@ function verifySignature(payload: string, signature: string | null, secret: stri
 }
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -101,7 +104,7 @@ Deno.serve(async (req) => {
     }
 
     // Update job status
-    const updateData: Record<string, any> = { status };
+    const updateData: Record<string, unknown> = { status };
     if (status === 'success' && result) {
       updateData.result = result;
     }
@@ -123,19 +126,6 @@ Deno.serve(async (req) => {
     }
 
     console.log(`[job-callback] Job ${job_id} updated to status=${status}`);
-
-    // If error, optionally refund credits (configurable policy)
-    // Currently NOT auto-refunding on error - this is a business decision
-    // Uncomment below to enable auto-refund on error:
-    /*
-    if (status === 'error') {
-      await supabaseAdmin.rpc('rpc_refund_credits_for_job', {
-        p_user_id: job.user_id,
-        p_feature: job.type,
-        p_original_idempotency_key: job.idempotency_key,
-      });
-    }
-    */
 
     return new Response(
       JSON.stringify({ success: true }),

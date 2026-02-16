@@ -1,3 +1,9 @@
+/**
+ * post-checkout-login: Auto-login after Stripe checkout
+ * 
+ * Security: Rate limited via config.toml, session_id validated against DB,
+ * tokens are single-use (deleted after consumption).
+ */
 import { createClient } from '../_shared/deps.ts';
 
 Deno.serve(async (req) => {
@@ -5,10 +11,16 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const sessionId = url.searchParams.get("session_id");
 
-    console.log("[POST-CHECKOUT-LOGIN] Session ID:", sessionId);
+    console.log("[POST-CHECKOUT-LOGIN] Request received");
 
     if (!sessionId) {
       throw new Error("No session_id provided");
+    }
+
+    // Basic format validation — Stripe session IDs start with "cs_"
+    if (!/^cs_(test_|live_)[a-zA-Z0-9]+$/.test(sessionId)) {
+      console.warn("[POST-CHECKOUT-LOGIN] Invalid session_id format");
+      throw new Error("Invalid session_id format");
     }
 
     const supabaseAdmin = createClient(
@@ -36,9 +48,9 @@ Deno.serve(async (req) => {
     }
 
     const email = tokenData.email;
-    console.log("[POST-CHECKOUT-LOGIN] Valid token for:", email);
+    console.log("[POST-CHECKOUT-LOGIN] Valid token found");
 
-    // Delete used token
+    // Delete used token (single-use)
     await supabaseAdmin
       .from('login_tokens')
       .delete()
@@ -58,7 +70,7 @@ Deno.serve(async (req) => {
       throw new Error("Failed to generate login link");
     }
 
-    console.log("[POST-CHECKOUT-LOGIN] Auto-login successful for", email);
+    console.log("[POST-CHECKOUT-LOGIN] Auto-login successful");
 
     // Redirect to the magic link (auto-login)
     return new Response(null, {
