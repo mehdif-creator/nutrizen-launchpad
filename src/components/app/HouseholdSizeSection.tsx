@@ -25,7 +25,7 @@ export function HouseholdSizeSection({ userId }: HouseholdSizeSectionProps) {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('household_adults, household_children')
         .eq('id', userId)
         .single();
@@ -47,7 +47,7 @@ export function HouseholdSizeSection({ userId }: HouseholdSizeSectionProps) {
     setSaving(true);
     try {
       const { error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .update({
           household_adults: adults,
           household_children: children,

@@ -50,7 +50,7 @@ export function AdminDebugPanel({ userId }: { userId: string }) {
 
         // Fetch profile
         const { data: profile } = await supabase
-          .from('user_profiles')
+          .from('profiles')
           .select('onboarding_status, onboarding_step, required_fields_ok, household_adults, household_children, kid_portion_ratio, portion_strategy')
           .eq('id', userId)
           .single();

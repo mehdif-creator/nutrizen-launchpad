@@ -29,7 +29,7 @@
  
    try {
      const { data, error } = await supabase
-       .from('user_profiles')
+        .from('profiles')
        .select('onboarding_completed_at, onboarding_step')
        .eq('id', userId)
        .maybeSingle();
@@ -75,7 +75,7 @@
      const now = new Date().toISOString();
      
      const { error } = await supabase
-       .from('user_profiles')
+       .from('profiles')
        .update({
          onboarding_completed_at: now,
          onboarding_completed: true,

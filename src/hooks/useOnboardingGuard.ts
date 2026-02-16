@@ -159,7 +159,7 @@
    if (Object.keys(updateData).length === 0) return;
  
    const { error } = await supabase
-     .from('user_profiles')
+     .from('profiles')
      .update(updateData)
      .eq('id', userId);
  

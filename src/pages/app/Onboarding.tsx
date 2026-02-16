@@ -57,7 +57,7 @@ export default function Onboarding() {
     const checkStatus = async () => {
       try {
         const { data, error } = await supabase
-          .from('user_profiles')
+          .from('profiles')
            .select('onboarding_step, required_fields_ok')
           .eq('id', user.id)
            .maybeSingle();
@@ -91,7 +91,7 @@ export default function Onboarding() {
 
         // Fetch profile data
         const { data: profile } = await supabase
-          .from('user_profiles')
+          .from('profiles')
           .select('household_adults, household_children, kid_portion_ratio, meals_per_day, portion_strategy')
           .eq('id', user.id)
           .single();
@@ -124,7 +124,7 @@ export default function Onboarding() {
     try {
       // Save profile data
       const { error: profileError } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .update({
           household_adults: profileData.household_adults,
           household_children: profileData.household_children,

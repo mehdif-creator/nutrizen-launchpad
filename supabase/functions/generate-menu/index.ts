@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
 
     // Get user's household info for portion calculations
     const { data: profileData, error: profileError } = await supabaseClient
-      .from("user_profiles")
+      .from("profiles")
       .select("household_adults, household_children")
       .eq("id", user.id)
       .single();

@@ -939,6 +939,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "meal_plans_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       meal_ratings: {
@@ -1390,6 +1397,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       processed_checkout_sessions: {
@@ -1421,38 +1435,92 @@ export type Database = {
       }
       profiles: {
         Row: {
+          affiliate_code: string | null
           avatar_url: string | null
           created_at: string | null
+          default_servings_per_recipe: number
+          default_servings_rounding: string
           diagnostics_meta: Json | null
+          display_name: string | null
           email: string | null
           full_name: string | null
+          household_adults: number
+          household_children: number
           id: string
+          is_affiliate: boolean
+          kid_portion_ratio: number
           last_diagnostics_at: string | null
           locale: string | null
+          meals_per_day: number
+          onboarding_completed: boolean | null
+          onboarding_completed_at: string | null
+          onboarding_status: string
+          onboarding_step: number | null
+          onboarding_version: number
+          portion_strategy: string
+          referral_code: string | null
+          required_fields_ok: boolean
+          show_on_leaderboard: boolean
           stripe_customer_id: string | null
           updated_at: string | null
         }
         Insert: {
+          affiliate_code?: string | null
           avatar_url?: string | null
           created_at?: string | null
+          default_servings_per_recipe?: number
+          default_servings_rounding?: string
           diagnostics_meta?: Json | null
+          display_name?: string | null
           email?: string | null
           full_name?: string | null
+          household_adults?: number
+          household_children?: number
           id: string
+          is_affiliate?: boolean
+          kid_portion_ratio?: number
           last_diagnostics_at?: string | null
           locale?: string | null
+          meals_per_day?: number
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
+          onboarding_status?: string
+          onboarding_step?: number | null
+          onboarding_version?: number
+          portion_strategy?: string
+          referral_code?: string | null
+          required_fields_ok?: boolean
+          show_on_leaderboard?: boolean
           stripe_customer_id?: string | null
           updated_at?: string | null
         }
         Update: {
+          affiliate_code?: string | null
           avatar_url?: string | null
           created_at?: string | null
+          default_servings_per_recipe?: number
+          default_servings_rounding?: string
           diagnostics_meta?: Json | null
+          display_name?: string | null
           email?: string | null
           full_name?: string | null
+          household_adults?: number
+          household_children?: number
           id?: string
+          is_affiliate?: boolean
+          kid_portion_ratio?: number
           last_diagnostics_at?: string | null
           locale?: string | null
+          meals_per_day?: number
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
+          onboarding_status?: string
+          onboarding_step?: number | null
+          onboarding_version?: number
+          portion_strategy?: string
+          referral_code?: string | null
+          required_fields_ok?: boolean
+          show_on_leaderboard?: boolean
           stripe_customer_id?: string | null
           updated_at?: string | null
         }
@@ -2266,6 +2334,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       support_tickets: {
@@ -2304,6 +2379,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "support_tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       swaps: {
@@ -2331,6 +2413,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "swaps_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2736,7 +2825,7 @@ export type Database = {
         }
         Relationships: []
       }
-      user_profiles: {
+      user_profiles_deprecated: {
         Row: {
           affiliate_code: string | null
           avatar_url: string | null
@@ -3249,6 +3338,87 @@ export type Database = {
           fibers_g: number | null
           proteins_g: number | null
           recipe_id: string | null
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          affiliate_code: string | null
+          avatar_url: string | null
+          created_at: string | null
+          default_servings_per_recipe: number | null
+          default_servings_rounding: string | null
+          diagnostics_meta: Json | null
+          display_name: string | null
+          household_adults: number | null
+          household_children: number | null
+          id: string | null
+          is_affiliate: boolean | null
+          kid_portion_ratio: number | null
+          last_diagnostics_at: string | null
+          meals_per_day: number | null
+          onboarding_completed: boolean | null
+          onboarding_completed_at: string | null
+          onboarding_status: string | null
+          onboarding_step: number | null
+          onboarding_version: number | null
+          portion_strategy: string | null
+          referral_code: string | null
+          required_fields_ok: boolean | null
+          show_on_leaderboard: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          affiliate_code?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          default_servings_per_recipe?: number | null
+          default_servings_rounding?: string | null
+          diagnostics_meta?: Json | null
+          display_name?: string | null
+          household_adults?: number | null
+          household_children?: number | null
+          id?: string | null
+          is_affiliate?: boolean | null
+          kid_portion_ratio?: number | null
+          last_diagnostics_at?: string | null
+          meals_per_day?: number | null
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
+          onboarding_status?: string | null
+          onboarding_step?: number | null
+          onboarding_version?: number | null
+          portion_strategy?: string | null
+          referral_code?: string | null
+          required_fields_ok?: boolean | null
+          show_on_leaderboard?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          affiliate_code?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          default_servings_per_recipe?: number | null
+          default_servings_rounding?: string | null
+          diagnostics_meta?: Json | null
+          display_name?: string | null
+          household_adults?: number | null
+          household_children?: number | null
+          id?: string | null
+          is_affiliate?: boolean | null
+          kid_portion_ratio?: number | null
+          last_diagnostics_at?: string | null
+          meals_per_day?: number | null
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
+          onboarding_status?: string | null
+          onboarding_step?: number | null
+          onboarding_version?: number | null
+          portion_strategy?: string | null
+          referral_code?: string | null
+          required_fields_ok?: boolean | null
+          show_on_leaderboard?: boolean | null
+          updated_at?: string | null
         }
         Relationships: []
       }

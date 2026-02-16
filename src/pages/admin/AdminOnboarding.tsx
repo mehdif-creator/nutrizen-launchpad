@@ -79,21 +79,14 @@ export default function AdminOnboarding() {
     try {
       // Get all user profiles with onboarding data
       const { data: profiles, error: profilesError } = await supabase
-        .from('user_profiles')
-        .select('id, display_name, onboarding_step, onboarding_completed, created_at')
+        .from('profiles')
+        .select('id, display_name, email, onboarding_step, onboarding_completed, created_at')
         .order('created_at', { ascending: false });
 
       if (profilesError) throw profilesError;
 
-      // Get emails from profiles table (auth schema data)
-      const { data: authProfiles, error: authError } = await supabase
-        .from('profiles')
-        .select('id, email');
-
-      if (authError) throw authError;
-
-      // Create a map of user IDs to emails
-      const emailMap = new Map(authProfiles?.map(p => [p.id, p.email]) || []);
+      // Email is now in the same profiles table
+      const emailMap = new Map(profiles?.map(p => [p.id, p.email]) || []);
 
       const totalUsers = profiles?.length || 0;
       const completedOnboarding = profiles?.filter(p => p.onboarding_completed).length || 0;

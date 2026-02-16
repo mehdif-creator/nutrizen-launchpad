@@ -73,7 +73,7 @@
  
      try {
        const { error } = await supabase
-         .from('user_profiles')
+          .from('profiles')
          .update({ onboarding_step: step })
          .eq('id', userId);
  
@@ -139,7 +139,7 @@
  
      try {
        const { error } = await supabase
-         .from('user_profiles')
+         .from('profiles')
          .update({ 
            onboarding_step: 0,
            onboarding_completed: false,

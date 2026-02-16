@@ -56,7 +56,7 @@ export default function Affiliate() {
     try {
       // Check if user is affiliate
       const { data: profile } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('is_affiliate, affiliate_code')
         .eq('id', user.id)
         .single();
@@ -116,7 +116,7 @@ export default function Affiliate() {
 
       // Update user profile
       const { error: updateError } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .update({
           is_affiliate: true,
           affiliate_code: codeData,
