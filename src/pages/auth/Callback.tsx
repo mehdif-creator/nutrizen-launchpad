@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, AlertCircle } from 'lucide-react';
@@ -7,73 +7,91 @@ import { Button } from '@/components/ui/button';
 export default function Callback() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+  const resolvedRef = useRef(false);
 
   useEffect(() => {
-    let handled = false;
-
-    const succeed = () => {
-      if (handled) return;
-      handled = true;
-      clearTimeout(hardTimeout);
-      console.log('[AUTH-CALLBACK] Session established, redirecting to /app');
-      navigate('/app', { replace: true });
+    const resolve = (path: string) => {
+      if (resolvedRef.current) return;
+      resolvedRef.current = true;
+      console.log('[AuthCallback] ✅ Resolving to:', path);
+      navigate(path, { replace: true });
     };
 
     const fail = (msg: string) => {
-      if (handled) return;
-      handled = true;
-      clearTimeout(hardTimeout);
-      console.error('[AUTH-CALLBACK] Error:', msg);
+      if (resolvedRef.current) return;
+      resolvedRef.current = true;
+      console.error('[AuthCallback] ❌ Failed:', msg);
       setError(msg);
     };
 
-    // Check for errors in URL hash or query params
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const searchParams = new URLSearchParams(window.location.search);
+    // Step 1: Check for errors in URL
+    const hash = window.location.hash.substring(1);
+    const hashParams = new URLSearchParams(hash);
+    const queryParams = new URLSearchParams(window.location.search);
 
-    const errorParam = searchParams.get('error') || hashParams.get('error');
-    if (errorParam) {
-      const desc = searchParams.get('error_description')
+    const urlError = queryParams.get('error') || hashParams.get('error');
+    if (urlError) {
+      const desc = queryParams.get('error_description')
         || hashParams.get('error_description')
-        || errorParam;
-      fail(desc);
+        || urlError;
+      fail(decodeURIComponent(desc.replace(/\+/g, ' ')));
       return;
     }
 
-    // Hard timeout — 12 seconds
+    console.log('[AuthCallback] Has access_token in hash:', hashParams.has('access_token'));
+
+    // Step 2: Hard timeout — 15 seconds
     const hardTimeout = setTimeout(() => {
       fail('La connexion a pris trop de temps. Veuillez réessayer.');
-    }, 12000);
+    }, 15000);
 
-    // With flowType: "implicit" + detectSessionInUrl: true,
-    // Supabase JS automatically extracts #access_token from the URL hash
-    // and fires onAuthStateChange with SIGNED_IN.
+    // Step 3: CRITICAL — Check session IMMEDIATELY (0ms)
+    // Supabase may have already parsed the hash during createClient()
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('[AuthCallback] getSession() immediate:', !!session);
+      if (session) {
+        clearTimeout(hardTimeout);
+        resolve('/app');
+      }
+    });
+
+    // Step 4: Listen for ALL auth events including INITIAL_SESSION
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('[AUTH-CALLBACK] Auth event:', event);
-        if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
-          succeed();
+        console.log('[AuthCallback] Auth event:', event, 'has session:', !!session);
+        if (session && (
+          event === 'INITIAL_SESSION' ||
+          event === 'SIGNED_IN' ||
+          event === 'TOKEN_REFRESHED'
+        )) {
+          clearTimeout(hardTimeout);
+          clearInterval(retryInterval);
+          subscription.unsubscribe();
+          resolve('/app');
         }
       }
     );
 
-    // Fallback: session may already be set if Supabase parsed the hash
-    // before our listener was attached (race condition)
-    const fallbackTimer = setTimeout(async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          console.log('[AUTH-CALLBACK] Session found via fallback check');
-          succeed();
-        }
-      } catch (e) {
-        console.error('[AUTH-CALLBACK] Fallback check error:', e);
+    // Step 5: Poll getSession() every 500ms as belt-and-suspenders
+    let retryCount = 0;
+    const retryInterval = setInterval(async () => {
+      retryCount++;
+      if (resolvedRef.current || retryCount > 16) {
+        clearInterval(retryInterval);
+        return;
       }
-    }, 800);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        clearInterval(retryInterval);
+        clearTimeout(hardTimeout);
+        subscription.unsubscribe();
+        resolve('/app');
+      }
+    }, 500);
 
     return () => {
       clearTimeout(hardTimeout);
-      clearTimeout(fallbackTimer);
+      clearInterval(retryInterval);
       subscription.unsubscribe();
     };
   }, [navigate]);
@@ -88,13 +106,13 @@ export default function Callback() {
             <p className="text-muted-foreground">{error}</p>
             <div className="space-y-2">
               <Button
-                onClick={() => navigate('/auth/login')}
+                onClick={() => window.location.href = '/auth/login'}
                 className="w-full"
               >
                 Retour à la connexion
               </Button>
               <Button
-                onClick={() => navigate('/')}
+                onClick={() => window.location.href = '/'}
                 variant="outline"
                 className="w-full"
               >
