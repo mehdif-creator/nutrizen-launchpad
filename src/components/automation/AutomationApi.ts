@@ -12,13 +12,10 @@ const DEFAULT_SETTINGS: AutomationSettings = {
   timezone: 'Europe/Paris',
   language: 'fr',
   supabaseUrl: '',
-  supabaseKey: '',
   pinterestAppId: '',
-  pinterestAppSecret: '',
   pinterestToken: '',
   cloudinaryName: '',
   cloudinaryKey: '',
-  cloudinarySecret: '',
   googleAnalyticsId: '',
   defaultUtmSource: 'pinterest',
 };
