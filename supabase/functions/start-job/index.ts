@@ -1,21 +1,11 @@
+/**
+ * start-job: Authenticated job launcher
+ * 
+ * Security: Auth required, strict CORS, Zod validation, credit debit
+ */
 import { createClient } from '../_shared/deps.ts';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
-
-const ALLOWED_ORIGINS = [
-  'https://mynutrizen.fr',
-  'https://app.mynutrizen.fr',
-  'https://www.mynutrizen.fr',
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'https://id-preview--a4e7364c-6c94-4f23-85c6-e6adea1804c7.lovable.app',
-  'https://nutrizen-launchpad.lovable.app',
-];
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+import { getCorsHeaders } from '../_shared/security.ts';
 
 // Valid job types
 const JOB_TYPES = ['scan_repas', 'inspi_frigo', 'substitutions'] as const;
@@ -23,7 +13,7 @@ const JOB_TYPES = ['scan_repas', 'inspi_frigo', 'substitutions'] as const;
 // Input schema
 const StartJobSchema = z.object({
   type: z.enum(JOB_TYPES),
-  payload: z.record(z.any()).default({}),
+  payload: z.record(z.unknown()).default({}),
   idempotency_key: z.string().min(1).max(255),
 });
 
@@ -52,6 +42,9 @@ function getWebhookUrl(type: string): string | null {
 }
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -141,7 +134,6 @@ Deno.serve(async (req) => {
 
     if (jobError) {
       console.error('[start-job] Job upsert error:', jobError);
-      // Refund credits since job failed to create
       await supabaseAdmin.rpc('rpc_refund_credits_for_job', {
         p_user_id: user.id,
         p_feature: type,
@@ -178,11 +170,8 @@ Deno.serve(async (req) => {
 
     // 3. Call n8n webhook (server-side)
     const webhookUrl = getWebhookUrl(type);
-    
-    // Get callback URL
     const callbackUrl = `${supabaseUrl}/functions/v1/job-callback`;
 
-    // Provide specific French error messages per type
     const webhookErrorMessages: Record<string, string> = {
       scan_repas: 'Configuration manquante : webhook ScanRepas.',
       inspi_frigo: 'Configuration manquante : webhook InspiFrigo.',
@@ -193,7 +182,6 @@ Deno.serve(async (req) => {
       const errorMessage = webhookErrorMessages[type] || 'Configuration webhook manquante.';
       console.error(`[start-job] Webhook not configured for type=${type}`);
       
-      // Mark job as error and refund
       await supabaseAdmin
         .from('automation_jobs')
         .update({ status: 'error', error: errorMessage })
@@ -230,7 +218,7 @@ Deno.serve(async (req) => {
       console.log(`[start-job] Calling n8n webhook for job ${jobId}`);
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout for webhook call
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       const webhookResponse = await fetch(webhookUrl, {
         method: 'POST',
@@ -245,7 +233,6 @@ Deno.serve(async (req) => {
         throw new Error(`Webhook returned ${webhookResponse.status}`);
       }
 
-      // Update job to running
       await supabaseAdmin
         .from('automation_jobs')
         .update({ status: 'running' })
@@ -266,7 +253,6 @@ Deno.serve(async (req) => {
     } catch (webhookError) {
       console.error('[start-job] Webhook call failed:', webhookError);
       
-      // Mark job as error and refund
       await supabaseAdmin
         .from('automation_jobs')
         .update({ status: 'error', error: 'Échec de communication avec le service' })
@@ -292,7 +278,6 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('[start-job] Unhandled error:', error);
     
-    // Handle validation errors
     if (error instanceof z.ZodError) {
       return new Response(
         JSON.stringify({ 

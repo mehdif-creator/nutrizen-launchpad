@@ -1,3 +1,9 @@
+/**
+ * handle-referral: Process referral attribution
+ * 
+ * Security: Requires SERVICE_ROLE_KEY auth (internal calls only).
+ * Client-provided newUserId is NEVER trusted — caller must be server-side.
+ */
 import { createClient } from '../_shared/deps.ts';
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { getCorsHeaders } from '../_shared/security.ts';
@@ -33,9 +39,34 @@ Deno.serve(async (req) => {
   try {
     logger.info('Function started');
 
+    // SECURITY: This endpoint must only be called with SERVICE_ROLE_KEY
+    // It trusts the newUserId parameter, so it must NOT be called from client-side.
+    const authHeader = req.headers.get('Authorization');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    
+    if (!authHeader) {
+      throw new PublicError({
+        code: 'AUTH_REQUIRED',
+        userMessage: 'Authentication required',
+        statusCode: 401,
+      });
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Only accept SERVICE_ROLE_KEY — not user JWTs
+    if (token !== serviceRoleKey) {
+      logger.warn('Non-service-role call attempted');
+      throw new PublicError({
+        code: 'FORBIDDEN',
+        userMessage: 'This endpoint requires service-role access',
+        statusCode: 403,
+      });
+    }
+
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      serviceRoleKey,
       { auth: { persistSession: false } }
     );
 
@@ -110,14 +141,12 @@ Deno.serve(async (req) => {
 
     if (pointsError && pointsError.code !== 'PGRST116') {
       logger.error('Error fetching user points', pointsError);
-      // Don't fail - referral was recorded, points can be handled separately
     } else {
       const pointsToAward = 5;
       const newTotalPoints = (userPoints?.total_points || 0) + pointsToAward;
       const newLevel = calculateLevel(newTotalPoints);
 
       if (!userPoints) {
-        // Create new points record
         await supabaseAdmin
           .from('user_points')
           .insert({
@@ -127,7 +156,6 @@ Deno.serve(async (req) => {
             referrals: 1,
           });
       } else {
-        // Update existing record
         await supabaseAdmin
           .from('user_points')
           .update({
@@ -155,12 +183,10 @@ Deno.serve(async (req) => {
       : { message: String(error) };
     logger.error('Operation failed', errorDetails);
 
-    // Handle PublicError instances
     if (error instanceof PublicError) {
       return error.toResponse(corsHeaders);
     }
     
-    // Return sanitized generic error
     return new PublicError({
       code: 'INTERNAL_ERROR',
       userMessage: 'Une erreur est survenue. Veuillez réessayer.',
