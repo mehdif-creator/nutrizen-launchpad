@@ -1,4 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('initUser');
 
 export interface InitUserResult {
   success: boolean;
@@ -19,7 +22,7 @@ export async function initUserRows(userId: string): Promise<InitUserResult> {
       throw new Error('No active session');
     }
 
-    console.log('[initUser] Calling init-user-rows edge function');
+    logger.info('Calling init-user-rows edge function');
 
     // Call Edge Function
     const { data, error } = await supabase.functions.invoke('init-user-rows', {
@@ -30,11 +33,11 @@ export async function initUserRows(userId: string): Promise<InitUserResult> {
     });
 
     if (error) {
-      console.error('[initUser] Edge function error:', error);
+      logger.error('Edge function error', error);
       throw error;
     }
 
-    console.log('[initUser] Success:', data);
+    logger.debug('Success', { data });
 
     return {
       success: data.success ?? false,
@@ -42,7 +45,7 @@ export async function initUserRows(userId: string): Promise<InitUserResult> {
       user_id: data.user_id,
     };
   } catch (error) {
-    console.error('[initUser] Error:', error);
+    logger.error('Error', error instanceof Error ? error : new Error(String(error)));
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -57,7 +60,7 @@ export async function initializeNewUser(userId: string) {
   const result = await initUserRows(userId);
   
   if (!result.success) {
-    console.error('[initializeNewUser] Failed to initialize user:', result.message);
+    logger.error('Failed to initialize user', new Error(result.message || 'Unknown'));
   }
   
   return result;

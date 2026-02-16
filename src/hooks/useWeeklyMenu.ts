@@ -2,6 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
 import { queryClient } from '@/lib/queryClient';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('useWeeklyMenu');
 
 export interface WeeklyMenuDay {
   day: string;
@@ -49,7 +52,7 @@ export function getCurrentWeekStart(): string {
 async function fetchWeeklyMenu(userId: string): Promise<WeeklyMenu | null> {
   const weekStart = getCurrentWeekStart();
   
-  console.log('[useWeeklyMenu] Fetching menu for user:', userId, 'week_start:', weekStart);
+  logger.debug('Fetching menu', { userId, weekStart });
 
   const { data, error } = await supabase
     .from('user_weekly_menus')
@@ -59,12 +62,12 @@ async function fetchWeeklyMenu(userId: string): Promise<WeeklyMenu | null> {
     .maybeSingle();
 
   if (error) {
-    console.error('[useWeeklyMenu] Error fetching menu:', error);
+    logger.error('Error fetching menu', error);
     throw error;
   }
 
   if (!data) {
-    console.warn('[useWeeklyMenu] No menu found for current week:', weekStart);
+    logger.warn('No menu found for current week', { weekStart });
     return null;
   }
 
@@ -78,7 +81,7 @@ async function fetchWeeklyMenu(userId: string): Promise<WeeklyMenu | null> {
     };
   } | null;
 
-  console.log('[useWeeklyMenu] Menu data received:', {
+  logger.debug('Menu data received', {
     menu_id: data.menu_id,
     day_count: payload?.days?.length,
     used_fallback: data.used_fallback,
@@ -111,7 +114,7 @@ export function useWeeklyMenu(userId: string | undefined) {
   useEffect(() => {
     if (!userId) return;
 
-    console.log('[useWeeklyMenu] Setting up realtime subscription for user:', userId);
+    logger.debug('Setting up realtime subscription', { userId });
     
     const channel = supabase
       .channel('user_weekly_menus_changes')
@@ -124,17 +127,17 @@ export function useWeeklyMenu(userId: string | undefined) {
           filter: `user_id=eq.${userId}`
         },
         (payload) => {
-          console.log('[useWeeklyMenu] Received realtime update:', payload.eventType);
+          logger.debug('Received realtime update', { eventType: payload.eventType });
           // Invalidate and refetch
           queryClient.invalidateQueries({ queryKey: ['weeklyMenu', userId] });
         }
       )
       .subscribe((status) => {
-        console.log('[useWeeklyMenu] Realtime subscription status:', status);
+        logger.debug('Realtime subscription status', { status });
       });
 
     return () => {
-      console.log('[useWeeklyMenu] Cleaning up realtime subscription');
+      logger.debug('Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
   }, [userId]);

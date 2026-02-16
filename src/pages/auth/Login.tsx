@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, Chrome, Apple } from 'lucide-react';
+import { Mail, Chrome } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -14,7 +14,7 @@ export default function Login() {
   const { toast } = useToast();
   
   // Support redirect after login (e.g. from /credits)
-  const searchParams = new URLSearchParams(window.location.search);
+  const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirect');
 
   const handleMagicLink = async (e: React.FormEvent) => {
@@ -35,11 +35,11 @@ export default function Login() {
         title: '✉️ Email envoyé !',
         description: 'Vérifie ta boîte mail pour te connecter.',
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Generic error message to prevent user enumeration
       toast({
         title: 'Connexion',
-        description: 'Email ou mot de passe incorrect.',
+        description: 'Une erreur est survenue lors de la connexion. Veuillez réessayer.',
         variant: 'destructive',
       });
     } finally {
@@ -56,10 +56,9 @@ export default function Login() {
     });
 
     if (error) {
-      // Generic error message to prevent user enumeration
       toast({
         title: 'Connexion',
-        description: 'Email ou mot de passe incorrect.',
+        description: 'Une erreur est survenue lors de la connexion avec Google. Veuillez réessayer.',
         variant: 'destructive',
       });
     }

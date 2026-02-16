@@ -1,5 +1,8 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('AffiliateTracking');
 
 /**
  * Hook to track affiliate codes from URL parameters
@@ -15,7 +18,7 @@ export function useAffiliateTracking() {
     if (affCode) {
       // Store affiliate code in sessionStorage
       sessionStorage.setItem('nutrizen_affiliate_code', affCode);
-      console.log('Affiliate code captured:', affCode);
+      logger.info('Affiliate code captured', { affCode });
     }
   }, [location]);
 }

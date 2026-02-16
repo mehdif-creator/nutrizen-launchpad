@@ -15,32 +15,3 @@ export const queryClient = new QueryClient({
     },
   },
 });
-
-// Persist cache to sessionStorage to avoid flashes on navigation
-if (typeof window !== 'undefined') {
-  const CACHE_KEY = 'nutrizen-query-cache';
-  
-  // Load persisted cache on mount
-  try {
-    const cached = sessionStorage.getItem(CACHE_KEY);
-    if (cached) {
-      const parsed = JSON.parse(cached);
-      queryClient.setQueryData(['persisted'], parsed);
-    }
-  } catch (error) {
-    console.warn('Failed to load query cache:', error);
-  }
-
-  // Save cache on unmount/page hide
-  const persistCache = () => {
-    try {
-      const cache = queryClient.getQueryCache().getAll();
-      sessionStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-    } catch (error) {
-      console.warn('Failed to persist query cache:', error);
-    }
-  };
-
-  window.addEventListener('beforeunload', persistCache);
-  window.addEventListener('pagehide', persistCache);
-}

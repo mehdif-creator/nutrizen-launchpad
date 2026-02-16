@@ -1,9 +1,12 @@
 import { supabase } from '@/integrations/supabase/client';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('adminActions');
 
 export interface AdminActionResult {
   success: boolean;
   message?: string;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 /**
@@ -22,7 +25,7 @@ export async function createUser(
       throw new Error('No active session');
     }
 
-    console.log(`[adminActions] Creating user: ${email}`);
+    logger.info(`Creating user: ${email}`);
 
     const { data, error } = await supabase.functions.invoke('admin-create-user', {
       body: { 
@@ -37,7 +40,7 @@ export async function createUser(
     });
 
     if (error) {
-      console.error('[adminActions] Create user error:', error);
+      logger.error('Create user error', error);
       throw error;
     }
 
@@ -47,7 +50,7 @@ export async function createUser(
       data: data,
     };
   } catch (error) {
-    console.error('[adminActions] Error:', error);
+    logger.error('Error', error instanceof Error ? error : new Error(String(error)));
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -70,7 +73,7 @@ export async function manageUserCredits(
       throw new Error('No active session');
     }
 
-    console.log(`[adminActions] Managing credits for user: ${userId}`);
+    logger.info(`Managing credits for user: ${userId}`);
 
     const { data, error } = await supabase.functions.invoke('admin-manage-credits', {
       body: { 
@@ -84,7 +87,7 @@ export async function manageUserCredits(
     });
 
     if (error) {
-      console.error('[adminActions] Manage credits error:', error);
+      logger.error('Manage credits error', error);
       throw error;
     }
 
@@ -94,7 +97,7 @@ export async function manageUserCredits(
       data: data,
     };
   } catch (error) {
-    console.error('[adminActions] Error:', error);
+    logger.error('Error', error instanceof Error ? error : new Error(String(error)));
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -113,7 +116,7 @@ export async function deleteUser(userId: string): Promise<AdminActionResult> {
       throw new Error('No active session');
     }
 
-    console.log(`[adminActions] Deleting user: ${userId}`);
+    logger.info(`Deleting user: ${userId}`);
 
     const { data, error } = await supabase.functions.invoke('admin-delete-user', {
       body: { 
@@ -125,7 +128,7 @@ export async function deleteUser(userId: string): Promise<AdminActionResult> {
     });
 
     if (error) {
-      console.error('[adminActions] Delete user error:', error);
+      logger.error('Delete user error', error);
       throw error;
     }
 
@@ -135,7 +138,7 @@ export async function deleteUser(userId: string): Promise<AdminActionResult> {
       data: data,
     };
   } catch (error) {
-    console.error('[adminActions] Error:', error);
+    logger.error('Error', error instanceof Error ? error : new Error(String(error)));
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -157,7 +160,7 @@ export async function resetUserAccount(
       throw new Error('No active session');
     }
 
-    console.log(`[adminActions] Resetting user: ${email}`);
+    logger.info(`Resetting user: ${email}`);
 
     const { data, error } = await supabase.functions.invoke('admin-reset-user', {
       body: { 
@@ -170,7 +173,7 @@ export async function resetUserAccount(
     });
 
     if (error) {
-      console.error('[adminActions] Reset user error:', error);
+      logger.error('Reset user error', error);
       throw error;
     }
 
@@ -180,7 +183,7 @@ export async function resetUserAccount(
       data: data,
     };
   } catch (error) {
-    console.error('[adminActions] Error:', error);
+    logger.error('Error', error instanceof Error ? error : new Error(String(error)));
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Unknown error',

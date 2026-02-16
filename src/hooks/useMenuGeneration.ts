@@ -3,6 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { t } from '@/i18n/translations';
 import { queryClient } from '@/lib/queryClient';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('useMenuGeneration');
 
 export interface MenuGenerationResult {
   success: boolean;
@@ -43,11 +46,11 @@ export function useMenuGeneration() {
       });
 
       if (error) {
-        console.error('[useMenuGeneration] Error:', error);
+        logger.error('Error', error);
         throw error;
       }
 
-      console.log('[useMenuGeneration] Response:', data);
+      logger.debug('Response received', { data });
 
       // Check for safety gate errors
       if (data.success === false) {
@@ -98,7 +101,7 @@ export function useMenuGeneration() {
 
       return { success: true };
     } catch (error) {
-      console.error('[useMenuGeneration] Failed to generate menu:', error);
+      logger.error('Failed to generate menu', error instanceof Error ? error : new Error(String(error)));
       
       const errorResult: MenuGenerationResult = {
         success: false,

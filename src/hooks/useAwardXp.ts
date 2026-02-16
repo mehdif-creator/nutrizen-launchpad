@@ -2,6 +2,9 @@ import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('useAwardXp');
 
 export type GamificationEventType =
   | 'onboarding_completed'
@@ -28,6 +31,15 @@ interface AwardXpResult {
   level?: number;
   streakDays?: number;
   error?: string;
+}
+
+interface RpcAwardXpResult {
+  success: boolean;
+  already_processed: boolean;
+  xp: number;
+  xp_delta?: number;
+  level_info: { level: number };
+  streak_days: number;
 }
 
 export function useAwardXp() {
@@ -63,18 +75,11 @@ export function useAwardXp() {
         });
 
         if (error) {
-          console.error('[useAwardXp] Error awarding XP:', error);
+          logger.error('Error awarding XP', error);
           return { success: false, alreadyProcessed: false, error: error.message };
         }
 
-        const result = data as {
-          success: boolean;
-          already_processed: boolean;
-          xp: number;
-          xp_delta?: number;
-          level_info: { level: number };
-          streak_days: number;
-        } | null;
+        const result = data as RpcAwardXpResult | null;
 
         // Invalidate gamification queries to refresh UI
         if (result && !result.already_processed) {
@@ -91,7 +96,7 @@ export function useAwardXp() {
           streakDays: result?.streak_days,
         };
       } catch (error) {
-        console.error('[useAwardXp] Unexpected error:', error);
+        logger.error('Unexpected error', error instanceof Error ? error : new Error(String(error)));
         return { 
           success: false, 
           alreadyProcessed: false, 
@@ -118,8 +123,6 @@ export function useAwardXp() {
     async (recipeId: string) => {
       if (!user?.id) return;
       const today = new Date().toISOString().split('T')[0];
-      // The idempotency key includes recipe ID to allow viewing different recipes
-      // but prevent re-awarding for the same recipe on the same day
       return awardXp('recipe_viewed', `recipe_view:${user.id}:${recipeId}:${today}`);
     },
     [user?.id, awardXp]

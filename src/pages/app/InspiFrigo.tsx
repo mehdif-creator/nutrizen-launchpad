@@ -7,6 +7,9 @@ import { Camera, Upload, Loader2, RefreshCw, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useAutomationJob } from "@/hooks/useAutomationJob";
 import { InsufficientCreditsModal } from "@/components/app/InsufficientCreditsModal";
+import { createLogger } from "@/lib/logger";
+
+const logger = createLogger('InspiFrigo');
 
 interface Ingredient {
   nom: string;
@@ -61,7 +64,7 @@ export default function InspiFrigo() {
     reset: resetJob,
   } = useAutomationJob({
     onSuccess: (jobResult) => {
-      console.log('[InspiFrigo] Job success:', jobResult);
+      logger.debug('Job success', { jobResult });
       if (jobResult.plat || jobResult.status === 'succès') {
         setAnalysisResult({
           status: jobResult.status || 'succès',
@@ -71,7 +74,7 @@ export default function InspiFrigo() {
       }
     },
     onError: (errorMsg, errorCode) => {
-      console.error('[InspiFrigo] Job error:', errorMsg, errorCode);
+      logger.error('Job error', new Error(errorMsg || 'Unknown'), { errorCode });
       if (errorCode !== 'INSUFFICIENT_CREDITS') {
         toast.error(errorMsg || 'Erreur lors de l\'analyse');
       }
@@ -103,7 +106,7 @@ export default function InspiFrigo() {
       return;
     }
 
-    console.log('[InspiFrigo] Starting analysis...', { 
+    logger.debug('Starting analysis...', { 
       fileName: selectedFile.name, 
       fileSize: selectedFile.size,
       fileType: selectedFile.type 
@@ -125,11 +128,11 @@ export default function InspiFrigo() {
           file_type: selectedFile.type,
         }, key);
 
-        console.log('[InspiFrigo] Job started:', jobResult);
+        logger.debug('Job started', { jobResult });
       };
       reader.readAsDataURL(selectedFile);
     } catch (err) {
-      console.error('[InspiFrigo] Error starting job:', err);
+      logger.error('Error starting job', err instanceof Error ? err : new Error(String(err)));
       toast.error('Erreur lors du démarrage de l\'analyse');
     }
   }, [selectedFile, startJob]);

@@ -1,6 +1,9 @@
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('useReferralSignup');
 
 export function useReferralSignup() {
   return useMutation({
@@ -19,8 +22,8 @@ export function useReferralSignup() {
         toast.info(data.message || 'Code de parrainage invalide');
       }
     },
-    onError: (error: any) => {
-      console.error('Referral signup error:', error);
+    onError: (error: unknown) => {
+      logger.error('Referral signup error', error instanceof Error ? error : new Error(String(error)));
       toast.error('Erreur lors de l\'enregistrement du parrainage');
     },
   });

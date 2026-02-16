@@ -1,11 +1,14 @@
  import { useState, useEffect, useCallback } from 'react';
  import { supabase } from '@/integrations/supabase/client';
  import { useToast } from '@/hooks/use-toast';
+ import { createLogger } from '@/lib/logger';
  import { 
    getOnboardingStatus, 
    markOnboardingComplete,
    clearOnboardingCache 
  } from '@/lib/onboarding/status';
+
+ const logger = createLogger('useOnboarding');
  
  export interface OnboardingStep {
    step: number;
@@ -79,7 +82,7 @@
        clearOnboardingCache(userId);
        setState(prev => ({ ...prev, currentStep: step }));
      } catch (error) {
-       console.error('Error updating onboarding step:', error);
+       logger.error('Error updating onboarding step', error instanceof Error ? error : new Error(String(error)));
        toast({
          variant: 'destructive',
          title: 'Erreur',
@@ -106,7 +109,7 @@
          description: 'Tu es prêt(e) à profiter de tous les outils.',
        });
      } catch (error) {
-       console.error('Error completing onboarding:', error);
+       logger.error('Error completing onboarding', error instanceof Error ? error : new Error(String(error)));
        toast({
          variant: 'destructive',
          title: 'Erreur',
@@ -150,7 +153,7 @@
        clearOnboardingCache(userId);
        setState({ currentStep: 0, completed: false, loading: false });
      } catch (error) {
-       console.error('Error resetting onboarding:', error);
+       logger.error('Error resetting onboarding', error instanceof Error ? error : new Error(String(error)));
      }
    }, [userId]);
  

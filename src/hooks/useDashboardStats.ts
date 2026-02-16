@@ -3,6 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
 import { subscribeToUserStats } from '@/lib/realtime';
 import { queryClient } from '@/lib/queryClient';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('useDashboardStats');
 
 export interface DashboardStats {
   temps_gagne: number;
@@ -17,7 +20,7 @@ const DEFAULT_STATS: DashboardStats = {
   temps_gagne: 0,
   charge_mentale_pct: 0,
   serie_en_cours_set_count: 0,
-  credits_zen: 0, // Will be synced from user_wallets
+  credits_zen: 0,
   references_count: 0,
   objectif_hebdos_valide: 0,
 };
@@ -30,17 +33,15 @@ async function fetchDashboardStats(userId: string): Promise<DashboardStats> {
     .maybeSingle();
 
   if (error) {
-    console.error('[useDashboardStats] Error fetching stats:', error);
+    logger.error('Error fetching stats', error);
     throw error;
   }
 
-  // Always return defaults if no data
   if (!data) {
-    console.warn('[useDashboardStats] No stats found, returning defaults');
+    logger.warn('No stats found, returning defaults');
     return DEFAULT_STATS;
   }
 
-  // Coalesce all values to 0 (never show null/undefined)
   return {
     temps_gagne: data.temps_gagne ?? 0,
     charge_mentale_pct: data.charge_mentale_pct ?? 0,
@@ -56,21 +57,18 @@ export function useDashboardStats(userId: string | undefined) {
     queryKey: ['dashboardStats', userId],
     queryFn: () => fetchDashboardStats(userId!),
     enabled: !!userId,
-    staleTime: 10 * 1000, // 10 seconds - aggressive for credit/stat freshness
+    staleTime: 10 * 1000,
     refetchOnMount: 'always',
-    placeholderData: DEFAULT_STATS, // Show defaults immediately
+    placeholderData: DEFAULT_STATS,
   });
 
-  // Subscribe to realtime updates for dashboard stats AND wallets
   useEffect(() => {
     if (!userId) return;
 
-    const unsubscribe = subscribeToUserStats(userId, (payload) => {
-      // Invalidate query to refetch
+    const unsubscribe = subscribeToUserStats(userId, () => {
       queryClient.invalidateQueries({ queryKey: ['dashboardStats', userId] });
     });
 
-    // Also subscribe to user_wallets changes for credit updates
     const walletSubscription = supabase
       .channel(`user-wallet-${userId}`)
       .on(
@@ -95,6 +93,6 @@ export function useDashboardStats(userId: string | undefined) {
 
   return {
     ...query,
-    stats: query.data ?? DEFAULT_STATS, // Always provide stats
+    stats: query.data ?? DEFAULT_STATS,
   };
 }

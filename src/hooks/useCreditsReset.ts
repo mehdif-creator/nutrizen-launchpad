@@ -1,5 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('useCreditsReset');
 
 /**
  * Hook to check and apply credit reset on app load (fallback mechanism).
@@ -15,7 +18,7 @@ export function useCreditsReset(userId: string | undefined) {
       try {
         hasChecked.current = true;
         
-        console.log('[useCreditsReset] Checking credit reset for user');
+        logger.debug('Checking credit reset for user');
         
         // Call the RPC to apply reset if due
         const { data, error } = await supabase.rpc('rpc_apply_credit_reset', {
@@ -23,18 +26,19 @@ export function useCreditsReset(userId: string | undefined) {
         });
 
         if (error) {
-          console.error('[useCreditsReset] Error applying credit reset:', error);
+          logger.error('Error applying credit reset', error);
           return;
         }
 
-        const action = (data as any)?.action;
+        const result = data as Record<string, unknown> | null;
+        const action = result?.action;
         if (action === 'reset_applied') {
-          console.log('[useCreditsReset] Credit reset applied:', data);
+          logger.info('Credit reset applied', { data: result });
         } else {
-          console.log('[useCreditsReset] No reset needed:', action);
+          logger.debug('No reset needed', { action });
         }
       } catch (error) {
-        console.error('[useCreditsReset] Exception:', error);
+        logger.error('Exception', error instanceof Error ? error : new Error(String(error)));
       }
     };
 

@@ -11,6 +11,9 @@ import { toast } from 'sonner';
 import { Header } from '@/components/landing/Header';
 import { Footer } from '@/components/landing/Footer';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('Credits');
 
 const FEATURES_COST = [
   { feature: 'Changer une recette (swap)', cost: 1 },
@@ -57,7 +60,7 @@ export default function CreditsPage() {
     }
 
     setPurchaseLoading(packId);
-    console.log('[Credits] Starting checkout', { packId, userId: user.id.substring(0, 8) });
+    logger.info('Starting checkout', { packId, userId: user.id.substring(0, 8) });
     
     try {
       const { data, error } = await supabase.functions.invoke('create-credits-checkout', {
@@ -65,7 +68,7 @@ export default function CreditsPage() {
       });
 
       if (error) {
-        console.error('[Credits] Checkout creation failed:', error);
+        logger.error('Checkout creation failed', error);
         const msg = error.message?.includes('price')
           ? 'Configuration de paiement en cours. Réessaie dans quelques minutes.'
           : error.message?.includes('401') || error.message?.includes('auth')
@@ -76,14 +79,14 @@ export default function CreditsPage() {
       }
 
       if (data?.url) {
-        console.log('[Credits] Redirecting to Stripe Checkout');
+        logger.debug('Redirecting to Stripe Checkout');
         window.location.href = data.url;
       } else {
-        console.error('[Credits] No URL in response:', data);
+        logger.error('No URL in response', new Error('Missing URL'), { data });
         toast.error('URL de paiement non reçue. Réessaie.');
       }
     } catch (error) {
-      console.error('[Credits] Unexpected error:', error);
+      logger.error('Unexpected error', error instanceof Error ? error : new Error(String(error)));
       toast.error('Erreur réseau. Vérifie ta connexion et réessaie.');
     } finally {
       setPurchaseLoading(null);
@@ -91,13 +94,12 @@ export default function CreditsPage() {
   };
 
   const getPopularPack = () => {
-    // Pack M is most popular (best value)
     return 'pack_m';
   };
 
   const getSavingsPercent = (pack: typeof packs[0]) => {
     if (pack.id === 'pack_s') return 0;
-    const basePrice = 499 / 50; // Pack S price per credit
+    const basePrice = 499 / 50;
     const packPrice = pack.price_cents / pack.credits;
     return Math.round((1 - packPrice / basePrice) * 100);
   };

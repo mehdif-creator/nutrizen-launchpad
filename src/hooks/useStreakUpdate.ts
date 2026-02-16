@@ -1,6 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { queryClient } from '@/lib/queryClient';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('useStreakUpdate');
 
 /**
  * Hook to update user streak and dashboard stats on app mount
@@ -19,11 +22,11 @@ export function useStreakUpdate(userId: string | undefined) {
         });
 
         if (error) {
-          console.error('[useStreakUpdate] Error updating streak:', error);
+          logger.error('Error updating streak', error);
           return;
         }
 
-        console.log('[useStreakUpdate] Streak updated:', data);
+        logger.debug('Streak updated', { data });
 
         // Invalidate relevant queries to refetch data
         queryClient.invalidateQueries({ queryKey: ['dashboardStats', userId] });
@@ -31,7 +34,7 @@ export function useStreakUpdate(userId: string | undefined) {
         
         hasUpdated.current = true;
       } catch (error) {
-        console.error('[useStreakUpdate] Exception:', error);
+        logger.error('Exception', error instanceof Error ? error : new Error(String(error)));
       }
     };
 

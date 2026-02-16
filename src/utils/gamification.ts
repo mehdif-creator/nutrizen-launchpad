@@ -1,4 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('Gamification');
 
 export interface PointsAction {
   type: 'daily_login' | 'meal_generated' | 'meal_completed' | 'meal_swap' | 'referral' | 'weekly_completion';
@@ -18,21 +21,21 @@ export async function awardPoints(action: PointsAction): Promise<boolean> {
     });
 
     if (error) {
-      console.error('Error awarding points:', error);
+      logger.error('Error awarding points', error);
       return false;
     }
 
     const result = data as { success: boolean; error?: string };
     if (!result.success) {
       if (result.error !== 'already_logged_today') {
-        console.warn('Award points returned:', result.error);
+        logger.warn('Award points returned error', { error: result.error });
       }
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Error in awardPoints:', error);
+    logger.error('Error in awardPoints', error instanceof Error ? error : new Error(String(error)));
     return false;
   }
 }
@@ -68,6 +71,12 @@ export async function awardMealCompletionPoints(userId: string): Promise<boolean
   return awardPoints({ type: 'meal_completed', userId });
 }
 
+interface MealDay {
+  breakfast?: { completed?: boolean };
+  lunch?: { completed?: boolean };
+  dinner?: { completed?: boolean };
+}
+
 /**
  * Check if user completed all meals for the week and award bonus
  */
@@ -84,8 +93,8 @@ export async function checkAndAwardWeeklyBonus(userId: string, weekOf: string): 
       return false;
     }
 
-    const items = mealPlan.items as any;
-    const allCompleted = Object.values(items).every((day: any) => {
+    const items = mealPlan.items as Record<string, MealDay>;
+    const allCompleted = Object.values(items).every((day) => {
       return day.breakfast?.completed && day.lunch?.completed && day.dinner?.completed;
     });
 
@@ -95,7 +104,7 @@ export async function checkAndAwardWeeklyBonus(userId: string, weekOf: string): 
 
     return false;
   } catch (error) {
-    console.error('Error checking weekly bonus:', error);
+    logger.error('Error checking weekly bonus', error instanceof Error ? error : new Error(String(error)));
     return false;
   }
 }
