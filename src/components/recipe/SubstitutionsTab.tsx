@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { InsufficientCreditsModal } from '@/components/app/InsufficientCreditsModal';
 import { getCreditsBalance } from '@/lib/credits';
+import { getFeatureCost } from '@/lib/featureCosts';
 
 interface Substitution {
   name: string;
@@ -28,7 +29,7 @@ interface SubstitutionsTabProps {
   ingredients: Array<string | { name?: string; ingredient?: string }>;
 }
 
-const SUBSTITUTION_COST = 5;
+const SUBSTITUTION_COST = getFeatureCost('substitutions');
 
 export function SubstitutionsTab({ recipeId, ingredients }: SubstitutionsTabProps) {
   const { user } = useAuth();
