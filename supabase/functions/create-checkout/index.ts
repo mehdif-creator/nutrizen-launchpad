@@ -67,6 +67,17 @@ async function verifyTurnstile(token: string, ip: string, logger: Logger): Promi
   }
 }
 
+/** Generate a cryptographically secure checkout token (URL-safe base64, 32 bytes) */
+function generateCheckoutToken(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  // URL-safe base64 encoding
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
 // =============================================================================
 // MAIN HANDLER
 // =============================================================================
@@ -97,7 +108,6 @@ Deno.serve(async (req) => {
     // ── Honeypot: reject bots that fill hidden "website" field ───────────
     if (body.website) {
       logger.warn("Honeypot triggered");
-      // Return 200 to avoid leaking detection to bots
       return new Response(JSON.stringify({ url: getAppBaseUrl() }), { status: 200, headers: jsonHeaders });
     }
 
@@ -193,7 +203,6 @@ Deno.serve(async (req) => {
         userId = userData.user?.id || null;
         if (userId) logger.info("Authenticated user", { userId });
       } catch {
-        // Auth is optional — continue as anonymous
         logger.warn("Auth token invalid, continuing as anonymous");
       }
     }
@@ -213,12 +222,31 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── Build URLs from server-side allowlist ────────────────────────────
-    const supabaseProjectRef = Deno.env.get("SUPABASE_URL")?.match(/https:\/\/([^.]+)/)?.[1] || "";
-    const successUrl = supabaseProjectRef
-      ? `https://${supabaseProjectRef}.supabase.co/functions/v1/post-checkout-login?session_id={CHECKOUT_SESSION_ID}`
-      : `${getAppBaseUrl()}/auth/callback?from_checkout=true`;
+    // ── Generate checkout_token and persist in DB ───────────────────────
+    const checkoutToken = generateCheckoutToken();
+    const tokenExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 min TTL
 
+    const { error: tokenInsertError } = await supabaseAdmin
+      .from('checkout_tokens')
+      .insert({
+        token: checkoutToken,
+        email,
+        user_id: userId,
+        plan_key: planKey,
+        status: 'pending',
+        expires_at: tokenExpiresAt,
+      });
+
+    if (tokenInsertError) {
+      logger.error("Failed to create checkout_token", tokenInsertError);
+      return new Response(JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "Erreur lors de la préparation du paiement." } }), {
+        status: 500, headers: jsonHeaders,
+      });
+    }
+
+    // ── Build URLs from server-side allowlist ────────────────────────────
+    const appBase = getAppBaseUrl();
+    const successUrl = `${appBase}/post-checkout?token=${checkoutToken}`;
     const cancelUrl = `${getSafeOriginForCancel(origin)}/?canceled=true`;
 
     // ── Referral / affiliate from query params ──────────────────────────
@@ -243,10 +271,17 @@ Deno.serve(async (req) => {
         referral_code: referralCode,
         affiliate_code: affiliateCode,
         from_checkout: "true",
+        checkout_token: checkoutToken,
       },
       success_url: successUrl,
       cancel_url: cancelUrl,
     });
+
+    // ── Update checkout_token with stripe_session_id ─────────────────────
+    await supabaseAdmin
+      .from('checkout_tokens')
+      .update({ stripe_session_id: session.id })
+      .eq('token', checkoutToken);
 
     logger.info("Checkout session created", { sessionId: session.id });
 
