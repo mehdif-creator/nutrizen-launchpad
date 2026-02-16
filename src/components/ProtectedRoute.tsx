@@ -34,10 +34,12 @@ export const ProtectedRoute = ({
 
   // Reset timeout when route changes
   useEffect(() => {
-    setTimedOut(false);
-  }, [location.pathname]);
+    if (loading || adminLoading) {
+      setTimedOut(false);
+    }
+  }, [location.pathname, loading, adminLoading]);
 
-  const isStillLoading = loading || adminLoading;
+  const isStillLoading = loading || (requireAdmin ? adminLoading : false);
 
   // Wait for auth, but respect timeout
   if (isStillLoading && !timedOut) {
