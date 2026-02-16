@@ -18,10 +18,12 @@ npm run dev
 
 ## 📚 Documentation
 
-- [ARCHITECTURE.md](./ARCHITECTURE.md) - Vue d'ensemble technique
-- [CODING_STANDARDS.md](./CODING_STANDARDS.md) - Standards et conventions
-- [TESTS.md](./TESTS.md) - Guide de tests
-- [README_INTEGRATION.md](./README_INTEGRATION.md) - Intégration backend-frontend
+- [Architecture](./docs/ARCHITECTURE.md) - Vue d'ensemble technique
+- [Standards de code](./docs/CODING_STANDARDS.md) - Standards et conventions
+- [Tests](./docs/TESTS.md) - Guide de tests
+- [Intégration](./docs/INTEGRATION.md) - Intégration backend-frontend
+- [Sécurité](./docs/SECURITY.md) - Notes de sécurité
+- [Déploiement](./docs/DEPLOYMENT.md) - Guide de déploiement
 
 ## 🛠️ Stack
 

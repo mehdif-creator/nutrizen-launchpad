@@ -1,6 +1,17 @@
 /**
- * Vite Plugin for Security Headers
- * Adds security headers to development server
+ * Vite Plugin for Security Headers (Development Server)
+ *
+ * ⚠️  SYNC NOTICE — This file MUST stay in sync with `public/_headers`.
+ *     `public/_headers` defines production security headers (Netlify / Cloudflare Pages).
+ *     This plugin mirrors them for the Vite dev server so behaviour is consistent.
+ *
+ *     When adding or changing any CSP directive, Cache-Control rule, or security
+ *     header here, update `public/_headers` as well (and vice-versa).
+ *
+ *  Differences allowed between dev and prod:
+ *    - frame-ancestors: dev uses '*' (needed for Lovable preview iframe), prod uses 'none'
+ *    - upgrade-insecure-requests: omitted in dev
+ *    - HSTS / Cross-Origin-*-Policy: prod-only
  */
 
 import type { Plugin } from 'vite';
@@ -14,13 +25,15 @@ export function securityHeadersPlugin(): Plugin {
         const url = req.url || '';
 
         // Cache-Control: no-store for authenticated app/admin routes
+        // Mirrors: public/_headers /app/* and /admin/* blocks
         if (url.startsWith('/app') || url.startsWith('/admin')) {
           res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
           res.setHeader('Pragma', 'no-cache');
           res.setHeader('Expires', '0');
         }
-        
+
         // Content Security Policy — NO unsafe-eval
+        // Mirrors: public/_headers Content-Security-Policy
         res.setHeader(
           'Content-Security-Policy',
           [
@@ -35,8 +48,10 @@ export function securityHeadersPlugin(): Plugin {
             "base-uri 'self'",
             "form-action 'self'",
             "object-src 'none'",
-            isDev ? "" : "upgrade-insecure-requests",
-          ].filter(Boolean).join('; ')
+            isDev ? '' : 'upgrade-insecure-requests',
+          ]
+            .filter(Boolean)
+            .join('; ')
         );
 
         // HSTS - only in production
@@ -47,17 +62,14 @@ export function securityHeadersPlugin(): Plugin {
           );
         }
 
-        // Prevent MIME sniffing
+        // Prevent MIME sniffing — Mirrors: public/_headers X-Content-Type-Options
         res.setHeader('X-Content-Type-Options', 'nosniff');
 
-        // Referrer Policy
+        // Referrer Policy — Mirrors: public/_headers Referrer-Policy
         res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
 
-        // Permissions Policy
-        res.setHeader(
-          'Permissions-Policy',
-          'camera=(), microphone=(), geolocation=()'
-        );
+        // Permissions Policy — Mirrors: public/_headers Permissions-Policy
+        res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
         // Cross-Origin Policies - relaxed in development
         if (!isDev) {
@@ -66,7 +78,8 @@ export function securityHeadersPlugin(): Plugin {
           res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
         }
 
-        // X-Frame-Options - allow in development for Lovable preview
+        // X-Frame-Options — Mirrors: public/_headers (prod = DENY)
+        // Dev allows all for Lovable preview iframe
         res.setHeader('X-Frame-Options', isDev ? 'ALLOWALL' : 'DENY');
 
         // Remove X-Powered-By header
