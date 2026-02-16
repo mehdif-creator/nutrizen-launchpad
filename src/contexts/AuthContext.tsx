@@ -66,8 +66,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const refreshSubscription = useCallback(async () => {
-    const currentSession = session;
+  const refreshSubscription = useCallback(async (sessionOverride?: Session | null) => {
+    const currentSession = sessionOverride !== undefined ? sessionOverride : session;
     if (!currentSession) {
       setSubscription(null);
       return;
@@ -119,7 +119,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setAdminLoading(false);
         }
         if (mounted) {
-          refreshSubscription();
+          refreshSubscription(currentSession);
           trackDailyLogin(currentSession.user.id);
         }
       } else {
@@ -144,11 +144,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(newSession?.user ?? null);
         
         if (newSession?.user) {
+          // Only re-check admin role on actual sign-in events.
+          // TOKEN_REFRESHED just updates the token — the admin role cannot change.
           if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
             await checkAdminRole(newSession.user.id);
-            refreshSubscription();
+            refreshSubscription(newSession);
           }
-          // For TOKEN_REFRESHED: update session silently, no adminLoading flip
+          // For TOKEN_REFRESHED: silently update session, no adminLoading flip
         } else {
           setIsAdmin(false);
           setAdminLoading(false);
@@ -173,7 +175,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, adminLoading, isAdmin, subscription, refreshSubscription, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, adminLoading, isAdmin, subscription, refreshSubscription: () => refreshSubscription(), signOut }}>
       {children}
     </AuthContext.Provider>
   );
