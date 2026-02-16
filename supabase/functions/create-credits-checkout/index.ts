@@ -1,4 +1,4 @@
-import Stripe from "https://esm.sh/stripe@18.5.0?target=deno";
+import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from '../_shared/deps.ts';
 
 const corsHeaders = {
