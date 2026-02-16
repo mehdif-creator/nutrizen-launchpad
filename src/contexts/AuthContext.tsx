@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { trackDailyLogin } from '@/utils/gamification';
 import { createLogger } from '@/lib/logger';
+import { clearOnboardingCache } from '@/lib/onboarding/status';
 
 const logger = createLogger('AuthContext');
 
@@ -161,6 +162,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [checkAdminRole]);
 
   const signOut = async () => {
+    clearOnboardingCache();
     setSubscription(null);
     setIsAdmin(false);
     await supabase.auth.signOut();

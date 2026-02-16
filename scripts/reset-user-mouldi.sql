@@ -13,9 +13,9 @@ DECLARE
   v_current_month date;
   v_new_trial_end timestamp with time zone;
 BEGIN
-  -- Récupérer l'ID utilisateur
+  -- Récupérer l'ID utilisateur depuis auth.users (source canonique)
   SELECT id INTO v_user_id
-  FROM profiles
+  FROM auth.users
   WHERE email = v_target_email;
 
   IF v_user_id IS NULL THEN
@@ -90,25 +90,25 @@ BEGIN
   
   RAISE NOTICE '✓ Trial extended to: %', v_new_trial_end;
 
-  -- 6. Supprimer les meal plans
-  DELETE FROM meal_plans 
-  WHERE user_id = v_user_id;
-  
-  RAISE NOTICE '✓ Meal plans deleted';
-
-  -- 7. Supprimer les menus hebdomadaires
-  DELETE FROM user_weekly_menus 
-  WHERE user_id = v_user_id;
-  
-  RAISE NOTICE '✓ Weekly menus deleted';
-
-  -- 8. Supprimer les ratings de repas (via les meal_plans)
+  -- 6. Supprimer les ratings de repas (doit précéder la suppression des meal_plans)
   DELETE FROM meal_ratings
   WHERE meal_plan_id IN (
     SELECT id FROM meal_plans WHERE user_id = v_user_id
   );
   
   RAISE NOTICE '✓ Meal ratings deleted';
+
+  -- 7. Supprimer les meal plans
+  DELETE FROM meal_plans 
+  WHERE user_id = v_user_id;
+  
+  RAISE NOTICE '✓ Meal plans deleted';
+
+  -- 8. Supprimer les menus hebdomadaires
+  DELETE FROM user_weekly_menus 
+  WHERE user_id = v_user_id;
+  
+  RAISE NOTICE '✓ Weekly menus deleted';
 
   -- Résumé final
   RAISE NOTICE '═══════════════════════════════════════════════════════';
