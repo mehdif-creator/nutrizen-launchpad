@@ -27,7 +27,7 @@ const PinterestCallback: React.FC = () => {
 
         if (data.ok) {
           setStatus('success');
-          setTimeout(() => navigate('/admin/automation/settings'), 1500);
+          setTimeout(() => navigate('/admin/automation/settings'), 2000);
         } else {
           setErrorMessage(data.message ?? "Erreur inconnue lors de la connexion Pinterest.");
           setStatus('error');

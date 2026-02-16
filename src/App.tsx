@@ -82,6 +82,7 @@ import PostCheckout from "./pages/PostCheckout";
 import PostCheckoutProfile from "./pages/PostCheckoutProfile";
 import Credits from "./pages/Credits";
 import About from "./pages/About";
+import PinterestOAuthCallback from "./pages/oauth/PinterestOAuthCallback";
 
 const App = () => {
   // Track referral codes from URL
@@ -160,6 +161,9 @@ const App = () => {
             <Route path="/legal/confidentialite" element={<Confidentialite />} />
             <Route path="/legal/resiliation" element={<Resiliation />} />
             
+            {/* OAuth Callbacks (public, no auth wall) */}
+            <Route path="/oauth/pinterest/callback" element={<PinterestOAuthCallback />} />
+
             {/* Other */}
             <Route path="/contact" element={<Contact />} />
             <Route path="/fit" element={<Fit />} />
