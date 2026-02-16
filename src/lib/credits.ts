@@ -99,14 +99,3 @@ export async function getCreditsBalance(userId: string): Promise<{
   }
 }
 
-/**
- * Feature credit costs
- */
-export const FEATURE_COSTS = {
-  swap: 1,
-  inspifrigo: 1,
-  scanrepas: 1,
-  substitution: 5,
-} as const;
-
-export type Feature = keyof typeof FEATURE_COSTS;

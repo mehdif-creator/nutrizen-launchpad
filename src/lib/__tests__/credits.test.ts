@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FEATURE_COSTS, type Feature } from '@/lib/credits';
+import { FEATURE_COSTS, type FeatureType } from '@/lib/featureCosts';
 
 // We mock the supabase client at module level so we can control RPC responses
 const mockRpc = vi.fn();
@@ -20,13 +20,13 @@ const { checkAndConsumeCredits, getCreditsBalance } = await import('@/lib/credit
 describe('FEATURE_COSTS', () => {
   it('defines expected feature costs', () => {
     expect(FEATURE_COSTS.swap).toBe(1);
-    expect(FEATURE_COSTS.inspifrigo).toBe(1);
-    expect(FEATURE_COSTS.scanrepas).toBe(1);
-    expect(FEATURE_COSTS.substitution).toBe(5);
+    expect(FEATURE_COSTS.scan_repas).toBe(2);
+    expect(FEATURE_COSTS.inspi_frigo).toBe(2);
+    expect(FEATURE_COSTS.substitutions).toBe(1);
   });
 
   it('has no unknown features', () => {
-    const validKeys: Feature[] = ['swap', 'inspifrigo', 'scanrepas', 'substitution'];
+    const validKeys: FeatureType[] = ['swap', 'scan_repas', 'inspi_frigo', 'substitutions'];
     expect(Object.keys(FEATURE_COSTS).sort()).toEqual(validKeys.sort());
   });
 });
