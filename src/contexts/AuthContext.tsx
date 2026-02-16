@@ -90,6 +90,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let mounted = true;
 
+    // Timeout fallback: ensure loading states resolve within 8 seconds
+    const loadingTimeout = setTimeout(() => {
+      if (mounted) {
+        console.warn('[AuthContext] Loading timeout reached, forcing loading=false');
+        setLoading(false);
+        setAdminLoading(false);
+      }
+    }, 8000);
+
     // Check for existing session first
     supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
       if (!mounted) return;
@@ -99,7 +108,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (currentSession?.user) {
         // Await admin check before marking loading as done
-        await checkAdminRole(currentSession.user.id);
+        try {
+          await checkAdminRole(currentSession.user.id);
+        } catch (e) {
+          console.error('[AuthContext] Admin check failed:', e);
+          setAdminLoading(false);
+        }
         if (mounted) {
           refreshSubscription();
           trackDailyLogin(currentSession.user.id);
@@ -109,6 +123,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       if (mounted) setLoading(false);
+    }).catch((err) => {
+      console.error('[AuthContext] getSession failed:', err);
+      if (mounted) {
+        setLoading(false);
+        setAdminLoading(false);
+      }
     });
 
     // Set up auth state listener for future changes
@@ -130,6 +150,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => {
       mounted = false;
+      clearTimeout(loadingTimeout);
       authSub.unsubscribe();
     };
   }, [checkAdminRole]);

@@ -1,4 +1,4 @@
-import Stripe from "https://esm.sh/stripe@18.5.0?target=deno";
+import Stripe from "https://esm.sh/stripe@18.5.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
   }
 
   // 3. Check subscription price vars (optional)
-  const subVars = ["STRIPE_PRICE_ESSENTIEL", "STRIPE_PRICE_EQUILIBRE", "STRIPE_PRICE_PREMIUM"];
+  const subVars = ["STRIPE_PRICE_ESSENTIEL_MONTHLY", "STRIPE_PRICE_ESSENTIEL_YEARLY", "STRIPE_PRICE_EQUILIBRE", "STRIPE_PRICE_PREMIUM"];
   for (const v of subVars) {
     const val = Deno.env.get(v);
     checks[v] = { ok: !!val, detail: val ? "configured" : "missing (subscriptions disabled)" };

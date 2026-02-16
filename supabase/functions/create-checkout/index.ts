@@ -1,4 +1,4 @@
-import Stripe from "https://esm.sh/stripe@18.5.0?target=deno";
+import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from '../_shared/deps.ts';
 
 // SECURITY: Strict CORS allow-list
@@ -24,7 +24,9 @@ const logStep = (step: string, details?: any) => {
 
 // Plan key → env var mapping (no hardcoded price IDs)
 const PLAN_ENV_KEYS: Record<string, string> = {
-  essentiel: "STRIPE_PRICE_ESSENTIEL",
+  essentiel: "STRIPE_PRICE_ESSENTIEL_MONTHLY",
+  essentiel_monthly: "STRIPE_PRICE_ESSENTIEL_MONTHLY",
+  essentiel_yearly: "STRIPE_PRICE_ESSENTIEL_YEARLY",
   equilibre: "STRIPE_PRICE_EQUILIBRE",
   premium: "STRIPE_PRICE_PREMIUM",
 };

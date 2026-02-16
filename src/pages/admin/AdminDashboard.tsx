@@ -54,38 +54,46 @@ export default function AdminDashboard() {
   }, []);
 
   const fetchStats = async () => {
+    const safeQuery = async <T,>(fn: () => Promise<T> | PromiseLike<T>, fallback: T): Promise<T> => {
+      try { return await fn(); } catch { return fallback; }
+    };
+
     try {
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const startOfWeek = new Date(now);
       startOfWeek.setDate(now.getDate() - 7);
 
-      const { count: totalUsers } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
-      const { count: activeSubscribers } = await supabase.from('subscriptions').select('*', { count: 'exact', head: true }).eq('status', 'active');
-      const { count: trialUsers } = await supabase.from('subscriptions').select('*', { count: 'exact', head: true }).eq('status', 'trialing');
-      const { count: canceledSubscriptions } = await supabase.from('subscriptions').select('*', { count: 'exact', head: true }).eq('status', 'canceled');
-      const { count: newUsersThisMonth } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', startOfMonth.toISOString());
-      const { count: newUsersThisWeek } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', startOfWeek.toISOString());
-      const { data: pointsData } = await supabase.from('user_points').select('total_points');
-      const totalPoints = pointsData?.reduce((sum, user) => sum + user.total_points, 0) || 0;
-      const { count: totalMealPlans } = await supabase.from('meal_plans').select('*', { count: 'exact', head: true });
-      const { count: totalRatings, data: ratingsData } = await supabase.from('meal_ratings').select('stars', { count: 'exact' });
-      const avgRatingScore = ratingsData && ratingsData.length > 0 ? ratingsData.reduce((sum, r) => sum + (r.stars || 0), 0) / ratingsData.length : 0;
-      const { count: openTickets } = await supabase.from('support_tickets').select('*', { count: 'exact', head: true }).eq('status', 'open');
+      const [
+        totalUsers, activeSubscribers, trialUsers, canceledSubscriptions,
+        newUsersThisMonth, newUsersThisWeek, totalPoints, totalMealPlans, ratingsObj, openTickets
+      ] = await Promise.all([
+        safeQuery(async () => (await supabase.from('profiles').select('*', { count: 'exact', head: true })).count ?? 0, 0),
+        safeQuery(async () => (await (supabase.from as any)('subscriptions').select('*', { count: 'exact', head: true }).eq('status', 'active')).count ?? 0, 0),
+        safeQuery(async () => (await (supabase.from as any)('subscriptions').select('*', { count: 'exact', head: true }).eq('status', 'trialing')).count ?? 0, 0),
+        safeQuery(async () => (await (supabase.from as any)('subscriptions').select('*', { count: 'exact', head: true }).eq('status', 'canceled')).count ?? 0, 0),
+        safeQuery(async () => (await supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', startOfMonth.toISOString())).count ?? 0, 0),
+        safeQuery(async () => (await supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', startOfWeek.toISOString())).count ?? 0, 0),
+        safeQuery(async () => { const r = await (supabase.from as any)('user_points').select('total_points'); return r.data?.reduce((s: number, u: any) => s + (u.total_points || 0), 0) ?? 0; }, 0),
+        safeQuery(async () => (await supabase.from('meal_plans').select('*', { count: 'exact', head: true })).count ?? 0, 0),
+        safeQuery(async () => { const r = await supabase.from('meal_ratings').select('stars', { count: 'exact' }); return { count: r.count ?? 0, avg: r.data && r.data.length > 0 ? r.data.reduce((s, rr) => s + (rr.stars || 0), 0) / r.data.length : 0 }; }, { count: 0, avg: 0 }),
+        safeQuery(async () => (await (supabase.from as any)('support_tickets').select('*', { count: 'exact', head: true }).eq('status', 'open')).count ?? 0, 0),
+      ]);
 
       const pricePerMonth = 19.99;
-      const mrr = (activeSubscribers || 0) * pricePerMonth;
-      const arpu = totalUsers && totalUsers > 0 ? mrr / totalUsers : 0;
-      const totalSubs = (activeSubscribers || 0) + (canceledSubscriptions || 0);
-      const churnRate = totalSubs > 0 ? ((canceledSubscriptions || 0) / totalSubs) * 100 : 0;
-      const conversionRate = totalUsers && totalUsers > 0 ? ((activeSubscribers || 0) / totalUsers) * 100 : 0;
-      const avgMealPlansPerUser = totalUsers && totalUsers > 0 ? (totalMealPlans || 0) / totalUsers : 0;
+      const mrr = activeSubscribers * pricePerMonth;
+      const arpu = totalUsers > 0 ? mrr / totalUsers : 0;
+      const totalSubs = activeSubscribers + canceledSubscriptions;
+      const churnRate = totalSubs > 0 ? (canceledSubscriptions / totalSubs) * 100 : 0;
+      const conversionRate = totalUsers > 0 ? (activeSubscribers / totalUsers) * 100 : 0;
+      const avgMealPlansPerUser = totalUsers > 0 ? totalMealPlans / totalUsers : 0;
 
       setStats({
-        totalUsers: totalUsers || 0, activeSubscribers: activeSubscribers || 0, trialUsers: trialUsers || 0,
-        totalPoints, totalMealPlans: totalMealPlans || 0, totalRatings: totalRatings || 0, openTickets: openTickets || 0,
-        mrr, arpu, churnRate, conversionRate, newUsersThisMonth: newUsersThisMonth || 0,
-        newUsersThisWeek: newUsersThisWeek || 0, canceledSubscriptions: canceledSubscriptions || 0, avgMealPlansPerUser, avgRatingScore,
+        totalUsers, activeSubscribers, trialUsers,
+        totalPoints, totalMealPlans, totalRatings: ratingsObj.count,
+        openTickets, mrr, arpu, churnRate, conversionRate,
+        newUsersThisMonth, newUsersThisWeek,
+        canceledSubscriptions, avgMealPlansPerUser, avgRatingScore: ratingsObj.avg,
       });
     } catch (error) {
       console.error('Error fetching stats:', error);

@@ -2,6 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 import { useOnboardingGuard } from '@/hooks/useOnboardingGuard';
+import { useState, useEffect } from 'react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -16,6 +17,7 @@ export const ProtectedRoute = ({
 }: ProtectedRouteProps) => {
   const { user, loading, adminLoading, isAdmin } = useAuth();
   const location = useLocation();
+  const [timedOut, setTimedOut] = useState(false);
   
   const shouldCheckOnboarding = !requireAdmin && !skipOnboardingCheck && 
     location.pathname !== '/app/onboarding';
@@ -24,8 +26,21 @@ export const ProtectedRoute = ({
     shouldCheckOnboarding ? user?.id : undefined
   );
 
-  // Wait for both auth and admin role check to complete
-  if (loading || adminLoading) {
+  // Timeout fallback: never show spinner for more than 8 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => setTimedOut(true), 8000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Reset timeout when route changes
+  useEffect(() => {
+    setTimedOut(false);
+  }, [location.pathname]);
+
+  const isStillLoading = loading || adminLoading;
+
+  // Wait for auth, but respect timeout
+  if (isStillLoading && !timedOut) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -33,12 +48,13 @@ export const ProtectedRoute = ({
     );
   }
 
+  // After timeout, if still no user, redirect to login
   if (!user) {
     return <Navigate to="/auth/login" replace />;
   }
 
-  // Wait for onboarding check to complete (if applicable)
-  if (shouldCheckOnboarding && onboardingStatus.state === 'loading') {
+  // Wait for onboarding check, but respect timeout
+  if (shouldCheckOnboarding && onboardingStatus.state === 'loading' && !timedOut) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
