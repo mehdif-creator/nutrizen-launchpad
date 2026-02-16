@@ -141,9 +141,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (newSession?.user) {
           await checkAdminRole(newSession.user.id);
+          refreshSubscription();
         } else {
           setIsAdmin(false);
           setAdminLoading(false);
+          setSubscription(null);
         }
       }
     );
@@ -156,6 +158,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [checkAdminRole]);
 
   const signOut = async () => {
+    setSubscription(null);
+    setIsAdmin(false);
     await supabase.auth.signOut();
     navigate('/');
   };

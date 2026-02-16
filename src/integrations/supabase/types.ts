@@ -4112,6 +4112,10 @@ export type Database = {
         }
         Returns: Json
       }
+      rpc_award_points: {
+        Args: { p_action: string; p_user_id: string }
+        Returns: Json
+      }
       rpc_award_xp: {
         Args: {
           p_event_type: string
