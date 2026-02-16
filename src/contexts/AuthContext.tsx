@@ -47,17 +47,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const navigate = useNavigate();
 
-  const checkAdminRole = useCallback(async (userId: string) => {
+  const checkAdminRole = useCallback(async () => {
     setAdminLoading(true);
     try {
-      const { data } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .eq('role', 'admin')
-        .maybeSingle();
-      
-      setIsAdmin(!!data);
+      const { data, error } = await supabase.rpc('is_admin');
+      if (error) {
+        logger.error('is_admin RPC error', error);
+        setIsAdmin(false);
+      } else {
+        setIsAdmin(!!data);
+      }
     } catch (error) {
       logger.error('Error checking admin role', error instanceof Error ? error : new Error(String(error)));
       setIsAdmin(false);
@@ -113,7 +112,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (currentSession?.user) {
         // Await admin check before marking loading as done
         try {
-          await checkAdminRole(currentSession.user.id);
+          await checkAdminRole();
         } catch (e) {
           logger.error('Admin check failed', e instanceof Error ? e : new Error(String(e)));
           setAdminLoading(false);
@@ -147,7 +146,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Only re-check admin role on actual sign-in events.
           // TOKEN_REFRESHED just updates the token — the admin role cannot change.
           if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-            await checkAdminRole(newSession.user.id);
+            await checkAdminRole();
             refreshSubscription(newSession);
           }
           // For TOKEN_REFRESHED: silently update session, no adminLoading flip
