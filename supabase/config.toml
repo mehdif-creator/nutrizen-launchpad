@@ -48,7 +48,11 @@ period = "1h"
 verify_jwt = true
 
 [functions.create-checkout]
-verify_jwt = true
+verify_jwt = false
+
+[functions.create-checkout.rate_limit]
+limit = 20
+period = "1h"
 
 [functions.customer-portal]
 verify_jwt = true

@@ -1,28 +1,20 @@
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from '../_shared/deps.ts';
+import {
+  getCorsHeaders,
+  getClientIp,
+  checkRateLimit,
+  sanitizeEmail,
+  sanitizeString,
+  generateRequestId,
+  Logger,
+} from '../_shared/security.ts';
 
-// SECURITY: Strict CORS allow-list
-const ALLOWED_ORIGINS = [
-  'https://mynutrizen.fr',
-  'https://app.mynutrizen.fr',
-  'http://localhost:5173', // Dev only
-];
+// =============================================================================
+// CONFIGURATION
+// =============================================================================
 
-function getCorsHeaders(origin: string | null): Record<string, string> {
-  const isAllowed = origin && ALLOWED_ORIGINS.includes(origin);
-  return {
-    "Access-Control-Allow-Origin": isAllowed ? origin : ALLOWED_ORIGINS[0],
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-  };
-}
-
-const logStep = (step: string, details?: any) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
-  console.log(`[CREATE-CHECKOUT] ${step}${detailsStr}`);
-};
-
-// Plan key → env var mapping (no hardcoded price IDs)
+/** Strict plan-key → env-var mapping. No arbitrary price IDs accepted. */
 const PLAN_ENV_KEYS: Record<string, string> = {
   essentiel: "STRIPE_PRICE_ESSENTIEL_MONTHLY",
   essentiel_monthly: "STRIPE_PRICE_ESSENTIEL_MONTHLY",
@@ -31,131 +23,240 @@ const PLAN_ENV_KEYS: Record<string, string> = {
   premium: "STRIPE_PRICE_PREMIUM",
 };
 
+const VALID_PLAN_KEYS = Object.keys(PLAN_ENV_KEYS);
+
+/** Server-side redirect allow-list — never trust the request Origin for URLs */
+const ALLOWED_REDIRECT_ORIGINS = [
+  'https://mynutrizen.fr',
+  'https://app.mynutrizen.fr',
+];
+
+function getAppBaseUrl(): string {
+  return Deno.env.get("APP_BASE_URL") || ALLOWED_REDIRECT_ORIGINS[0];
+}
+
+function getSafeOriginForCancel(requestOrigin: string | null): string {
+  if (requestOrigin && ALLOWED_REDIRECT_ORIGINS.includes(requestOrigin)) {
+    return requestOrigin;
+  }
+  return getAppBaseUrl();
+}
+
+// =============================================================================
+// TURNSTILE VERIFICATION (optional — only if TURNSTILE_SECRET_KEY is set)
+// =============================================================================
+
+async function verifyTurnstile(token: string, ip: string, logger: Logger): Promise<boolean> {
+  const secret = Deno.env.get("TURNSTILE_SECRET_KEY");
+  if (!secret) return true; // Skip if not configured
+
+  try {
+    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ secret, response: token, remoteip: ip }),
+    });
+    const data = await res.json();
+    if (!data.success) {
+      logger.warn("Turnstile verification failed", { errors: data["error-codes"] });
+    }
+    return data.success === true;
+  } catch (err) {
+    logger.error("Turnstile verification error", err);
+    return false; // Fail closed on Turnstile errors
+  }
+}
+
+// =============================================================================
+// MAIN HANDLER
+// =============================================================================
+
 Deno.serve(async (req) => {
   const origin = req.headers.get("origin");
   const corsHeaders = getCorsHeaders(origin);
+  const requestId = generateRequestId();
+  const logger = new Logger(requestId, "create-checkout");
 
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders, status: 204 });
   }
 
+  const jsonHeaders = { ...corsHeaders, "Content-Type": "application/json", "X-Request-Id": requestId };
+
   try {
-    logStep("Function started");
+    // ── Parse body ──────────────────────────────────────────────────────
+    let body: Record<string, unknown>;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(JSON.stringify({ error: { code: "INVALID_BODY", message: "Invalid JSON" } }), {
+        status: 400, headers: jsonHeaders,
+      });
+    }
 
-    const body = await req.json();
-    // Accept plan key (e.g. "equilibre") OR legacy priceId
-    const planKey = body.plan || body.planKey || 'equilibre';
-    const email = body.email;
-    
-    if (!email) throw new Error("email is required");
-    
-    // Resolve price ID from env, falling back to legacy priceId if provided
+    // ── Honeypot: reject bots that fill hidden "website" field ───────────
+    if (body.website) {
+      logger.warn("Honeypot triggered");
+      // Return 200 to avoid leaking detection to bots
+      return new Response(JSON.stringify({ url: getAppBaseUrl() }), { status: 200, headers: jsonHeaders });
+    }
+
+    // ── Optional Turnstile verification ─────────────────────────────────
+    const turnstileToken = typeof body.turnstile_token === "string" ? body.turnstile_token : null;
+    const clientIp = getClientIp(req);
+
+    if (Deno.env.get("TURNSTILE_SECRET_KEY")) {
+      if (!turnstileToken) {
+        return new Response(JSON.stringify({ error: { code: "CAPTCHA_REQUIRED", message: "Vérification anti-robot requise." } }), {
+          status: 400, headers: jsonHeaders,
+        });
+      }
+      const ok = await verifyTurnstile(turnstileToken, clientIp, logger);
+      if (!ok) {
+        return new Response(JSON.stringify({ error: { code: "CAPTCHA_FAILED", message: "Vérification anti-robot échouée. Réessaie." } }), {
+          status: 403, headers: jsonHeaders,
+        });
+      }
+    }
+
+    // ── DB-backed rate limiting ─────────────────────────────────────────
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } },
+    );
+
+    const rateResult = await checkRateLimit(
+      supabaseAdmin,
+      `ip:${clientIp}`,
+      "create-checkout",
+      { maxTokens: 20, refillRate: 20, cost: 1 },
+      logger,
+    );
+    if (!rateResult.allowed) {
+      return new Response(
+        JSON.stringify({ error: { code: "RATE_LIMIT_EXCEEDED", message: "Trop de requêtes. Réessaie plus tard." } }),
+        { status: 429, headers: { ...jsonHeaders, "Retry-After": String(rateResult.retryAfter || 60) } },
+      );
+    }
+
+    // ── Validate inputs ─────────────────────────────────────────────────
+    const planKey = typeof body.plan === "string" ? sanitizeString(body.plan) : (typeof body.planKey === "string" ? sanitizeString(body.planKey) : "equilibre");
+
+    if (!VALID_PLAN_KEYS.includes(planKey)) {
+      return new Response(JSON.stringify({ error: { code: "INVALID_PLAN", message: `Plan invalide. Plans acceptés : ${VALID_PLAN_KEYS.join(", ")}` } }), {
+        status: 400, headers: jsonHeaders,
+      });
+    }
+
+    const rawEmail = typeof body.email === "string" ? body.email : "";
+    if (!rawEmail) {
+      return new Response(JSON.stringify({ error: { code: "VALIDATION_ERROR", message: "L'email est requis." } }), {
+        status: 400, headers: jsonHeaders,
+      });
+    }
+    const email = sanitizeEmail(rawEmail);
+
+    // ── Resolve price from env (NO legacy priceId fallback) ─────────────
     const envKey = PLAN_ENV_KEYS[planKey];
-    let priceId = envKey ? Deno.env.get(envKey) : null;
-    
-    // Legacy fallback: if frontend still sends priceId directly
-    if (!priceId && body.priceId) {
-      logStep("WARN: Frontend sent raw priceId, using as fallback");
-      priceId = body.priceId;
-    }
-    
+    const priceId = Deno.env.get(envKey);
     if (!priceId) {
-      throw new Error(`No price configured for plan "${planKey}". Set ${envKey || 'STRIPE_PRICE_*'} in secrets.`);
+      logger.error("Missing price env var", undefined, { envKey, planKey });
+      return new Response(JSON.stringify({ error: { code: "CONFIG_ERROR", message: "Plan temporairement indisponible. Contacte le support." } }), {
+        status: 503, headers: jsonHeaders,
+      });
     }
-    
-    logStep("Request received", { plan: planKey, email });
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
-      apiVersion: "2025-08-27.basil" 
-    });
+    logger.info("Request validated", { plan: planKey, email });
 
-    // Authenticate user if auth header present
+    // ── Stripe init ─────────────────────────────────────────────────────
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      logger.error("STRIPE_SECRET_KEY not set");
+      return new Response(JSON.stringify({ error: { code: "CONFIG_ERROR", message: "Service de paiement indisponible." } }), {
+        status: 503, headers: jsonHeaders,
+      });
+    }
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+
+    // ── Optional auth (logged-in users get profile link) ────────────────
     let userId: string | null = null;
     const authHeader = req.headers.get("Authorization");
-    if (authHeader) {
-      const supabaseClient = createClient(
-        Deno.env.get("SUPABASE_URL") ?? "",
-        Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-      );
-      const token = authHeader.replace("Bearer ", "");
-      const { data: userData } = await supabaseClient.auth.getUser(token);
-      userId = userData.user?.id || null;
+    if (authHeader?.startsWith("Bearer ")) {
+      try {
+        const supabaseAnon = createClient(
+          Deno.env.get("SUPABASE_URL") ?? "",
+          Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+        );
+        const token = authHeader.substring(7);
+        const { data: userData } = await supabaseAnon.auth.getUser(token);
+        userId = userData.user?.id || null;
+        if (userId) logger.info("Authenticated user", { userId });
+      } catch {
+        // Auth is optional — continue as anonymous
+        logger.warn("Auth token invalid, continuing as anonymous");
+      }
     }
 
-    logStep("Checking for existing customer", { email });
+    // ── Stripe customer lookup ──────────────────────────────────────────
     const customers = await stripe.customers.list({ email, limit: 1 });
     let customerId: string | undefined;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
-      logStep("Existing customer found", { customerId });
-      
-      // Persist stripe_customer_id on profile
+      logger.info("Existing Stripe customer", { customerId });
+
       if (userId) {
-        const supabaseAdmin = createClient(
-          Deno.env.get("SUPABASE_URL") ?? "",
-          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-          { auth: { persistSession: false } }
-        );
         await supabaseAdmin
-          .from('profiles')
+          .from("profiles")
           .update({ stripe_customer_id: customerId })
-          .eq('id', userId);
+          .eq("id", userId);
       }
     }
 
-    const requestOrigin = req.headers.get("origin") || "http://localhost:3000";
+    // ── Build URLs from server-side allowlist ────────────────────────────
     const supabaseProjectRef = Deno.env.get("SUPABASE_URL")?.match(/https:\/\/([^.]+)/)?.[1] || "";
-    
-    // Get referral code from query params if present
-    const url = new URL(req.url);
-    const referralCode = url.searchParams.get('referral_code');
-    const affiliateCode = url.searchParams.get('affiliate_code');
-    
-    // Use post-checkout-login edge function for auto-login after payment
-    const appBaseUrl = Deno.env.get("APP_BASE_URL") || "https://mynutrizen.fr";
-    const successUrl = supabaseProjectRef 
+    const successUrl = supabaseProjectRef
       ? `https://${supabaseProjectRef}.supabase.co/functions/v1/post-checkout-login?session_id={CHECKOUT_SESSION_ID}`
-      : `${appBaseUrl}/auth/callback?from_checkout=true`;
-    
-    logStep("Creating checkout session", { plan: planKey, email, referralCode, affiliateCode, successUrl });
+      : `${getAppBaseUrl()}/auth/callback?from_checkout=true`;
+
+    const cancelUrl = `${getSafeOriginForCancel(origin)}/?canceled=true`;
+
+    // ── Referral / affiliate from query params ──────────────────────────
+    const url = new URL(req.url);
+    const referralCode = sanitizeString(url.searchParams.get("referral_code") || "").substring(0, 50);
+    const affiliateCode = sanitizeString(url.searchParams.get("affiliate_code") || "").substring(0, 50);
+
+    // ── Create Stripe Checkout session ──────────────────────────────────
+    logger.info("Creating checkout session", { plan: planKey, email });
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : email,
       client_reference_id: userId || undefined,
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
+      line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
-      subscription_data: {
-        trial_period_days: 7,
-      },
+      subscription_data: { trial_period_days: 7 },
       metadata: {
         plan: planKey,
-        user_id: userId || '',
-        app: 'nutrizen',
-        referral_code: referralCode || '',
-        affiliate_code: affiliateCode || '',
-        from_checkout: 'true',
+        user_id: userId || "",
+        app: "nutrizen",
+        referral_code: referralCode,
+        affiliate_code: affiliateCode,
+        from_checkout: "true",
       },
       success_url: successUrl,
-      cancel_url: `${requestOrigin}/?canceled=true`,
+      cancel_url: cancelUrl,
     });
 
-    logStep("Checkout session created", { sessionId: session.id, url: session.url });
+    logger.info("Checkout session created", { sessionId: session.id });
 
-    return new Response(JSON.stringify({ url: session.url }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+    return new Response(JSON.stringify({ url: session.url }), { status: 200, headers: jsonHeaders });
+
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR", { message: errorMessage });
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    logger.error("Unhandled error", error);
+    return new Response(
+      JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "Erreur inattendue. Réessaie." } }),
+      { status: 500, headers: jsonHeaders },
+    );
   }
 });
