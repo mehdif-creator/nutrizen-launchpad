@@ -389,28 +389,42 @@ Deno.serve(async (req) => {
       logStep("Updating subscription record");
       await updateSubscriptionRecord(supabaseAdmin, userId, customerId, subscriptionId, session, stripe);
       
-      // Create one-time login token
-      if (userId && session.id) {
-        const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-        
-        logStep("Creating one-time login token", { 
-          email: redactEmail(customerEmail),
-          sessionId: session.id.substring(0, 8) + "***"
+      // ── Mark checkout_token as "ready" (tamper-resistant flow) ──────────
+      const checkoutToken = session.metadata?.checkout_token;
+      if (checkoutToken) {
+        logStep("Marking checkout_token as ready", { 
+          tokenPrefix: checkoutToken.substring(0, 8) + "***"
         });
         
-        const { error: tokenError } = await supabaseAdmin
-          .from('login_tokens')
-          .insert({
-            email: customerEmail,
-            token: crypto.randomUUID(),
-            session_id: session.id,
-            expires_at: expiresAt.toISOString(),
-          });
+        const { error: ctError } = await supabaseAdmin
+          .from('checkout_tokens')
+          .update({ 
+            status: 'ready',
+            user_id: userId,
+            stripe_session_id: session.id,
+          })
+          .eq('token', checkoutToken)
+          .eq('status', 'pending'); // CAS: only update if still pending
         
-        if (tokenError) {
-          logStep("ERROR creating login token", { error: tokenError.message });
+        if (ctError) {
+          logStep("ERROR marking checkout_token ready", { error: ctError.message });
         } else {
-          logStep("One-time login token created");
+          logStep("checkout_token marked as ready");
+        }
+      } else {
+        // Legacy fallback: create login_tokens entry for old-style sessions
+        if (userId && session.id) {
+          const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+          logStep("Creating legacy login token (no checkout_token in metadata)");
+          
+          await supabaseAdmin
+            .from('login_tokens')
+            .insert({
+              email: customerEmail,
+              token: crypto.randomUUID(),
+              session_id: session.id,
+              expires_at: expiresAt.toISOString(),
+            });
         }
       }
         

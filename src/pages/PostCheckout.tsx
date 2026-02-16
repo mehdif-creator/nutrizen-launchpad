@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Mail, Loader2, Chrome } from 'lucide-react';
+import { CheckCircle, Loader2, Chrome, AlertCircle, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -11,37 +11,95 @@ export default function PostCheckout() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
-  const [countdown, setCountdown] = useState(10);
+  const [status, setStatus] = useState<'polling' | 'ready' | 'redirecting' | 'error'>('polling');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
-  
-  const sessionId = searchParams.get('session_id');
-  const email = searchParams.get('email');
-  const fallback = searchParams.get('fallback') === 'true';
-  const error = searchParams.get('error');
+  const pollCount = useRef(0);
+  const maxPolls = 60; // 60 × 3s = 3 min max
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const token = searchParams.get('token');
+  const urlError = searchParams.get('error');
+
+  // If already authenticated, go to profile completion
   useEffect(() => {
-    // If user is already authenticated, redirect to profile completion
     if (!authLoading && user) {
       navigate('/post-checkout-profile', { replace: true });
+    }
+  }, [authLoading, user, navigate]);
+
+  const pollTokenStatus = useCallback(async () => {
+    if (!token) return;
+
+    pollCount.current++;
+    if (pollCount.current > maxPolls) {
+      setStatus('error');
+      setErrorMessage('Le traitement prend plus de temps que prévu. Connecte-toi manuellement.');
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
       return;
     }
 
-    // Countdown timer only if not authenticated
-    if (!authLoading && !user) {
-      const timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            navigate('/auth/login');
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    try {
+      const res = await supabase.functions.invoke('post-checkout-login', {
+        method: 'POST',
+        body: { token },
+      });
 
-      return () => clearInterval(timer);
+      const data = res.data;
+
+      if (!data) {
+        // Network error or non-JSON response
+        return;
+      }
+
+      if (data.ready === false) {
+        // Still pending — keep polling
+        return;
+      }
+
+      if (data.ready === true && data.redirect) {
+        // Token consumed, redirect to magic link
+        setStatus('redirecting');
+        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+        window.location.href = data.redirect;
+        return;
+      }
+
+      if (data.code === 'TOKEN_EXPIRED' || data.code === 'TOKEN_CONSUMED') {
+        setStatus('error');
+        setErrorMessage(data.message || 'Token expiré. Connecte-toi manuellement.');
+        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+        return;
+      }
+
+      if (data.code === 'INVALID_TOKEN') {
+        setStatus('error');
+        setErrorMessage('Lien invalide. Connecte-toi manuellement.');
+        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+        return;
+      }
+    } catch {
+      // Transient error — keep polling
     }
-  }, [navigate, user, authLoading]);
+  }, [token]);
+
+  useEffect(() => {
+    if (!token || authLoading || user) return;
+
+    if (urlError) {
+      setStatus('error');
+      setErrorMessage(decodeURIComponent(urlError.replace(/\+/g, ' ')));
+      return;
+    }
+
+    // Start polling immediately, then every 3 seconds
+    pollTokenStatus();
+    pollIntervalRef.current = setInterval(pollTokenStatus, 3000);
+
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    };
+  }, [token, urlError, authLoading, user, pollTokenStatus]);
 
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
@@ -60,8 +118,7 @@ export default function PostCheckout() {
           variant: 'destructive',
         });
       }
-    } catch (err) {
-      console.error('Google login error:', err);
+    } catch {
       toast({
         title: 'Erreur',
         description: 'Une erreur est survenue lors de la connexion.',
@@ -72,7 +129,7 @@ export default function PostCheckout() {
     }
   };
 
-  // Show loading while checking auth status
+  // Loading auth state
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -81,17 +138,40 @@ export default function PostCheckout() {
     );
   }
 
+  // No token provided
+  if (!token) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-accent/10 to-primary/10 p-4">
+        <div className="w-full max-w-md bg-card rounded-2xl shadow-card p-8 text-center space-y-4">
+          <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
+          <h2 className="text-xl font-semibold text-foreground">Lien invalide</h2>
+          <p className="text-muted-foreground">Ce lien de confirmation est invalide ou a expiré.</p>
+          <Button onClick={() => navigate('/auth/login')} className="w-full">
+            Aller à la connexion
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-accent/10 to-primary/10 p-4">
       <div className="w-full max-w-2xl">
-        <div className="bg-white rounded-2xl shadow-card p-8 md:p-12">
+        <div className="bg-card rounded-2xl shadow-card p-8 md:p-12">
           <div className="text-center space-y-6">
-            {/* Success Icon */}
+
+            {/* Status Icon */}
             <div className="flex justify-center">
-              <div className="relative">
-                <CheckCircle className="h-20 w-20 text-primary animate-pulse" />
-                <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
-              </div>
+              {status === 'error' ? (
+                <AlertCircle className="h-20 w-20 text-destructive" />
+              ) : status === 'redirecting' ? (
+                <CheckCircle className="h-20 w-20 text-primary" />
+              ) : (
+                <div className="relative">
+                  <CheckCircle className="h-20 w-20 text-primary animate-pulse" />
+                  <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
+                </div>
+              )}
             </div>
 
             {/* Title */}
@@ -104,59 +184,55 @@ export default function PostCheckout() {
               </p>
             </div>
 
-            {/* Error Message */}
-            {error && (
-              <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-6">
-                <p className="text-sm text-destructive">{error}</p>
+            {/* Status Message */}
+            {status === 'polling' && (
+              <div className="bg-accent/10 rounded-xl p-6 space-y-3">
+                <div className="flex items-center justify-center gap-3">
+                  <Clock className="h-5 w-5 text-primary animate-pulse" />
+                  <h3 className="font-semibold text-lg">Vérification en cours...</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Nous vérifions ton paiement et préparons ton compte. Cela prend généralement quelques secondes.
+                </p>
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Vérification automatique en cours...</span>
+                </div>
               </div>
             )}
 
-            {/* Instructions */}
-            <div className="bg-accent/10 rounded-xl p-6 space-y-4">
-              <div className="flex items-start gap-4">
-                <Mail className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
-                <div className="text-left space-y-2">
-                  {fallback ? (
-                    <>
-                      <h3 className="font-semibold text-lg">Connecte-toi pour accéder à ton compte</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Ton paiement a bien été enregistré ! 
-                        {email && <span className="block mt-2">Email: <strong>{email}</strong></span>}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Choisis une méthode de connexion ci-dessous :
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <h3 className="font-semibold text-lg">Vérification en cours...</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Nous créons ton compte et préparons ton espace personnel. 
-                        <strong className="text-foreground"> Tu vas recevoir un email avec un lien magique</strong> pour accéder à ton tableau de bord.
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        ⏱️ Cela peut prendre quelques instants. Si tu ne reçois pas l'email :
-                      </p>
-                      <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1 ml-2">
-                        <li>Vérifie tes <strong>spams/courrier indésirable</strong></li>
-                        <li>Attends 2-3 minutes (le traitement peut prendre un peu de temps)</li>
-                        <li>Connecte-toi avec Google ci-dessous</li>
-                      </ul>
-                    </>
-                  )}
+            {status === 'redirecting' && (
+              <div className="bg-primary/10 rounded-xl p-6 space-y-3">
+                <div className="flex items-center justify-center gap-3">
+                  <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                  <h3 className="font-semibold text-lg">Connexion en cours...</h3>
                 </div>
+                <p className="text-sm text-muted-foreground">
+                  Tu vas être redirigé automatiquement vers ton espace personnel.
+                </p>
               </div>
-            </div>
+            )}
 
-            {/* Google Login Option */}
+            {status === 'error' && (
+              <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-6 space-y-3">
+                <p className="text-sm text-destructive font-medium">
+                  {errorMessage || 'Une erreur est survenue.'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Pas d'inquiétude ! Ton paiement a bien été enregistré. Connecte-toi avec l'email utilisé lors du paiement.
+                </p>
+              </div>
+            )}
+
+            {/* Google Login — always available as fallback */}
             <div className="space-y-3">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <span className="w-full border-t" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-2 text-muted-foreground">
-                    {fallback ? 'Connexion rapide' : 'Ou connexion rapide'}
+                  <span className="bg-card px-2 text-muted-foreground">
+                    Ou connexion rapide
                   </span>
                 </div>
               </div>
@@ -182,27 +258,15 @@ export default function PostCheckout() {
               </Button>
             </div>
 
-            {/* Session ID for debugging */}
-            {sessionId && (
-              <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                ID de session : {sessionId}
-              </div>
-            )}
-
-            {/* Auto-redirect indicator */}
-            <div className="pt-4 space-y-3">
-              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Redirection automatique dans {countdown}s...</span>
-              </div>
-              
+            {/* Manual login button */}
+            <div className="pt-2">
               <Button
                 onClick={() => navigate('/auth/login')}
                 variant="outline"
                 size="lg"
                 className="w-full"
               >
-                Aller à la page de connexion maintenant
+                Aller à la page de connexion
               </Button>
             </div>
 

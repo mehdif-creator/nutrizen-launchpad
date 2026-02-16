@@ -227,6 +227,45 @@ export type Database = {
         }
         Relationships: []
       }
+      checkout_tokens: {
+        Row: {
+          consumed_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          plan_key: string | null
+          status: string
+          stripe_session_id: string | null
+          token: string
+          user_id: string | null
+        }
+        Insert: {
+          consumed_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          plan_key?: string | null
+          status?: string
+          stripe_session_id?: string | null
+          token: string
+          user_id?: string | null
+        }
+        Update: {
+          consumed_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          plan_key?: string | null
+          status?: string
+          stripe_session_id?: string | null
+          token?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       ciqual_compositions: {
         Row: {
           alim_code: string | null
