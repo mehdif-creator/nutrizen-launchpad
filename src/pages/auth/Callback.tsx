@@ -7,12 +7,33 @@ import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('AuthCallback');
 
+/**
+ * Auth Callback — handles both PKCE (?code=) and legacy hash (#access_token=) flows.
+ *
+ * PKCE (current): Supabase redirects here with ?code=... which we exchange for a session.
+ * Legacy/implicit: Supabase redirects with #access_token=... which detectSessionInUrl parses.
+ *
+ * Query params preserved:
+ *   ?redirect=/some-path  → navigate there instead of /app
+ *   ?from_checkout=true    → navigate to /post-checkout-profile
+ */
 export default function Callback() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const resolvedRef = useRef(false);
 
   useEffect(() => {
+    const queryParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+
+    // Determine destination after auth
+    const getDestination = (): string => {
+      if (queryParams.get('from_checkout') === 'true') return '/post-checkout-profile';
+      const redirect = queryParams.get('redirect');
+      if (redirect && redirect.startsWith('/')) return redirect;
+      return '/app';
+    };
+
     const resolve = (path: string) => {
       if (resolvedRef.current) return;
       resolvedRef.current = true;
@@ -27,11 +48,7 @@ export default function Callback() {
       setError(msg);
     };
 
-    // Step 1: Check for errors in URL
-    const hash = window.location.hash.substring(1);
-    const hashParams = new URLSearchParams(hash);
-    const queryParams = new URLSearchParams(window.location.search);
-
+    // ── Check for error in URL (both query and hash) ────────────────────
     const urlError = queryParams.get('error') || hashParams.get('error');
     if (urlError) {
       const desc = queryParams.get('error_description')
@@ -41,24 +58,42 @@ export default function Callback() {
       return;
     }
 
-    logger.debug('Has access_token in hash', { hasToken: hashParams.has('access_token') });
-
-    // Step 2: Hard timeout — 15 seconds
+    // ── Hard timeout — 15 seconds ───────────────────────────────────────
     const hardTimeout = setTimeout(() => {
       fail('La connexion a pris trop de temps. Veuillez réessayer.');
-    }, 15000);
+    }, 15_000);
 
-    // Step 3: CRITICAL — Check session IMMEDIATELY (0ms)
-    // Supabase may have already parsed the hash during createClient()
+    // ── PKCE flow: exchange ?code= for session ──────────────────────────
+    const code = queryParams.get('code');
+    if (code) {
+      logger.debug('PKCE code detected, exchanging for session');
+      supabase.auth.exchangeCodeForSession(code)
+        .then(({ data, error: exchangeError }) => {
+          if (exchangeError) {
+            logger.error('Code exchange failed', exchangeError);
+            // Don't fail immediately — the onAuthStateChange listener may still pick up the session
+            return;
+          }
+          if (data.session) {
+            clearTimeout(hardTimeout);
+            resolve(getDestination());
+          }
+        })
+        .catch((err) => {
+          logger.error('Code exchange threw', err);
+        });
+    }
+
+    // ── Immediate session check (hash tokens may already be parsed) ─────
     supabase.auth.getSession().then(({ data: { session } }) => {
       logger.debug('getSession() immediate', { hasSession: !!session });
       if (session) {
         clearTimeout(hardTimeout);
-        resolve('/app');
+        resolve(getDestination());
       }
     });
 
-    // Step 4: Listen for ALL auth events including INITIAL_SESSION
+    // ── Listen for auth state changes ───────────────────────────────────
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         logger.debug('Auth event', { event, hasSession: !!session });
@@ -70,16 +105,16 @@ export default function Callback() {
           clearTimeout(hardTimeout);
           clearInterval(retryInterval);
           subscription.unsubscribe();
-          resolve('/app');
+          resolve(getDestination());
         }
       }
     );
 
-    // Step 5: Poll getSession() every 500ms as belt-and-suspenders
+    // ── Poll as belt-and-suspenders ─────────────────────────────────────
     let retryCount = 0;
     const retryInterval = setInterval(async () => {
       retryCount++;
-      if (resolvedRef.current || retryCount > 16) {
+      if (resolvedRef.current || retryCount > 20) {
         clearInterval(retryInterval);
         return;
       }
@@ -88,7 +123,7 @@ export default function Callback() {
         clearInterval(retryInterval);
         clearTimeout(hardTimeout);
         subscription.unsubscribe();
-        resolve('/app');
+        resolve(getDestination());
       }
     }, 500);
 
