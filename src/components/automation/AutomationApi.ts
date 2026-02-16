@@ -138,7 +138,7 @@ const supabaseApi = {
     if (error) throw error;
   },
   async getSettings(): Promise<AutomationSettings> {
-    const { data: authData } = await supabase.from('pinterest_oauth').select('expires_at, account_label').eq('account_label', 'default').maybeSingle();
+    const { data: authData } = await supabase.from('pinterest_oauth').select('expires_at, account_label, scope').eq('account_label', 'main').maybeSingle();
     return {
       ...DEFAULT_SETTINGS,
       pinterestConnected: !!authData,

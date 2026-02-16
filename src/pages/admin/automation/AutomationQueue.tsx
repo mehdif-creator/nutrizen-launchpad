@@ -5,6 +5,7 @@ import { Filter, Calendar, ExternalLink, RefreshCw, Trash2, Edit, Loader2, Play 
 import { SocialQueueItem } from '@/components/automation/AutomationTypes';
 import AutomationModal from '@/components/automation/AutomationModal';
 import { supabase } from '@/integrations/supabase/client';
+import { functionsBaseUrl } from '@/lib/supabaseUrls';
 
 const AutomationQueue: React.FC = () => {
   const { queue, removeFromQueue, updateQueueItem, fetchInitialData } = useAutomationStore();
@@ -24,10 +25,28 @@ const AutomationQueue: React.FC = () => {
   const handleForcePublish = async (item: SocialQueueItem) => {
     setProcessingId(item.id);
     try {
-      addToast("Lancement de la publication forcée...", "info");
-      const { error } = await supabase.functions.invoke('pinterest-publish', { body: { queue_id: item.id } });
-      if (error) throw error;
-      addToast("Publication réussie !", "success");
+      addToast("Lancement de la publication...", "info");
+      const res = await fetch(`${functionsBaseUrl()}/pinterest-publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          board_id: item.board_slug,
+          title: item.pin_title,
+          description: item.pin_description,
+          image_url: item.image_path || item.asset_9x16_path || item.asset_4x5_path,
+          link: item.destination_url,
+          alt_text: item.pin_title,
+          queue_id: item.id,
+        }),
+      });
+      const data = await res.json();
+      if (data.ok && data.published) {
+        addToast("Pin published! 📌", "success");
+      } else if (data.ok && data.stub) {
+        addToast("Pinterest publish coming soon", "info");
+      } else {
+        addToast(`Erreur: ${data.message || 'Unknown error'}`, "error");
+      }
       await fetchInitialData();
     } catch (error: any) {
       addToast(`Erreur de publication: ${error.message || 'Erreur serveur'}`, "error");
