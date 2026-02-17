@@ -40,44 +40,56 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [adminLoading, setAdminLoading] = useState(false);
+  // A) Start true so ProtectedRoute never redirects before first check
+  const [adminLoading, setAdminLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const navigate = useNavigate();
 
-  // Refs to deduplicate concurrent admin checks
-  const adminCheckInFlight = useRef(false);
-  const lastCheckedUserId = useRef<string | null>(null);
+  // B) Shared in-flight promise map keyed by userId
+  const adminCheckPromiseRef = useRef<Map<string, Promise<boolean>>>(new Map());
 
-  // Stable reference — no reactive deps. Always receives userId as param.
-  const checkAdminRole = useCallback(async (userId: string) => {
-    if (adminCheckInFlight.current && lastCheckedUserId.current === userId) {
-      logger.debug('Admin check already in flight, skipping duplicate');
-      return;
+  // C) De-dupe initial session side effects
+  const initialSetupDoneForUser = useRef<string | null>(null);
+
+  const checkAdminRole = useCallback(async (userId: string): Promise<boolean> => {
+    if (!userId) {
+      setIsAdmin(false);
+      setAdminLoading(false);
+      return false;
     }
 
-    adminCheckInFlight.current = true;
-    lastCheckedUserId.current = userId;
+    const map = adminCheckPromiseRef.current;
+    const existing = map.get(userId);
+    if (existing) return existing;
+
     setAdminLoading(true);
 
-    try {
-      const { data, error } = await supabase.rpc('is_admin');
-
-      if (error) {
-        logger.error('Admin role check failed', error);
+    const p = (async () => {
+      try {
+        const { data, error } = await supabase.rpc('is_admin');
+        if (error) {
+          logger.error('Admin role check failed', error);
+          setIsAdmin(false);
+          return false;
+        }
+        const result = data === true;
+        setIsAdmin(result);
+        logger.debug('Admin check result', { userId: userId.substring(0, 8), isAdmin: result });
+        return result;
+      } catch (error) {
+        logger.error('Admin role check exception', error instanceof Error ? error : new Error(String(error)));
         setIsAdmin(false);
-      } else {
-        setIsAdmin(data === true);
-        logger.debug('Admin check result', { userId: userId.substring(0, 8), isAdmin: data });
+        return false;
+      } finally {
+        setAdminLoading(false);
+        map.delete(userId);
       }
-    } catch (error) {
-      logger.error('Admin role check exception', error instanceof Error ? error : new Error(String(error)));
-      setIsAdmin(false);
-    } finally {
-      setAdminLoading(false);
-      adminCheckInFlight.current = false;
-    }
-  }, []); // NO user?.id — stable forever
+    })();
+
+    map.set(userId, p);
+    return p;
+  }, []);
 
   const refreshSubscription = useCallback(async (sessionOverride?: Session | null) => {
     const currentSession = sessionOverride !== undefined ? sessionOverride : session;
@@ -98,6 +110,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       logger.error('Error refreshing subscription', error instanceof Error ? error : new Error(String(error)));
     }
   }, [session]);
+
+  // C) Run subscription refresh + daily login exactly once per user
+  const runInitialSetupOnce = useCallback((sess: Session) => {
+    const uid = sess.user.id;
+    if (initialSetupDoneForUser.current === uid) return;
+    initialSetupDoneForUser.current = uid;
+
+    refreshSubscription(sess);
+    trackDailyLogin(uid);
+  }, [refreshSubscription]);
 
   useEffect(() => {
     let mounted = true;
@@ -122,14 +144,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         if (newSession?.user) {
           if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-            // Only check admin if user changed or never checked
-            if (lastCheckedUserId.current !== newSession.user.id) {
-              await checkAdminRole(newSession.user.id);
-            }
-            refreshSubscription(newSession);
-            trackDailyLogin(newSession.user.id);
+            await checkAdminRole(newSession.user.id);
+            runInitialSetupOnce(newSession);
           }
-          // TOKEN_REFRESHED: session updated silently, no adminLoading flip
+          // TOKEN_REFRESHED: session updated silently, no admin check
         } else {
           setIsAdmin(false);
           setAdminLoading(false);
@@ -146,20 +164,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(currentSession?.user ?? null);
 
       if (currentSession?.user) {
-        // Only check admin if not already verified for this user
-        if (lastCheckedUserId.current !== currentSession.user.id) {
-          try {
-            await checkAdminRole(currentSession.user.id);
-          } catch (e) {
-            logger.error('Admin check failed', e instanceof Error ? e : new Error(String(e)));
-            setAdminLoading(false);
-          }
+        try {
+          await checkAdminRole(currentSession.user.id);
+        } catch (e) {
+          logger.error('Admin check failed', e instanceof Error ? e : new Error(String(e)));
+          setAdminLoading(false);
         }
         if (mounted) {
-          refreshSubscription(currentSession);
-          trackDailyLogin(currentSession.user.id);
+          runInitialSetupOnce(currentSession);
         }
       } else {
+        // No session → admin check not needed, stop loading
         setAdminLoading(false);
       }
 
@@ -177,13 +192,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       clearTimeout(loadingTimeout);
       authSub.unsubscribe();
     };
-  }, []); // EMPTY deps — runs once, never re-registers
+  }, []); // EMPTY deps — runs once
 
   const signOut = async () => {
     clearOnboardingCache();
-    lastCheckedUserId.current = null;
+    initialSetupDoneForUser.current = null;
+    adminCheckPromiseRef.current.clear();
     setSubscription(null);
     setIsAdmin(false);
+    setAdminLoading(false);
     await supabase.auth.signOut();
     navigate('/');
   };
