@@ -72,22 +72,23 @@ export default function Dashboard() {
   // Effective portions from profile (single source of truth)
   const { data: portions } = useEffectivePortions(user?.id);
 
-  // Update streak on mount
+  // Update streak once per browser session per user
   useEffect(() => {
     if (!user?.id) return;
-    
-    const updateStreak = async () => {
+
+    const key = `streak_updated_${user.id}`;
+    if (sessionStorage.getItem(key)) return;
+
+    const run = async () => {
       try {
-        await supabase.rpc('update_user_streak_and_stats', {
-          p_user_id: user.id
-        });
-        // Stats will auto-refresh via realtime subscription
-      } catch (error) {
-        console.error('[Dashboard] Error updating streak:', error);
+        await supabase.rpc('update_user_streak_and_stats', { p_user_id: user.id });
+        sessionStorage.setItem(key, '1');
+      } catch (err) {
+        console.error('[Dashboard] Error updating streak:', err);
       }
     };
 
-    updateStreak();
+    run();
   }, [user?.id]);
 
   const [generating, setGenerating] = useState(false);
