@@ -65,7 +65,7 @@ const PinterestOAuthCallback: React.FC = () => {
             <p className="text-foreground text-xl font-semibold">Pinterest connection failed</p>
             <p className="text-destructive text-sm">{errorMessage}</p>
             <button
-              onClick={() => navigate('/app/dashboard')}
+              onClick={() => navigate('/admin/automation/settings')}
               className="mt-4 px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition"
             >
               Back to Dashboard

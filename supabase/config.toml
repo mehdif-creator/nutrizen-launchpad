@@ -176,3 +176,16 @@ verify_jwt = true
 limit = 120
 period = "1h"
 
+[functions.pinterest-oauth-start]
+verify_jwt = false
+
+[functions.pinterest-oauth-start.rate_limit]
+limit = 10
+period = "1h"
+
+[functions.pinterest-oauth-callback]
+verify_jwt = false
+
+[functions.pinterest-oauth-callback.rate_limit]
+limit = 10
+period = "1h"
