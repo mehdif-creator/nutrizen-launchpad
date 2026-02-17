@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -32,9 +32,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 };
 
@@ -42,42 +40,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [adminLoading, setAdminLoading] = useState(true);
+  const [adminLoading, setAdminLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const navigate = useNavigate();
 
-  const checkAdminRole = useCallback(async (userId?: string) => {
-    const uid = userId || user?.id;
-    if (!uid) {
-      setIsAdmin(false);
-      setAdminLoading(false);
+  // Refs to deduplicate concurrent admin checks
+  const adminCheckInFlight = useRef(false);
+  const lastCheckedUserId = useRef<string | null>(null);
+
+  // Stable reference — no reactive deps. Always receives userId as param.
+  const checkAdminRole = useCallback(async (userId: string) => {
+    if (adminCheckInFlight.current && lastCheckedUserId.current === userId) {
+      logger.debug('Admin check already in flight, skipping duplicate');
       return;
     }
-    setAdminLoading(true);
-    try {
-      console.info('[Auth] checking admin role for', uid);
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', uid)
-        .eq('role', 'admin')
-        .maybeSingle();
 
-      console.info('[Auth] role row', data);
+    adminCheckInFlight.current = true;
+    lastCheckedUserId.current = userId;
+    setAdminLoading(true);
+
+    try {
+      const { data, error } = await supabase.rpc('is_admin');
+
       if (error) {
-        console.error('[Auth] role check error', error);
+        logger.error('Admin role check failed', error);
         setIsAdmin(false);
       } else {
-        setIsAdmin(data?.role === 'admin');
+        setIsAdmin(data === true);
+        logger.debug('Admin check result', { userId: userId.substring(0, 8), isAdmin: data });
       }
     } catch (error) {
-      console.error('[Auth] role check error', error);
+      logger.error('Admin role check exception', error instanceof Error ? error : new Error(String(error)));
       setIsAdmin(false);
     } finally {
       setAdminLoading(false);
+      adminCheckInFlight.current = false;
     }
-  }, [user?.id]);
+  }, []); // NO user?.id — stable forever
 
   const refreshSubscription = useCallback(async (sessionOverride?: Session | null) => {
     const currentSession = sessionOverride !== undefined ? sessionOverride : session;
@@ -85,19 +85,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSubscription(null);
       return;
     }
-
     try {
       const { data, error } = await supabase.functions.invoke('check-subscription', {
-        headers: {
-          Authorization: `Bearer ${currentSession.access_token}`,
-        },
+        headers: { Authorization: `Bearer ${currentSession.access_token}` },
       });
-
       if (error) {
         logger.error('Error checking subscription', error);
         return;
       }
-
       setSubscription(data);
     } catch (error) {
       logger.error('Error refreshing subscription', error instanceof Error ? error : new Error(String(error)));
@@ -107,24 +102,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let mounted = true;
 
-    // Timeout fallback: ensure loading states resolve within 8 seconds
     const loadingTimeout = setTimeout(() => {
       if (mounted) {
-        logger.warn('Loading timeout reached, forcing loading=false');
+        logger.warn('Auth loading timeout, forcing resolution');
         setLoading(false);
         setAdminLoading(false);
       }
     }, 8000);
 
-    // Check for existing session first
+    // Register listener FIRST so we never miss INITIAL_SESSION with PKCE
+    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(
+      async (event, newSession) => {
+        if (!mounted) return;
+
+        logger.debug('Auth event', { event, hasSession: !!newSession });
+
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+
+        if (newSession?.user) {
+          if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+            await checkAdminRole(newSession.user.id);
+            refreshSubscription(newSession);
+            trackDailyLogin(newSession.user.id);
+          }
+          // TOKEN_REFRESHED: session updated silently, no adminLoading flip
+        } else {
+          setIsAdmin(false);
+          setAdminLoading(false);
+          setSubscription(null);
+        }
+      }
+    );
+
+    // Then check for existing session
     supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
       if (!mounted) return;
-      
+
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
-      
+
       if (currentSession?.user) {
-        // Await admin check before marking loading as done
         try {
           await checkAdminRole(currentSession.user.id);
         } catch (e) {
@@ -138,7 +156,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setAdminLoading(false);
       }
-      
+
       if (mounted) setLoading(false);
     }).catch((err) => {
       logger.error('getSession failed', err instanceof Error ? err : new Error(String(err)));
@@ -148,39 +166,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     });
 
-    // Set up auth state listener for future changes
-    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
-        if (!mounted) return;
-        
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        
-        if (newSession?.user) {
-          // Only re-check admin role on actual sign-in events.
-          // TOKEN_REFRESHED just updates the token — the admin role cannot change.
-          if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-            await checkAdminRole(newSession.user.id);
-            refreshSubscription(newSession);
-          }
-          // For TOKEN_REFRESHED: silently update session, no adminLoading flip
-        } else {
-          setIsAdmin(false);
-          setAdminLoading(false);
-          setSubscription(null);
-        }
-      }
-    );
-
     return () => {
       mounted = false;
       clearTimeout(loadingTimeout);
       authSub.unsubscribe();
     };
-  }, [checkAdminRole]);
+  }, []); // EMPTY deps — runs once, never re-registers
 
   const signOut = async () => {
     clearOnboardingCache();
+    lastCheckedUserId.current = null;
     setSubscription(null);
     setIsAdmin(false);
     await supabase.auth.signOut();
@@ -188,7 +183,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, adminLoading, isAdmin, subscription, refreshSubscription: () => refreshSubscription(), signOut }}>
+    <AuthContext.Provider value={{
+      user, session, loading, adminLoading, isAdmin, subscription,
+      refreshSubscription: () => refreshSubscription(),
+      signOut
+    }}>
       {children}
     </AuthContext.Provider>
   );

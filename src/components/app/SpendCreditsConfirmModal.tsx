@@ -9,6 +9,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Sparkles, AlertTriangle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface SpendCreditsConfirmModalProps {
   open: boolean;
@@ -29,6 +30,7 @@ export function SpendCreditsConfirmModal({
   featureName,
   loading = false,
 }: SpendCreditsConfirmModalProps) {
+  const navigate = useNavigate();
   const newBalance = currentBalance - cost;
   const hasEnough = currentBalance >= cost;
 
@@ -108,7 +110,7 @@ export function SpendCreditsConfirmModal({
             <AlertDialogAction
               onClick={() => {
                 onOpenChange(false);
-                window.location.href = '/credits';
+                navigate('/credits');
               }}
               className="gap-2"
             >

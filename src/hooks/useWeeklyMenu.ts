@@ -106,7 +106,7 @@ export function useWeeklyMenu(userId: string | undefined) {
     queryFn: () => fetchWeeklyMenu(userId!),
     enabled: !!userId,
     staleTime: 30 * 1000, // 30 seconds
-    refetchOnMount: 'always',
+    refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
 
@@ -117,7 +117,7 @@ export function useWeeklyMenu(userId: string | undefined) {
     logger.debug('Setting up realtime subscription', { userId });
     
     const channel = supabase
-      .channel('user_weekly_menus_changes')
+      .channel(`user_weekly_menus_changes_${userId}`)
       .on(
         'postgres_changes',
         {

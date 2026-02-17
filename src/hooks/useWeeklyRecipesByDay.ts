@@ -63,7 +63,7 @@ export function useWeeklyRecipesByDay(userId: string | undefined) {
     queryFn: () => fetchWeeklyRecipesByDay(userId!),
     enabled: !!userId,
     staleTime: 30 * 1000, // 30 seconds
-    refetchOnMount: 'always',
+    refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
 
@@ -74,7 +74,7 @@ export function useWeeklyRecipesByDay(userId: string | undefined) {
     console.log('[useWeeklyRecipesByDay] Setting up realtime subscription');
     
     const channel = supabase
-      .channel('weekly_recipes_changes')
+      .channel(`weekly_recipes_changes_${userId}`)
       .on(
         'postgres_changes',
         {
