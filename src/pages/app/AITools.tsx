@@ -8,10 +8,12 @@ import { useState } from 'react';
 import { Upload, Camera, Loader2, Sparkles, Lock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export default function AITools() {
   const { toast } = useToast();
   const { subscription } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [photoMacrosResult, setPhotoMacrosResult] = useState<any>(null);
   const [fridgeRecipesResult, setFridgeRecipesResult] = useState<any>(null);
@@ -120,7 +122,7 @@ export default function AITools() {
                       <p className="text-sm text-muted-foreground mb-4">
                         Cette fonctionnalité est réservée aux abonnés Premium
                       </p>
-                      <Button onClick={() => window.location.href = '/app/settings'}>
+                      <Button onClick={() => navigate('/app/settings')}>
                         Passer Premium
                       </Button>
                     </div>
@@ -208,7 +210,7 @@ export default function AITools() {
                       <p className="text-sm text-muted-foreground mb-4">
                         Cette fonctionnalité est réservée aux abonnés Premium
                       </p>
-                      <Button onClick={() => window.location.href = '/app/settings'}>
+                      <Button onClick={() => navigate('/app/settings')}>
                         Passer Premium
                       </Button>
                     </div>

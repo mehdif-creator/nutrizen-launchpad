@@ -1,6 +1,6 @@
 import { DashboardCard, CardState } from './DashboardCard';
 import { ShoppingCart, Check } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import type { DashboardShoppingListStatus } from '@/hooks/useUserDashboard';
@@ -18,6 +18,7 @@ export function ShoppingListCard({
   isError,
   onRetry,
 }: ShoppingListCardProps) {
+  const navigate = useNavigate();
   let state: CardState = 'ready';
   if (isLoading) state = 'loading';
   else if (isError) state = 'error';
@@ -37,7 +38,7 @@ export function ShoppingListCard({
         label: 'Générer la liste',
         onClick: () => {
           // Navigate to meal plan to generate
-          window.location.href = '/app/meal-plan';
+          navigate('/app/meal-plan');
         },
       }}
       onRetry={onRetry}

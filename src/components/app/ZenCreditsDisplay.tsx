@@ -35,7 +35,7 @@ export function ZenCreditsDisplay({
 
     // Subscribe to realtime updates
     const channel = supabase
-      .channel('credits-changes')
+      .channel(`credits_changes_${userId}`)
       .on(
         'postgres_changes',
         {

@@ -7,8 +7,7 @@ export default function Signup() {
   const { t } = useLanguage();
 
   const handleSignup = () => {
-    // Redirect to home page with pricing section
-    window.location.href = '/#tarifs';
+    navigate('/#tarifs');
   };
 
   return (

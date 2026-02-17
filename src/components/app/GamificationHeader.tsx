@@ -30,7 +30,7 @@ export function GamificationHeader() {
 
     // Set up real-time subscription for updates
     const channel = supabase
-      .channel('user_gamification_changes')
+      .channel(`user_gamification_changes_${user?.id}`)
       .on(
         'postgres_changes',
         {
