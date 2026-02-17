@@ -108,12 +108,12 @@ function MealSlot({
       <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
         <span className="inline-flex items-center gap-1">
           <Clock className="h-3 w-3" />
-          {recipe.prep_min + recipe.total_min} min
+          {(recipe.prep_min || 0) + (recipe.total_min || 0)} min
         </span>
         <span>·</span>
         <span className="inline-flex items-center gap-1">
           <Flame className="h-3 w-3" />
-          {Math.round(recipe.calories)} kcal
+          {Math.round(recipe.calories || 0)} kcal
         </span>
       </div>
 
