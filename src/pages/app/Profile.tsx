@@ -95,6 +95,10 @@ export default function Profile() {
   });
 
   useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     loadPreferences();
   }, [user]);
 

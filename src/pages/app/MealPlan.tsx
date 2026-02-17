@@ -98,7 +98,7 @@ export default function MealPlan() {
             <Card 
               key={`${recipe.recipe_id}-${index}`}
               className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
-              onClick={() => navigate(`/app/recipes/${recipe.recipe_id}`)}
+              onClick={() => recipe.recipe_id ? navigate(`/app/recipes/${recipe.recipe_id}`) : undefined}
             >
               <div className="h-48 bg-muted relative overflow-hidden">
                 {recipe.image_url ? (
@@ -131,11 +131,11 @@ export default function MealPlan() {
                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Clock className="h-3.5 w-3.5" />
-                    {recipe.prep_min + recipe.total_min} min
+                    {(recipe.prep_min || 0) + (recipe.total_min || 0)} min
                   </span>
                   <span className="flex items-center gap-1">
                     <Flame className="h-3.5 w-3.5" />
-                    {Math.round(recipe.calories)} kcal
+                    {Math.round(recipe.calories || 0)} kcal
                   </span>
                 </div>
 

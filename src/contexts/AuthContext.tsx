@@ -122,7 +122,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         if (newSession?.user) {
           if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-            await checkAdminRole(newSession.user.id);
+            // Only check admin if user changed or never checked
+            if (lastCheckedUserId.current !== newSession.user.id) {
+              await checkAdminRole(newSession.user.id);
+            }
             refreshSubscription(newSession);
             trackDailyLogin(newSession.user.id);
           }
@@ -143,11 +146,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(currentSession?.user ?? null);
 
       if (currentSession?.user) {
-        try {
-          await checkAdminRole(currentSession.user.id);
-        } catch (e) {
-          logger.error('Admin check failed', e instanceof Error ? e : new Error(String(e)));
-          setAdminLoading(false);
+        // Only check admin if not already verified for this user
+        if (lastCheckedUserId.current !== currentSession.user.id) {
+          try {
+            await checkAdminRole(currentSession.user.id);
+          } catch (e) {
+            logger.error('Admin check failed', e instanceof Error ? e : new Error(String(e)));
+            setAdminLoading(false);
+          }
         }
         if (mounted) {
           refreshSubscription(currentSession);
