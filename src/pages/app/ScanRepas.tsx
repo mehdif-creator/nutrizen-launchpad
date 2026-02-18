@@ -7,6 +7,9 @@ import { Camera, Upload, Loader2, Brain, RefreshCw, AlertCircle } from 'lucide-r
 import { toast } from 'sonner';
 import { useAutomationJob } from '@/hooks/useAutomationJob';
 import { InsufficientCreditsModal } from '@/components/app/InsufficientCreditsModal';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('ScanRepas');
 
 interface FoodItem {
   name: string;
@@ -80,7 +83,7 @@ export default function ScanRepas() {
     reset: resetJob,
   } = useAutomationJob({
     onSuccess: (jobResult) => {
-      console.log('[ScanRepas] Job success:', jobResult);
+      logger.debug('Job success', { jobResult });
       if (jobResult.food && jobResult.total) {
         setAnalysisResult({
           food: jobResult.food,
@@ -91,7 +94,7 @@ export default function ScanRepas() {
       }
     },
     onError: (errorMsg, errorCode) => {
-      console.error('[ScanRepas] Job error:', errorMsg, errorCode);
+      logger.error('Job error', new Error(errorMsg || 'Unknown'), { errorCode });
       if (errorCode !== 'INSUFFICIENT_CREDITS') {
         toast.error(errorMsg || 'Erreur lors de l\'analyse');
       }
@@ -123,7 +126,7 @@ export default function ScanRepas() {
       return;
     }
 
-    console.log('[ScanRepas] Starting analysis...', { 
+    logger.debug('Starting analysis', { 
       fileName: selectedFile.name, 
       fileSize: selectedFile.size,
       fileType: selectedFile.type 
@@ -145,11 +148,11 @@ export default function ScanRepas() {
           file_type: selectedFile.type,
         }, key);
 
-        console.log('[ScanRepas] Job started:', jobResult);
+        logger.debug('Job started', { jobResult });
       };
       reader.readAsDataURL(selectedFile);
     } catch (err) {
-      console.error('[ScanRepas] Error starting job:', err);
+      logger.error('Error starting job', err instanceof Error ? err : new Error(String(err)));
       toast.error('Erreur lors du démarrage de l\'analyse');
     }
   }, [selectedFile, startJob]);

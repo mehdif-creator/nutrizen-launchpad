@@ -144,13 +144,13 @@ export default function Callback() {
             <p className="text-muted-foreground">{error}</p>
             <div className="space-y-2">
               <Button
-                onClick={() => window.location.href = '/auth/login'}
+                onClick={() => navigate('/auth/login', { replace: true })}
                 className="w-full"
               >
                 Retour à la connexion
               </Button>
               <Button
-                onClick={() => window.location.href = '/'}
+                onClick={() => navigate('/', { replace: true })}
                 variant="outline"
                 className="w-full"
               >
