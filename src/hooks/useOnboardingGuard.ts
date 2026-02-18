@@ -7,6 +7,9 @@
    clearOnboardingCache,
    type OnboardingState 
  } from '@/lib/onboarding/status';
+ import { createLogger } from '@/lib/logger';
+
+ const logger = createLogger('OnboardingGuard');
  
  export interface OnboardingGuardResult {
    state: OnboardingState;
@@ -53,7 +56,7 @@
          const isAuthPage = location.pathname.startsWith('/auth/');
          
          if (!isOnboardingPage && !isAuthPage) {
-           console.log('[useOnboardingGuard] Needs onboarding, redirecting');
+           logger.debug('Needs onboarding, redirecting');
            navigate('/app/onboarding', { replace: true });
          }
        }
@@ -101,7 +104,7 @@
  
        // If already onboarded, redirect to dashboard
        if (status.state === 'onboarded') {
-         console.log('[useOnboardingPageGuard] Already onboarded, redirecting to dashboard');
+         logger.debug('Already onboarded, redirecting to dashboard');
          navigate('/app/dashboard', { replace: true });
        }
      };

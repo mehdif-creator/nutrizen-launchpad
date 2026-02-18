@@ -5,6 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('BuyCredits');
 
 export function BuyCreditsSection() {
   const [loading, setLoading] = useState(false);
@@ -21,13 +24,13 @@ export function BuyCreditsSection() {
         return;
       }
 
-      console.log('[BuyCredits] Creating checkout for pack_m');
+      logger.debug('Creating checkout for pack_m');
       const { data, error } = await supabase.functions.invoke('create-credits-checkout', {
         body: { pack_id: 'pack_m' },
       });
 
       if (error) {
-        console.error('[BuyCredits] Checkout error:', error);
+        logger.error('Checkout error', error instanceof Error ? error : new Error(String(error)));
         toast.error('Erreur lors de la création du paiement. Réessaie.');
         return;
       }
@@ -35,11 +38,11 @@ export function BuyCreditsSection() {
       if (data?.url) {
         window.location.href = data.url;
       } else {
-        console.error('[BuyCredits] No URL in response:', data);
+        logger.error('No URL in response', new Error('Missing checkout URL'), { data });
         toast.error('URL de paiement non reçue. Réessaie.');
       }
     } catch (error) {
-      console.error('[BuyCredits] Unexpected error:', error);
+      logger.error('Unexpected error', error instanceof Error ? error : new Error(String(error)));
       toast.error('Erreur réseau. Vérifie ta connexion.');
     } finally {
       setLoading(false);

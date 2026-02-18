@@ -2,6 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
 import { queryClient } from '@/lib/queryClient';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('WeeklyRecipesByDay');
 
 export interface RecipeInfo {
   recipe_id: string;
@@ -40,7 +43,7 @@ function getCurrentWeekStart(): string {
 async function fetchWeeklyRecipesByDay(userId: string): Promise<DayRecipes[]> {
   const weekStart = getCurrentWeekStart();
   
-  console.log('[useWeeklyRecipesByDay] Fetching recipes for user:', userId, 'week_start:', weekStart);
+  logger.debug('Fetching recipes', { userId, weekStart });
 
   const { data, error } = await supabase.rpc('get_weekly_recipes_by_day', {
     p_user_id: userId,
@@ -48,12 +51,12 @@ async function fetchWeeklyRecipesByDay(userId: string): Promise<DayRecipes[]> {
   });
 
   if (error) {
-    console.error('[useWeeklyRecipesByDay] Error fetching recipes:', error);
+    logger.error('Error fetching recipes', error);
     throw error;
   }
 
   const days = (data as unknown as DayRecipes[]) || [];
-  console.log('[useWeeklyRecipesByDay] Received days:', days.length);
+  logger.debug('Received days', { count: days.length });
   return days;
 }
 
@@ -71,7 +74,7 @@ export function useWeeklyRecipesByDay(userId: string | undefined) {
   useEffect(() => {
     if (!userId) return;
 
-    console.log('[useWeeklyRecipesByDay] Setting up realtime subscription');
+    logger.debug('Setting up realtime subscription');
     
     const channel = supabase
       .channel(`weekly_recipes_changes_${userId}`)
@@ -84,7 +87,7 @@ export function useWeeklyRecipesByDay(userId: string | undefined) {
           filter: `user_id=eq.${userId}`
         },
         () => {
-          console.log('[useWeeklyRecipesByDay] Menu updated, refetching');
+          logger.debug('Menu updated, refetching');
           queryClient.invalidateQueries({ queryKey: ['weeklyRecipesByDay', userId] });
         }
       )
@@ -96,7 +99,7 @@ export function useWeeklyRecipesByDay(userId: string | undefined) {
           table: 'user_weekly_menu_items',
         },
         () => {
-          console.log('[useWeeklyRecipesByDay] Menu items updated, refetching');
+          logger.debug('Menu items updated, refetching');
           queryClient.invalidateQueries({ queryKey: ['weeklyRecipesByDay', userId] });
         }
       )

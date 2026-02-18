@@ -2,6 +2,9 @@ import { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('ErrorBoundary');
 
 interface Props {
   children: ReactNode;
@@ -34,8 +37,7 @@ export class ErrorBoundary extends Component<Props, State> {
     this.setState({ errorInfo });
     
     // Log error for debugging (lightweight client logging)
-    console.error('[ErrorBoundary] Caught error:', error);
-    console.error('[ErrorBoundary] Component stack:', errorInfo.componentStack);
+    logger.error('Caught error', error, { componentStack: errorInfo.componentStack });
     
     // Optional: send to server for mobile error tracking
     this.logErrorToServer(error, errorInfo);
@@ -57,13 +59,10 @@ export class ErrorBoundary extends Component<Props, State> {
       sessionStorage.setItem('lastErrorLogTime', String(now));
       
       // Log to console for now (could be extended to Supabase table)
-      console.log('[ErrorBoundary] Would log to server:', {
-        message: error.message,
-        stack: error.stack?.slice(0, 500),
+      logger.error('Client error captured', error, {
         componentStack: errorInfo.componentStack?.slice(0, 500),
         url: window.location.href,
         userAgent: navigator.userAgent,
-        timestamp: new Date().toISOString(),
       });
     } catch {
       // Silently fail - don't crash the error handler
@@ -75,6 +74,8 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   private handleGoHome = () => {
+    // Intentional hard reload: after a React crash, component tree is corrupted
+    // so we need a full page reload to restore a clean state
     window.location.href = '/app/dashboard';
   };
 

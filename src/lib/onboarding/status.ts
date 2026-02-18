@@ -2,7 +2,10 @@
   * Centralized onboarding status management
   * Single source of truth: onboarding_completed_at timestamp
   */
- import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('Onboarding');
  
  export type OnboardingState = 'loading' | 'needs_onboarding' | 'onboarded';
  
@@ -94,7 +97,7 @@
      // Clear cache to force refresh
      statusCache.delete(userId);
      
-     console.log('[Onboarding] Marked complete for user:', userId);
+     logger.info('Marked complete', { userId });
      return true;
    } catch (error) {
      console.error('[Onboarding] Exception marking complete:', error);
