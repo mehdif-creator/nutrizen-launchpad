@@ -38,7 +38,7 @@ export function securityHeadersPlugin(): Plugin {
           'Content-Security-Policy',
           [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.googletagmanager.com",
+            "script-src 'self' https://js.stripe.com https://*.googletagmanager.com",
             "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.google-analytics.com https://*.googletagmanager.com",
             "img-src 'self' https://*.supabase.co https://storage.googleapis.com data: blob: https:",
             "style-src 'self' 'unsafe-inline'",

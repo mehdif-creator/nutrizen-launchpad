@@ -46,10 +46,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const navigate = useNavigate();
 
-  // B) Shared in-flight promise map keyed by userId
-  const adminCheckPromiseRef = useRef<Map<string, Promise<boolean>>>(new Map());
-
-  // C) De-dupe initial session side effects
+  // B) Cache resolved admin check results per userId (avoids re-checking on re-renders)
+  const adminCheckResultRef = useRef<Map<string, boolean>>(new Map());
+  // De-dupe initial session side effects (subscription refresh + daily login) per user
   const initialSetupDoneForUser = useRef<string | null>(null);
 
   const checkAdminRole = useCallback(async (userId: string): Promise<boolean> => {
@@ -59,36 +58,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
 
-    const map = adminCheckPromiseRef.current;
-    const existing = map.get(userId);
-    if (existing) return existing;
+    // Return cached result if already resolved for this user
+    if (adminCheckResultRef.current.has(userId)) {
+      const cached = adminCheckResultRef.current.get(userId)!;
+      setIsAdmin(cached);
+      setAdminLoading(false);
+      return cached;
+    }
 
     setAdminLoading(true);
-
-    const p = (async () => {
-      try {
-        const { data, error } = await supabase.rpc('is_admin');
-        if (error) {
-          logger.error('Admin role check failed', error);
-          setIsAdmin(false);
-          return false;
-        }
-        const result = data === true;
-        setIsAdmin(result);
-        logger.debug('Admin check result', { userId: userId.substring(0, 8), isAdmin: result });
-        return result;
-      } catch (error) {
-        logger.error('Admin role check exception', error instanceof Error ? error : new Error(String(error)));
+    try {
+      const { data, error } = await supabase.rpc('is_admin');
+      if (error) {
+        logger.error('Admin role check failed', error);
         setIsAdmin(false);
+        adminCheckResultRef.current.set(userId, false);
         return false;
-      } finally {
-        setAdminLoading(false);
-        map.delete(userId);
       }
-    })();
-
-    map.set(userId, p);
-    return p;
+      const result = data === true;
+      setIsAdmin(result);
+      adminCheckResultRef.current.set(userId, result);
+      logger.debug('Admin check result', { userId: userId.substring(0, 8), isAdmin: result });
+      return result;
+    } catch (error) {
+      logger.error('Admin role check exception', error instanceof Error ? error : new Error(String(error)));
+      setIsAdmin(false);
+      adminCheckResultRef.current.set(userId, false);
+      return false;
+    } finally {
+      setAdminLoading(false);
+    }
   }, []);
 
   const refreshSubscription = useCallback(async (sessionOverride?: Session | null) => {
@@ -197,7 +196,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     clearOnboardingCache();
     initialSetupDoneForUser.current = null;
-    adminCheckPromiseRef.current.clear();
+    adminCheckResultRef.current.clear();
     setSubscription(null);
     setIsAdmin(false);
     setAdminLoading(false);
