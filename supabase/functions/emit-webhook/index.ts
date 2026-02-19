@@ -1,4 +1,5 @@
 import { createClient } from '../_shared/deps.ts';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const ALLOWED_ORIGINS = [
   'https://mynutrizen.fr',
@@ -49,7 +50,22 @@ Deno.serve(async (req) => {
       )
     }
 
-    const body = await req.json()
+    const rawBody = await req.json()
+
+    // Validate request body with Zod before processing
+    const EmitWebhookSchema = z.object({
+      event: z.string().min(1).max(100),
+    }).passthrough();
+
+    const parseResult = EmitWebhookSchema.safeParse(rawBody);
+    if (!parseResult.success) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid request body', details: parseResult.error.flatten() }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const body = parseResult.data;
     const { event, ...eventData } = body
 
     // Validate event type - only allow specific events

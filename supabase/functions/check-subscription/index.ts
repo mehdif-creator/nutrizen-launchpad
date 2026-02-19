@@ -67,12 +67,38 @@ Deno.serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    
+
+    // Build product-to-plan map from env vars (no hardcoded product IDs)
+    function buildProductMap(): Record<string, string> {
+      const map: Record<string, string> = {};
+      const essentiel = Deno.env.get('STRIPE_PRODUCT_ESSENTIEL');
+      const equilibre  = Deno.env.get('STRIPE_PRODUCT_EQUILIBRE');
+      const premium    = Deno.env.get('STRIPE_PRODUCT_PREMIUM');
+      if (essentiel) map[essentiel] = 'essentiel';
+      if (equilibre)  map[equilibre]  = 'equilibre';
+      if (premium)    map[premium]    = 'premium';
+      return map;
+    }
+
     if (customers.data.length === 0) {
-      logStep("No customer found");
-      return new Response(JSON.stringify({ 
-        subscribed: false,
-        status: 'trialing'
+      logStep("No Stripe customer found — checking DB trial status");
+
+      const { data: dbSub } = await supabaseClient
+        .from('subscriptions')
+        .select('status, trial_end')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      const now = new Date();
+      const trialEnd = dbSub?.trial_end ? new Date(dbSub.trial_end) : null;
+      const isTrialActive = dbSub?.status === 'trialing' && trialEnd != null && trialEnd > now;
+
+      return new Response(JSON.stringify({
+        subscribed:       false,
+        status:           isTrialActive ? 'trialing' : (dbSub?.status ?? 'inactive'),
+        trial_end:        dbSub?.trial_end ?? null,
+        subscription_end: null,
+        plan:             null,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -97,19 +123,12 @@ Deno.serve(async (req) => {
       const subscription = subscriptions.data[0];
       subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
       productId = subscription.items.data[0].price.product as string;
-      
-      // Map product ID to plan name
-      const productIdToPlan: Record<string, string> = {
-        'prod_TF0D6woqZUymTP': 'essentiel',
-        'prod_TF0GZblDN5RHUZ': 'equilibre',
-        'prod_TF0HAbZNmWYYDW': 'premium',
-      };
-      
+
+      const productIdToPlan = buildProductMap();
       plan = productIdToPlan[productId] || 'unknown';
       logStep("Active subscription found", { 
         subscriptionId: subscription.id, 
         endDate: subscriptionEnd,
-        productId,
         plan 
       });
 

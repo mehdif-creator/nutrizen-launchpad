@@ -523,3 +523,16 @@ export function validateUuid(uuid: string, fieldName = 'id'): void {
     throw new SecurityError(`Invalid ${fieldName} format`, 'INVALID_UUID', 400);
   }
 }
+
+/**
+ * Standard security response headers for Edge Function responses.
+ * Merge into every response alongside CORS headers.
+ */
+export function getSecurityHeaders(): Record<string, string> {
+  return {
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'X-Permitted-Cross-Domain-Policies': 'none',
+  };
+}

@@ -1,10 +1,6 @@
 import { createClient } from '../_shared/deps.ts';
 import { requireAdmin } from '../_shared/auth.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { getCorsHeaders } from '../_shared/security.ts';
 
 interface TestResult {
   test_key: string;
@@ -605,9 +601,12 @@ async function testRealtimeRefresh(userId: string): Promise<TestResult> {
 
 // Main handler
 Deno.serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   try {

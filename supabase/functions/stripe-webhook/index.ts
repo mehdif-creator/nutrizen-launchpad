@@ -432,28 +432,11 @@ Deno.serve(async (req) => {
       const affCode = session.metadata?.affiliate_code;
       
       if (referralCode && userId) {
-        logStep("Processing referral signup and subscription reward");
+        logStep("Processing referral subscription reward");
           
         try {
-          const referralResponse = await fetch(
-            `${Deno.env.get("SUPABASE_URL")}/functions/v1/handle-referral`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-              },
-              body: JSON.stringify({
-                referralCode,
-                newUserId: userId,
-              }),
-            }
-          );
-          
-          if (referralResponse.ok) {
-            logStep("Referral signup tracked successfully");
-          }
-          
+          // Call RPC directly — the broken handle-referral function has been removed.
+          // handle_referred_user_subscribed covers the full referral reward logic.
           const { error: rewardError } = await supabaseAdmin.rpc('handle_referred_user_subscribed', {
             p_referred_user_id: userId,
             p_referral_code: referralCode,
@@ -490,7 +473,7 @@ Deno.serve(async (req) => {
                 affiliate_user_id: affiliateProfile.id,
                 referred_user_id: userId,
                 stripe_subscription_id: subscriptionId,
-                commission_rate: 0.04,
+                commission_rate: parseFloat(Deno.env.get('AFFILIATE_COMMISSION_RATE') ?? '0.04'),
                 amount_recurring: amountRecurring / 100,
                 status: 'active',
               });

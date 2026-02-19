@@ -5,6 +5,19 @@ import { validate, AdminCreateUserSchema } from '../_shared/validation.ts';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
+/**
+ * Generate a cryptographically secure random password.
+ * Uses crypto.getRandomValues() — NOT Math.random() (which is weak for security purposes).
+ */
+function generateSecurePassword(length = 20): string {
+  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes)
+    .map(b => charset[b % charset.length])
+    .join('');
+}
+
 Deno.serve(async (req) => {
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
@@ -46,7 +59,7 @@ Deno.serve(async (req) => {
     // Create auth user
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
-      password: password || Math.random().toString(36).slice(-12),
+      password: password || generateSecurePassword(),
       email_confirm: true,
       user_metadata: {
         full_name: full_name || '',

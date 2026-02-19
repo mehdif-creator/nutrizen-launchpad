@@ -56,12 +56,39 @@ Deno.serve(async (req) => {
 
     console.log(`[generate-menu] Processing request for user: ${redactId(user.id)}`);
 
-    // Calculate current week start (Monday)
+    // ── Server-side subscription gate ──────────────────────────────────────────
+    const { data: subRow } = await supabaseClient
+      .from('subscriptions')
+      .select('status, trial_end, current_period_end')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
     const now = new Date();
-    const dayOfWeek = now.getDay();
+    const isActiveSub   = subRow?.status === 'active';
+    const isTrialing    = subRow?.status === 'trialing' &&
+                          subRow.trial_end != null &&
+                          new Date(subRow.trial_end) > now;
+    const hasValidAccess = isActiveSub || isTrialing;
+
+    if (!hasValidAccess) {
+      console.log(`[generate-menu] Access denied — no valid subscription for user ${redactId(user.id)}`);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error_code: 'NO_SUBSCRIPTION',
+          message: 'Un abonnement actif est requis pour générer un menu.',
+        }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    // ── End subscription gate ───────────────────────────────────────────────────
+
+    // Calculate current week start (Monday)
+    const currentDate = new Date();
+    const dayOfWeek = currentDate.getDay();
     const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() + diff);
+    const weekStart = new Date(currentDate);
+    weekStart.setDate(currentDate.getDate() + diff);
     weekStart.setHours(0, 0, 0, 0);
     const weekStartStr = weekStart.toISOString().split('T')[0];
 
@@ -178,32 +205,53 @@ Deno.serve(async (req) => {
     // Collect all restriction keys the user wants to avoid
     let userRestrictionKeys: string[] = [];
     
+    // Allowlist for diet types to prevent PostgREST filter injection
+    const ALLOWED_DIET_TYPES = new Set([
+      'omnivore', 'vegetarien', 'végétarien', 'vegetarian',
+      'vegan', 'végétalien', 'pescatarien', 'pescatarian',
+      'halal', 'casher', 'kosher',
+    ]);
+
+    // Escape PostgREST special characters from user-provided strings
+    function escapePostgrestPattern(value: string): string {
+      return value.replace(/[%_,.()'"\\\s]/g, (c) => `\\${c}`).slice(0, 50);
+    }
+
     // 1. From structured allergies array
     if (preferences?.allergies && Array.isArray(preferences.allergies)) {
       const allergyKeys = preferences.allergies
         .map((a: string) => allergenToKeyMap[a] || a.toLowerCase().trim())
         .filter((k: string) => k.length > 0);
       userRestrictionKeys.push(...allergyKeys);
-      console.log(`[generate-menu] Allergen keys from preferences.allergies: ${allergyKeys.join(", ")}`);
+      // Log count only — allergen names are special-category health data (GDPR Art. 9)
+      console.log(`[generate-menu] Allergen keys from preferences.allergies: ${allergyKeys.length} key(s)`);
     }
 
     // 2. From aliments_eviter array - need to map to canonical keys via dictionary
     if (preferences?.aliments_eviter && Array.isArray(preferences.aliments_eviter)) {
       const avoidItems = preferences.aliments_eviter
         .map((ing: string) => (ing || '').toLowerCase().trim())
-        .filter((ing: string) => ing.length > 0);
-      
+        .filter((ing: string) => ing.length > 0 && ing.length <= 50);
+
       if (avoidItems.length > 0) {
-        // Query dictionary to find canonical keys for these items
-        const { data: dictMatches } = await supabaseClient
-          .from('restriction_dictionary')
-          .select('key, pattern')
-          .or(avoidItems.map(item => `pattern.ilike.%${item}%`).join(','));
+        // Escape each item before building the .or() filter to prevent injection
+        const safeItems = avoidItems.map(escapePostgrestPattern).filter(i => i.length > 0);
         
-        if (dictMatches && dictMatches.length > 0) {
-          const mappedKeys = dictMatches.map((d: any) => d.key);
-          userRestrictionKeys.push(...mappedKeys);
-          console.log(`[generate-menu] Mapped aliments_eviter to keys via dictionary: ${[...new Set(mappedKeys)].join(", ")}`);
+        if (safeItems.length > 0) {
+          const orFilter = safeItems.map(item => `pattern.ilike.%${item}%`).join(',');
+          // Only query if filter string contains no unbalanced quotes or parentheses
+          if (!/[()'"\\]/.test(orFilter)) {
+            const { data: dictMatches } = await supabaseClient
+              .from('restriction_dictionary')
+              .select('key, pattern')
+              .or(orFilter);
+            
+            if (dictMatches && dictMatches.length > 0) {
+              const mappedKeys = dictMatches.map((d: any) => d.key);
+              userRestrictionKeys.push(...mappedKeys);
+              console.log(`[generate-menu] Mapped ${avoidItems.length} aliments_eviter item(s) to ${[...new Set(mappedKeys)].length} key(s) via dictionary`);
+            }
+          }
         }
         
         // Also add the raw items as keys (in case they're already canonical)
@@ -220,7 +268,6 @@ Deno.serve(async (req) => {
             if (directMatch && directMatch.length > 0) {
               userRestrictionKeys.push(item);
             } else {
-              // For "porc" specifically, map to "pork"
               if (item === 'porc' || item === 'cochon') {
                 userRestrictionKeys.push('pork');
               }
@@ -246,7 +293,8 @@ Deno.serve(async (req) => {
             }
           }
         }
-        console.log(`[generate-menu] Extracted keys from autres_allergies text: ${freeText}`);
+        // Log count only — free-text allergies are special-category health data (GDPR Art. 9)
+        console.log(`[generate-menu] Extracted ${userRestrictionKeys.length} keys from autres_allergies text`);
       }
     }
 
@@ -362,10 +410,12 @@ Deno.serve(async (req) => {
             console.log(`[generate-menu] Min proteins: ${minProteins}g per meal`);
           }
 
-          // Filter by diet type (allow null diet_type for omnivores)
-          if (preferences.type_alimentation && preferences.type_alimentation !== "Omnivore" && preferences.type_alimentation.toLowerCase() !== "omnivore") {
-            query = query.or(`diet_type.eq.${preferences.type_alimentation.toLowerCase()},diet_type.is.null`);
-            console.log(`[generate-menu] Diet type: ${preferences.type_alimentation}`);
+          // Filter by diet type — validate against allowlist to prevent PostgREST injection
+          const rawDiet = (preferences.type_alimentation ?? '').toLowerCase().trim();
+          const safeDiet = ALLOWED_DIET_TYPES.has(rawDiet) ? rawDiet : null;
+          if (safeDiet && safeDiet !== 'omnivore') {
+            query = query.or(`diet_type.eq.${safeDiet},diet_type.is.null`);
+            console.log(`[generate-menu] Diet type: ${safeDiet}`);
           }
 
           // Filter by cuisine preference
@@ -409,9 +459,11 @@ Deno.serve(async (req) => {
             console.log(`[generate-menu] F1: Relaxed total time to ${maxTotalTime} min`);
           }
 
-          // Keep other filters from F0 (allow null diet_type)
-          if (preferences.type_alimentation && preferences.type_alimentation !== "Omnivore" && preferences.type_alimentation.toLowerCase() !== "omnivore") {
-            query = query.or(`diet_type.eq.${preferences.type_alimentation.toLowerCase()},diet_type.is.null`);
+          // Keep other filters from F0 — validate against allowlist
+          const rawDietF1 = (preferences.type_alimentation ?? '').toLowerCase().trim();
+          const safeDietF1 = ALLOWED_DIET_TYPES.has(rawDietF1) ? rawDietF1 : null;
+          if (safeDietF1 && safeDietF1 !== 'omnivore') {
+            query = query.or(`diet_type.eq.${safeDietF1},diet_type.is.null`);
           }
         }
         
