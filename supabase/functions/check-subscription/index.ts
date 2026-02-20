@@ -1,5 +1,6 @@
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from '../_shared/deps.ts';
+import { checkRateLimit, rateLimitExceededResponse } from '../_shared/rateLimit.ts';
 
 const ALLOWED_ORIGINS = [
   'https://mynutrizen.fr',
@@ -64,6 +65,17 @@ Deno.serve(async (req) => {
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
+
+    // ── Rate limiting ─────────────────────────────────────────────────────────
+    const rl = await checkRateLimit(supabaseClient, {
+      identifier: `user:${user.id}`,
+      endpoint:   'check-subscription',
+      maxTokens:  20,
+      refillRate: 20,
+      cost:       60,
+    });
+    if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
+    // ── End rate limiting ──────────────────────────────────────────────────────
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });

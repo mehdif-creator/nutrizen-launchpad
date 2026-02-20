@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from '../_shared/deps.ts';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { checkRateLimit, rateLimitExceededResponse } from '../_shared/rateLimit.ts';
 
 const ALLOWED_ORIGINS = [
   'https://mynutrizen.fr',
@@ -78,6 +79,17 @@ Deno.serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // ── Rate limiting ─────────────────────────────────────────────────────────
+    const rl = await checkRateLimit(supabaseClient, {
+      identifier: `user:${user.id}`,
+      endpoint:   'suggest-substitution',
+      maxTokens:  20,
+      refillRate: 20,
+      cost:       60,
+    });
+    if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
+    // ── End rate limiting ──────────────────────────────────────────────────────
 
     // Parse and validate input
     const body = await req.json();

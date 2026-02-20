@@ -1,5 +1,6 @@
 import { createClient } from '../_shared/deps.ts';
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { checkRateLimit, rateLimitExceededResponse } from '../_shared/rateLimit.ts';
 
 const ALLOWED_ORIGINS = [
   'https://mynutrizen.fr',
@@ -55,6 +56,17 @@ Deno.serve(async (req) => {
     }
 
     console.log(`[generate-menu] Processing request for user: ${redactId(user.id)}`);
+
+    // ── Rate limiting ─────────────────────────────────────────────────────────
+    const rl = await checkRateLimit(supabaseClient, {
+      identifier: `user:${user.id}`,
+      endpoint:   'generate-menu',
+      maxTokens:  10,
+      refillRate: 10,
+      cost:       600,
+    });
+    if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
+    // ── End rate limiting ──────────────────────────────────────────────────────
 
     // ── Server-side subscription gate ──────────────────────────────────────────
     const { data: subRow } = await supabaseClient

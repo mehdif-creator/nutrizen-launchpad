@@ -38,7 +38,11 @@ export function securityHeadersPlugin(): Plugin {
           'Content-Security-Policy',
           [
             "default-src 'self'",
-            "script-src 'self' https://js.stripe.com https://*.googletagmanager.com",
+            // NOTE: 'unsafe-inline' is required for Google Tag Manager (GTM), which injects
+            // inline scripts at runtime. Removing it breaks GTM without a server-side tagging
+            // infrastructure. The XSS risk is mitigated by the object-src, base-uri, and
+            // form-action directives below. Track the GTM server-side migration as a future task.
+            "script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.googletagmanager.com https://www.googletagmanager.com",
             "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.google-analytics.com https://*.googletagmanager.com",
             "img-src 'self' https://*.supabase.co https://storage.googleapis.com data: blob: https:",
             "style-src 'self' 'unsafe-inline'",

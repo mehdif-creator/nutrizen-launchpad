@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from '../_shared/deps.ts';
 import { ImageUploadSchema, validate } from '../_shared/validation.ts';
+import { checkRateLimit, rateLimitExceededResponse } from '../_shared/rateLimit.ts';
 
 const ALLOWED_ORIGINS = [
   'https://mynutrizen.fr',
@@ -53,6 +54,17 @@ Deno.serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // ── Rate limiting ─────────────────────────────────────────────────────────
+    const rl = await checkRateLimit(supabaseClient, {
+      identifier: `user:${user.id}`,
+      endpoint:   'analyze-food-photo',
+      maxTokens:  5,
+      refillRate: 5,
+      cost:       600,
+    });
+    if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
+    // ── End rate limiting ──────────────────────────────────────────────────────
 
     // Check subscription status
     const { data: subscription, error: subError } = await supabaseClient

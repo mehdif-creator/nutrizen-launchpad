@@ -1,6 +1,7 @@
 import { createClient } from '../_shared/deps.ts';
 import { getCorsHeaders } from '../_shared/security.ts';
 import { validate, AdminDeleteUserSchema } from '../_shared/validation.ts';
+import { checkRateLimit, rateLimitExceededResponse } from '../_shared/rateLimit.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -40,6 +41,17 @@ Deno.serve(async (req) => {
     if (roleError || !roles) {
       throw new Error('Insufficient permissions');
     }
+
+    // ── Rate limiting ─────────────────────────────────────────────────────────
+    const rl = await checkRateLimit(supabaseAdmin, {
+      identifier: `admin:${user.id}`,
+      endpoint:   'admin-delete-user',
+      maxTokens:  5,
+      refillRate: 5,
+      cost:       120,
+    });
+    if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
+    // ── End rate limiting ──────────────────────────────────────────────────────
 
     // Validate and parse request body
     const body = await req.json();

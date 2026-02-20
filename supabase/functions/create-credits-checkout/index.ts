@@ -65,6 +65,22 @@ Deno.serve(async (req) => {
     const user = userData.user;
     logStep("User authenticated", { userId: user.id.substring(0, 8) + "***", email: (user.email || "").substring(0, 3) + "***" });
 
+    // ── Rate limiting ─────────────────────────────────────────────────────────
+    const supabaseAdmin2 = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+    const rl = await checkRateLimit(supabaseAdmin2, {
+      identifier: `user:${user.id}`,
+      endpoint:   'create-credits-checkout',
+      maxTokens:  10,
+      refillRate: 10,
+      cost:       60,
+    });
+    if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
+    // ── End rate limiting ──────────────────────────────────────────────────────
+
     // Initialize Stripe
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {
