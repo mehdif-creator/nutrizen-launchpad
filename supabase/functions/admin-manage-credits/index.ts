@@ -1,5 +1,6 @@
 import { createClient } from '../_shared/deps.ts';
 import { getCorsHeaders } from '../_shared/security.ts';
+import { checkRateLimit, rateLimitExceededResponse } from '../_shared/rateLimit.ts';
 import { validate, AdminManageCreditsSchema } from '../_shared/validation.ts';
 import { createLogger, redactId } from '../_shared/logging.ts';
 import { sanitizeDbError, unauthorizedError, validationError, PublicError } from '../_shared/errors.ts';
@@ -49,6 +50,17 @@ Deno.serve(async (req) => {
     }
 
     logger.step(4, 'Admin role verified');
+
+    // ── Rate limiting ─────────────────────────────────────────────────────────
+    const rl = await checkRateLimit(supabaseAdmin, {
+      identifier: `admin:${user.id}`,
+      endpoint:   'admin-manage-credits',
+      maxTokens:  20,
+      refillRate: 20,
+      cost:       30,
+    });
+    if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
+    // ── End rate limiting ──────────────────────────────────────────────────────
 
     // Validate and parse request body
     const body = await req.json();

@@ -1,4 +1,5 @@
 import { createClient } from '../_shared/deps.ts';
+import { checkRateLimit, rateLimitExceededResponse } from '../_shared/rateLimit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,6 +35,17 @@ Deno.serve(async (req) => {
     if (authError || !user) {
       throw new Error('Invalid token');
     }
+
+    // ── Rate limiting ─────────────────────────────────────────────────────────
+    const rl = await checkRateLimit(supabase, {
+      identifier: `user:${user.id}`,
+      endpoint:   'generate-grocery-list',
+      maxTokens:  10,
+      refillRate: 10,
+      cost:       120,
+    });
+    if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
+    // ── End rate limiting ──────────────────────────────────────────────────────
 
     console.log(`[generate-grocery-list] Processing for user: ${user.id.substring(0, 8)}...`);
 

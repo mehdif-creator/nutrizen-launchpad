@@ -9,6 +9,7 @@ import {
   generateRequestId,
   Logger,
 } from '../_shared/security.ts';
+import { checkRateLimit as checkRL, rateLimitExceededResponse } from '../_shared/rateLimit.ts';
 
 // =============================================================================
 // CONFIGURATION
@@ -201,7 +202,19 @@ Deno.serve(async (req) => {
         const token = authHeader.substring(7);
         const { data: userData } = await supabaseAnon.auth.getUser(token);
         userId = userData.user?.id || null;
-        if (userId) logger.info("Authenticated user", { userId });
+        if (userId) {
+          logger.info("Authenticated user", { userId });
+          // ── Per-user rate limiting ─────────────────────────────────────
+          const rlUser = await checkRL(supabaseAdmin, {
+            identifier: `user:${userId}`,
+            endpoint:   'create-checkout',
+            maxTokens:  10,
+            refillRate: 10,
+            cost:       60,
+          });
+          if (!rlUser.allowed) return rateLimitExceededResponse(getCorsHeaders(origin), rlUser.retryAfter);
+          // ── End per-user rate limiting ─────────────────────────────────
+        }
       } catch {
         logger.warn("Auth token invalid, continuing as anonymous");
       }
