@@ -3,7 +3,6 @@ import { AutomationRecipe, SocialQueueItem, PinterestBoardMap, AutomationSetting
 import { MOCK_RECIPES, MOCK_QUEUE, MOCK_BOARDS } from './AutomationConstants';
 
 // Check if tables exist by attempting a query
-let usesMock = false;
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -97,7 +96,7 @@ const supabaseApi = {
   },
   async getQueue(): Promise<SocialQueueItem[]> {
     const { data, error } = await supabase.from('social_queue').select('*').order('created_at', { ascending: false });
-    if (error) { usesMock = true; return mockService.getQueue(); }
+    if (error) { throw error; }
     return (data || []).map((item: any) => ({
       ...item,
       image_path: item.image_path || item.asset_9x16_path || item.asset_4x5_path || '',
@@ -121,7 +120,7 @@ const supabaseApi = {
   },
   async getBoards(): Promise<PinterestBoardMap[]> {
     const { data, error } = await supabase.from('pinterest_board_map').select('*').order('board_slug');
-    if (error) { usesMock = true; return mockService.getBoards(); }
+    if (error) { throw error; }
     return (data || []) as unknown as PinterestBoardMap[];
   },
   async addBoard(board: Partial<PinterestBoardMap>): Promise<PinterestBoardMap> {
@@ -147,17 +146,72 @@ const supabaseApi = {
   },
 };
 
-// Export an API that tries supabase first, falls back to mock
+// Export an API that tries supabase first, falls back to mock with visible error logging
 export const automationApi = {
-  getRecipes: async () => { try { return await supabaseApi.getRecipes(); } catch { return mockService.getRecipes(); } },
-  addRecipe: async (r: Omit<AutomationRecipe, 'id' | 'created_at'>) => { try { return await supabaseApi.addRecipe(r); } catch { return mockService.addRecipe(r); } },
-  getQueue: async () => { try { return await supabaseApi.getQueue(); } catch { return mockService.getQueue(); } },
-  addToQueue: async (item: Partial<SocialQueueItem>) => { try { return await supabaseApi.addToQueue(item); } catch { return mockService.addToQueue(item); } },
-  updateQueueItem: async (id: string, updates: Partial<SocialQueueItem>) => { try { return await supabaseApi.updateQueueItem(id, updates); } catch { return mockService.updateQueueItem(id, updates); } },
-  removeFromQueue: async (id: string) => { try { return await supabaseApi.removeFromQueue(id); } catch { return mockService.removeFromQueue(id); } },
-  getBoards: async () => { try { return await supabaseApi.getBoards(); } catch { return mockService.getBoards(); } },
-  addBoard: async (board: Partial<PinterestBoardMap>) => { try { return await supabaseApi.addBoard(board); } catch { return mockService.addBoard(board); } },
-  updateBoard: async (id: string, updates: Partial<PinterestBoardMap>) => { try { return await supabaseApi.updateBoard(id, updates); } catch { return mockService.updateBoard(id, updates); } },
-  getSettings: async () => { try { return await supabaseApi.getSettings(); } catch { return mockService.getSettings(); } },
-  saveSettings: async (s: AutomationSettings) => { try { return await supabaseApi.saveSettings(s); } catch { return mockService.saveSettings(s); } },
+  getRecipes: async () => {
+    try { return await supabaseApi.getRecipes(); } catch (err) {
+      console.error('[AutomationApi] getRecipes failed, falling back to mock data. Real data is NOT shown.', err);
+      return mockService.getRecipes();
+    }
+  },
+  addRecipe: async (r: Omit<AutomationRecipe, 'id' | 'created_at'>) => {
+    try { return await supabaseApi.addRecipe(r); } catch (err) {
+      console.error('[AutomationApi] addRecipe failed, falling back to mock.', err);
+      return mockService.addRecipe(r);
+    }
+  },
+  getQueue: async () => {
+    try { return await supabaseApi.getQueue(); } catch (err) {
+      console.error('[AutomationApi] getQueue failed, falling back to mock data. Real data is NOT shown.', err);
+      return mockService.getQueue();
+    }
+  },
+  addToQueue: async (item: Partial<SocialQueueItem>) => {
+    try { return await supabaseApi.addToQueue(item); } catch (err) {
+      console.error('[AutomationApi] addToQueue failed, falling back to mock.', err);
+      return mockService.addToQueue(item);
+    }
+  },
+  updateQueueItem: async (id: string, updates: Partial<SocialQueueItem>) => {
+    try { return await supabaseApi.updateQueueItem(id, updates); } catch (err) {
+      console.error('[AutomationApi] updateQueueItem failed, falling back to mock.', err);
+      return mockService.updateQueueItem(id, updates);
+    }
+  },
+  removeFromQueue: async (id: string) => {
+    try { return await supabaseApi.removeFromQueue(id); } catch (err) {
+      console.error('[AutomationApi] removeFromQueue failed, falling back to mock.', err);
+      return mockService.removeFromQueue(id);
+    }
+  },
+  getBoards: async () => {
+    try { return await supabaseApi.getBoards(); } catch (err) {
+      console.error('[AutomationApi] getBoards failed, falling back to mock data. Real data is NOT shown.', err);
+      return mockService.getBoards();
+    }
+  },
+  addBoard: async (board: Partial<PinterestBoardMap>) => {
+    try { return await supabaseApi.addBoard(board); } catch (err) {
+      console.error('[AutomationApi] addBoard failed, falling back to mock.', err);
+      return mockService.addBoard(board);
+    }
+  },
+  updateBoard: async (id: string, updates: Partial<PinterestBoardMap>) => {
+    try { return await supabaseApi.updateBoard(id, updates); } catch (err) {
+      console.error('[AutomationApi] updateBoard failed, falling back to mock.', err);
+      return mockService.updateBoard(id, updates);
+    }
+  },
+  getSettings: async () => {
+    try { return await supabaseApi.getSettings(); } catch (err) {
+      console.error('[AutomationApi] getSettings failed, falling back to mock.', err);
+      return mockService.getSettings();
+    }
+  },
+  saveSettings: async (s: AutomationSettings) => {
+    try { return await supabaseApi.saveSettings(s); } catch (err) {
+      console.error('[AutomationApi] saveSettings failed, falling back to mock.', err);
+      return mockService.saveSettings(s);
+    }
+  },
 };

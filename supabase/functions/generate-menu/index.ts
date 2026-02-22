@@ -1,23 +1,7 @@
 import { createClient } from '../_shared/deps.ts';
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { checkRateLimit, rateLimitExceededResponse } from '../_shared/rateLimit.ts';
-
-const ALLOWED_ORIGINS = [
-  'https://mynutrizen.fr',
-  'https://app.mynutrizen.fr',
-  'https://www.mynutrizen.fr',
-  'http://localhost:5173',
-  'http://localhost:3000',
-];
-
-function getCorsHeaders(origin: string | null): Record<string, string> {
-  const isAllowed = origin && ALLOWED_ORIGINS.includes(origin);
-  return {
-    'Access-Control-Allow-Origin': isAllowed ? origin : ALLOWED_ORIGINS[0],
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  };
-}
+import { getCorsHeaders, getSecurityHeaders } from '../_shared/security.ts';
 
 // Input validation schema
 const GenerateMenuSchema = z.object({
@@ -90,7 +74,7 @@ Deno.serve(async (req) => {
           error_code: 'NO_SUBSCRIPTION',
           message: 'Un abonnement actif est requis pour générer un menu.',
         }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 403, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
       );
     }
     // ── End subscription gate ───────────────────────────────────────────────────
@@ -124,7 +108,7 @@ Deno.serve(async (req) => {
           success: false,
           message: 'Erreur lors de la vérification des crédits.'
         }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
       );
     }
 
@@ -139,7 +123,7 @@ Deno.serve(async (req) => {
           current_balance: currentBalance,
           required: MENU_GENERATION_COST,
         }),
-        { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 402, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
       );
     }
 
@@ -189,7 +173,7 @@ Deno.serve(async (req) => {
             success: false,
             message: 'Âge invalide. L\'âge doit être entre 18 et 99 ans.'
           }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 400, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
         );
       }
     }
@@ -593,7 +577,7 @@ Deno.serve(async (req) => {
           error: "NO_SAFE_RECIPES",
           restrictions: userRestrictionKeys
         }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+        { headers: { ...corsHeaders, ...getSecurityHeaders(), "Content-Type": "application/json" }, status: 200 }
       );
     }
 
@@ -689,7 +673,7 @@ Deno.serve(async (req) => {
             restrictions: userRestrictionKeys,
             violations: unsafeRecipes
           }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+          { headers: { ...corsHeaders, ...getSecurityHeaders(), "Content-Type": "application/json" }, status: 200 }
         );
       }
     }
@@ -876,7 +860,7 @@ Deno.serve(async (req) => {
         usedFallback: usedFallback,
         fallbackLevel: fallbackLevel
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, ...getSecurityHeaders(), "Content-Type": "application/json" } }
     );
 
   } catch (error) {
@@ -884,7 +868,7 @@ Deno.serve(async (req) => {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
       JSON.stringify({ error: errorMessage }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      { headers: { ...corsHeaders, ...getSecurityHeaders(), "Content-Type": "application/json" }, status: 400 }
     );
   }
 });

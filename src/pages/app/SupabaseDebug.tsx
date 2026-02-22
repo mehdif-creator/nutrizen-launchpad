@@ -25,11 +25,6 @@ export default function SupabaseDebug() {
   });
   const [running, setRunning] = useState(false);
 
-  // Redirect if not authenticated
-  if (!authLoading && !user) {
-    return <Navigate to="/auth/login" replace />;
-  }
-
   const runTests = async () => {
     if (!user) return;
     setRunning(true);
@@ -51,16 +46,17 @@ export default function SupabaseDebug() {
         auth: {
           status: 'success',
           message: 'Connexion Supabase : OK',
-          details: `User ID: ${session.user?.id?.slice(0, 8)}... | Email: ${session.user?.email}`,
+          details: `User ID: ${session.user?.id?.slice(0, 8)}••• | Email: •••@${session.user?.email?.split('@')[1] ?? ''}`,
         },
       }));
-    } catch (err: any) {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
       setTests(prev => ({
         ...prev,
         auth: {
           status: 'error',
           message: 'Connexion Supabase : ERREUR',
-          details: err.message,
+          details: message,
         },
       }));
     }
@@ -81,13 +77,14 @@ export default function SupabaseDebug() {
           details: `Recette test: "${data?.title?.slice(0, 40)}..."`,
         },
       }));
-    } catch (err: any) {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
       setTests(prev => ({
         ...prev,
         dbRead: {
           status: 'error',
           message: 'Lecture DB : ERREUR',
-          details: err.message,
+          details: message,
         },
       }));
     }
@@ -110,13 +107,14 @@ export default function SupabaseDebug() {
           details: `Mise à jour réussie à ${new Date().toLocaleTimeString('fr-FR')}`,
         },
       }));
-    } catch (err: any) {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
       setTests(prev => ({
         ...prev,
         dbWrite: {
           status: 'error',
           message: 'Écriture profil : ERREUR (RLS ?)',
-          details: err.message,
+          details: message,
         },
       }));
     }
@@ -127,10 +125,8 @@ export default function SupabaseDebug() {
         .from('recipe-images')
         .getPublicUrl('test-placeholder.jpg');
       
-      // Try to actually fetch the URL to verify access
       const testUrl = data?.publicUrl;
       if (testUrl) {
-        // Just check if we can generate URLs - actual 403 would be on fetch
         setTests(prev => ({
           ...prev,
           storage: {
@@ -142,13 +138,14 @@ export default function SupabaseDebug() {
       } else {
         throw new Error('Impossible de générer l\'URL');
       }
-    } catch (err: any) {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
       setTests(prev => ({
         ...prev,
         storage: {
           status: 'error',
           message: 'Accès images : ERREUR (403 = permissions storage/RLS)',
-          details: err.message,
+          details: message,
         },
       }));
     }
@@ -161,6 +158,11 @@ export default function SupabaseDebug() {
       runTests();
     }
   }, [user, authLoading]);
+
+  // Redirect if not authenticated (after all hooks)
+  if (!authLoading && !user) {
+    return <Navigate to="/auth/login" replace />;
+  }
 
   const StatusIcon = ({ status }: { status: TestResult['status'] }) => {
     if (status === 'pending') return <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />;
@@ -254,13 +256,19 @@ export default function SupabaseDebug() {
             <div className="text-xs font-mono space-y-1 text-muted-foreground">
               <p>
                 <strong>Supabase URL:</strong>{' '}
-                {import.meta.env.VITE_SUPABASE_URL || 'Non définie'}
+                {import.meta.env.VITE_SUPABASE_URL
+                  ? new URL(import.meta.env.VITE_SUPABASE_URL).hostname
+                  : 'Non définie'}
               </p>
               <p>
-                <strong>User ID:</strong> {user?.id || 'Non connecté'}
+                <strong>User ID:</strong>{' '}
+                {user?.id ? `${user.id.substring(0, 8)}•••` : 'Non connecté'}
               </p>
               <p>
-                <strong>Email:</strong> {user?.email || 'N/A'}
+                <strong>Email:</strong>{' '}
+                {user?.email
+                  ? `${user.email.split('@')[0].substring(0, 2)}•••@${user.email.split('@')[1]}`
+                  : 'N/A'}
               </p>
             </div>
           </Card>

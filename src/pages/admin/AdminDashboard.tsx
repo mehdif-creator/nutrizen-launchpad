@@ -69,15 +69,15 @@ export default function AdminDashboard() {
         newUsersThisMonth, newUsersThisWeek, totalPoints, totalMealPlans, ratingsObj, openTickets
       ] = await Promise.all([
         safeQuery(async () => (await supabase.from('profiles').select('*', { count: 'exact', head: true })).count ?? 0, 0),
-        safeQuery(async () => (await (supabase.from as any)('subscriptions').select('*', { count: 'exact', head: true }).eq('status', 'active')).count ?? 0, 0),
-        safeQuery(async () => (await (supabase.from as any)('subscriptions').select('*', { count: 'exact', head: true }).eq('status', 'trialing')).count ?? 0, 0),
-        safeQuery(async () => (await (supabase.from as any)('subscriptions').select('*', { count: 'exact', head: true }).eq('status', 'canceled')).count ?? 0, 0),
+        safeQuery(async () => (await supabase.from('subscriptions' as any).select('*', { count: 'exact', head: true }).eq('status', 'active')).count ?? 0, 0),
+        safeQuery(async () => (await supabase.from('subscriptions' as any).select('*', { count: 'exact', head: true }).eq('status', 'trialing')).count ?? 0, 0),
+        safeQuery(async () => (await supabase.from('subscriptions' as any).select('*', { count: 'exact', head: true }).eq('status', 'canceled')).count ?? 0, 0),
         safeQuery(async () => (await supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', startOfMonth.toISOString())).count ?? 0, 0),
         safeQuery(async () => (await supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', startOfWeek.toISOString())).count ?? 0, 0),
-        safeQuery(async () => { const r = await (supabase.from as any)('user_points').select('total_points'); return r.data?.reduce((s: number, u: any) => s + (u.total_points || 0), 0) ?? 0; }, 0),
+        safeQuery(async () => { const r = await supabase.from('user_points' as any).select('total_points'); return (r.data as any[])?.reduce((s: number, u: any) => s + (u.total_points || 0), 0) ?? 0; }, 0),
         safeQuery(async () => (await supabase.from('meal_plans').select('*', { count: 'exact', head: true })).count ?? 0, 0),
         safeQuery(async () => { const r = await supabase.from('meal_ratings').select('stars', { count: 'exact' }); return { count: r.count ?? 0, avg: r.data && r.data.length > 0 ? r.data.reduce((s, rr) => s + (rr.stars || 0), 0) / r.data.length : 0 }; }, { count: 0, avg: 0 }),
-        safeQuery(async () => (await (supabase.from as any)('support_tickets').select('*', { count: 'exact', head: true }).eq('status', 'open')).count ?? 0, 0),
+        safeQuery(async () => (await supabase.from('support_tickets' as any).select('*', { count: 'exact', head: true }).eq('status', 'open')).count ?? 0, 0),
       ]);
 
       const pricePerMonth = 19.99;

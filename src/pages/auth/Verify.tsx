@@ -13,10 +13,10 @@ export default function Verify() {
     if (!loading && user) {
       // Emit trial started event
       emitWebhookEvent({
-        event: 'trial.started',
+        event: 'trial_started',
         user_id: user.id,
-        email: user.email,
         ts: Date.now(),
+        metadata: { email: user.email },
       });
 
       // Redirect to app after short delay

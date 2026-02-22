@@ -43,6 +43,7 @@ export const ProtectedRoute = ({
 
   // D) For admin routes: block render while adminLoading OR loading is true
   if (requireAdmin) {
+    // Still loading and not timed out: show spinner
     if ((loading || adminLoading) && !timedOut) {
       return (
         <div className="min-h-screen flex items-center justify-center">
@@ -51,13 +52,13 @@ export const ProtectedRoute = ({
       );
     }
 
-    // No user at all → login
+    // No user → redirect to login
     if (!user) {
       return <Navigate to="/auth/login" replace />;
     }
 
-    // Admin check done, user is NOT admin → redirect
-    if (!adminLoading && !isAdmin) {
+    // Timed out OR admin check complete and not admin → deny access
+    if (timedOut || (!adminLoading && !isAdmin)) {
       if (!denialToastShown.current) {
         denialToastShown.current = true;
         toast.error('Accès refusé — vous n\'avez pas les droits administrateur.');
