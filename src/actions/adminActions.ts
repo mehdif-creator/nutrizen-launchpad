@@ -25,7 +25,7 @@ export async function createUser(
       throw new Error('No active session');
     }
 
-    logger.info(`Creating user: ${email}`);
+    logger.info('Creating user', { email });
 
     const { data, error } = await supabase.functions.invoke('admin-create-user', {
       body: { 
@@ -73,7 +73,7 @@ export async function manageUserCredits(
       throw new Error('No active session');
     }
 
-    logger.info(`Managing credits for user: ${userId}`);
+    logger.info('Managing credits for user', { userId });
 
     const { data, error } = await supabase.functions.invoke('admin-manage-credits', {
       body: { 
@@ -116,7 +116,7 @@ export async function deleteUser(userId: string): Promise<AdminActionResult> {
       throw new Error('No active session');
     }
 
-    logger.info(`Deleting user: ${userId}`);
+    logger.info('Deleting user', { userId });
 
     const { data, error } = await supabase.functions.invoke('admin-delete-user', {
       body: { 
@@ -160,7 +160,7 @@ export async function resetUserAccount(
       throw new Error('No active session');
     }
 
-    logger.info(`Resetting user: ${email}`);
+    logger.info('Resetting user', { email });
 
     const { data, error } = await supabase.functions.invoke('admin-reset-user', {
       body: { 

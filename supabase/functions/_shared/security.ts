@@ -99,7 +99,7 @@ export class SecurityError extends Error {
  * Generate unique request ID for tracing
  */
 export function generateRequestId(): string {
-  return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `req_${crypto.randomUUID()}`;
 }
 
 /**
@@ -263,9 +263,8 @@ export async function checkRateLimit(
     });
 
     if (error) {
-      logger.error('Rate limit check failed', error);
-      // Fail open - allow request if rate limiting fails
-      return { allowed: true };
+      logger.error('Rate limit check failed — failing closed for safety', error);
+      return { allowed: false, tokensRemaining: 0, retryAfter: 60 };
     }
 
     const result = data as { allowed: boolean; tokens_remaining: number; retry_after: number | null };
@@ -284,9 +283,8 @@ export async function checkRateLimit(
       retryAfter: result.retry_after || undefined,
     };
   } catch (err) {
-    logger.error('Rate limit error', err);
-    // Fail open
-    return { allowed: true };
+    logger.error('Rate limit error — failing closed for safety', err);
+    return { allowed: false, tokensRemaining: 0, retryAfter: 60 };
   }
 }
 
@@ -314,7 +312,7 @@ export async function withSecurity<T = unknown>(
   config: SecurityConfig,
   handler: (context: SecurityContext, body: T, logger: Logger) => Promise<unknown>
 ): Promise<Response> {
-  const requestId = req.headers.get('x-request-id') || generateRequestId();
+  const requestId = generateRequestId();
   const endpoint = new URL(req.url).pathname;
   const logger = new Logger(requestId, endpoint);
 

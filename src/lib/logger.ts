@@ -21,6 +21,7 @@ const SENSITIVE_PATTERNS = [
   /auth/i,
   /credit[_-]?card/i,
   /ssn/i,
+  /email/i,
 ];
 
 /**

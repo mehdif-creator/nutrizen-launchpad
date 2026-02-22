@@ -38,8 +38,8 @@ export async function checkRateLimit(
     });
 
     if (error || data === null || data === undefined) {
-      console.warn(`[rate-limit] DB error or null result for ${opts.endpoint}, failing open:`, error?.message);
-      return { allowed: true };
+      console.warn(`[rate-limit] DB error or null result for ${opts.endpoint}, failing closed for safety:`, error?.message);
+      return { allowed: false, retryAfter: 60 };
     }
 
     if (!data.allowed) {
@@ -49,8 +49,8 @@ export async function checkRateLimit(
 
     return { allowed: true };
   } catch (err) {
-    console.warn(`[rate-limit] Exception for ${opts.endpoint}, failing open:`, err);
-    return { allowed: true };
+    console.warn(`[rate-limit] Exception for ${opts.endpoint}, failing closed for safety:`, err);
+    return { allowed: false, retryAfter: 60 };
   }
 }
 

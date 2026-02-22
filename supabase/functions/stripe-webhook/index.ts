@@ -1,5 +1,6 @@
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from '../_shared/deps.ts';
+import { getSecurityHeaders } from '../_shared/security.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
@@ -181,7 +182,7 @@ Deno.serve(async (req) => {
       if (idempotencyError.code === '23505') {
         logStep("Event already processed (conflict), skipping", { eventId: event.id });
         return new Response(JSON.stringify({ received: true, skipped: true }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...corsHeaders, ...getSecurityHeaders(), "Content-Type": "application/json" },
           status: 200,
         });
       }
@@ -263,7 +264,7 @@ Deno.serve(async (req) => {
               transactionId: creditsResult.transaction_id 
             });
             return new Response(JSON.stringify({ received: true, idempotent: true }), {
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              headers: { ...corsHeaders, ...getSecurityHeaders(), "Content-Type": "application/json" },
               status: 200,
             });
           }
@@ -314,7 +315,7 @@ Deno.serve(async (req) => {
           }
           
           return new Response(JSON.stringify({ received: true, credits_added: true }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            headers: { ...corsHeaders, ...getSecurityHeaders(), "Content-Type": "application/json" },
             status: 200,
           });
         } catch (error) {
@@ -535,14 +536,14 @@ Deno.serve(async (req) => {
     }
 
     return new Response(JSON.stringify({ received: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, ...getSecurityHeaders(), "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
     return new Response(JSON.stringify({ error: "Webhook processing failed" }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, ...getSecurityHeaders(), "Content-Type": "application/json" },
       status: 400,
     });
   }
