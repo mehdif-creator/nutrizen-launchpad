@@ -1,17 +1,46 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders, getSecurityHeaders } from '../_shared/security.ts';
+import { requireAdmin } from '../_shared/auth.ts';
 
 Deno.serve(async (req: Request) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  const headers = { ...corsHeaders, ...getSecurityHeaders(), "Content-Type": "application/json" };
+
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    // Verify JWT and require admin role
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ ok: false, message: "Authentication required." }),
+        { status: 401, headers }
+      );
+    }
+
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
+
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ ok: false, message: "Invalid or expired token." }),
+        { status: 401, headers }
+      );
+    }
+
+    await requireAdmin(supabase, user.id);
+
     const url = new URL(req.url);
     const code = url.searchParams.get("code");
     const state = url.searchParams.get("state");
@@ -19,14 +48,9 @@ Deno.serve(async (req: Request) => {
     if (!code || !state) {
       return new Response(
         JSON.stringify({ ok: false, message: "Missing code or state parameter." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers }
       );
     }
-
-    // Admin Supabase client (service_role)
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     // 1) Validate state against oauth_states table
     const { data: stateRow, error: stateErr } = await supabase
@@ -39,7 +63,7 @@ Deno.serve(async (req: Request) => {
       console.error("[pinterest-oauth-callback] Invalid state:", stateErr);
       return new Response(
         JSON.stringify({ ok: false, message: "Invalid or expired OAuth state." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers }
       );
     }
 
@@ -55,7 +79,7 @@ Deno.serve(async (req: Request) => {
       console.error("[pinterest-oauth-callback] Missing PINTEREST_APP_ID or PINTEREST_APP_SECRET");
       return new Response(
         JSON.stringify({ ok: false, message: "Pinterest API credentials not configured." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers }
       );
     }
 
@@ -81,7 +105,7 @@ Deno.serve(async (req: Request) => {
           ok: false,
           message: tokenData.message || "Token exchange failed with Pinterest.",
         }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers }
       );
     }
 
@@ -112,22 +136,29 @@ Deno.serve(async (req: Request) => {
     if (upsertErr) {
       console.error("[pinterest-oauth-callback] DB upsert error:", upsertErr);
       return new Response(
-        JSON.stringify({ ok: false, message: upsertErr.message }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ ok: false, message: "Failed to store tokens." }),
+        { status: 500, headers }
       );
     }
 
-    console.log("[pinterest-oauth-callback] Token stored successfully, expires:", expiresAt);
+    console.log("[pinterest-oauth-callback] Token stored successfully for admin:", user.id);
 
     return new Response(
       JSON.stringify({ ok: true }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers }
     );
   } catch (err) {
+    if (err && typeof err === 'object' && 'statusCode' in err) {
+      const secErr = err as { statusCode: number; message: string };
+      return new Response(
+        JSON.stringify({ ok: false, message: secErr.message }),
+        { status: secErr.statusCode, headers }
+      );
+    }
     console.error("[pinterest-oauth-callback] Unhandled error:", err);
     return new Response(
       JSON.stringify({ ok: false, message: "Internal server error." }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers }
     );
   }
 });

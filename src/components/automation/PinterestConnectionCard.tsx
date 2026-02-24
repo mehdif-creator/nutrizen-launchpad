@@ -10,6 +10,12 @@ interface PinterestStatus {
   expiresAt?: string;
 }
 
+const getAuthHeaders = async (): Promise<Record<string, string>> => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return {};
+  return { Authorization: `Bearer ${session.access_token}` };
+};
+
 const PinterestConnectionCard: React.FC = () => {
   const { addToast } = useAutomationToast();
   const [status, setStatus] = useState<PinterestStatus>({ connected: false });
@@ -43,7 +49,11 @@ const PinterestConnectionCard: React.FC = () => {
   const handleConnect = async () => {
     setConnecting(true);
     try {
-      const res = await fetch(`${functionsBaseUrl()}/pinterest-oauth-start`, { method: 'GET' });
+      const authHeaders = await getAuthHeaders();
+      const res = await fetch(`${functionsBaseUrl()}/pinterest-oauth-start`, {
+        method: 'GET',
+        headers: authHeaders,
+      });
       const data = await res.json();
       if (data.ok && data.auth_url) {
         window.location.href = data.auth_url;
@@ -60,7 +70,11 @@ const PinterestConnectionCard: React.FC = () => {
   const handleTest = async () => {
     setTesting(true);
     try {
-      const res = await fetch(`${functionsBaseUrl()}/pinterest-oauth-start`, { method: 'GET' });
+      const authHeaders = await getAuthHeaders();
+      const res = await fetch(`${functionsBaseUrl()}/pinterest-oauth-start`, {
+        method: 'GET',
+        headers: authHeaders,
+      });
       const data = await res.json();
       if (data.ok) {
         addToast("Connection OK ✅", "success");
