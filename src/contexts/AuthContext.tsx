@@ -125,9 +125,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const loadingTimeout = setTimeout(() => {
       if (mounted) {
-        logger.warn('Auth loading timeout, forcing resolution');
+        logger.warn('Auth loading timeout, forcing loading=false');
         setLoading(false);
-        setAdminLoading(false);
+        // DO NOT set adminLoading=false here — let checkAdminRole resolve naturally.
+        // Setting adminLoading=false while isAdmin is still false causes false denials.
       }
     }, 8000);
 

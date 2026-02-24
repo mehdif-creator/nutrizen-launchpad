@@ -28,18 +28,12 @@ export const ProtectedRoute = ({
     shouldCheckOnboarding ? user?.id : undefined
   );
 
-  // Timeout fallback: never show spinner for more than 8 seconds
+  // Timeout fallback: never show spinner for more than 15 seconds on admin routes, 8s otherwise
+  const timeoutMs = requireAdmin ? 15000 : 8000;
   useEffect(() => {
-    const timer = setTimeout(() => setTimedOut(true), 8000);
+    const timer = setTimeout(() => setTimedOut(true), timeoutMs);
     return () => clearTimeout(timer);
-  }, []);
-
-  // Only reset timeout if auth is genuinely still loading
-  useEffect(() => {
-    if (loading || adminLoading) {
-      setTimedOut(false);
-    }
-  }, [location.pathname, loading, adminLoading]);
+  }, [timeoutMs]);
 
   // D) For admin routes: block render while adminLoading OR loading is true
   if (requireAdmin) {
