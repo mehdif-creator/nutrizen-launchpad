@@ -55,9 +55,9 @@ Deno.serve(async (req) => {
     const rl = await checkRateLimit(supabaseAdmin, {
       identifier: `admin:${user.id}`,
       endpoint:   'admin-manage-credits',
-      maxTokens:  20,
-      refillRate: 20,
-      cost:       30,
+      maxTokens:  30,
+      refillRate: 10,
+      cost:       1,
     });
     if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
     // ── End rate limiting ──────────────────────────────────────────────────────
