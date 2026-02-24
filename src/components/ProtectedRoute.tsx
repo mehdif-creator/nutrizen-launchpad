@@ -57,8 +57,13 @@ export const ProtectedRoute = ({
       return <Navigate to="/auth/login" replace />;
     }
 
-    // Timed out OR admin check complete and not admin → deny access
-    if (timedOut || (!adminLoading && !isAdmin)) {
+    // Admin confirmed → render children immediately
+    if (isAdmin) {
+      return <>{children}</>;
+    }
+
+    // Not admin: either timed out or admin check completed with !isAdmin → deny
+    if (timedOut || !adminLoading) {
       if (!denialToastShown.current) {
         denialToastShown.current = true;
         toast.error('Accès refusé — vous n\'avez pas les droits administrateur.');
@@ -66,8 +71,12 @@ export const ProtectedRoute = ({
       return <Navigate to="/app" replace />;
     }
 
-    // Admin confirmed → render children
-    return <>{children}</>;
+    // Fallback: still loading (shouldn't reach here, but safety net)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   // --- Non-admin routes below ---
@@ -96,7 +105,8 @@ export const ProtectedRoute = ({
   }
 
   // Redirect admin to admin dashboard if they try to access /app root
-  if (isAdmin && location.pathname === '/app') {
+  // Only redirect once admin check is fully resolved to avoid loops
+  if (isAdmin && !adminLoading && location.pathname === '/app') {
     return <Navigate to="/admin" replace />;
   }
 
