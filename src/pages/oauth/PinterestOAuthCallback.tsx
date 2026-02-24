@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { functionsBaseUrl } from '@/lib/supabaseUrls';
+import { supabase } from '@/integrations/supabase/client';
 
 const PinterestOAuthCallback: React.FC = () => {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -21,8 +22,14 @@ const PinterestOAuthCallback: React.FC = () => {
 
     const exchangeCode = async () => {
       try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const headers: Record<string, string> = {};
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
         const url = `${functionsBaseUrl()}/pinterest-oauth-callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`;
-        const res = await fetch(url, { method: 'GET' });
+        const res = await fetch(url, { method: 'GET', headers });
         const data = await res.json();
 
         if (data.ok) {
