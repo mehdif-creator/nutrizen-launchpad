@@ -1,6 +1,7 @@
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from '../_shared/deps.ts';
 import { getCorsHeaders } from '../_shared/security.ts';
+import { checkRateLimit, rateLimitExceededResponse } from '../_shared/rateLimit.ts';
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -9,11 +10,9 @@ const logStep = (step: string, details?: any) => {
 
 // Credit pack configurations — price IDs from env, never hardcoded
 const CREDIT_PACKS: Record<string, { credits: number; priceEnvKey: string; name: string }> = {
-  pack_s: { credits: 50, priceEnvKey: 'STRIPE_PRICE_CREDITS_50', name: 'Pack S' },
-  pack_m: { credits: 120, priceEnvKey: 'STRIPE_PRICE_CREDITS_120', name: 'Pack M' },
-  pack_l: { credits: 300, priceEnvKey: 'STRIPE_PRICE_CREDITS_300', name: 'Pack L' },
-  pack_xl: { credits: 700, priceEnvKey: 'STRIPE_PRICE_CREDITS_700', name: 'Pack XL' },
-  zen_15: { credits: 15, priceEnvKey: 'ZEN_CREDITS_PRICE_ID', name: 'Crédits Zen x15' },
+  topup_30:  { credits: 30,  priceEnvKey: 'STRIPE_PRICE_TOPUP_30',  name: 'Pack 30 crédits' },
+  topup_80:  { credits: 80,  priceEnvKey: 'STRIPE_PRICE_TOPUP_80',  name: 'Pack 80 crédits' },
+  topup_200: { credits: 200, priceEnvKey: 'STRIPE_PRICE_TOPUP_200', name: 'Pack 200 crédits' },
 };
 
 Deno.serve(async (req) => {
@@ -28,12 +27,10 @@ Deno.serve(async (req) => {
     logStep("Function started");
 
     // Parse request body
-    let packId = 'pack_m'; // Default to Pack M
+    let packId = 'topup_80'; // Default
     try {
       const body = await req.json();
-      if (body.pack_id) {
-        packId = body.pack_id;
-      }
+      if (body.pack_id) packId = body.pack_id;
     } catch {
       // No body or invalid JSON, use default
     }
@@ -51,9 +48,7 @@ Deno.serve(async (req) => {
     );
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("No authorization header provided");
-    }
+    if (!authHeader) throw new Error("No authorization header provided");
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
@@ -63,41 +58,36 @@ Deno.serve(async (req) => {
     }
 
     const user = userData.user;
-    logStep("User authenticated", { userId: user.id.substring(0, 8) + "***", email: (user.email || "").substring(0, 3) + "***" });
+    logStep("User authenticated", { userId: user.id.substring(0, 8) + "***" });
 
-    // ── Rate limiting ─────────────────────────────────────────────────────────
-    const supabaseAdmin2 = createClient(
+    // Rate limiting
+    const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { persistSession: false } }
     );
-    const rl = await checkRateLimit(supabaseAdmin2, {
+    const rl = await checkRateLimit(supabaseAdmin, {
       identifier: `user:${user.id}`,
       endpoint:   'create-credits-checkout',
-      maxTokens:  10,
+      maxTokens:  30,
       refillRate: 10,
-      cost:       60,
+      cost:       1,
     });
     if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
-    // ── End rate limiting ──────────────────────────────────────────────────────
 
     // Initialize Stripe
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) {
-      throw new Error("STRIPE_SECRET_KEY is not set");
-    }
+    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
     // Get price ID from environment
     const priceId = Deno.env.get(pack.priceEnvKey);
-    
     if (!priceId) {
-      logStep("WARNING: Price ID not configured", { envKey: pack.priceEnvKey });
-      throw new Error(`Price ID for ${pack.name} not configured. Please add ${pack.priceEnvKey} to Supabase secrets.`);
+      throw new Error(`Price ID for ${pack.name} not configured. Please add ${pack.priceEnvKey} to secrets.`);
     }
-    
-    logStep("Using price", { packId, priceId: priceId.substring(0, 15) + "***", credits: pack.credits });
+
+    logStep("Using price", { packId, credits: pack.credits });
 
     // Check if customer exists
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
@@ -105,34 +95,31 @@ Deno.serve(async (req) => {
     
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
-      logStep("Found existing Stripe customer", { customerId: (customerId || "").substring(0, 10) + "***" });
-      
-      // Persist stripe_customer_id on profile for future webhook lookups
-      const supabaseAdmin = createClient(
-        Deno.env.get("SUPABASE_URL") ?? "",
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-        { auth: { persistSession: false } }
-      );
+      // Persist on profile
       await supabaseAdmin
         .from('profiles')
         .update({ stripe_customer_id: customerId })
         .eq('id', user.id);
     }
 
-    // Generate idempotency key for checkout creation
+    // Check if user is Premium for coupon discount
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('plan_tier')
+      .eq('id', user.id)
+      .single();
+
+    const isPremium = profile?.plan_tier === 'premium';
+    const couponId = isPremium ? Deno.env.get('STRIPE_COUPON_PREMIUM_TOPUP') : undefined;
+
+    // Create checkout session
     const idempotencyKey = `checkout:${user.id}:${packId}:${Date.now()}`;
     
-    // Create checkout session with user_id in metadata and client_reference_id
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       client_reference_id: user.id,
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
+      line_items: [{ price: priceId, quantity: 1 }],
       mode: "payment",
       success_url: `${req.headers.get("origin")}/app/dashboard?credits_purchased=true&pack=${packId}`,
       cancel_url: `${req.headers.get("origin")}/credits`,
@@ -145,30 +132,30 @@ Deno.serve(async (req) => {
         pack_id: packId,
         pack_name: pack.name,
         product_role: "zen_credits_pack",
+        topup_credits: String(pack.credits),
       },
-    }, {
-      idempotencyKey,
-    });
+    };
+
+    // Apply Premium coupon if applicable
+    if (couponId) {
+      sessionParams.discounts = [{ coupon: couponId }];
+      logStep("Applied Premium coupon", { couponId });
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams, { idempotencyKey });
 
     logStep("Checkout session created", { sessionId: session.id.substring(0, 15) + "***" });
 
     return new Response(
       JSON.stringify({ url: session.url }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
-    
     return new Response(
       JSON.stringify({ error: errorMessage }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      }
+      { headers: { ...getCorsHeaders(req.headers.get('origin')), "Content-Type": "application/json" }, status: 500 }
     );
   }
 });

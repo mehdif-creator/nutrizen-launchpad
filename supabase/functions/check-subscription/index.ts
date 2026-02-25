@@ -19,17 +19,13 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
   };
 }
 
-// Redaction utilities
 const redactId = (id: string): string => id ? id.substring(0, 8) + '***' : 'null';
-const redactEmail = (email: string): string => email ? email.split('@')[0] + '@***' : 'null';
 
 const logStep = (step: string, details?: any) => {
-  // Redact sensitive fields before logging
   if (details) {
     if (details.userId) details.userId = redactId(details.userId);
-    if (details.email) details.email = redactEmail(details.email);
+    if (details.email) details.email = '***';
     if (details.customerId) details.customerId = redactId(details.customerId);
-    if (details.subscriptionId) details.subscriptionId = redactId(details.subscriptionId);
   }
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
@@ -64,36 +60,30 @@ Deno.serve(async (req) => {
     
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
-    logStep("User authenticated", { userId: user.id, email: user.email });
+    logStep("User authenticated", { userId: user.id });
 
-    // ── Rate limiting ─────────────────────────────────────────────────────────
+    // Rate limiting
     const rl = await checkRateLimit(supabaseClient, {
       identifier: `user:${user.id}`,
       endpoint:   'check-subscription',
-      maxTokens:  20,
-      refillRate: 20,
-      cost:       60,
+      maxTokens:  30,
+      refillRate: 10,
+      cost:       1,
     });
     if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
-    // ── End rate limiting ──────────────────────────────────────────────────────
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
 
-    // Build product-to-plan map from env vars (no hardcoded product IDs)
-    function buildProductMap(): Record<string, string> {
-      const map: Record<string, string> = {};
-      const essentiel = Deno.env.get('STRIPE_PRODUCT_ESSENTIEL');
-      const equilibre  = Deno.env.get('STRIPE_PRODUCT_EQUILIBRE');
-      const premium    = Deno.env.get('STRIPE_PRODUCT_PREMIUM');
-      if (essentiel) map[essentiel] = 'essentiel';
-      if (equilibre)  map[equilibre]  = 'equilibre';
-      if (premium)    map[premium]    = 'premium';
-      return map;
-    }
-
     if (customers.data.length === 0) {
-      logStep("No Stripe customer found — checking DB trial status");
+      logStep("No Stripe customer found — checking DB");
+
+      // Check profile for plan_tier
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('plan_tier, welcome_credits_granted')
+        .eq('id', user.id)
+        .maybeSingle();
 
       const { data: dbSub } = await supabaseClient
         .from('subscriptions')
@@ -101,16 +91,13 @@ Deno.serve(async (req) => {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      const now = new Date();
-      const trialEnd = dbSub?.trial_end ? new Date(dbSub.trial_end) : null;
-      const isTrialActive = dbSub?.status === 'trialing' && trialEnd != null && trialEnd > now;
-
       return new Response(JSON.stringify({
-        subscribed:       false,
-        status:           isTrialActive ? 'trialing' : (dbSub?.status ?? 'inactive'),
-        trial_end:        dbSub?.trial_end ?? null,
+        subscribed: false,
+        status: dbSub?.status ?? 'inactive',
+        trial_end: dbSub?.trial_end ?? null,
         subscription_end: null,
-        plan:             null,
+        plan: profile?.plan_tier || 'free',
+        plan_tier: profile?.plan_tier || 'free',
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -120,60 +107,82 @@ Deno.serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
+    // Check active subscriptions
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
       status: "active",
       limit: 1,
     });
 
-    const hasActiveSub = subscriptions.data.length > 0;
-    let productId = null;
-    let plan = null;
-    let subscriptionEnd = null;
-
-    if (hasActiveSub) {
-      const subscription = subscriptions.data[0];
-      subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-      productId = subscription.items.data[0].price.product as string;
-
-      const productIdToPlan = buildProductMap();
-      plan = productIdToPlan[productId] || 'unknown';
-      logStep("Active subscription found", { 
-        subscriptionId: subscription.id, 
-        endDate: subscriptionEnd,
-        plan 
+    // Also check trialing
+    let sub = subscriptions.data[0];
+    if (!sub) {
+      const trialingSubs = await stripe.subscriptions.list({
+        customer: customerId,
+        status: "trialing",
+        limit: 1,
       });
-
-      // Update subscription in database
-      await supabaseClient
-        .from('subscriptions')
-        .upsert({
-          user_id: user.id,
-          status: 'active',
-          plan: plan,
-          stripe_customer_id: customerId,
-          stripe_subscription_id: subscription.id,
-          current_period_end: subscriptionEnd,
-        }, {
-          onConflict: 'user_id'
-        });
-    } else {
-      logStep("No active subscription found");
+      sub = trialingSubs.data[0];
     }
 
+    if (!sub) {
+      logStep("No active/trialing subscription");
+      return new Response(JSON.stringify({
+        subscribed: false,
+        status: 'inactive',
+        plan: 'free',
+        plan_tier: 'free',
+        subscription_end: null,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    const subscriptionEnd = new Date(sub.current_period_end * 1000).toISOString();
+    const priceId = sub.items.data[0]?.price.id;
+
+    // Get plan tier from price metadata
+    let planTier = 'unknown';
+    try {
+      const price = await stripe.prices.retrieve(priceId);
+      planTier = price.metadata?.plan_tier || 'unknown';
+    } catch {
+      // Fallback: check env vars
+      const starterPrice = Deno.env.get('STRIPE_PRICE_STARTER_MONTHLY');
+      const premiumPrice = Deno.env.get('STRIPE_PRICE_PREMIUM_MONTHLY');
+      if (priceId === starterPrice) planTier = 'starter';
+      else if (priceId === premiumPrice) planTier = 'premium';
+    }
+
+    // Update profile + subscription
+    await supabaseClient.from('profiles').update({ plan_tier: planTier }).eq('id', user.id);
+    await supabaseClient.from('subscriptions').upsert({
+      user_id: user.id,
+      status: sub.status,
+      plan: planTier,
+      stripe_customer_id: customerId,
+      stripe_subscription_id: sub.id,
+      current_period_end: subscriptionEnd,
+    }, { onConflict: 'user_id' });
+
+    logStep("Subscription found", { status: sub.status, planTier });
+
     return new Response(JSON.stringify({
-      subscribed: hasActiveSub,
-      product_id: productId,
-      plan: plan,
+      subscribed: true,
+      status: sub.status,
+      plan: planTier,
+      plan_tier: planTier,
       subscription_end: subscriptionEnd,
-      status: hasActiveSub ? 'active' : 'trialing'
+      trial_end: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
+      current_period_end: subscriptionEnd,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR in check-subscription", { message: errorMessage });
+    logStep("ERROR", { message: errorMessage });
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

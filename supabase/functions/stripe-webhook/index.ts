@@ -11,25 +11,37 @@ const redactEmail = (email: string): string => {
   return `${user.slice(0, 2)}***@${domain}`;
 };
 
-const redactId = (id: string): string => {
-  return id ? `${id.slice(0, 8)}***` : '[NONE]';
-};
+const redactId = (id: string): string => id ? `${id.slice(0, 8)}***` : '[NONE]';
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
 
-// ── Price-to-plan mapping from env (no hardcoded price IDs) ──
-function buildPriceMap(): Record<string, string> {
-  const map: Record<string, string> = {};
-  const essentiel = Deno.env.get("STRIPE_PRICE_ESSENTIEL");
-  const equilibre = Deno.env.get("STRIPE_PRICE_EQUILIBRE");
-  const premium = Deno.env.get("STRIPE_PRICE_PREMIUM");
-  if (essentiel) map[essentiel] = "essentiel";
-  if (equilibre) map[equilibre] = "equilibre";
-  if (premium) map[premium] = "premium";
-  return map;
+// ── Plan metadata lookup from Stripe price metadata ──
+interface PlanMeta {
+  tier: string;
+  credits_monthly: number;
+  rollover_cap: number;
+  priority_generation: boolean;
+  topup_discount_pct: number;
+}
+
+async function getPlanMetaFromPrice(stripe: Stripe, priceId: string): Promise<PlanMeta | null> {
+  try {
+    const price = await stripe.prices.retrieve(priceId, { expand: ['product'] });
+    const meta = price.metadata || {};
+    if (!meta.plan_tier) return null;
+    return {
+      tier: meta.plan_tier,
+      credits_monthly: parseInt(meta.credits_monthly || '0'),
+      rollover_cap: parseInt(meta.rollover_cap || '0'),
+      priority_generation: meta.priority_generation === 'true',
+      topup_discount_pct: parseInt(meta.topup_discount_pct || '0'),
+    };
+  } catch {
+    return null;
+  }
 }
 
 // ── Resolve user WITHOUT listUsers ──
@@ -42,14 +54,12 @@ async function resolveUserId(
     customerEmail?: string | null;
   }
 ): Promise<string | null> {
-  // 1) metadata.user_id or client_reference_id (fastest)
   const directId = opts.metadataUserId || opts.clientReferenceId;
   if (directId) {
     logStep("Resolved user via metadata/client_reference_id", { userId: redactId(directId) });
     return directId;
   }
 
-  // 2) Lookup by stripe_customer_id in subscriptions table
   if (opts.stripeCustomerId) {
     const { data: sub } = await supabaseAdmin
       .from('subscriptions')
@@ -57,24 +67,17 @@ async function resolveUserId(
       .eq('stripe_customer_id', opts.stripeCustomerId)
       .limit(1)
       .maybeSingle();
-    if (sub?.user_id) {
-      logStep("Resolved user via subscriptions.stripe_customer_id", { userId: redactId(sub.user_id) });
-      return sub.user_id;
-    }
-    // Also check profiles
+    if (sub?.user_id) return sub.user_id;
+
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('id')
       .eq('stripe_customer_id', opts.stripeCustomerId)
       .limit(1)
       .maybeSingle();
-    if (profile?.id) {
-      logStep("Resolved user via profiles.stripe_customer_id", { userId: redactId(profile.id) });
-      return profile.id;
-    }
+    if (profile?.id) return profile.id;
   }
 
-  // 3) Fallback: lookup by email in profiles
   if (opts.customerEmail) {
     const { data: profile } = await supabaseAdmin
       .from('profiles')
@@ -82,16 +85,10 @@ async function resolveUserId(
       .eq('email', opts.customerEmail)
       .limit(1)
       .maybeSingle();
-    if (profile?.id) {
-      logStep("Resolved user via profiles.email", { userId: redactId(profile.id) });
-      return profile.id;
-    }
+    if (profile?.id) return profile.id;
   }
 
-  logStep("WARN: Could not resolve user", {
-    hasCustomerId: !!opts.stripeCustomerId,
-    hasEmail: !!opts.customerEmail,
-  });
+  logStep("WARN: Could not resolve user");
   return null;
 }
 
@@ -108,437 +105,430 @@ Deno.serve(async (req) => {
 
   // Helper to log payment events
   const logPaymentEvent = async (
-    eventType: string,
-    stripeEventId: string | null,
-    userId: string | null,
-    userEmail: string | null,
-    amountCents: number | null,
-    creditsAmount: number | null,
-    status: string,
-    errorMessage: string | null = null,
-    metadata: any = {}
+    eventType: string, stripeEventId: string | null, userId: string | null,
+    userEmail: string | null, amountCents: number | null, creditsAmount: number | null,
+    status: string, errorMessage: string | null = null, metadata: any = {}
   ) => {
     try {
       await supabaseAdmin.from('payment_events_log').insert({
-        event_type: eventType,
-        stripe_event_id: stripeEventId,
-        user_id: userId,
-        user_email: userEmail,
-        amount_cents: amountCents,
-        credits_amount: creditsAmount,
-        status,
-        error_message: errorMessage,
-        metadata,
+        event_type: eventType, stripe_event_id: stripeEventId, user_id: userId,
+        user_email: userEmail, amount_cents: amountCents, credits_amount: creditsAmount,
+        status, error_message: errorMessage, metadata,
       });
     } catch (err) {
-      console.error('[PAYMENT-LOG] Error logging event:', err);
+      console.error('[PAYMENT-LOG] Error:', err);
     }
   };
 
   try {
-    logStep("Webhook received", { method: req.method, hasSignature: !!req.headers.get("stripe-signature") });
+    logStep("Webhook received");
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
     });
 
     const signature = req.headers.get("stripe-signature");
-    if (!signature) {
-      logStep("ERROR: No stripe signature found in headers");
-      throw new Error("No stripe signature found");
-    }
+    if (!signature) throw new Error("No stripe signature");
 
     const body = await req.text();
     const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
-    
-    if (!webhookSecret) {
-      logStep("ERROR: STRIPE_WEBHOOK_SECRET not configured in env");
-      throw new Error("STRIPE_WEBHOOK_SECRET not configured");
-    }
-    
-    logStep("Constructing Stripe event from webhook");
+    if (!webhookSecret) throw new Error("STRIPE_WEBHOOK_SECRET not configured");
+
     let event: Stripe.Event;
     try {
       event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
-      logStep("Stripe event constructed successfully", { eventId: event.id });
     } catch (err) {
-      logStep("ERROR: Failed to construct Stripe event", { error: String(err) });
+      logStep("ERROR: Failed to construct event", { error: String(err) });
       throw err;
     }
 
     logStep("Event type", { type: event.type, eventId: event.id });
 
-    // IDEMPOTENCY CHECK: Atomic insert with conflict detection
-    // Uses unique constraint on event_id to prevent race conditions
+    // IDEMPOTENCY CHECK
     const { error: idempotencyError } = await supabaseAdmin
       .from('stripe_events')
-      .insert({
-        event_id: event.id,
-        event_type: event.type,
-      });
+      .insert({ event_id: event.id, event_type: event.type });
 
     if (idempotencyError) {
-      // Unique violation = already processed (23505 is PG unique_violation)
       if (idempotencyError.code === '23505') {
-        logStep("Event already processed (conflict), skipping", { eventId: event.id });
+        logStep("Event already processed, skipping", { eventId: event.id });
         return new Response(JSON.stringify({ received: true, skipped: true }), {
           headers: { ...corsHeaders, ...getSecurityHeaders(), "Content-Type": "application/json" },
           status: 200,
         });
       }
-      // Other DB error — log but continue processing (fail open for webhooks)
-      logStep("WARN: Idempotency check DB error, proceeding", { error: idempotencyError.message });
+      logStep("WARN: Idempotency check error, proceeding", { error: idempotencyError.message });
     }
 
     // =========================================
-    // Handle checkout.session.completed
+    // checkout.session.completed
     // =========================================
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
       const customerEmail = session.customer_email || session.customer_details?.email;
       const customerId = session.customer as string;
       const subscriptionId = session.subscription as string;
-      
-      // Check if this is a credit pack purchase
-      const isCreditPurchase = session.metadata?.product_role === 'zen_credits_pack' || 
-                               session.metadata?.credits_type === 'lifetime' ||
-                               session.metadata?.pack_id;
-      const creditsAmount = session.metadata?.credits_amount ? parseInt(session.metadata.credits_amount) : null;
-      const supabaseUserId = session.metadata?.supabase_user_id || session.metadata?.user_id || session.client_reference_id;
-      const packId = session.metadata?.pack_id;
-      
-      if (isCreditPurchase && creditsAmount && supabaseUserId) {
-        // =========================================
-        // CREDITS PURCHASE - Atomic & Idempotent
-        // =========================================
-        logStep("Processing credit pack purchase", {
-          userId: redactId(supabaseUserId),
-          credits: creditsAmount,
-          packId,
-          sessionId: session.id.substring(0, 8) + "***"
-        });
-        
-        // Persist stripe_customer_id on profile for future lookups
-        if (customerId) {
-          await supabaseAdmin
-            .from('profiles')
-            .update({ stripe_customer_id: customerId })
-            .eq('id', supabaseUserId);
-        }
-        
-        // Build stable idempotency key
-        const idempotencyKey = `stripe:checkout_session:${session.id}`;
-        
-        try {
-          // Use atomic RPC function
+
+      // ── TOP-UP PURCHASE (mode=payment) ──
+      if (session.mode === 'payment' && session.payment_status === 'paid') {
+        const topupCredits = session.metadata?.topup_credits
+          ? parseInt(session.metadata.topup_credits)
+          : (session.metadata?.credits_amount ? parseInt(session.metadata.credits_amount) : null);
+        const supabaseUserId = session.metadata?.supabase_user_id || session.metadata?.user_id || session.client_reference_id;
+
+        if (topupCredits && supabaseUserId) {
+          logStep("Processing top-up purchase", { userId: redactId(supabaseUserId), credits: topupCredits });
+
+          if (customerId) {
+            await supabaseAdmin.from('profiles').update({ stripe_customer_id: customerId }).eq('id', supabaseUserId);
+          }
+
+          const idempotencyKey = `stripe:checkout_session:${session.id}`;
           const { data: creditsResult, error: creditsError } = await supabaseAdmin.rpc('rpc_apply_credit_transaction', {
             p_user_id: supabaseUserId,
             p_type: 'purchase',
-            p_amount: creditsAmount,
-            p_reason: `Achat pack ${packId || 'credits'} - ${creditsAmount} crédits`,
+            p_amount: topupCredits,
+            p_reason: `Achat pack ${session.metadata?.pack_id || 'credits'} - ${topupCredits} crédits`,
             p_reference_type: 'stripe_checkout_session',
             p_reference_id: session.id,
             p_idempotency_key: idempotencyKey,
             p_feature: null,
           });
-          
+
           if (creditsError) {
-            logStep("ERROR adding credits via RPC", { error: creditsError.message });
-            await logPaymentEvent(
-              'credits_purchase_failed',
-              event.id,
-              supabaseUserId,
-              customerEmail,
-              session.amount_total,
-              creditsAmount,
-              'error',
-              creditsError.message,
-              { session_id: session.id, pack_id: packId }
-            );
+            logStep("ERROR adding credits", { error: creditsError.message });
+            await logPaymentEvent('credits_purchase_failed', event.id, supabaseUserId, customerEmail, session.amount_total, topupCredits, 'error', creditsError.message);
             throw creditsError;
           }
-          
-          // Check if this was an idempotent hit (already processed)
+
           if (creditsResult?.idempotent_hit) {
-            logStep("Idempotent hit - transaction already processed", { 
-              transactionId: creditsResult.transaction_id 
-            });
-            return new Response(JSON.stringify({ received: true, idempotent: true }), {
-              headers: { ...corsHeaders, ...getSecurityHeaders(), "Content-Type": "application/json" },
-              status: 200,
-            });
+            logStep("Idempotent hit - already processed");
+            return okResponse(corsHeaders);
           }
-          
-          logStep("Credits added successfully", { 
-            subscriptionBalance: creditsResult.subscription_balance,
-            lifetimeBalance: creditsResult.lifetime_balance,
-            totalBalance: creditsResult.total_balance
+
+          logStep("Credits added successfully", { balance: creditsResult.total_balance });
+          await logPaymentEvent('credits_purchase_success', event.id, supabaseUserId, customerEmail, session.amount_total, topupCredits, 'success');
+
+          return okResponse(corsHeaders);
+        }
+      }
+
+      // ── SUBSCRIPTION CHECKOUT ──
+      if (session.mode === 'subscription' && subscriptionId) {
+        if (!customerEmail) throw new Error("No customer email found");
+
+        let userId = await resolveUserId(supabaseAdmin, {
+          metadataUserId: session.metadata?.user_id,
+          clientReferenceId: session.client_reference_id,
+          stripeCustomerId: customerId,
+          customerEmail,
+        });
+
+        if (!userId) {
+          logStep("Creating new user");
+          const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+            email: customerEmail,
+            password: crypto.randomUUID(),
+            email_confirm: true,
+            user_metadata: { stripe_customer_id: customerId, created_via_stripe: true },
           });
-          
-          // Log successful payment event
-          await logPaymentEvent(
-            'credits_purchase_success',
-            event.id,
-            supabaseUserId,
-            customerEmail,
-            session.amount_total,
-            creditsAmount,
-            'success',
-            null,
-            { 
-              session_id: session.id, 
-              pack_id: packId,
-              new_balance: creditsResult.total_balance 
-            }
-          );
-          
-          // =========================================
-          // REFERRAL QUALIFICATION - First credits purchase
-          // =========================================
+          if (authError || !authData.user) throw authError || new Error("User creation failed");
+          userId = authData.user.id;
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        if (customerId && userId) {
+          await supabaseAdmin.from('profiles').update({ stripe_customer_id: customerId }).eq('id', userId);
+        }
+
+        // Update subscription record + plan_tier on profile
+        const sub = await stripe.subscriptions.retrieve(subscriptionId);
+        const priceId = sub.items.data[0]?.price.id;
+        const planMeta = await getPlanMetaFromPrice(stripe, priceId);
+
+        await updateSubscriptionRecord(supabaseAdmin, userId, customerId, subscriptionId, sub);
+
+        if (planMeta) {
+          await supabaseAdmin.from('profiles').update({ plan_tier: planMeta.tier }).eq('id', userId);
+          await supabaseAdmin.from('user_wallets')
+            .upsert({
+              user_id: userId,
+              rollover_cap: planMeta.rollover_cap,
+              current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
+              current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+            }, { onConflict: 'user_id' });
+        }
+
+        // Grant welcome credits (once)
+        await supabaseAdmin.rpc('grant_welcome_credits', { p_user_id: userId });
+
+        // Handle checkout_token
+        const checkoutToken = session.metadata?.checkout_token;
+        if (checkoutToken) {
+          await supabaseAdmin.from('checkout_tokens')
+            .update({ status: 'ready', user_id: userId, stripe_session_id: session.id })
+            .eq('token', checkoutToken)
+            .eq('status', 'pending');
+        }
+
+        // Handle referral
+        const referralCode = session.metadata?.referral_code;
+        if (referralCode && userId) {
           try {
-            const { data: qualResult, error: qualError } = await supabaseAdmin.rpc('handle_referral_qualification', {
-              p_referred_user_id: supabaseUserId,
-              p_reference_type: 'stripe_checkout_session',
-              p_reference_id: session.id,
+            await supabaseAdmin.rpc('handle_referred_user_subscribed', {
+              p_referred_user_id: userId,
+              p_referral_code: referralCode,
             });
-            
-            if (qualError) {
-              logStep("Referral qualification check failed (non-blocking)", { error: qualError.message });
-            } else if (qualResult?.success) {
-              logStep("Referral qualification processed", { 
-                rewardCredits: qualResult.reward_credits,
-                alreadyQualified: qualResult.already_qualified 
-              });
-            }
-          } catch (refErr) {
-            logStep("Referral qualification error (non-blocking)", { error: String(refErr) });
+          } catch (e) {
+            logStep("Referral error (non-blocking)", { error: String(e) });
           }
-          
-          return new Response(JSON.stringify({ received: true, credits_added: true }), {
-            headers: { ...corsHeaders, ...getSecurityHeaders(), "Content-Type": "application/json" },
-            status: 200,
-          });
-        } catch (error) {
-          logStep("CRITICAL ERROR processing credit purchase", { error: String(error) });
-          throw error;
         }
-      }
-      
-      // =========================================
-      // SUBSCRIPTION HANDLING - NO listUsers
-      // =========================================
-      const referralCode = session.metadata?.referral_code;
-      const fromCheckout = session.metadata?.from_checkout === 'true';
-
-      if (!customerEmail) {
-        throw new Error("No customer email found");
-      }
-
-      logStep("Processing subscription checkout for customer", { 
-        email: redactEmail(customerEmail), 
-        customerId: redactId(customerId),
-        subscriptionId: redactId(subscriptionId),
-        referralCode: referralCode ? '[REDACTED]' : null,
-        fromCheckout 
-      });
-
-      // Resolve user via metadata or DB lookup — NO listUsers
-      let userId = await resolveUserId(supabaseAdmin, {
-        metadataUserId: session.metadata?.user_id,
-        clientReferenceId: session.client_reference_id,
-        stripeCustomerId: customerId,
-        customerEmail,
-      });
-
-      if (!userId) {
-        // Create new user as last resort
-        logStep("Creating new user in Supabase Auth", { email: redactEmail(customerEmail) });
-        const randomPassword = crypto.randomUUID();
-        
-        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-          email: customerEmail,
-          password: randomPassword,
-          email_confirm: true,
-          user_metadata: {
-            stripe_customer_id: customerId,
-            created_via_stripe: true,
-          },
-        });
-
-        if (authError) {
-          logStep("ERROR creating user", { error: authError.message });
-          throw authError;
-        }
-        
-        if (!authData.user) {
-          throw new Error("User creation failed - no user data returned");
-        }
-        
-        userId = authData.user.id;
-        logStep("User created successfully", { userId: redactId(userId) });
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-      
-      // Persist stripe_customer_id on profiles for future lookups
-      if (customerId && userId) {
-        await supabaseAdmin
-          .from('profiles')
-          .update({ stripe_customer_id: customerId })
-          .eq('id', userId);
-      }
-
-      logStep("Updating subscription record");
-      await updateSubscriptionRecord(supabaseAdmin, userId, customerId, subscriptionId, session, stripe);
-      
-      // ── Mark checkout_token as "ready" (tamper-resistant flow) ──────────
-      const checkoutToken = session.metadata?.checkout_token;
-      if (checkoutToken) {
-        logStep("Marking checkout_token as ready", { 
-          tokenPrefix: checkoutToken.substring(0, 8) + "***"
-        });
-        
-        const { error: ctError } = await supabaseAdmin
-          .from('checkout_tokens')
-          .update({ 
-            status: 'ready',
-            user_id: userId,
-            stripe_session_id: session.id,
-          })
-          .eq('token', checkoutToken)
-          .eq('status', 'pending'); // CAS: only update if still pending
-        
-        if (ctError) {
-          logStep("ERROR marking checkout_token ready", { error: ctError.message });
-        } else {
-          logStep("checkout_token marked as ready");
-        }
-      } else {
-        // Legacy fallback: create login_tokens entry for old-style sessions
-        if (userId && session.id) {
-          const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-          logStep("Creating legacy login token (no checkout_token in metadata)");
-          
-          await supabaseAdmin
-            .from('login_tokens')
-            .insert({
-              email: customerEmail,
-              token: crypto.randomUUID(),
-              session_id: session.id,
-              expires_at: expiresAt.toISOString(),
-            });
-        }
-      }
-        
-      // Handle referral
-      const affCode = session.metadata?.affiliate_code;
-      
-      if (referralCode && userId) {
-        logStep("Processing referral subscription reward");
-          
-        try {
-          // Call RPC directly — the broken handle-referral function has been removed.
-          // handle_referred_user_subscribed covers the full referral reward logic.
-          const { error: rewardError } = await supabaseAdmin.rpc('handle_referred_user_subscribed', {
-            p_referred_user_id: userId,
-            p_referral_code: referralCode,
-          });
-          
-          if (rewardError) {
-            logStep("Referral subscription reward failed", { error: rewardError.message });
-          } else {
-            logStep("Referral subscription reward processed successfully");
-          }
-        } catch (referralError) {
-          logStep("Referral processing error", { error: String(referralError) });
-        }
-      }
-      
-      // Handle affiliate tracking
-      if (affCode && userId && subscriptionId) {
-        logStep("Processing affiliate conversion", { affiliateCode: redactId(affCode) });
-        try {
-          const { data: affiliateProfile } = await supabaseAdmin
-            .from('profiles')
-            .select('id')
-            .eq('affiliate_code', affCode)
-            .eq('is_affiliate', true)
-            .single();
-          
-          if (affiliateProfile) {
-            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-            const amountRecurring = subscription.items.data[0].price.unit_amount || 0;
-            
-            await supabaseAdmin
-              .from('affiliate_conversions')
-              .insert({
-                affiliate_user_id: affiliateProfile.id,
-                referred_user_id: userId,
-                stripe_subscription_id: subscriptionId,
-                commission_rate: parseFloat(Deno.env.get('AFFILIATE_COMMISSION_RATE') ?? '0.04'),
-                amount_recurring: amountRecurring / 100,
-                status: 'active',
-              });
-            
-            logStep("Affiliate conversion tracked successfully");
-          }
-        } catch (affError) {
-          logStep("Affiliate tracking error", { error: String(affError) });
-        }
-      }
-    }
-
-    // Handle charge.refunded - Reverse credits if needed
-    if (event.type === "charge.refunded") {
-      const charge = event.data.object as Stripe.Charge;
-      const refunds = charge.refunds?.data || [];
-      
-      for (const refund of refunds) {
-        logStep("Processing refund", { 
-          refundId: refund.id, 
-          amount: refund.amount,
-          chargeId: charge.id 
-        });
-        
-        await logPaymentEvent(
-          'refund_received',
-          event.id,
-          null,
-          charge.billing_details?.email,
-          refund.amount,
-          null,
-          'pending_review',
-          null,
-          { 
-            refund_id: refund.id, 
-            charge_id: charge.id,
-            reason: refund.reason 
-          }
-        );
       }
     }
 
     // =========================================
-    // Handle subscription updates - NO listUsers
+    // invoice.paid — CRITICAL: billing_reason-based logic
+    // =========================================
+    if (event.type === "invoice.paid") {
+      const invoice = event.data.object as Stripe.Invoice;
+      const customerId = invoice.customer as string;
+      const billingReason = invoice.billing_reason;
+      const subscriptionId = invoice.subscription as string;
+
+      logStep("invoice.paid", { billingReason, subscriptionId: redactId(subscriptionId || '') });
+
+      const userId = await resolveUserId(supabaseAdmin, { stripeCustomerId: customerId });
+      if (!userId) {
+        logStep("WARN: Cannot resolve user for invoice.paid");
+        return okResponse(corsHeaders);
+      }
+
+      if (billingReason === 'subscription_create' || billingReason === 'subscription_cycle') {
+        // ── MONTHLY REFILL ──
+        if (!subscriptionId) {
+          logStep("No subscriptionId on invoice, skipping refill");
+          return okResponse(corsHeaders);
+        }
+
+        const sub = await stripe.subscriptions.retrieve(subscriptionId);
+        const priceId = sub.items.data[0]?.price.id;
+        const planMeta = await getPlanMetaFromPrice(stripe, priceId);
+
+        if (!planMeta) {
+          logStep("WARN: No plan metadata on price, skipping refill");
+          return okResponse(corsHeaders);
+        }
+
+        const periodStart = new Date(sub.current_period_start * 1000).toISOString();
+        const periodEnd = new Date(sub.current_period_end * 1000).toISOString();
+
+        // Get current balance for rollover calc
+        const { data: wallet } = await supabaseAdmin
+          .from('user_wallets')
+          .select('subscription_credits, lifetime_credits')
+          .eq('user_id', userId)
+          .single();
+
+        const currentBalance = (wallet?.subscription_credits || 0) + (wallet?.lifetime_credits || 0);
+        const carry = Math.min(currentBalance, planMeta.rollover_cap);
+        const newBalance = carry + planMeta.credits_monthly;
+
+        // Idempotent insert
+        const { error: txError } = await supabaseAdmin.from('credit_transactions').insert({
+          user_id: userId,
+          delta: planMeta.credits_monthly,
+          reason: 'subscription_refill',
+          credit_type: 'subscription',
+          stripe_event_id: event.id,
+          stripe_invoice_id: invoice.id,
+          period_start: periodStart,
+          period_end: periodEnd,
+          metadata: { carry, plan_tier: planMeta.tier, credits_monthly: planMeta.credits_monthly },
+        });
+
+        if (txError) {
+          if (txError.code === '23505') {
+            logStep("Refill already processed (idempotent)");
+            return okResponse(corsHeaders);
+          }
+          throw txError;
+        }
+
+        // Update wallet
+        await supabaseAdmin.from('user_wallets').upsert({
+          user_id: userId,
+          subscription_credits: newBalance,
+          lifetime_credits: wallet?.lifetime_credits || 0,
+          credits_total: newBalance + (wallet?.lifetime_credits || 0),
+          balance: newBalance + (wallet?.lifetime_credits || 0),
+          balance_allowance: newBalance,
+          balance_purchased: wallet?.lifetime_credits || 0,
+          rollover_cap: planMeta.rollover_cap,
+          current_period_start: periodStart,
+          current_period_end: periodEnd,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id' });
+
+        // Update profile plan_tier
+        await supabaseAdmin.from('profiles').update({
+          plan_tier: planMeta.tier,
+        }).eq('id', userId);
+
+        // Update subscription record
+        await updateSubscriptionRecord(supabaseAdmin, userId, customerId, subscriptionId, sub);
+
+        logStep("Monthly refill completed", { carry, newBalance, tier: planMeta.tier });
+
+      } else if (billingReason === 'subscription_update') {
+        // ── PRORATION INVOICE (upgrade) ──
+        if (!subscriptionId || !invoice.amount_paid || invoice.amount_paid <= 0) {
+          logStep("Proration invoice with 0 amount or no sub, skipping");
+          return okResponse(corsHeaders);
+        }
+
+        // Check if any line has proration=true for premium tier
+        const lines = invoice.lines?.data || [];
+        const hasProrationForPremium = lines.some(line => {
+          if (!line.proration) return false;
+          // The line price should be premium
+          return true; // We'll verify via subscription lookup
+        });
+
+        if (!hasProrationForPremium) {
+          logStep("No proration line found, skipping delta credit");
+          return okResponse(corsHeaders);
+        }
+
+        const sub = await stripe.subscriptions.retrieve(subscriptionId);
+        const priceId = sub.items.data[0]?.price.id;
+        const planMeta = await getPlanMetaFromPrice(stripe, priceId);
+
+        if (!planMeta || planMeta.tier !== 'premium') {
+          logStep("Proration not for premium upgrade, skipping");
+          return okResponse(corsHeaders);
+        }
+
+        // Calculate prorated delta
+        const periodStart = sub.current_period_start;
+        const periodEnd = sub.current_period_end;
+        const now = Math.floor(Date.now() / 1000);
+        const remainingRatio = (periodEnd - now) / (periodEnd - periodStart);
+        const STARTER_CREDITS = 80;
+        const PREMIUM_CREDITS = 200;
+        const delta = Math.min(
+          Math.ceil((PREMIUM_CREDITS - STARTER_CREDITS) * remainingRatio),
+          PREMIUM_CREDITS - STARTER_CREDITS
+        );
+
+        if (delta <= 0) {
+          logStep("Prorated delta is 0, skipping");
+          return okResponse(corsHeaders);
+        }
+
+        // Idempotent insert
+        const { error: txError } = await supabaseAdmin.from('credit_transactions').insert({
+          user_id: userId,
+          delta,
+          reason: 'plan_upgrade_prorated',
+          credit_type: 'subscription',
+          stripe_event_id: event.id,
+          stripe_invoice_id: invoice.id,
+          metadata: { from_tier: 'starter', to_tier: 'premium', remaining_ratio: remainingRatio, delta },
+        });
+
+        if (txError) {
+          if (txError.code === '23505') {
+            logStep("Upgrade delta already processed");
+            return okResponse(corsHeaders);
+          }
+          throw txError;
+        }
+
+        // Update wallet
+        const { data: wallet } = await supabaseAdmin
+          .from('user_wallets')
+          .select('subscription_credits, lifetime_credits')
+          .eq('user_id', userId)
+          .single();
+
+        const newSub = (wallet?.subscription_credits || 0) + delta;
+        await supabaseAdmin.from('user_wallets').update({
+          subscription_credits: newSub,
+          credits_total: newSub + (wallet?.lifetime_credits || 0),
+          balance: newSub + (wallet?.lifetime_credits || 0),
+          balance_allowance: newSub,
+          rollover_cap: planMeta.rollover_cap,
+          updated_at: new Date().toISOString(),
+        }).eq('user_id', userId);
+
+        // Update profile tier
+        await supabaseAdmin.from('profiles').update({ plan_tier: 'premium' }).eq('id', userId);
+
+        // Update subscription record
+        await updateSubscriptionRecord(supabaseAdmin, userId, customerId, subscriptionId, sub);
+
+        logStep("Upgrade prorated delta granted", { delta, tier: 'premium' });
+      }
+    }
+
+    // =========================================
+    // invoice.payment_failed
+    // =========================================
+    if (event.type === "invoice.payment_failed") {
+      const invoice = event.data.object as Stripe.Invoice;
+      const customerId = invoice.customer as string;
+      const subscriptionId = invoice.subscription as string;
+
+      const userId = await resolveUserId(supabaseAdmin, { stripeCustomerId: customerId });
+      if (userId && subscriptionId) {
+        await supabaseAdmin.from('subscriptions').update({
+          status: 'past_due',
+          updated_at: new Date().toISOString(),
+        }).eq('user_id', userId);
+
+        logStep("Payment failed, subscription marked past_due", { userId: redactId(userId) });
+      }
+    }
+
+    // =========================================
+    // customer.subscription.updated / deleted
     // =========================================
     if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
       const subscription = event.data.object as Stripe.Subscription;
       const customerId = subscription.customer as string;
 
-      const userId = await resolveUserId(supabaseAdmin, {
-        stripeCustomerId: customerId,
-      });
-
+      const userId = await resolveUserId(supabaseAdmin, { stripeCustomerId: customerId });
       if (userId) {
-        await updateSubscriptionRecord(supabaseAdmin, userId, customerId, subscription.id, null, stripe);
-      } else {
-        logStep("WARN: Could not resolve user for subscription event", { customerId: redactId(customerId) });
+        await updateSubscriptionRecord(supabaseAdmin, userId, customerId, subscription.id, subscription);
+
+        // If deleted, reset plan_tier to free
+        if (event.type === "customer.subscription.deleted") {
+          await supabaseAdmin.from('profiles').update({ plan_tier: 'free' }).eq('id', userId);
+        } else {
+          // Update plan_tier based on current price
+          const priceId = subscription.items.data[0]?.price.id;
+          if (priceId) {
+            const planMeta = await getPlanMetaFromPrice(stripe, priceId);
+            if (planMeta) {
+              await supabaseAdmin.from('profiles').update({ plan_tier: planMeta.tier }).eq('id', userId);
+              await supabaseAdmin.from('user_wallets').update({
+                rollover_cap: planMeta.rollover_cap,
+              }).eq('user_id', userId);
+            }
+          }
+        }
       }
     }
 
-    return new Response(JSON.stringify({ received: true }), {
-      headers: { ...corsHeaders, ...getSecurityHeaders(), "Content-Type": "application/json" },
-      status: 200,
-    });
+    // =========================================
+    // charge.refunded
+    // =========================================
+    if (event.type === "charge.refunded") {
+      const charge = event.data.object as Stripe.Charge;
+      await logPaymentEvent('refund_received', event.id, null, charge.billing_details?.email, charge.amount_refunded, null, 'pending_review');
+    }
+
+    return okResponse(corsHeaders);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
@@ -549,90 +539,52 @@ Deno.serve(async (req) => {
   }
 });
 
+function okResponse(corsHeaders: Record<string, string>) {
+  return new Response(JSON.stringify({ received: true }), {
+    headers: { ...corsHeaders, ...getSecurityHeaders(), "Content-Type": "application/json" },
+    status: 200,
+  });
+}
+
 async function updateSubscriptionRecord(
   supabaseAdmin: any,
   userId: string,
   customerId: string,
-  subscriptionId: string | null,
-  session: Stripe.Checkout.Session | null,
-  stripe: Stripe
+  subscriptionId: string,
+  subscription: Stripe.Subscription
 ) {
-  // Build price-to-plan map from env
-  const priceMap = buildPriceMap();
-
-  let subscription = null;
-  let plan = null;
-  let status = 'trialing';
-  let trialEnd = null;
-  let currentPeriodEnd = null;
-  let trialStart = null;
-
   const safeTimestamp = (unixTime: number | null | undefined): string | null => {
     if (!unixTime || typeof unixTime !== 'number') return null;
     try {
       const date = new Date(unixTime * 1000);
       if (isNaN(date.getTime())) return null;
       return date.toISOString();
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   };
 
-  if (subscriptionId) {
-    logStep("Retrieving subscription from Stripe", { subscriptionId: redactId(subscriptionId) });
-    subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    status = subscription.status;
-    const priceId = subscription.items.data[0]?.price.id;
-    
-    // Map price ID to plan name using env-based config
-    plan = priceMap[priceId] || priceId;
-
-    logStep("Subscription details", { 
-      status, 
-      plan, 
-      hasTrialEnd: !!subscription.trial_end,
-      hasPeriodEnd: !!subscription.current_period_end 
-    });
-
-    trialEnd = safeTimestamp(subscription.trial_end);
-    currentPeriodEnd = safeTimestamp(subscription.current_period_end);
-    trialStart = safeTimestamp(subscription.trial_start);
-  }
-
-  if (!trialStart && session?.created) {
-    trialStart = safeTimestamp(session.created);
-  }
-  if (!trialStart) {
-    trialStart = new Date().toISOString();
-  }
+  const status = subscription.status;
+  const priceId = subscription.items.data[0]?.price.id;
 
   const upsertData = {
     user_id: userId,
     stripe_customer_id: customerId,
     stripe_subscription_id: subscriptionId,
     status,
-    plan,
-    trial_start: trialStart,
-    trial_end: trialEnd,
-    current_period_end: currentPeriodEnd,
+    plan: priceId,
+    trial_start: safeTimestamp(subscription.trial_start),
+    trial_end: safeTimestamp(subscription.trial_end),
+    current_period_end: safeTimestamp(subscription.current_period_end),
     updated_at: new Date().toISOString(),
   };
 
-  logStep("Upserting subscription", { userId: redactId(userId), status, plan });
-
-  const { error: subError } = await supabaseAdmin
+  const { error } = await supabaseAdmin
     .from('subscriptions')
-    .upsert(upsertData, {
-      onConflict: 'user_id'
-    });
+    .upsert(upsertData, { onConflict: 'user_id' });
 
-  if (subError) {
-    logStep("ERROR upserting subscription", { 
-      error: subError.message, 
-      code: subError.code,
-    });
-    throw subError;
+  if (error) {
+    logStep("ERROR upserting subscription", { error: error.message });
+    throw error;
   }
 
-  logStep("Subscription record updated successfully", { userId: redactId(userId), plan, status });
+  logStep("Subscription record updated", { userId: redactId(userId), status });
 }
