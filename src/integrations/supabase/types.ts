@@ -574,9 +574,14 @@ export type Database = {
           id: string
           idempotency_key: string | null
           metadata: Json | null
+          period_end: string | null
+          period_start: string | null
           reason: string
           reference_id: string | null
           reference_type: string | null
+          stripe_event_id: string | null
+          stripe_invoice_id: string | null
+          stripe_payment_intent_id: string | null
           user_id: string
         }
         Insert: {
@@ -587,9 +592,14 @@ export type Database = {
           id?: string
           idempotency_key?: string | null
           metadata?: Json | null
+          period_end?: string | null
+          period_start?: string | null
           reason: string
           reference_id?: string | null
           reference_type?: string | null
+          stripe_event_id?: string | null
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
           user_id: string
         }
         Update: {
@@ -600,9 +610,14 @@ export type Database = {
           id?: string
           idempotency_key?: string | null
           metadata?: Json | null
+          period_end?: string | null
+          period_start?: string | null
           reason?: string
           reference_id?: string | null
           reference_type?: string | null
+          stripe_event_id?: string | null
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
           user_id?: string
         }
         Relationships: []
@@ -1475,12 +1490,14 @@ export type Database = {
           onboarding_status: string
           onboarding_step: number | null
           onboarding_version: number
+          plan_tier: string
           portion_strategy: string
           referral_code: string | null
           required_fields_ok: boolean
           show_on_leaderboard: boolean
           stripe_customer_id: string | null
           updated_at: string | null
+          welcome_credits_granted: boolean
         }
         Insert: {
           affiliate_code?: string | null
@@ -1505,12 +1522,14 @@ export type Database = {
           onboarding_status?: string
           onboarding_step?: number | null
           onboarding_version?: number
+          plan_tier?: string
           portion_strategy?: string
           referral_code?: string | null
           required_fields_ok?: boolean
           show_on_leaderboard?: boolean
           stripe_customer_id?: string | null
           updated_at?: string | null
+          welcome_credits_granted?: boolean
         }
         Update: {
           affiliate_code?: string | null
@@ -1535,12 +1554,14 @@ export type Database = {
           onboarding_status?: string
           onboarding_step?: number | null
           onboarding_version?: number
+          plan_tier?: string
           portion_strategy?: string
           referral_code?: string | null
           required_fields_ok?: boolean
           show_on_leaderboard?: boolean
           stripe_customer_id?: string | null
           updated_at?: string | null
+          welcome_credits_granted?: boolean
         }
         Relationships: []
       }
@@ -3003,6 +3024,8 @@ export type Database = {
           balance_allowance: number
           balance_purchased: number
           credits_total: number
+          current_period_end: string | null
+          current_period_start: string | null
           free_months_earned: number
           free_months_used: number
           last_reset_at: string | null
@@ -3012,6 +3035,7 @@ export type Database = {
           next_reset_at: string | null
           points_total: number
           reset_cadence: string
+          rollover_cap: number
           subscription_credits: number
           updated_at: string
           user_id: string
@@ -3022,6 +3046,8 @@ export type Database = {
           balance_allowance?: number
           balance_purchased?: number
           credits_total?: number
+          current_period_end?: string | null
+          current_period_start?: string | null
           free_months_earned?: number
           free_months_used?: number
           last_reset_at?: string | null
@@ -3031,6 +3057,7 @@ export type Database = {
           next_reset_at?: string | null
           points_total?: number
           reset_cadence?: string
+          rollover_cap?: number
           subscription_credits?: number
           updated_at?: string
           user_id: string
@@ -3041,6 +3068,8 @@ export type Database = {
           balance_allowance?: number
           balance_purchased?: number
           credits_total?: number
+          current_period_end?: string | null
+          current_period_start?: string | null
           free_months_earned?: number
           free_months_used?: number
           last_reset_at?: string | null
@@ -3050,6 +3079,7 @@ export type Database = {
           next_reset_at?: string | null
           points_total?: number
           reset_cadence?: string
+          rollover_cap?: number
           subscription_credits?: number
           updated_at?: string
           user_id?: string
@@ -3553,6 +3583,10 @@ export type Database = {
       compute_recipe_macros: {
         Args: { p_recipe_id: string }
         Returns: undefined
+      }
+      consume_credits: {
+        Args: { p_amount: number; p_feature: string }
+        Returns: Json
       }
       consume_oauth_state: {
         Args: { p_state: string; p_ttl?: unknown }
@@ -4231,6 +4265,7 @@ export type Database = {
         Args: { p_user_id: string; p_week_start?: string }
         Returns: Json
       }
+      grant_welcome_credits: { Args: { p_user_id: string }; Returns: Json }
       handle_referral_qualification: {
         Args: {
           p_reference_id?: string
