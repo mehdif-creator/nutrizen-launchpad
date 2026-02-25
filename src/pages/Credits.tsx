@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, Sparkles, Shield, Zap, HelpCircle, ChevronDown, ChevronUp, LogIn } from 'lucide-react';
+import { Check, Sparkles, Shield, Zap, HelpCircle, ChevronDown, ChevronUp, LogIn, Crown } from 'lucide-react';
 import { useCreditPacks } from '@/hooks/useCreditPacks';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,47 +12,38 @@ import { Header } from '@/components/landing/Header';
 import { Footer } from '@/components/landing/Footer';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { createLogger } from '@/lib/logger';
+import { CREDIT_COSTS_DISPLAY } from '@/lib/featureCosts';
 
 const logger = createLogger('Credits');
-
-const FEATURES_COST = [
-  { feature: 'Changer une recette (swap)', cost: 1 },
-  { feature: 'InspiFrigo - Recettes depuis ton frigo', cost: 1 },
-  { feature: 'ScanRepas - Analyse de tes repas', cost: 1 },
-  { feature: 'Génération menu hebdomadaire', cost: 7 },
-];
 
 const FAQ_ITEMS = [
   {
     question: "Comment fonctionnent les Crédits Zen ?",
-    answer: "Les Crédits Zen te permettent d'accéder aux fonctionnalités premium de NutriZen. Chaque action (swap de recette, InspiFrigo, ScanRepas) consomme un crédit. Les crédits achetés n'expirent jamais et sont utilisés en dernier, après tes crédits mensuels si tu as un abonnement."
+    answer: "Les Crédits Zen te permettent de déclencher des actions IA : menus, scans, substitutions. Chaque action a un coût en crédits. Les crédits achetés n'expirent jamais et sont utilisés après tes crédits d'abonnement."
   },
   {
-    question: "Les crédits expirent-ils ?",
-    answer: "Non ! Les crédits achetés sont valables à vie. Ils sont ajoutés à ton solde permanent (lifetime) et ne sont jamais perdus."
+    question: "Les crédits achetés expirent-ils ?",
+    answer: "Non ! Les crédits achetés (top-ups) sont valables à vie. Ils sont ajoutés à ton solde permanent."
   },
   {
-    question: "Comment sont utilisés mes crédits ?",
-    answer: "Lorsque tu utilises une fonctionnalité payante, on débite d'abord tes crédits d'abonnement (mensuels), puis tes crédits achetés. Ainsi, tes crédits permanents durent le plus longtemps possible."
+    question: "Suis-je abonné Premium ? Ai-je la réduction -10% ?",
+    answer: "Si tu es abonné Premium, la réduction de 10% est automatiquement appliquée lors du paiement de tes packs de crédits."
   },
   {
     question: "Puis-je me faire rembourser ?",
-    answer: "Oui, nous offrons une garantie satisfait ou remboursé de 30 jours sur les packs non utilisés. Contacte notre support pour toute demande."
-  },
-  {
-    question: "L'accès de base est-il gratuit ?",
-    answer: "Oui ! Tu peux accéder gratuitement aux menus hebdomadaires, recettes et liste de courses. Les crédits débloquent les options avancées comme les swaps et les analyses IA."
+    answer: "Oui, nous offrons une garantie satisfait ou remboursé de 30 jours sur les packs non utilisés. Contacte notre support."
   },
 ];
 
 export default function CreditsPage() {
   const { packs, loading, formatPrice, getPricePerCredit } = useCreditPacks();
-  const { user, session, loading: authLoading } = useAuth();
+  const { user, session, subscription, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [purchaseLoading, setPurchaseLoading] = useState<string | null>(null);
 
+  const isPremium = subscription?.plan === 'premium' || subscription?.plan === 'NutriZen Premium';
+
   const handlePurchase = async (packId: string) => {
-    // If not logged in, redirect to login with return URL
     if (!user || !session) {
       toast.info('Connecte-toi pour acheter des crédits');
       navigate(`/auth/login?redirect=${encodeURIComponent('/credits')}`);
@@ -69,39 +60,26 @@ export default function CreditsPage() {
 
       if (error) {
         logger.error('Checkout creation failed', error);
-        const msg = error.message?.includes('price')
-          ? 'Configuration de paiement en cours. Réessaie dans quelques minutes.'
-          : error.message?.includes('401') || error.message?.includes('auth')
-          ? 'Session expirée. Reconnecte-toi et réessaie.'
-          : 'Erreur lors de la création du paiement. Réessaie.';
-        toast.error(msg);
+        toast.error('Erreur lors de la création du paiement. Réessaie.');
         return;
       }
 
       if (data?.url) {
-        logger.debug('Redirecting to Stripe Checkout');
         window.location.href = data.url;
       } else {
-        logger.error('No URL in response', new Error('Missing URL'), { data });
         toast.error('URL de paiement non reçue. Réessaie.');
       }
     } catch (error) {
       logger.error('Unexpected error', error instanceof Error ? error : new Error(String(error)));
-      toast.error('Erreur réseau. Vérifie ta connexion et réessaie.');
+      toast.error('Erreur réseau. Vérifie ta connexion.');
     } finally {
       setPurchaseLoading(null);
     }
   };
 
-  const getPopularPack = () => {
-    return 'pack_m';
-  };
-
-  const getSavingsPercent = (pack: typeof packs[0]) => {
-    if (pack.id === 'pack_s') return 0;
-    const basePrice = 499 / 50;
-    const packPrice = pack.price_cents / pack.credits;
-    return Math.round((1 - packPrice / basePrice) * 100);
+  const getDiscountedPrice = (priceCents: number) => {
+    if (!isPremium) return priceCents;
+    return Math.round(priceCents * 0.9);
   };
 
   return (
@@ -114,17 +92,24 @@ export default function CreditsPage() {
           <div className="container max-w-4xl mx-auto">
             <Badge variant="secondary" className="mb-4">
               <Sparkles className="w-3 h-3 mr-1" />
-              Paiement unique • Sans abonnement
+              Packs de crédits • Paiement unique
             </Badge>
             
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Débloquez les options à la carte avec des{' '}
+              Recharge tes{' '}
               <span className="text-primary">Crédits Zen</span>
             </h1>
             
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              L'accès de base NutriZen est gratuit. Les Crédits Zen débloquent les fonctionnalités premium — sans abonnement, sans engagement.
+            <p className="text-xl text-muted-foreground mb-4 max-w-2xl mx-auto">
+              Besoin de plus de crédits ? Achète un pack à tout moment. Les crédits achetés n'expirent jamais.
             </p>
+
+            {isPremium && (
+              <div className="inline-flex items-center gap-2 bg-accent/10 border border-accent/20 rounded-full px-4 py-2 mb-4">
+                <Crown className="w-4 h-4 text-accent" />
+                <span className="text-sm font-medium text-accent">Premium : -10% sur tous les packs</span>
+              </div>
+            )}
             
             <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
@@ -137,7 +122,7 @@ export default function CreditsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-primary" />
-                <span>Garantie 30 jours</span>
+                <span>Prix TTC</span>
               </div>
             </div>
           </div>
@@ -145,11 +130,13 @@ export default function CreditsPage() {
 
         {/* Pricing Cards */}
         <section className="py-12 px-4">
-          <div className="container max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="container max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {packs.map((pack) => {
-                const isPopular = pack.id === getPopularPack();
-                const savings = getSavingsPercent(pack);
+                const isPopular = pack.id === 'topup_80';
+                const displayPrice = getDiscountedPrice(pack.price_cents);
+                const originalPrice = pack.price_cents;
+                const hasDiscount = isPremium && displayPrice < originalPrice;
                 
                 return (
                   <Card 
@@ -166,12 +153,6 @@ export default function CreditsPage() {
                       </div>
                     )}
                     
-                    {savings > 0 && (
-                      <Badge variant="secondary" className="absolute top-4 right-4 text-green-600">
-                        -{savings}%
-                      </Badge>
-                    )}
-                    
                     <div className="mb-4">
                       <h3 className="text-xl font-bold">{pack.name}</h3>
                       <p className="text-3xl font-bold text-primary mt-2">
@@ -181,9 +162,14 @@ export default function CreditsPage() {
                     </div>
                     
                     <div className="mb-6">
-                      <p className="text-2xl font-bold">{formatPrice(pack.price_cents)}</p>
+                      {hasDiscount && (
+                        <p className="text-sm text-muted-foreground line-through">
+                          {formatPrice(originalPrice)}
+                        </p>
+                      )}
+                      <p className="text-2xl font-bold">{formatPrice(displayPrice)} TTC</p>
                       <p className="text-sm text-muted-foreground">
-                        Soit {getPricePerCredit(pack)}€ / crédit
+                        Soit {(displayPrice / pack.credits / 100).toFixed(3)}€ / crédit
                       </p>
                     </div>
                     
@@ -211,7 +197,7 @@ export default function CreditsPage() {
                       {purchaseLoading === pack.id ? (
                         'Redirection…'
                       ) : !user ? (
-                        <><LogIn className="w-4 h-4 mr-1" /> Se connecter pour acheter</>
+                        <><LogIn className="w-4 h-4 mr-1" /> Se connecter</>
                       ) : (
                         'Acheter'
                       )}
@@ -223,59 +209,18 @@ export default function CreditsPage() {
           </div>
         </section>
 
-        {/* How it works */}
-        <section className="py-16 px-4 bg-muted/30">
-          <div className="container max-w-4xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-center mb-12">
-              Comment ça marche ?
-            </h2>
-            
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="text-center">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <span className="text-xl font-bold text-primary">1</span>
-                </div>
-                <h3 className="font-semibold mb-2">Choisis ton pack</h3>
-                <p className="text-sm text-muted-foreground">
-                  Sélectionne le pack qui correspond à tes besoins. Plus le pack est grand, plus le prix par crédit est avantageux.
-                </p>
-              </div>
-              
-              <div className="text-center">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <span className="text-xl font-bold text-primary">2</span>
-                </div>
-                <h3 className="font-semibold mb-2">Paie en toute sécurité</h3>
-                <p className="text-sm text-muted-foreground">
-                  Paiement sécurisé par Stripe. Tes crédits sont ajoutés instantanément à ton compte.
-                </p>
-              </div>
-              
-              <div className="text-center">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <span className="text-xl font-bold text-primary">3</span>
-                </div>
-                <h3 className="font-semibold mb-2">Utilise tes crédits</h3>
-                <p className="text-sm text-muted-foreground">
-                  Débourse tes crédits pour accéder aux fonctionnalités premium quand tu le souhaites.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* Features cost table */}
-        <section className="py-16 px-4">
+        <section className="py-16 px-4 bg-muted/30">
           <div className="container max-w-2xl mx-auto">
             <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">
-              Coût des fonctionnalités
+              Coût des actions IA
             </h2>
             
             <Card className="overflow-hidden">
               <div className="divide-y">
-                {FEATURES_COST.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-4">
-                    <span>{item.feature}</span>
+                {CREDIT_COSTS_DISPLAY.map((item) => (
+                  <div key={item.label} className="flex items-center justify-between p-4">
+                    <span className="text-sm">{item.label}</span>
                     <Badge variant="secondary">
                       {item.cost} crédit{item.cost > 1 ? 's' : ''}
                     </Badge>
@@ -283,15 +228,11 @@ export default function CreditsPage() {
                 ))}
               </div>
             </Card>
-            
-            <p className="text-center text-sm text-muted-foreground mt-4">
-              L'accès aux menus, recettes et liste de courses reste gratuit et illimité.
-            </p>
           </div>
         </section>
 
         {/* FAQ */}
-        <section className="py-16 px-4 bg-muted/30">
+        <section className="py-16 px-4">
           <div className="container max-w-2xl mx-auto">
             <div className="flex items-center justify-center gap-2 mb-8">
               <HelpCircle className="w-6 h-6 text-primary" />
@@ -316,8 +257,7 @@ export default function CreditsPage() {
               <span className="text-lg font-semibold">Paiement 100% sécurisé par Stripe</span>
             </div>
             <p className="text-sm text-muted-foreground max-w-xl mx-auto">
-              Vos informations bancaires ne transitent jamais par nos serveurs. 
-              Stripe, leader mondial du paiement en ligne, garantit la sécurité de vos transactions.
+              Vos informations bancaires ne transitent jamais par nos serveurs. Prix TTC.
             </p>
           </div>
         </section>

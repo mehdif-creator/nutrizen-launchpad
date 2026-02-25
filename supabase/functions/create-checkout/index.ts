@@ -15,18 +15,26 @@ import { checkRateLimit as checkRL, rateLimitExceededResponse } from '../_shared
 // CONFIGURATION
 // =============================================================================
 
-/** Strict plan-key → env-var mapping. No arbitrary price IDs accepted. */
+/** Strict plan-key → env-var mapping. New plans + legacy plans. */
 const PLAN_ENV_KEYS: Record<string, string> = {
+  starter: "STRIPE_PRICE_STARTER_MONTHLY",
+  premium: "STRIPE_PRICE_PREMIUM_MONTHLY",
+  // Legacy plans (grandfathered - kept for existing subscribers)
   essentiel: "STRIPE_PRICE_ESSENTIEL_MONTHLY",
   essentiel_monthly: "STRIPE_PRICE_ESSENTIEL_MONTHLY",
   essentiel_yearly: "STRIPE_PRICE_ESSENTIEL_YEARLY",
   equilibre: "STRIPE_PRICE_EQUILIBRE",
-  premium: "STRIPE_PRICE_PREMIUM",
+};
+
+/** Plan metadata for new plans */
+const PLAN_META: Record<string, { tier: string; credits: number; rollover_cap: number; priority: boolean }> = {
+  starter: { tier: 'starter', credits: 80, rollover_cap: 20, priority: false },
+  premium: { tier: 'premium', credits: 200, rollover_cap: 80, priority: true },
 };
 
 const VALID_PLAN_KEYS = Object.keys(PLAN_ENV_KEYS);
 
-/** Server-side redirect allow-list — never trust the request Origin for URLs */
+/** Server-side redirect allow-list */
 const ALLOWED_REDIRECT_ORIGINS = [
   'https://mynutrizen.fr',
   'https://app.mynutrizen.fr',
@@ -44,12 +52,12 @@ function getSafeOriginForCancel(requestOrigin: string | null): string {
 }
 
 // =============================================================================
-// TURNSTILE VERIFICATION (optional — only if TURNSTILE_SECRET_KEY is set)
+// TURNSTILE VERIFICATION
 // =============================================================================
 
 async function verifyTurnstile(token: string, ip: string, logger: Logger): Promise<boolean> {
   const secret = Deno.env.get("TURNSTILE_SECRET_KEY");
-  if (!secret) return true; // Skip if not configured
+  if (!secret) return true;
 
   try {
     const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
@@ -64,15 +72,13 @@ async function verifyTurnstile(token: string, ip: string, logger: Logger): Promi
     return data.success === true;
   } catch (err) {
     logger.error("Turnstile verification error", err);
-    return false; // Fail closed on Turnstile errors
+    return false;
   }
 }
 
-/** Generate a cryptographically secure checkout token (URL-safe base64, 32 bytes) */
 function generateCheckoutToken(): string {
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
-  // URL-safe base64 encoding
   return btoa(String.fromCharCode(...bytes))
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
@@ -106,13 +112,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ── Honeypot: reject bots that fill hidden "website" field ───────────
+    // ── Honeypot ────────────────────────────────────────────────────────
     if (body.website) {
       logger.warn("Honeypot triggered");
       return new Response(JSON.stringify({ url: getAppBaseUrl() }), { status: 200, headers: jsonHeaders });
     }
 
-    // ── Optional Turnstile verification ─────────────────────────────────
+    // ── Turnstile ───────────────────────────────────────────────────────
     const turnstileToken = typeof body.turnstile_token === "string" ? body.turnstile_token : null;
     const clientIp = getClientIp(req);
 
@@ -124,13 +130,13 @@ Deno.serve(async (req) => {
       }
       const ok = await verifyTurnstile(turnstileToken, clientIp, logger);
       if (!ok) {
-        return new Response(JSON.stringify({ error: { code: "CAPTCHA_FAILED", message: "Vérification anti-robot échouée. Réessaie." } }), {
+        return new Response(JSON.stringify({ error: { code: "CAPTCHA_FAILED", message: "Vérification anti-robot échouée." } }), {
           status: 403, headers: jsonHeaders,
         });
       }
     }
 
-    // ── DB-backed rate limiting ─────────────────────────────────────────
+    // ── Rate limiting ───────────────────────────────────────────────────
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -138,24 +144,21 @@ Deno.serve(async (req) => {
     );
 
     const rateResult = await checkRateLimit(
-      supabaseAdmin,
-      `ip:${clientIp}`,
-      "create-checkout",
-      { maxTokens: 20, refillRate: 20, cost: 1 },
-      logger,
+      supabaseAdmin, `ip:${clientIp}`, "create-checkout",
+      { maxTokens: 20, refillRate: 20, cost: 1 }, logger,
     );
     if (!rateResult.allowed) {
       return new Response(
-        JSON.stringify({ error: { code: "RATE_LIMIT_EXCEEDED", message: "Trop de requêtes. Réessaie plus tard." } }),
+        JSON.stringify({ error: { code: "RATE_LIMIT_EXCEEDED", message: "Trop de requêtes." } }),
         { status: 429, headers: { ...jsonHeaders, "Retry-After": String(rateResult.retryAfter || 60) } },
       );
     }
 
-    // ── Validate inputs ─────────────────────────────────────────────────
-    const planKey = typeof body.plan === "string" ? sanitizeString(body.plan) : (typeof body.planKey === "string" ? sanitizeString(body.planKey) : "equilibre");
+    // ── Validate plan ───────────────────────────────────────────────────
+    const planKey = typeof body.plan === "string" ? sanitizeString(body.plan) : (typeof body.planKey === "string" ? sanitizeString(body.planKey) : "premium");
 
     if (!VALID_PLAN_KEYS.includes(planKey)) {
-      return new Response(JSON.stringify({ error: { code: "INVALID_PLAN", message: `Plan invalide. Plans acceptés : ${VALID_PLAN_KEYS.join(", ")}` } }), {
+      return new Response(JSON.stringify({ error: { code: "INVALID_PLAN", message: `Plan invalide. Plans: ${VALID_PLAN_KEYS.join(", ")}` } }), {
         status: 400, headers: jsonHeaders,
       });
     }
@@ -168,12 +171,12 @@ Deno.serve(async (req) => {
     }
     const email = sanitizeEmail(rawEmail);
 
-    // ── Resolve price from env (NO legacy priceId fallback) ─────────────
+    // ── Resolve price from env ──────────────────────────────────────────
     const envKey = PLAN_ENV_KEYS[planKey];
     const priceId = Deno.env.get(envKey);
     if (!priceId) {
       logger.error("Missing price env var", undefined, { envKey, planKey });
-      return new Response(JSON.stringify({ error: { code: "CONFIG_ERROR", message: "Plan temporairement indisponible. Contacte le support." } }), {
+      return new Response(JSON.stringify({ error: { code: "CONFIG_ERROR", message: "Plan temporairement indisponible." } }), {
         status: 503, headers: jsonHeaders,
       });
     }
@@ -183,14 +186,13 @@ Deno.serve(async (req) => {
     // ── Stripe init ─────────────────────────────────────────────────────
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {
-      logger.error("STRIPE_SECRET_KEY not set");
       return new Response(JSON.stringify({ error: { code: "CONFIG_ERROR", message: "Service de paiement indisponible." } }), {
         status: 503, headers: jsonHeaders,
       });
     }
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    // ── Optional auth (logged-in users get profile link) ────────────────
+    // ── Optional auth ───────────────────────────────────────────────────
     let userId: string | null = null;
     const authHeader = req.headers.get("Authorization");
     if (authHeader?.startsWith("Bearer ")) {
@@ -204,16 +206,35 @@ Deno.serve(async (req) => {
         userId = userData.user?.id || null;
         if (userId) {
           logger.info("Authenticated user", { userId });
-          // ── Per-user rate limiting ─────────────────────────────────────
           const rlUser = await checkRL(supabaseAdmin, {
             identifier: `user:${userId}`,
             endpoint:   'create-checkout',
-            maxTokens:  10,
+            maxTokens:  30,
             refillRate: 10,
-            cost:       60,
+            cost:       1,
           });
           if (!rlUser.allowed) return rateLimitExceededResponse(getCorsHeaders(origin), rlUser.retryAfter);
-          // ── End per-user rate limiting ─────────────────────────────────
+
+          // ── Check for existing active subscription (one user = one sub) ──
+          const customers = await stripe.customers.list({ email, limit: 1 });
+          if (customers.data.length > 0) {
+            const existingSubs = await stripe.subscriptions.list({
+              customer: customers.data[0].id,
+              status: 'active',
+              limit: 1,
+            });
+            if (existingSubs.data.length > 0) {
+              // User already has active subscription → route to portal
+              logger.info("User already has active subscription, redirecting to portal");
+              const portalSession = await stripe.billingPortal.sessions.create({
+                customer: customers.data[0].id,
+                return_url: `${getAppBaseUrl()}/app/settings`,
+              });
+              return new Response(JSON.stringify({ url: portalSession.url, existing_subscription: true }), {
+                status: 200, headers: jsonHeaders,
+              });
+            }
+          }
         }
       } catch {
         logger.warn("Auth token invalid, continuing as anonymous");
@@ -225,19 +246,14 @@ Deno.serve(async (req) => {
     let customerId: string | undefined;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
-      logger.info("Existing Stripe customer", { customerId });
-
       if (userId) {
-        await supabaseAdmin
-          .from("profiles")
-          .update({ stripe_customer_id: customerId })
-          .eq("id", userId);
+        await supabaseAdmin.from("profiles").update({ stripe_customer_id: customerId }).eq("id", userId);
       }
     }
 
-    // ── Generate checkout_token and persist in DB ───────────────────────
+    // ── Generate checkout_token ─────────────────────────────────────────
     const checkoutToken = generateCheckoutToken();
-    const tokenExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 min TTL
+    const tokenExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
     const { error: tokenInsertError } = await supabaseAdmin
       .from('checkout_tokens')
@@ -252,33 +268,36 @@ Deno.serve(async (req) => {
 
     if (tokenInsertError) {
       logger.error("Failed to create checkout_token", tokenInsertError);
-      return new Response(JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "Erreur lors de la préparation du paiement." } }), {
+      return new Response(JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "Erreur préparation paiement." } }), {
         status: 500, headers: jsonHeaders,
       });
     }
 
-    // ── Build URLs from server-side allowlist ────────────────────────────
+    // ── Build URLs ──────────────────────────────────────────────────────
     const appBase = getAppBaseUrl();
     const successUrl = `${appBase}/post-checkout?token=${checkoutToken}`;
     const cancelUrl = `${getSafeOriginForCancel(origin)}/?canceled=true`;
 
-    // ── Referral / affiliate from query params ──────────────────────────
+    // ── Referral / affiliate ────────────────────────────────────────────
     const url = new URL(req.url);
     const referralCode = sanitizeString(url.searchParams.get("referral_code") || "").substring(0, 50);
     const affiliateCode = sanitizeString(url.searchParams.get("affiliate_code") || "").substring(0, 50);
 
-    // ── Create Stripe Checkout session ──────────────────────────────────
-    logger.info("Creating checkout session", { plan: planKey, email });
+    // ── Plan metadata ───────────────────────────────────────────────────
+    const meta = PLAN_META[planKey] || {};
 
+    // ── Create Stripe Checkout session ──────────────────────────────────
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : email,
       client_reference_id: userId || undefined,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
-      subscription_data: { trial_period_days: 7 },
       metadata: {
         plan: planKey,
+        plan_tier: meta.tier || planKey,
+        credits_monthly: String(meta.credits || 0),
+        rollover_cap: String(meta.rollover_cap || 0),
         user_id: userId || "",
         app: "nutrizen",
         referral_code: referralCode,
@@ -290,7 +309,7 @@ Deno.serve(async (req) => {
       cancel_url: cancelUrl,
     });
 
-    // ── Update checkout_token with stripe_session_id ─────────────────────
+    // Update token with session id
     await supabaseAdmin
       .from('checkout_tokens')
       .update({ stripe_session_id: session.id })
