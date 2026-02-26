@@ -17,7 +17,7 @@ export const personaConfig: Record<PersonaKey, PersonaConfig> = {
   thomas: {
     h1: "Arrête de gâcher ta séance avec Uber Eats : menus muscu en 30 s.",
     sub: "Recettes rapides + liste de courses auto. Zéro calcul.",
-    heroImage: "/img/hero-thomas.png",
+    heroImage: "/img/hero-thomas.jpg",
     painExplicit: [
       "Marre d'improviser après la salle ?",
       "Macros = casse-tête permanent ?",
@@ -52,7 +52,7 @@ export const personaConfig: Record<PersonaKey, PersonaConfig> = {
   sarah: {
     h1: "Finis le meal-prep de 3 h : menus CrossFit adaptés à tes WOD.",
     sub: "Variété sans prise de tête, recettes 20–30 min max.",
-    heroImage: "/img/hero-sarah.png",
+    heroImage: "/img/hero-sarah.jpg",
     painExplicit: [
       "Meal-prep = tout ton dimanche ?",
       "Toujours les mêmes repas ?",
@@ -87,7 +87,7 @@ export const personaConfig: Record<PersonaKey, PersonaConfig> = {
   kevin: {
     h1: "Dis adieu au mur du km 30 — nutrition d'endurance, claire et prête.",
     sub: "Avant/pendant/après sortie : tu sais quoi manger et quand.",
-    heroImage: "/img/hero-kevin.png",
+    heroImage: "/img/hero-kevin.jpg",
     painExplicit: [
       "Le mur au km 30 à chaque sortie longue ?",
       "Tu ne sais pas quoi manger la veille ?",
@@ -122,7 +122,7 @@ export const personaConfig: Record<PersonaKey, PersonaConfig> = {
   default: {
     h1: "Des menus adaptés à tes objectifs, prêts en 30 secondes.",
     sub: "Recettes rapides, liste de courses automatique, zéro charge mentale.",
-    heroImage: "/img/hero-default.png",
+    heroImage: "/img/hero-default.jpg",
     painExplicit: [
       "Pas le temps de planifier tes repas ?",
       "Toujours les mêmes idées ?",

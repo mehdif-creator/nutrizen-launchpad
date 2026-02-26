@@ -39,7 +39,7 @@ export default function BlogPost() {
           </div>
 
           <img
-            src="/img/hero-default.png"
+            src="/img/hero-default.jpg"
             alt="Article"
             className="w-full h-64 object-cover rounded-2xl mb-8"
           />
