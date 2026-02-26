@@ -86,7 +86,7 @@ export const Hero = ({ onCtaClick, onExampleClick, copy }: HeroProps) => {
 
             {/* CTAs */}
             <div className="space-y-3">
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3">
                 <Button
                   onClick={onCtaClick}
                   size="lg"
