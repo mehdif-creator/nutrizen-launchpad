@@ -3326,6 +3326,33 @@ export type Database = {
         }
         Relationships: []
       }
+      pinterest_oauth_status: {
+        Row: {
+          account_label: string | null
+          expires_at: string | null
+          has_access_token: boolean | null
+          has_refresh_token: boolean | null
+          scope: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          account_label?: string | null
+          expires_at?: string | null
+          has_access_token?: never
+          has_refresh_token?: never
+          scope?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          account_label?: string | null
+          expires_at?: string | null
+          has_access_token?: never
+          has_refresh_token?: never
+          scope?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       recipe_ingredients_normalized: {
         Row: {
           id: number | null
