@@ -27,10 +27,10 @@ const PinterestConnectionCard: React.FC = () => {
     setLoading(true);
     try {
       const { data } = await supabase
-        .from('pinterest_oauth')
+        .from('pinterest_oauth_status' as any)
         .select('scope, expires_at')
         .eq('account_label', 'main')
-        .maybeSingle();
+        .maybeSingle() as { data: { scope: string | null; expires_at: string | null } | null };
 
       if (data && data.expires_at && new Date(data.expires_at) > new Date()) {
         setStatus({ connected: true, scope: data.scope ?? undefined, expiresAt: data.expires_at });
