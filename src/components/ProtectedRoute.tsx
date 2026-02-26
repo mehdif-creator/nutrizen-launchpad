@@ -16,10 +16,11 @@ export const ProtectedRoute = ({
   requireAdmin = false,
   skipOnboardingCheck = false,
 }: ProtectedRouteProps) => {
-  const { user, loading, adminLoading, isAdmin } = useAuth();
+  const { user, loading, adminLoading, isAdmin, recheckAdmin } = useAuth();
   const location = useLocation();
   const [timedOut, setTimedOut] = useState(false);
   const denialToastShown = useRef(false);
+  const adminRecheckDone = useRef(false);
   
   const shouldCheckOnboarding = !requireAdmin && !skipOnboardingCheck && 
     location.pathname !== '/app/onboarding';
@@ -34,6 +35,14 @@ export const ProtectedRoute = ({
     const timer = setTimeout(() => setTimedOut(true), timeoutMs);
     return () => clearTimeout(timer);
   }, [timeoutMs]);
+
+  // Force re-check admin role when navigating to an admin route
+  useEffect(() => {
+    if (requireAdmin && user && !adminRecheckDone.current) {
+      adminRecheckDone.current = true;
+      recheckAdmin();
+    }
+  }, [requireAdmin, user, recheckAdmin]);
 
   // D) For admin routes: block render while adminLoading OR loading is true
   if (requireAdmin) {

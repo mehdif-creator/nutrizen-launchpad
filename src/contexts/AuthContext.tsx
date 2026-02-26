@@ -25,6 +25,7 @@ interface AuthContextType {
   isAdmin: boolean;
   subscription: SubscriptionInfo | null;
   refreshSubscription: () => Promise<void>;
+  recheckAdmin: () => Promise<boolean>;
   signOut: () => Promise<void>;
 }
 
@@ -51,19 +52,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // De-dupe initial session side effects (subscription refresh + daily login) per user
   const initialSetupDoneForUser = useRef<string | null>(null);
 
-  const checkAdminRole = useCallback(async (userId: string): Promise<boolean> => {
+  const checkAdminRole = useCallback(async (userId: string, forceRefresh = false): Promise<boolean> => {
     if (!userId) {
       setIsAdmin(false);
       setAdminLoading(false);
       return false;
     }
 
-    // Return cached result if already resolved for this user
-    if (adminCheckResultRef.current.has(userId)) {
+    // Only return cached result if it was TRUE (never cache false — allows retry)
+    if (!forceRefresh && adminCheckResultRef.current.has(userId)) {
       const cached = adminCheckResultRef.current.get(userId)!;
-      setIsAdmin(cached);
-      setAdminLoading(false);
-      return cached;
+      if (cached === true) {
+        setIsAdmin(true);
+        setAdminLoading(false);
+        return true;
+      }
+      // cached false → don't use cache, retry the RPC
     }
 
     setAdminLoading(true);
@@ -73,18 +77,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         logger.error('Admin role check failed', { message: error.message, code: error.code, details: error.details });
         console.error('[AdminCheck] RPC error:', JSON.stringify(error));
         setIsAdmin(false);
-        adminCheckResultRef.current.set(userId, false);
+        // Do NOT cache failures — allow retry
         return false;
       }
       const result = data === true;
       setIsAdmin(result);
-      adminCheckResultRef.current.set(userId, result);
+      if (result) {
+        adminCheckResultRef.current.set(userId, true);
+      }
       logger.debug('Admin check result', { userId: userId.substring(0, 8), isAdmin: result, rawData: data, dataType: typeof data });
       return result;
     } catch (error) {
       logger.error('Admin role check exception', error instanceof Error ? error : new Error(String(error)));
       setIsAdmin(false);
-      adminCheckResultRef.current.set(userId, false);
       return false;
     } finally {
       setAdminLoading(false);
@@ -196,20 +201,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []); // EMPTY deps — runs once
 
   const signOut = async () => {
-    clearOnboardingCache();
-    initialSetupDoneForUser.current = null;
-    adminCheckResultRef.current.clear();
-    setSubscription(null);
-    setIsAdmin(false);
-    setAdminLoading(false);
-    await supabase.auth.signOut();
-    navigate('/');
+    try {
+      clearOnboardingCache();
+      initialSetupDoneForUser.current = null;
+      adminCheckResultRef.current.clear();
+      setSubscription(null);
+      setIsAdmin(false);
+      setAdminLoading(false);
+      await supabase.auth.signOut();
+    } catch (error) {
+      logger.error('Sign out error', error instanceof Error ? error : new Error(String(error)));
+      console.error('[SignOut] Error:', error);
+      // Force clear local state even if signOut API fails
+      setUser(null);
+      setSession(null);
+    } finally {
+      navigate('/');
+    }
   };
 
   return (
     <AuthContext.Provider value={{
       user, session, loading, adminLoading, isAdmin, subscription,
       refreshSubscription: () => refreshSubscription(),
+      recheckAdmin: () => user ? checkAdminRole(user.id, true) : Promise.resolve(false),
       signOut
     }}>
       {children}
