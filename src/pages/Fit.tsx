@@ -55,33 +55,39 @@ const fitValueItems = [
 
 const fitTestimonials = [
   {
-    name: 'Thomas, 31 ans, Bordeaux — Développeur, musculation 4x/semaine',
-    quote: "Je comptais mes macros sur MyFitnessPal depuis 2 ans. Ça me prenait 25 minutes par jour. Depuis NutriZen Fit, je mets 5 minutes le dimanche. J'ai pris 3kg de muscle en 3 mois sans changer mon entraînement.",
+    name: 'Thomas, 31 ans, Bordeaux',
+    profession: 'Développeur — Musculation 4x/semaine',
+    quote: "Je comptais mes macros sur MyFitnessPal depuis 2 ans — 25 minutes par jour. Depuis NutriZen Fit, 5 minutes le dimanche. J'ai pris 3kg de muscle en 3 mois sans changer mon entraînement.",
     rating: 5,
   },
   {
-    name: 'Alexis, 28 ans, Lyon — Commercial, crossfit 3x/semaine',
-    quote: "Je séchais depuis 8 semaines sans résultats visibles. Le problème c'était mes repas du soir trop glucidiques. NutriZen a restructuré ma journée alimentaire en 3 minutes. -5kg en 6 semaines.",
+    name: 'Alexis, 28 ans, Lyon',
+    profession: 'Commercial — Crossfit 3x/semaine',
+    quote: "Je séchais depuis 8 semaines sans résultats. Le problème c'était mes repas du soir trop glucidiques. NutriZen a restructuré ma journée en 3 minutes. -5kg en 6 semaines.",
     rating: 5,
   },
   {
-    name: 'Laure, 34 ans, Rennes — Kinésithérapeute, running 5x/semaine',
-    quote: "En tant que coureuse je n'avais pas de plan nutrition adapté à mes séances. NutriZen Fit ajuste mes apports les jours de sortie longue automatiquement. Mon énergie sur les sorties de plus de 15km s'est vraiment améliorée.",
+    name: 'Laure, 34 ans, Rennes',
+    profession: 'Kinésithérapeute — Running 5x/semaine',
+    quote: "En tant que coureuse, mes apports n'étaient pas adaptés à mes séances. NutriZen ajuste mes macros automatiquement les jours de sortie longue. Mon énergie sur 15km+ s'est transformée.",
     rating: 5,
   },
   {
-    name: 'Maxime, 26 ans, Nantes — Étudiant, musculation 5x/semaine',
-    quote: "En prise de masse j'avais du mal à atteindre 180g de protéines par jour sans manger n'importe quoi. Les menus NutriZen Fit y arrivent avec des recettes que j'ai réellement envie de cuisiner.",
+    name: 'Mehdi, 26 ans, Marseille',
+    profession: "Étudiant en école d'ingénieur — Crossfit 5x/semaine",
+    quote: "Je mangeais pareil depuis 2 ans : riz, poulet, œufs. Efficace mais invivable. NutriZen Fit m'a donné 60+ recettes hautes en protéines que j'attendais sans le savoir.",
     rating: 5,
   },
   {
-    name: 'Clara, 30 ans, Marseille — Chef de projet, cyclisme 4x/semaine',
-    quote: "Mes sorties vélo de 3h demandent beaucoup d'énergie. Depuis que NutriZen adapte mes glucides les jours de sortie, j'ai gagné en récupération et perdu 2kg de gras en 2 mois.",
+    name: 'Sébastien, 37 ans, Paris',
+    profession: 'Consultant — Musculation 3x/semaine',
+    quote: "Le meal prep que je faisais prenait 3h le dimanche parce que je n'avais pas de plan. Avec NutriZen, 1h15 chrono, tout préparé pour la semaine.",
     rating: 5,
   },
   {
-    name: 'Romain, 37 ans, Lille — Ingénieur, crossfit 4x/semaine',
-    quote: "Je dépensais 90€/mois chez un coach nutrition pour un plan figé. NutriZen me donne un plan qui évolue chaque semaine pour 12,99€. Même résultats, 7x moins cher.",
+    name: 'Antoine, 30 ans, Lille',
+    profession: 'Professeur de sport — Musculation 5x/semaine',
+    quote: "Je voulais prendre de la masse sans prendre trop de gras. En 10 semaines avec NutriZen Fit : +4kg sur la balance, -1.5% de masse grasse mesurée. Le ratio dont je rêvais.",
     rating: 5,
   },
 ];
