@@ -73,17 +73,30 @@ Deno.serve(async (req) => {
     if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
 
-    if (customers.data.length === 0) {
+    // Prefer profiles.stripe_customer_id, fallback to Stripe customers.list(email)
+    let customerId: string | null = null;
+    const { data: profileData } = await supabaseClient
+      .from('profiles')
+      .select('stripe_customer_id, plan_tier')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profileData?.stripe_customer_id) {
+      customerId = profileData.stripe_customer_id;
+      logStep("Customer ID from profile", { customerId });
+    } else {
+      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+        logStep("Customer ID from Stripe email lookup", { customerId });
+        // Persist for future fast lookups
+        await supabaseClient.from('profiles').update({ stripe_customer_id: customerId }).eq('id', user.id);
+      }
+    }
+
+    if (!customerId) {
       logStep("No Stripe customer found — checking DB");
-
-      // Check profile for plan_tier
-      const { data: profile } = await supabaseClient
-        .from('profiles')
-        .select('plan_tier, welcome_credits_granted')
-        .eq('id', user.id)
-        .maybeSingle();
 
       const { data: dbSub } = await supabaseClient
         .from('subscriptions')
@@ -96,16 +109,15 @@ Deno.serve(async (req) => {
         status: dbSub?.status ?? 'inactive',
         trial_end: dbSub?.trial_end ?? null,
         subscription_end: null,
-        plan: profile?.plan_tier || 'free',
-        plan_tier: profile?.plan_tier || 'free',
+        plan: profileData?.plan_tier || 'free',
+        plan_tier: profileData?.plan_tier || 'free',
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     }
 
-    const customerId = customers.data[0].id;
-    logStep("Found Stripe customer", { customerId });
+    logStep("Using Stripe customer", { customerId });
 
     // Check active subscriptions
     const subscriptions = await stripe.subscriptions.list({
@@ -142,17 +154,28 @@ Deno.serve(async (req) => {
     const subscriptionEnd = new Date(sub.current_period_end * 1000).toISOString();
     const priceId = sub.items.data[0]?.price.id;
 
-    // Get plan tier from price metadata
+    // Get plan tier from price metadata with legacy fallback
     let planTier = 'unknown';
     try {
       const price = await stripe.prices.retrieve(priceId);
       planTier = price.metadata?.plan_tier || 'unknown';
     } catch {
-      // Fallback: check env vars
+      logStep("WARN: Could not retrieve price metadata");
+    }
+
+    // Fallback: map known price IDs from env vars (legacy + current)
+    if (planTier === 'unknown') {
+      const priceToTierMap: Record<string, string> = {};
       const starterPrice = Deno.env.get('STRIPE_PRICE_STARTER_MONTHLY');
       const premiumPrice = Deno.env.get('STRIPE_PRICE_PREMIUM_MONTHLY');
-      if (priceId === starterPrice) planTier = 'starter';
-      else if (priceId === premiumPrice) planTier = 'premium';
+      const essentielPrice = Deno.env.get('STRIPE_PRICE_ESSENTIEL_MONTHLY');
+      const famillePrice = Deno.env.get('STRIPE_PRICE_FAMILLE_MONTHLY');
+      if (starterPrice) priceToTierMap[starterPrice] = 'starter';
+      if (premiumPrice) priceToTierMap[premiumPrice] = 'premium';
+      if (essentielPrice) priceToTierMap[essentielPrice] = 'starter'; // legacy → starter
+      if (famillePrice) priceToTierMap[famillePrice] = 'premium'; // legacy → premium
+      planTier = priceToTierMap[priceId] || 'starter'; // active subscriber never gets 'unknown'
+      logStep("Resolved tier via env fallback", { priceId, planTier });
     }
 
     // Update profile + subscription

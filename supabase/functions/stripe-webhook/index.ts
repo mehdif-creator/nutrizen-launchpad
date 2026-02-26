@@ -329,8 +329,10 @@ Deno.serve(async (req) => {
           .eq('user_id', userId)
           .single();
 
-        const currentBalance = (wallet?.subscription_credits || 0) + (wallet?.lifetime_credits || 0);
-        const carry = Math.min(currentBalance, planMeta.rollover_cap);
+        // CRITICAL: Rollover carry uses ONLY subscription_credits, NOT lifetime_credits
+        // lifetime_credits are perpetual purchased credits and must never be mixed into rollover
+        const currentSubscriptionCredits = wallet?.subscription_credits || 0;
+        const carry = Math.min(currentSubscriptionCredits, planMeta.rollover_cap);
         const newBalance = carry + planMeta.credits_monthly;
 
         // Idempotent insert
@@ -386,38 +388,65 @@ Deno.serve(async (req) => {
           return okResponse(corsHeaders);
         }
 
-        // Check if any line has proration=true for premium tier
+        // STRICT upgrade detection: require proration line with premium price metadata
         const lines = invoice.lines?.data || [];
-        const hasProrationForPremium = lines.some(line => {
-          if (!line.proration) return false;
-          // The line price should be premium
-          return true; // We'll verify via subscription lookup
-        });
+        let prorationPriceId: string | null = null;
+        for (const line of lines) {
+          if (line.proration && line.price?.id) {
+            prorationPriceId = line.price.id;
+            break;
+          }
+        }
 
-        if (!hasProrationForPremium) {
+        if (!prorationPriceId) {
           logStep("No proration line found, skipping delta credit");
           return okResponse(corsHeaders);
         }
 
-        const sub = await stripe.subscriptions.retrieve(subscriptionId);
-        const priceId = sub.items.data[0]?.price.id;
-        const planMeta = await getPlanMetaFromPrice(stripe, priceId);
-
-        if (!planMeta || planMeta.tier !== 'premium') {
-          logStep("Proration not for premium upgrade, skipping");
+        // Verify the proration target is actually premium via price metadata
+        const prorationPlanMeta = await getPlanMetaFromPrice(stripe, prorationPriceId);
+        if (!prorationPlanMeta || prorationPlanMeta.tier !== 'premium') {
+          logStep("Proration line is not for premium tier, skipping", { priceId: prorationPriceId });
           return okResponse(corsHeaders);
         }
 
-        // Calculate prorated delta
+        // Verify user was NOT already premium (prevent re-granting on non-upgrade updates)
+        const { data: profileBefore } = await supabaseAdmin
+          .from('profiles')
+          .select('plan_tier')
+          .eq('id', userId)
+          .single();
+
+        if (profileBefore?.plan_tier === 'premium') {
+          logStep("User already premium, not an upgrade — skipping delta", { currentTier: profileBefore.plan_tier });
+          return okResponse(corsHeaders);
+        }
+
+        // Get old plan credits from DB subscription's current price or fallback to starter metadata
+        const { data: oldSub } = await supabaseAdmin
+          .from('subscriptions')
+          .select('plan')
+          .eq('user_id', userId)
+          .single();
+
+        let oldCreditsMonthly = 80; // default starter
+        if (oldSub?.plan) {
+          const oldPlanMeta = await getPlanMetaFromPrice(stripe, oldSub.plan);
+          if (oldPlanMeta) oldCreditsMonthly = oldPlanMeta.credits_monthly;
+        }
+
+        const newCreditsMonthly = prorationPlanMeta.credits_monthly;
+
+        // Retrieve the subscription for period calculation
+        const sub = await stripe.subscriptions.retrieve(subscriptionId);
         const periodStart = sub.current_period_start;
         const periodEnd = sub.current_period_end;
         const now = Math.floor(Date.now() / 1000);
-        const remainingRatio = (periodEnd - now) / (periodEnd - periodStart);
-        const STARTER_CREDITS = 80;
-        const PREMIUM_CREDITS = 200;
+        const remainingRatio = Math.max(0, Math.min(1, (periodEnd - now) / (periodEnd - periodStart)));
+        const maxDelta = newCreditsMonthly - oldCreditsMonthly;
         const delta = Math.min(
-          Math.ceil((PREMIUM_CREDITS - STARTER_CREDITS) * remainingRatio),
-          PREMIUM_CREDITS - STARTER_CREDITS
+          Math.ceil(maxDelta * remainingRatio),
+          maxDelta
         );
 
         if (delta <= 0) {
@@ -433,7 +462,7 @@ Deno.serve(async (req) => {
           credit_type: 'subscription',
           stripe_event_id: event.id,
           stripe_invoice_id: invoice.id,
-          metadata: { from_tier: 'starter', to_tier: 'premium', remaining_ratio: remainingRatio, delta },
+          metadata: { from_tier: profileBefore?.plan_tier || 'starter', to_tier: 'premium', old_credits: oldCreditsMonthly, new_credits: newCreditsMonthly, remaining_ratio: remainingRatio, delta },
         });
 
         if (txError) {
