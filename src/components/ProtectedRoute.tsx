@@ -39,15 +39,15 @@ export const ProtectedRoute = ({
   // Force re-check admin role when navigating to an admin route
   // Track the recheck state to avoid rendering denial before result arrives
   useEffect(() => {
+    let mounted = true;
     if (requireAdmin && user && adminRecheckState === 'idle') {
       setAdminRecheckState('pending');
-      recheckAdmin().then(() => {
-        setAdminRecheckState('done');
-      }).catch(() => {
-        setAdminRecheckState('done');
-      });
+      recheckAdmin()
+        .then(() => { if (mounted) setAdminRecheckState('done'); })
+        .catch(() => { if (mounted) setAdminRecheckState('done'); });
     }
-  }, [requireAdmin, user, recheckAdmin, adminRecheckState]);
+    return () => { mounted = false; };
+  }, [requireAdmin, user?.id, adminRecheckState]);
 
   // For admin routes
   if (requireAdmin) {
@@ -72,7 +72,7 @@ export const ProtectedRoute = ({
     }
 
     // Only deny if recheck is definitively done (not just timed out mid-retry)
-    if (adminRecheckState !== 'done') {
+    if (adminRecheckState !== 'done' && !timedOut) {
       return (
         <div className="min-h-screen flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
