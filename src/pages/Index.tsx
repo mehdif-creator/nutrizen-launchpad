@@ -22,7 +22,6 @@ const RecipeGallery = lazy(() => import('@/components/landing/RecipeGallery').th
 const CommunityTestimonials = lazy(() => import('@/components/landing/CommunityTestimonials').then(m => ({ default: m.CommunityTestimonials })));
 const ExampleWeek = lazy(() => import('@/components/landing/ExampleWeek').then(m => ({ default: m.ExampleWeek })));
 const Pricing = lazy(() => import('@/components/landing/Pricing').then(m => ({ default: m.Pricing })));
-const EconomicComparison = lazy(() => import('@/components/landing/EconomicComparison').then(m => ({ default: m.EconomicComparison })));
 const FAQ = lazy(() => import('@/components/landing/FAQ').then(m => ({ default: m.FAQ })));
 const FinalCTA = lazy(() => import('@/components/landing/FinalCTA').then(m => ({ default: m.FinalCTA })));
 const Footer = lazy(() => import('@/components/landing/Footer').then(m => ({ default: m.Footer })));
@@ -93,7 +92,6 @@ const Index = () => {
         <ExampleWeek />
         <GuaranteeCard />
         <Pricing onCtaClick={handleCtaClick} />
-        <EconomicComparison />
         <FAQ copy={mainCopy.faq} />
         <LeadMagnet copy={mainCopy.leadMagnet} />
         <FinalCTA onCtaClick={handleCtaClick} copy={mainCopy.finalCta} />
