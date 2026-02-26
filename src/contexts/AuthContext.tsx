@@ -72,23 +72,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     setAdminLoading(true);
     try {
-      const { data, error } = await supabase.rpc('is_admin');
+      let data, error;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        ({ data, error } = await supabase.rpc('is_admin'));
+        if (!error) break;
+        if (attempt < 3) await new Promise(r => setTimeout(r, 1500 * attempt));
+      }
       if (error) {
-        logger.error('Admin role check failed', { message: error.message, code: error.code, details: error.details });
-        console.error('[AdminCheck] RPC error:', JSON.stringify(error));
         setIsAdmin(false);
-        // Do NOT cache failures — allow retry
         return false;
       }
       const result = data === true;
       setIsAdmin(result);
-      if (result) {
-        adminCheckResultRef.current.set(userId, true);
-      }
-      logger.debug('Admin check result', { userId: userId.substring(0, 8), isAdmin: result, rawData: data, dataType: typeof data });
+      if (result) adminCheckResultRef.current.set(userId, true);
       return result;
     } catch (error) {
-      logger.error('Admin role check exception', error instanceof Error ? error : new Error(String(error)));
       setIsAdmin(false);
       return false;
     } finally {
@@ -136,7 +134,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // DO NOT set adminLoading=false here — let checkAdminRole resolve naturally.
         // Setting adminLoading=false while isAdmin is still false causes false denials.
       }
-    }, 8000);
+    }, 25000);
 
     // Register listener FIRST so we never miss INITIAL_SESSION with PKCE
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(
