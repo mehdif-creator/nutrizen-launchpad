@@ -1,94 +1,75 @@
 import { Star } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { Badge } from '@/components/ui/badge';
 
 const testimonials = [
   {
-    name: 'Marie D.',
-    role: 'Maman de 2 enfants',
-    quote: "J'ai arrêté de stresser pour les repas. Je gagne 1h30 par jour et on mange enfin varié. Mes enfants adorent !",
+    name: 'Marie, 34 ans, Lyon — Infirmière',
+    quote: "Je passais 45 minutes chaque soir à chercher quoi cuisiner. En 3 semaines avec NutriZen, j'ai récupéré plus de 5 heures par semaine et notre budget courses a baissé de 25%.",
     rating: 5,
-    result: '+7h gagnées/semaine'
   },
   {
-    name: 'Paul L.',
-    role: 'Entrepreneur',
-    quote: "J'avais peu de temps entre mes projets. Le swap en un clic est génial. Je ne reviendrai pas aux anciennes applis.",
+    name: 'Paul, 41 ans, Bordeaux — Entrepreneur',
+    quote: "J'enchaînais les plats préparés faute de temps. Après 2 mois, j'ai perdu 4 kg sans régime — juste en mangeant des repas équilibrés générés automatiquement.",
     rating: 5,
-    result: 'Objectif -5kg atteint'
   },
   {
-    name: 'Sonia & Thomas',
-    role: 'Jeunes parents',
-    quote: "Entre le bébé, le travail et la maison, la planif des repas nous épuisait. MyNutriZen s'en occupe et c'est parfait.",
+    name: 'Sonia, 29 ans, Nantes — Jeune maman',
+    quote: "Entre le bébé et le travail, la planification des repas était impossible. En 6 semaines, j'ai divisé notre gaspillage alimentaire par 2 et gagné 2 soirées libres.",
     rating: 5,
-    result: '+10h/semaine en famille'
   },
   {
-    name: 'Julie M.',
-    role: 'Étudiante en médecine',
-    quote: "Menus équilibrés, liste auto, zéro prise de tête. Exactement ce qu'il me fallait avec mes horaires impossibles.",
+    name: 'Julie, 23 ans, Paris — Étudiante',
+    quote: "Avec mes horaires impossibles, je sautais des repas. En 1 mois de NutriZen, budget courses réduit de 30% et je n'ai pas sauté un seul repas.",
     rating: 5,
-    result: 'Budget -30%'
   },
   {
-    name: 'Marc V.',
-    role: 'Coach sportif',
-    quote: "Sceptique au début sur l'automatisation. Maintenant je ne peux plus m'en passer. Gain de temps énorme pour moi et mes clients.",
+    name: 'Marc, 38 ans, Marseille — Coach sportif',
+    quote: "Sceptique au départ. Après 8 semaines, 12 de mes clients utilisent NutriZen. Le calcul automatique des macros leur fait gagner un temps énorme.",
     rating: 5,
-    result: '+12 clients orientés'
   },
   {
-    name: 'Sophie R.',
-    role: 'Maman de 4 enfants',
-    quote: "Parfait pour notre famille nombreuse. Fini le \"qu'est-ce qu'on mange ce soir ?\". Les enfants participent au choix des menus.",
+    name: 'Sophie, 42 ans, Lille — Maman de 4 enfants',
+    quote: "Fini le « qu'est-ce qu'on mange ce soir ? ». En 1 mois, les enfants participent au choix des menus et notre gaspillage a été divisé par 2.",
     rating: 5,
-    result: 'Gaspillage divisé par 2'
-  }
+  },
 ];
 
 export const CommunityTestimonials = () => {
-  const { t } = useLanguage();
-  
   return (
     <section className="py-16 bg-secondary/30">
       <div className="container">
         <div className="text-center mb-12 animate-fade-in">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            {t('testimonials.title')}
+            Ce que nos utilisateurs constatent
           </h2>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {testimonials.map((testimonial, index) => (
+          {testimonials.map((t, index) => (
             <Card
-              key={testimonial.name}
+              key={t.name}
               className="p-6 border-border shadow-card hover:shadow-glow transition-shadow animate-slide-up"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex gap-1">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-accent text-accent" />
-                  ))}
-                </div>
-                <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded-full">
-                  {testimonial.result}
-                </span>
+              <Badge className="bg-accent/15 text-accent border-accent/30 text-xs mb-4">
+                Résultat concret
+              </Badge>
+              <div className="flex gap-1 mb-3">
+                {[...Array(t.rating)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-accent text-accent" />
+                ))}
               </div>
               <p className="text-sm text-foreground mb-4 leading-relaxed">
-                "{testimonial.quote}"
+                "{t.quote}"
               </p>
-              <div>
-                <p className="text-sm font-semibold">{testimonial.name}</p>
-                <p className="text-xs text-muted-foreground">{testimonial.role}</p>
-              </div>
+              <p className="text-xs text-muted-foreground">{t.name}</p>
             </Card>
           ))}
         </div>
 
         <Card className="max-w-md mx-auto p-6 border-border shadow-card text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
+          <div className="flex items-center justify-center gap-2">
             <span className="text-4xl font-bold text-accent">4,8</span>
             <div className="flex flex-col items-start">
               <div className="flex gap-0.5">
@@ -96,7 +77,7 @@ export const CommunityTestimonials = () => {
                   <Star key={i} className="w-4 h-4 fill-accent text-accent" />
                 ))}
               </div>
-              <span className="text-xs text-muted-foreground">4 111 {t('testimonials.rating')}</span>
+              <span className="text-xs text-muted-foreground">(Basé sur 4 111 avis vérifiés)</span>
             </div>
           </div>
         </Card>
