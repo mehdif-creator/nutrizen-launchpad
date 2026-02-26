@@ -29,11 +29,17 @@ jobs:
       - name: Lint
         run: npm run lint
       
+      - name: Lint for security issues
+        run: npx eslint src/ --rule '{"no-eval": "error"}' --no-eslintrc --plugin @typescript-eslint || true
+      
       - name: Type check
         run: npx tsc --noEmit
       
       - name: Unit tests
         run: npx vitest run --reporter=verbose
+      
+      - name: Security audit
+        run: npm audit --audit-level=high || true
       
       - name: Build
         run: npm run build

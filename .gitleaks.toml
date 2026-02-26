@@ -1,0 +1,41 @@
+title = "Gitleaks config for NutriZen"
+
+[allowlist]
+  description = "Allow known safe patterns"
+  paths = [
+    '''\.env\.example''',
+    '''docs/''',
+    '''\.github/workflows/''',
+  ]
+  regexes = [
+    # Supabase anon/publishable keys are safe to expose
+    '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6''',
+    # Placeholder keys used in CI
+    '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.placeholder''',
+  ]
+
+[[rules]]
+  id = "supabase-service-role-key"
+  description = "Supabase Service Role Key"
+  regex = '''SUPABASE_SERVICE_ROLE_KEY\s*=\s*['"]?eyJ[A-Za-z0-9_-]+'''
+  tags = ["key", "supabase"]
+
+[[rules]]
+  id = "stripe-secret-key"
+  description = "Stripe Secret Key"
+  regex = '''sk_(live|test)_[A-Za-z0-9]{20,}'''
+  tags = ["key", "stripe"]
+
+[[rules]]
+  id = "stripe-webhook-secret"
+  description = "Stripe Webhook Secret"
+  regex = '''whsec_[A-Za-z0-9]{20,}'''
+  tags = ["key", "stripe"]
+
+[[rules]]
+  id = "generic-api-key"
+  description = "Generic API Key in source"
+  regex = '''(?i)(api[_-]?key|secret[_-]?key|private[_-]?key)\s*[:=]\s*['"][A-Za-z0-9_\-]{16,}['"]'''
+  tags = ["key", "generic"]
+  [rules.allowlist]
+    paths = ['''\.env\.example''', '''docs/''']
