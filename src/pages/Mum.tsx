@@ -55,33 +55,39 @@ const mumValueItems = [
 
 const mumTestimonials = [
   {
-    name: 'Sophie, 38 ans, Nantes — Assistante de direction, 2 enfants',
-    quote: "J'avais l'habitude de faire les courses sans liste et de rentrer sans savoir quoi cuisiner. Maintenant je planifie le dimanche en 10 minutes. On jette deux fois moins et mes enfants mangent mieux sans que je me batte.",
+    name: 'Sophie, 38 ans, Nantes',
+    profession: 'Assistante de direction — 2 enfants',
+    quote: "Je faisais les courses sans liste et rentrais sans savoir quoi cuisiner. Maintenant je planifie en 10 minutes le dimanche. On jette deux fois moins et mes enfants mangent mieux.",
     rating: 5,
   },
   {
-    name: 'Isabelle, 42 ans, Montpellier — Infirmière, 3 enfants',
-    quote: "Mon fils est intolérant au lactose et ma fille déteste les légumes verts. NutriZen gère les deux en même temps. C'est la première appli qui ne m'oblige pas à contourner ses propres suggestions.",
+    name: 'Isabelle, 42 ans, Montpellier',
+    profession: 'Infirmière — 3 enfants',
+    quote: "Mon fils est intolérant au lactose, ma fille déteste les légumes verts. NutriZen gère les deux en même temps. C'est la première appli qui ne crée pas de problèmes supplémentaires.",
     rating: 5,
   },
   {
-    name: 'Claire, 35 ans, Lille — Comptable, 2 enfants',
-    quote: "On dépensait ~650€/mois en courses pour 4 personnes. En planifiant correctement avec NutriZen, on est passé à 430€. 220€ d'économie par mois sans se priver.",
+    name: 'Claire, 35 ans, Lille',
+    profession: 'Comptable — 2 enfants',
+    quote: "On dépensait 650€/mois en courses pour 4 personnes. En planifiant avec NutriZen, on est passé à 430€. 220€ d'économie par mois, sans rien supprimer.",
     rating: 5,
   },
   {
-    name: 'Marie, 40 ans, Bordeaux — Responsable RH, 2 enfants',
-    quote: "Le plus grand changement c'est la charge mentale. Je ne passe plus ma journée de travail à stresser sur le dîner du soir. Ça semble petit mais c'est énorme.",
+    name: 'Marie, 40 ans, Bordeaux',
+    profession: 'Responsable RH — 2 enfants',
+    quote: "La charge mentale autour des repas m'épuisait sans que je réalise à quel point. Depuis 6 semaines je ne pense plus aux dîners de la semaine. Ça paraît petit. C'est énorme.",
     rating: 5,
   },
   {
-    name: 'Émilie, 33 ans, Lyon — Sage-femme, 2 enfants',
-    quote: "Avant NutriZen je passais 30 minutes par soir à chercher une idée de repas. Maintenant c'est décidé le dimanche. J'ai récupéré plus de 3 heures par semaine.",
+    name: 'Aurélie, 36 ans, Grenoble',
+    profession: 'Architecte — 3 enfants',
+    quote: "Mon mari et moi n'avons pas les mêmes goûts et les enfants encore moins. NutriZen propose des menus qui conviennent à tout le monde sans que je cuisine 3 versions.",
     rating: 5,
   },
   {
-    name: 'Aurélie, 36 ans, Toulouse — Enseignante, 3 enfants',
-    quote: "Trois enfants avec des goûts différents, un mari qui ne mange pas de poisson. NutriZen trouve des repas qui conviennent à tout le monde. Ça paraît simple mais c'était impossible avant.",
+    name: 'Virginie, 43 ans, Strasbourg',
+    profession: "Directrice d'école — 2 enfants",
+    quote: "J'avais essayé de planifier seule avec un tableau Excel. J'abandonnais après 2 semaines à chaque fois. Avec NutriZen, je suis à 4 mois sans interruption.",
     rating: 5,
   },
 ];
