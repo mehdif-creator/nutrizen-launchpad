@@ -1,29 +1,34 @@
+import { lazy, Suspense } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useReferralTracking } from '@/hooks/useReferralTracking';
+import { useSeoMeta } from '@/hooks/useSeoMeta';
+import { mainCopy } from '@/config/marketingCopy';
+
+// Eager: above the fold
 import { AnnouncementBar } from '@/components/landing/AnnouncementBar';
 import { PreHeader } from '@/components/landing/PreHeader';
 import { Header } from '@/components/landing/Header';
 import { Hero } from '@/components/landing/Hero';
 import { MadeForYou } from '@/components/landing/MadeForYou';
 import { Benefits } from '@/components/landing/Benefits';
-import { HowItWorks } from '@/components/landing/HowItWorks';
-import { RecipeGallery } from '@/components/landing/RecipeGallery';
-import { ValueStackSection } from '@/components/landing/ValueStackSection';
 
-import { Guarantee } from '@/components/landing/Guarantee';
-import { GuaranteeCard } from '@/components/landing/GuaranteeCard';
-import { CommunityTestimonials } from '@/components/landing/CommunityTestimonials';
-import { ExampleWeek } from '@/components/landing/ExampleWeek';
-import { Pricing } from '@/components/landing/Pricing';
-import { EconomicComparison } from '@/components/landing/EconomicComparison';
-import { FAQ } from '@/components/landing/FAQ';
-import { ProfileQuiz } from '@/components/landing/ProfileQuiz';
-import { FinalCTA } from '@/components/landing/FinalCTA';
-import { Footer } from '@/components/landing/Footer';
-import { MobileStickyCTA } from '@/components/landing/MobileStickyCTA';
-import { ScrollToTop } from '@/components/common/ScrollToTop';
-import { useNavigate } from 'react-router-dom';
-import { useReferralTracking } from '@/hooks/useReferralTracking';
-import { useSeoMeta } from '@/hooks/useSeoMeta';
-import { mainCopy } from '@/config/marketingCopy';
+// Lazy: below the fold
+const ProfileQuiz = lazy(() => import('@/components/landing/ProfileQuiz').then(m => ({ default: m.ProfileQuiz })));
+const HowItWorks = lazy(() => import('@/components/landing/HowItWorks').then(m => ({ default: m.HowItWorks })));
+const ValueStackSection = lazy(() => import('@/components/landing/ValueStackSection').then(m => ({ default: m.ValueStackSection })));
+const Guarantee = lazy(() => import('@/components/landing/Guarantee').then(m => ({ default: m.Guarantee })));
+const GuaranteeCard = lazy(() => import('@/components/landing/GuaranteeCard').then(m => ({ default: m.GuaranteeCard })));
+const RecipeGallery = lazy(() => import('@/components/landing/RecipeGallery').then(m => ({ default: m.RecipeGallery })));
+const CommunityTestimonials = lazy(() => import('@/components/landing/CommunityTestimonials').then(m => ({ default: m.CommunityTestimonials })));
+const ExampleWeek = lazy(() => import('@/components/landing/ExampleWeek').then(m => ({ default: m.ExampleWeek })));
+const Pricing = lazy(() => import('@/components/landing/Pricing').then(m => ({ default: m.Pricing })));
+const EconomicComparison = lazy(() => import('@/components/landing/EconomicComparison').then(m => ({ default: m.EconomicComparison })));
+const FAQ = lazy(() => import('@/components/landing/FAQ').then(m => ({ default: m.FAQ })));
+const FinalCTA = lazy(() => import('@/components/landing/FinalCTA').then(m => ({ default: m.FinalCTA })));
+const Footer = lazy(() => import('@/components/landing/Footer').then(m => ({ default: m.Footer })));
+const MobileStickyCTA = lazy(() => import('@/components/landing/MobileStickyCTA').then(m => ({ default: m.MobileStickyCTA })));
+const ScrollToTop = lazy(() => import('@/components/common/ScrollToTop').then(m => ({ default: m.ScrollToTop })));
+const LeadMagnet = lazy(() => import('@/components/landing/LeadMagnet').then(m => ({ default: m.LeadMagnet })));
 
 const homeValueItems = [
   {
@@ -77,22 +82,25 @@ const Index = () => {
       <Hero onCtaClick={handleCtaClick} onExampleClick={handleExampleClick} copy={mainCopy.hero} />
       <MadeForYou />
       <Benefits copy={mainCopy.benefits} />
-      <ProfileQuiz />
-      <HowItWorks copy={mainCopy.howItWorks} />
-      <ValueStackSection items={homeValueItems} totalValue="~250€/mois" price="12,99€/mois" />
 
-      <Guarantee />
-      <RecipeGallery />
-      <CommunityTestimonials />
-      <ExampleWeek />
-      <GuaranteeCard />
-      <Pricing onCtaClick={handleCtaClick} />
-      <EconomicComparison />
-      <FAQ copy={mainCopy.faq} />
-      <FinalCTA onCtaClick={handleCtaClick} copy={mainCopy.finalCta} />
-      <Footer />
-      <MobileStickyCTA onCtaClick={handleCtaClick} />
-      <ScrollToTop />
+      <Suspense fallback={<div className="py-16" />}>
+        <ProfileQuiz />
+        <HowItWorks copy={mainCopy.howItWorks} />
+        <ValueStackSection items={homeValueItems} totalValue="~250€/mois" price="12,99€/mois" />
+        <Guarantee />
+        <RecipeGallery />
+        <CommunityTestimonials />
+        <ExampleWeek />
+        <GuaranteeCard />
+        <Pricing onCtaClick={handleCtaClick} />
+        <EconomicComparison />
+        <FAQ copy={mainCopy.faq} />
+        <LeadMagnet copy={mainCopy.leadMagnet} />
+        <FinalCTA onCtaClick={handleCtaClick} copy={mainCopy.finalCta} />
+        <Footer />
+        <MobileStickyCTA onCtaClick={handleCtaClick} />
+        <ScrollToTop />
+      </Suspense>
     </div>
   );
 };
