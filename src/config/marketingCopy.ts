@@ -132,60 +132,55 @@ export const mainCopy: PageMarketingCopy = {
 // =====================================================
 export const fitCopy: PageMarketingCopy = {
   seo: {
-    title: 'NutriZen Fit — Menus fitness + repères macros + meal prep',
-    description: 'Plans repas adaptés à ton objectif (sèche/maintien/prise de masse). Recettes riches en protéines, repères nutritionnels lisibles, substitutions fit.',
+    title: 'NutriZen Fit — Macros automatiques, menus performance, meal prep',
+    description: 'Calcul TDEE + macros personnalisées. Menus optimisés protéines pour sèche, prise de masse ou maintenance. Meal prep intégré. +4 000 sportifs.',
   },
   hero: {
-    badge: 'Profil Fit • Sèche / Maintien / Prise de masse',
-    h1: 'Mange pour performer. Pas pour deviner.',
-    subtitle: 'Un plan repas qui colle à ton objectif, avec des recettes "fit", des repères nutritionnels clairs, et des ajustements rapides quand ta semaine bouge.',
+    badge: 'Nutrition de performance · Macros automatiques · Adapté à votre objectif',
+    h1: 'Mange pour performer.\nPas pour deviner.',
+    subtitle: 'NutriZen Fit calcule vos macros cibles, génère vos menus adaptés et ajuste chaque semaine selon vos résultats. Sèche, prise de masse ou maintenance — vos repas sont toujours alignés avec votre objectif.',
     bullets: [
-      { icon: 'heart', bold: 'Recettes orientées protéines', text: '+ options "low-cal"' },
-      { icon: 'zap', bold: 'Repères nutritionnels lisibles', text: 'par repas' },
-      { icon: 'clock', bold: 'Mode "meal prep"', text: ': 2h d\'avance = semaine simplifiée' },
-      { icon: 'shopping', bold: 'Ajustements express', text: ': protéines ↑, calories ↓, portions ↕' },
+      { icon: 'heart', bold: 'Objectif sélectionnable', text: ': prise de masse / sèche / recomposition / maintenance' },
+      { icon: 'zap', bold: 'Calcul TDEE automatique', text: 'selon votre activité physique réelle' },
+      { icon: 'clock', bold: 'Meal prep intégré', text: '— cuisinez une fois, mangez bien toute la semaine' },
+      { icon: 'shopping', bold: 'Compatible tous sports', text: ': musculation, crossfit, running, cyclisme' },
     ],
-    primaryCta: 'Créer mon plan Fit',
-    secondaryCta: 'Voir un exemple macros',
+    primaryCta: 'Calculer mes macros et voir mon menu →',
+    secondaryCta: 'Voir un exemple de plan Sèche / Prise de masse',
     secondaryAction: 'example',
+    socialProof: '+4 000 sportifs',
+    socialProofSuffix: 'ont optimisé leur nutrition',
     heroImage: '/img/hero-thomas.png',
     heroImageAlt: 'Sportif avec un repas fit équilibré',
-    floatingTop: { value: '30s', label: 'Plan Fit personnalisé' },
+    floatingTop: { value: 'TDEE', label: 'Macros calculées' },
     floatingBottom: { value: '150g', label: 'Protéines/jour' },
-    trustLine: 'Compte gratuit — Sans carte bancaire, en 30 secondes',
+    trustLine: '⭐ 4.8/5  ·  +4 000 sportifs  ·  Macros recalculées chaque semaine  ·  Sans engagement',
   },
   benefits: {
     title: 'Pourquoi choisir NutriZen Fit ?',
     cards: [
       { title: 'Progression mesurable', result: 'Plan cohérent', description: 'Un plan cohérent semaine après semaine, sans repartir de zéro.' },
-      { title: 'Moins de décisions', result: 'Focus sur l\'essentiel', description: 'Tu suis le plan, tu ajustes, point. Fini le flou.' },
+      { title: 'Moins de décisions', result: 'Focus sur l\'essentiel', description: 'Vous suivez le plan, vous ajustez, point. Fini le flou.' },
       { title: 'Fit réaliste', result: 'Tenable au quotidien', description: 'Pas de cuisine "bodybuilder" : juste efficace, tenable, bon.' },
     ],
   },
   howItWorks: {
     title: 'Comment ça marche ?',
-    subtitle: '3 étapes vers ton plan Fit personnalisé',
+    subtitle: '3 étapes vers votre plan Fit personnalisé',
     steps: [
-      { title: 'Objectif + rythme sportif', description: 'Sèche, maintien ou prise de masse + contraintes de ton planning.' },
-      { title: 'Plan Fit prêt', description: 'Menus + recettes + repères + liste de courses.' },
-      { title: 'Optimisation continue', description: 'Remplace un repas sans casser la logique nutritionnelle.' },
+      { title: 'Objectif + rythme sportif', description: 'Sèche, maintien ou prise de masse + contraintes de votre planning.' },
+      { title: 'Plan Fit prêt', description: 'Menus + recettes + macros + liste de courses.' },
+      { title: 'Optimisation continue', description: 'Remplacez un repas sans casser la logique nutritionnelle.' },
     ],
   },
   faq: {
     items: [
-      // Fit-specific
-      { question: 'C\'est adapté à la prise de masse ?', answer: 'Oui. Choisis ton objectif et NutriZen ajuste les portions et la densité énergétique.' },
-      { question: 'Je veux sécher sans me prendre la tête.', answer: 'Active l\'option "low-cal" : recettes plus légères et repères plus stricts.' },
-      { question: 'Je déteste compter.', answer: 'Utilise les repères par repas : tu suis le plan, tu ajustes seulement si besoin.' },
-      { question: 'Je fais du meal prep.', answer: 'Oui. Le mode "meal prep" te propose des recettes compatibles batch cooking.' },
-      // Abonnement & crédits
-      { question: 'Puis-je annuler à tout moment ?', answer: 'Oui, tu peux annuler ton abonnement à tout moment. L\'accès reste actif jusqu\'à la fin de la période payée.' },
-      { question: 'Comment fonctionne le rollover ?', answer: 'Les crédits non utilisés sont reportés au mois suivant, dans la limite du cap de rollover (20 pour Starter, 80 pour Premium). Les crédits au-delà du cap sont perdus.' },
-      { question: 'Les crédits offerts (bienvenue) sont-ils reconductibles ?', answer: 'Non, les 14 crédits de bienvenue sont offerts une seule fois. Ils n\'expirent pas et restent sur ton compte jusqu\'à utilisation.' },
-      { question: 'Puis-je acheter des crédits en plus de mon abonnement ?', answer: 'Oui ! Les packs de crédits (top-ups) sont disponibles à tout moment. Les abonnés Premium bénéficient de -10% sur tous les packs.' },
-      // Général
-      { question: 'Est-ce que mes données sont sécurisées (RGPD) ?', answer: 'Totalement. Nous sommes conformes RGPD. Tes données personnelles ne sont ni vendues ni partagées. Elles servent uniquement à personnaliser tes menus.' },
-      { question: 'Comment contacter le support ?', answer: 'Tu peux nous contacter via le formulaire de contact sur le site, par email à support@nutrizen.fr, ou directement depuis ton espace membre. Nous répondons sous 24h en moyenne.' },
+      { question: 'Comment NutriZen calcule mes macros ?', answer: 'Via votre TDEE (dépense énergétique totale) calculé selon votre poids, taille, âge, sexe et niveau d\'activité. Vous choisissez votre objectif et les macros sont recalculées chaque semaine.' },
+      { question: 'Ça marche pour la prise de masse ET la sèche ?', answer: 'Oui. Vous changez d\'objectif à tout moment depuis votre profil. Les menus et macros s\'ajustent immédiatement.' },
+      { question: 'Les recettes sont adaptées au meal prep ?', answer: 'Une vue "Meal prep" regroupe toutes les recettes optimisées pour être préparées en batch. La liste de courses est adaptée en conséquence.' },
+      { question: 'Ça fonctionne si je m\'entraîne le matin et mange différemment les jours de repos ?', answer: 'Oui. Vous indiquez vos jours d\'entraînement et NutriZen ajuste les apports pour chaque journée — plus de glucides les jours d\'entraînement, profil différent les jours de repos.' },
+      { question: 'Je peux synchroniser avec mon tracker fitness ?', answer: 'L\'intégration avec les principales applications de fitness est en cours de développement. En attendant, vous pouvez saisir manuellement votre activité.' },
+      { question: 'Combien de temps ça prend vraiment chaque semaine ?', answer: '5 à 10 minutes le dimanche pour valider votre menu et votre liste de courses. C\'est tout.' },
     ],
   },
   leadMagnet: {
@@ -195,9 +190,9 @@ export const fitCopy: PageMarketingCopy = {
     source: 'fit_lead_magnet',
   },
   finalCta: {
-    headline: 'Prêt à transformer ta nutrition en routine ?',
-    button: 'Démarrer mon plan Fit',
-    subtitle: 'Créer ton compte en 30 secondes — sans carte bancaire',
+    headline: 'Votre alimentation devrait être aussi sérieuse que votre entraînement.',
+    button: 'Calculer mes macros gratuitement',
+    subtitle: 'Rejoignez +4 000 sportifs qui ont arrêté de deviner ce qu\'ils doivent manger.',
   },
 };
 
