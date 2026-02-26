@@ -1,11 +1,14 @@
+import { AnnouncementBar } from '@/components/landing/AnnouncementBar';
 import { PreHeader } from '@/components/landing/PreHeader';
 import { Header } from '@/components/landing/Header';
 import { Hero } from '@/components/landing/Hero';
 import { Benefits } from '@/components/landing/Benefits';
 import { HowItWorks } from '@/components/landing/HowItWorks';
 import { RecipeGallery } from '@/components/landing/RecipeGallery';
+import { ValueStackSection } from '@/components/landing/ValueStackSection';
 
 import { Guarantee } from '@/components/landing/Guarantee';
+import { GuaranteeCard } from '@/components/landing/GuaranteeCard';
 import { CommunityTestimonials } from '@/components/landing/CommunityTestimonials';
 import { ExampleWeek } from '@/components/landing/ExampleWeek';
 import { Pricing } from '@/components/landing/Pricing';
@@ -39,17 +42,20 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
+      <AnnouncementBar />
       <PreHeader />
       <Header onCtaClick={handleCtaClick} />
       <Hero onCtaClick={handleCtaClick} onExampleClick={handleExampleClick} copy={mainCopy.hero} />
       <Benefits copy={mainCopy.benefits} />
       <ProfileQuiz />
       <HowItWorks copy={mainCopy.howItWorks} />
+      <ValueStackSection />
       
       <Guarantee />
       <RecipeGallery />
       <CommunityTestimonials />
       <ExampleWeek />
+      <GuaranteeCard />
       <Pricing onCtaClick={handleCtaClick} />
       <EconomicComparison />
       <FAQ copy={mainCopy.faq} />
