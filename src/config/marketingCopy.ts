@@ -206,7 +206,7 @@ export const mumCopy: PageMarketingCopy = {
   },
   hero: {
     badge: 'Profil Mum • Famille • Rapide • Budget',
-    h1: 'Des repas de famille qui tiennent dans une vraie semaine.',
+    h1: 'Des repas de famille qui tiennent\ndans une vraie semaine.',
     subtitle: 'NutriZen t\'aide à planifier des repas simples qui plaisent aux enfants, avec des alternatives quand ils sont difficiles, une liste de courses claire, et du batch cooking quand tu veux gagner du temps.',
     bullets: [
       { icon: 'heart', bold: 'Repas kids-friendly', text: '+ options "enfants difficiles"' },
@@ -214,14 +214,16 @@ export const mumCopy: PageMarketingCopy = {
       { icon: 'zap', bold: 'Goûters/collations', text: '+ petits-déjeuners rapides' },
       { icon: 'shopping', bold: 'Liste de courses courte', text: ', anti-doublons, budget maîtrisé' },
     ],
-    primaryCta: 'Créer mon menu Famille',
-    secondaryCta: 'Voir un exemple de semaine',
+    primaryCta: 'Créer le menu de ma famille cette semaine →',
+    secondaryCta: 'Voir un exemple de semaine famille',
     secondaryAction: 'example',
+    socialProof: '+5 000 familles',
+    socialProofSuffix: 'ont simplifié leurs repas',
     heroImage: '/img/hero-sarah.png',
     heroImageAlt: 'Famille heureuse qui prépare un repas ensemble',
-    floatingTop: { value: '30s', label: 'Menu famille prêt' },
-    floatingBottom: { value: '5h', label: 'Économisées/semaine' },
-    trustLine: 'Compte gratuit — Sans carte bancaire, en 30 secondes',
+    floatingTop: { value: '10 min', label: 'Semaine planifiée' },
+    floatingBottom: { value: '200€', label: 'Économisés/mois' },
+    trustLine: '⭐ 4.8/5  ·  +5 000 familles  ·  Aucune carte bancaire  ·  Annulable à tout moment',
   },
   benefits: {
     title: 'Pourquoi choisir NutriZen Mum ?',
@@ -242,20 +244,13 @@ export const mumCopy: PageMarketingCopy = {
   },
   faq: {
     items: [
-      // Mum-specific
-      { question: 'Mes enfants sont difficiles, ça marche ?', answer: 'Oui. NutriZen propose des variantes et des alternatives simples (textures, ingrédients, assaisonnements).' },
-      { question: 'Je n\'ai pas le temps en semaine.', answer: 'Active le mode rapide et/ou batch cooking pour préparer en une fois.' },
-      { question: 'Je veux maîtriser le budget.', answer: 'La liste de courses est structurée et évite les doublons. Tu peux privilégier des ingrédients réutilisables.' },
-      { question: 'Je dois changer un repas au dernier moment.', answer: 'Tu peux remplacer une journée, demander une substitution, ou choisir un repas "backup" en 1 clic.' },
-      { question: 'Puis-je utiliser NutriZen pour toute ma famille ?', answer: 'Oui, NutriZen peut générer des menus adaptés pour toute la famille. Tu peux ajuster les portions et les préférences alimentaires pour inclure les enfants.' },
-      // Abonnement & crédits
-      { question: 'Puis-je annuler à tout moment ?', answer: 'Oui, tu peux annuler ton abonnement à tout moment. L\'accès reste actif jusqu\'à la fin de la période payée.' },
-      { question: 'Comment fonctionne le rollover ?', answer: 'Les crédits non utilisés sont reportés au mois suivant, dans la limite du cap de rollover (20 pour Starter, 80 pour Premium). Les crédits au-delà du cap sont perdus.' },
-      { question: 'Les crédits offerts (bienvenue) sont-ils reconductibles ?', answer: 'Non, les 14 crédits de bienvenue sont offerts une seule fois. Ils n\'expirent pas et restent sur ton compte jusqu\'à utilisation.' },
-      { question: 'Puis-je acheter des crédits en plus de mon abonnement ?', answer: 'Oui ! Les packs de crédits (top-ups) sont disponibles à tout moment. Les abonnés Premium bénéficient de -10% sur tous les packs.' },
-      // Général
-      { question: 'Est-ce que mes données sont sécurisées (RGPD) ?', answer: 'Totalement. Nous sommes conformes RGPD. Tes données personnelles ne sont ni vendues ni partagées. Elles servent uniquement à personnaliser tes menus.' },
-      { question: 'Comment contacter le support ?', answer: 'Tu peux nous contacter via le formulaire de contact sur le site, par email à support@nutrizen.fr, ou directement depuis ton espace membre. Nous répondons sous 24h en moyenne.' },
+      { question: 'Mes enfants sont difficiles, ça marche ?', answer: 'Oui. Vous indiquez les aliments que chaque enfant refuse et NutriZen ne les inclut jamais dans leurs menus. Sans compromis sur l\'équilibre nutritionnel.' },
+      { question: 'Puis-je avoir des menus différents pour les adultes et les enfants ?', answer: 'Oui. Les menus peuvent être partiellement différenciés par membre du foyer. Les enfants ont leurs portions et préférences, les adultes les leurs.' },
+      { question: 'Les recettes prennent vraiment moins de 30 minutes ?', answer: 'La grande majorité oui. Chaque recette affiche un temps de préparation réel — vous pouvez filtrer par temps disponible avant de valider votre menu.' },
+      { question: 'Est-ce que ça gère les allergies de mes enfants ?', answer: 'Oui. Vous configurez les allergies et intolérances de chaque membre une seule fois. Aucun aliment concerné n\'apparaîtra jamais dans leurs menus.' },
+      { question: 'Mon conjoint ne mange pas comme moi — comment ça fonctionne ?', answer: 'Vous créez un profil pour chaque membre du foyer avec ses préférences. NutriZen propose des menus qui satisfont tout le monde — ou indique les adaptations à faire.' },
+      { question: 'Est-ce que ça m\'aide vraiment à réduire mon budget courses ?', answer: 'Nos utilisatrices économisent en moyenne 170 à 220€/mois en courses grâce à la liste optimisée et à l\'élimination du gaspillage.' },
+      { question: 'Combien de temps ça prend vraiment chaque semaine ?', answer: 'La plupart des utilisatrices valident leur semaine en 10 minutes le dimanche. Certaines font ça pendant leur café du matin.' },
     ],
   },
   leadMagnet: {
@@ -265,9 +260,9 @@ export const mumCopy: PageMarketingCopy = {
     source: 'mum_lead_magnet',
   },
   finalCta: {
-    headline: 'Prêt à simplifier les repas de famille dès cette semaine ?',
-    button: 'Commencer Famille',
-    subtitle: 'Créer ton compte en 30 secondes — sans carte bancaire',
+    headline: 'Une décision par semaine. Pas vingt et une.',
+    button: 'Voir mon premier menu famille gratuitement',
+    subtitle: 'Rejoignez +5 000 familles qui ont arrêté de se battre avec la question du dîner.',
   },
 };
 
