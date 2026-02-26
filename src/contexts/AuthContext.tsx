@@ -72,21 +72,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     setAdminLoading(true);
     try {
-      let data, error;
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        ({ data, error } = await supabase.rpc('is_admin'));
-        if (!error) break;
-        if (attempt < 3) await new Promise(r => setTimeout(r, 1500 * attempt));
+      let data: boolean | null = null;
+      let lastError: Error | null = null;
+      for (let attempt = 1; attempt <= 4; attempt++) {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('is_admin');
+        if (!rpcError) {
+          data = rpcData;
+          lastError = null;
+          break;
+        }
+        lastError = rpcError;
+        logger.warn(`Admin check attempt ${attempt}/4 failed`, { message: rpcError.message });
+        if (attempt < 4) await new Promise(r => setTimeout(r, 1500 * attempt));
       }
-      if (error) {
+      if (lastError) {
+        logger.error('Admin role check failed after 4 attempts', { message: lastError.message });
         setIsAdmin(false);
         return false;
       }
       const result = data === true;
       setIsAdmin(result);
       if (result) adminCheckResultRef.current.set(userId, true);
+      logger.debug('Admin check result', { userId: userId.substring(0, 8), isAdmin: result });
       return result;
     } catch (error) {
+      logger.error('Admin role check exception', error instanceof Error ? error : new Error(String(error)));
       setIsAdmin(false);
       return false;
     } finally {
