@@ -70,7 +70,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { data, error } = await supabase.rpc('is_admin');
       if (error) {
-        logger.error('Admin role check failed', error);
+        logger.error('Admin role check failed', { message: error.message, code: error.code, details: error.details });
+        console.error('[AdminCheck] RPC error:', JSON.stringify(error));
         setIsAdmin(false);
         adminCheckResultRef.current.set(userId, false);
         return false;
@@ -78,7 +79,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const result = data === true;
       setIsAdmin(result);
       adminCheckResultRef.current.set(userId, result);
-      logger.debug('Admin check result', { userId: userId.substring(0, 8), isAdmin: result });
+      logger.debug('Admin check result', { userId: userId.substring(0, 8), isAdmin: result, rawData: data, dataType: typeof data });
       return result;
     } catch (error) {
       logger.error('Admin role check exception', error instanceof Error ? error : new Error(String(error)));

@@ -4317,9 +4317,7 @@ export type Database = {
         Returns: boolean
       }
       household_portion_factor: { Args: { p_people: Json }; Returns: number }
-      is_admin:
-        | { Args: never; Returns: boolean }
-        | { Args: { uid: string }; Returns: boolean }
+      is_admin: { Args: never; Returns: boolean }
       is_onboarding_complete: { Args: { p_user_id: string }; Returns: boolean }
       norm_txt: { Args: { input: string }; Returns: string }
       normalize_fraction: { Args: { p_text: string }; Returns: number }
