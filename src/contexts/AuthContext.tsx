@@ -228,11 +228,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const recheckAdmin = useCallback((): Promise<boolean> => {
+    if (!user) return Promise.resolve(false);
+    return checkAdminRole(user.id, true);
+  }, [user, checkAdminRole]);
+
   return (
     <AuthContext.Provider value={{
       user, session, loading, adminLoading, isAdmin, subscription,
       refreshSubscription: () => refreshSubscription(),
-      recheckAdmin: () => user ? checkAdminRole(user.id, true) : Promise.resolve(false),
+      recheckAdmin,
       signOut
     }}>
       {children}
