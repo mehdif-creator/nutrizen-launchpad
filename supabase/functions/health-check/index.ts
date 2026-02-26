@@ -90,7 +90,17 @@ async function checkStuckJobs() {
   return { status: 'pass' as const, message: 'No stuck jobs.' };
 }
 
-// 5) Images integrity
+// Helper: normalize image path (strip bucket prefix, extract from full URL)
+function normalizeImagePath(input: string): string {
+  let path = input.trim();
+  const m = path.match(/\/storage\/v1\/object\/public\/recipe-images\/(.+)$/);
+  if (m) path = m[1];
+  path = path.replace(/^\/+/, '');
+  while (path.startsWith('recipe-images/')) path = path.slice('recipe-images/'.length);
+  return path;
+}
+
+// 5) Images integrity — HEAD checks with actionable output
 async function checkImages() {
   const { data, error } = await adminClient.rpc('check_images_integrity');
   if (error) return { status: 'fail' as const, message: `RPC error: ${error.message}` };
@@ -104,29 +114,57 @@ async function checkImages() {
     };
   }
   
-  // Sample HEAD check on 3 published recipes with image_url
+  // Sample HEAD check on 5 published recipes
   const { data: sampleRecipes } = await adminClient
     .from('recipes')
-    .select('id, image_url')
-    .not('image_url', 'is', null)
+    .select('id, image_url, image_path')
+    .or('image_url.neq.null,image_path.neq.null')
     .eq('published', true)
-    .limit(3);
+    .limit(5);
   
+  const imageResults: Record<string, unknown>[] = [];
   let brokenCount = 0;
+
   if (sampleRecipes) {
     for (const r of sampleRecipes) {
+      const rawInput = r.image_path || r.image_url || '';
+      const normalized = normalizeImagePath(rawInput);
+      const { data: urlData } = adminClient.storage.from('recipe-images').getPublicUrl(normalized);
+      const publicUrl = urlData?.publicUrl || '';
+
+      let statusCode: number | null = null;
+      let errorClass = 'ok';
       try {
-        const res = await fetch(r.image_url, { method: 'HEAD' });
-        if (!res.ok && res.status !== 304) brokenCount++;
-      } catch { brokenCount++; }
+        const res = await fetch(publicUrl, { method: 'HEAD' });
+        statusCode = res.status;
+        if (!res.ok && res.status !== 304) {
+          errorClass = res.status === 404 ? 'not_found' : res.status === 403 ? 'forbidden' : 'other';
+          brokenCount++;
+        }
+      } catch {
+        errorClass = 'network_error';
+        brokenCount++;
+      }
+
+      imageResults.push({
+        recipe_id: r.id,
+        normalized_object_path: normalized,
+        status_code: statusCode,
+        error_class: errorClass,
+        public_url: publicUrl,
+      });
     }
   }
   
   if (brokenCount > 0) {
-    return { status: 'warn' as const, message: `${brokenCount}/${sampleRecipes?.length || 0} sampled image URLs returned errors.` };
+    return {
+      status: 'warn' as const,
+      message: `${brokenCount}/${sampleRecipes?.length || 0} sampled image URLs returned errors.`,
+      details: { checks: imageResults },
+    };
   }
   
-  return { status: 'pass' as const, message: 'Images integrity OK.' };
+  return { status: 'pass' as const, message: 'Images integrity OK.', details: { checks: imageResults } };
 }
 
 // 6) Stripe env check

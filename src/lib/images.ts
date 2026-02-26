@@ -20,16 +20,30 @@ const CACHE_BUFFER_SECONDS = 300; // Refresh 5 minutes before expiry
  * Normalize an image path - handles double-prefixes and ensures correct format
  */
 function normalizeImagePath(imagePath: string): string {
+  let path = imagePath.trim();
+
+  // If it's a full URL, extract just the object path after the bucket name
+  const fullUrlMatch = path.match(/\/storage\/v1\/object\/public\/recipe-images\/(.+)$/);
+  if (fullUrlMatch) {
+    path = fullUrlMatch[1];
+  }
+
   // Remove leading slashes
-  let path = imagePath.replace(/^\/+/, '');
+  path = path.replace(/^\/+/, '');
   
-  // Handle double bucket prefix (recipe-images/recipes/... or recipe-images/recipe-images/...)
-  if (path.startsWith('recipe-images/')) {
-    path = path.replace(/^recipe-images\//, '');
+  // Strip bucket prefix (handles recipe-images/recipe-images/... too)
+  while (path.startsWith('recipe-images/')) {
+    path = path.slice('recipe-images/'.length);
   }
   
   return path;
 }
+
+/**
+ * Normalize any recipe image input (path or URL) to a canonical object path.
+ * Exported so edge functions and other code can reuse the same logic.
+ */
+export { normalizeImagePath };
 
 /**
  * Build a public URL for a given image path

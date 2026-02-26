@@ -21,22 +21,41 @@ const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
 });
 
-// Test A: Check recipe images accessibility
-async function testStorageImages(): Promise<TestResult> {
-  const details: Record<string, unknown> = {
-    number_checked: 0,
-    broken_count: 0,
-    sample_broken_urls: [] as string[],
-  };
+/**
+ * Normalize a recipe image path — strips bucket prefix, leading slashes,
+ * and extracts the object path from full URLs.
+ */
+function normalizeImagePath(input: string): string {
+  let path = input.trim();
+  const fullUrlMatch = path.match(/\/storage\/v1\/object\/public\/recipe-images\/(.+)$/);
+  if (fullUrlMatch) path = fullUrlMatch[1];
+  path = path.replace(/^\/+/, '');
+  while (path.startsWith('recipe-images/')) {
+    path = path.slice('recipe-images/'.length);
+  }
+  return path;
+}
 
+interface ImageCheckDetail {
+  recipe_id: string;
+  original_image_path: string | null;
+  original_image_url: string | null;
+  normalized_object_path: string;
+  normalization_applied: boolean;
+  public_url: string;
+  status_code: number | null;
+  error_class: 'ok' | 'not_found' | 'forbidden' | 'network_error' | 'other';
+}
+
+// Test A: Check recipe images accessibility (HEAD requests, actionable logs)
+async function testStorageImages(): Promise<TestResult> {
   try {
-    // Fetch 5 recipes with images
     const { data: recipes, error } = await adminClient
       .from('recipes')
       .select('id, title, image_url, image_path')
       .or('image_url.neq.null,image_path.neq.null')
       .eq('published', true)
-      .limit(5);
+      .limit(10);
 
     if (error) {
       return {
@@ -54,55 +73,68 @@ async function testStorageImages(): Promise<TestResult> {
       };
     }
 
-    details.number_checked = recipes.length;
-    const brokenUrls: string[] = [];
+    const checks: ImageCheckDetail[] = [];
+    let brokenCount = 0;
 
     for (const recipe of recipes) {
-      let urlToCheck: string | null = null;
+      const rawInput = recipe.image_path || recipe.image_url || '';
+      const normalized = normalizeImagePath(rawInput);
+      const normalizationApplied = normalized !== (recipe.image_path || '');
 
-      // Prefer image_path (Supabase Storage) over image_url
-      if (recipe.image_path) {
-        const { data: urlData } = adminClient.storage
-          .from('recipe-images')
-          .getPublicUrl(recipe.image_path);
-        urlToCheck = urlData?.publicUrl || null;
-      } else if (recipe.image_url) {
-        urlToCheck = recipe.image_url;
-      }
+      // Build URL via SDK to guarantee correct format
+      const { data: urlData } = adminClient.storage
+        .from('recipe-images')
+        .getPublicUrl(normalized);
+      const publicUrl = urlData?.publicUrl || '';
 
-      if (urlToCheck) {
-        try {
-          const response = await fetch(urlToCheck, { method: 'HEAD' });
-          if (!response.ok && response.status !== 304) {
-            brokenUrls.push(urlToCheck);
-          }
-        } catch {
-          brokenUrls.push(urlToCheck);
+      let statusCode: number | null = null;
+      let errorClass: ImageCheckDetail['error_class'] = 'ok';
+
+      try {
+        const res = await fetch(publicUrl, { method: 'HEAD' });
+        statusCode = res.status;
+        if (res.ok || res.status === 304) {
+          errorClass = 'ok';
+        } else if (res.status === 404) {
+          errorClass = 'not_found';
+          brokenCount++;
+        } else if (res.status === 403) {
+          errorClass = 'forbidden';
+          brokenCount++;
+        } else {
+          errorClass = 'other';
+          brokenCount++;
         }
+      } catch {
+        errorClass = 'network_error';
+        brokenCount++;
       }
+
+      checks.push({
+        recipe_id: recipe.id,
+        original_image_path: recipe.image_path,
+        original_image_url: recipe.image_url,
+        normalized_object_path: normalized,
+        normalization_applied: normalizationApplied,
+        public_url: publicUrl,
+        status_code: statusCode,
+        error_class: errorClass,
+      });
     }
 
-    details.broken_count = brokenUrls.length;
-    details.sample_broken_urls = brokenUrls.slice(0, 3);
-
-    const brokenRatio = brokenUrls.length / recipes.length;
-    if (brokenRatio > 0.2) {
-      return {
-        test_key: 'storage_images',
-        status: 'fail',
-        details: {
-          ...details,
-          message_fr: `Échec — ${brokenUrls.length}/${recipes.length} images inaccessibles (>20%). Vérifiez les policies Storage.`,
-        },
-      };
-    }
+    const brokenRatio = brokenCount / recipes.length;
+    const status = brokenRatio > 0.2 ? 'fail' : 'pass';
 
     return {
       test_key: 'storage_images',
-      status: 'pass',
+      status,
       details: {
-        ...details,
-        message_fr: `OK — ${recipes.length - brokenUrls.length}/${recipes.length} images accessibles.`,
+        number_checked: recipes.length,
+        broken_count: brokenCount,
+        checks,
+        message_fr: status === 'pass'
+          ? `OK — ${recipes.length - brokenCount}/${recipes.length} images accessibles (HEAD).`
+          : `Échec — ${brokenCount}/${recipes.length} images inaccessibles. Voir checks[] pour détails.`,
       },
     };
   } catch (err) {
