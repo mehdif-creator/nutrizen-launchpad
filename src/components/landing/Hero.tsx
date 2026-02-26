@@ -39,7 +39,7 @@ export const Hero = ({ onCtaClick, onExampleClick, copy }: HeroProps) => {
   const secondaryCta = copy?.secondaryCta || 'Voir un exemple de semaine';
   const socialProof = copy?.socialProof || '+2 000 familles';
   const socialProofSuffix = copy?.socialProofSuffix || 'ont retrouvé la sérénité des repas';
-  const heroImage = copy?.heroImage || '/img/hero-default.png';
+  const heroImage = copy?.heroImage || '/img/hero-default.jpg';
   const heroImageAlt = copy?.heroImageAlt || 'Maman sereine qui cuisine avec ses enfants';
   const floatingTop = copy?.floatingTop || { value: '30s', label: 'Menu personnalisé' };
   const floatingBottom = copy?.floatingBottom || { value: '5h', label: 'Économisées/semaine' };
@@ -144,6 +144,11 @@ export const Hero = ({ onCtaClick, onExampleClick, copy }: HeroProps) => {
                 src={heroImage}
                 alt={heroImageAlt}
                 className="w-full h-full object-cover rounded-2xl"
+                width={600}
+                height={600}
+                fetchPriority="high"
+                decoding="sync"
+                loading="eager"
               />
             </div>
             {/* Floating elements */}

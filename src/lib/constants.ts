@@ -57,7 +57,7 @@ export const CACHE_TIME = {
  * Image fallback paths
  */
 export const IMAGE_FALLBACK = {
-  RECIPE: '/img/hero-default.png',
+  RECIPE: '/img/hero-default.jpg',
   AVATAR: '/img/avatar-default.png',
 } as const;
 

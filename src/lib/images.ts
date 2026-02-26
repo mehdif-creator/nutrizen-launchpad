@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { storagePublicBaseUrl } from '@/lib/supabaseUrls';
 
 const RECIPE_IMAGES_BUCKET = 'recipe-images';
-const PLACEHOLDER_IMAGE = '/img/hero-default.png';
+const PLACEHOLDER_IMAGE = '/img/hero-default.jpg';
 
 // Derived at runtime from VITE_SUPABASE_URL — no hardcoded project ID
 const STORAGE_BASE_URL = storagePublicBaseUrl();

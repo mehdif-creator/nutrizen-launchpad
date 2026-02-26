@@ -133,7 +133,7 @@ export default function RecipeDetail() {
                 alt={recipe.title}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/img/hero-default.png';
+                  (e.target as HTMLImageElement).src = '/img/hero-default.jpg';
                 }}
               />
             </div>

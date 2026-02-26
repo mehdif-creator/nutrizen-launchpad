@@ -107,12 +107,12 @@ export default function MealPlan() {
                     alt={recipe.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/img/hero-default.png';
+                      (e.target as HTMLImageElement).src = '/img/hero-default.jpg';
                     }}
                   />
                 ) : (
                   <img 
-                    src="/img/hero-default.png"
+                    src="/img/hero-default.jpg"
                     alt={recipe.title}
                     className="w-full h-full object-cover opacity-50"
                   />
