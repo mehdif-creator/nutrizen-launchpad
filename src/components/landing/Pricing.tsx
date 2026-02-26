@@ -1,11 +1,8 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Sparkles, Zap, Shield, ChefHat, Crown, Star, HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Check, Sparkles, Zap, Shield, ChefHat, Crown, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { CREDIT_COSTS_DISPLAY } from "@/lib/featureCosts";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useState } from "react";
 
 interface PricingProps {
   onCtaClick: () => void;
@@ -44,7 +41,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
         )}
 
         <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {/* FREE Card */}
+          {/* FREE Card — unchanged */}
           <Card className="p-6 md:p-8 relative border-2 border-muted hover:border-primary/30 transition-colors">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
               <Badge variant="secondary" className="text-xs font-bold">
@@ -85,7 +82,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
             <p className="text-xs text-muted-foreground text-center mt-2">Sans carte bancaire</p>
           </Card>
 
-          {/* STARTER Card */}
+          {/* STARTER Card — Hormozi rewrite */}
           <Card className="p-6 md:p-8 relative border-2 border-primary/20 hover:border-primary/40 transition-colors">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
               <Badge variant="secondary" className="text-xs font-bold">
@@ -99,6 +96,9 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
                 <Zap className="h-6 w-6 text-primary" />
               </div>
               <h3 className="text-2xl font-bold mb-2">Starter</h3>
+              <p className="text-sm text-muted-foreground italic mb-3">
+                Tu manges mieux dès cette semaine. Sans effort.
+              </p>
               <div className="flex items-baseline justify-center gap-1">
                 <span className="text-4xl font-bold">12,99€</span>
                 <span className="text-sm text-muted-foreground">/ mois TTC</span>
@@ -108,9 +108,11 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
 
             <div className="space-y-3 mb-6">
               {[
-                "Rollover : jusqu'à 20 crédits reportables",
-                "Menus + liste de courses, en continu",
-                "Idéal si tu utilises surtout la génération de menus",
+                "Tes menus de la semaine générés en 30 secondes, adaptés à tes allergies et objectifs",
+                "Ta liste de courses prête à imprimer — zéro temps perdu au supermarché",
+                "80 crédits/mois pour changer une recette, scanner ton frigo, ajuster tes macros",
+                "Rollover jusqu'à 20 crédits : ce que tu n'utilises pas, tu le gardes",
+                "Résultat : ~10 à 13 semaines de menus complets pour le prix d'un repas au restaurant",
               ].map((f) => (
                 <div key={f} className="flex items-start gap-3">
                   <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
@@ -119,12 +121,11 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
               ))}
             </div>
 
-            <p className="text-xs text-muted-foreground mb-2">
-              Starter = menus principalement. Premium = menus + scans + optimisation.
-            </p>
-            <p className="text-xs text-muted-foreground mb-6">
-              Équivalent : environ 10–13 semaines en "1 repas/jour" (selon ajustements)
-            </p>
+            <div className="bg-primary/5 rounded-lg p-3 mb-6">
+              <p className="text-xs text-muted-foreground italic">
+                Un diététicien te coûterait 60€ la séance. Ici, c'est 12,99€/mois, résiliable en 1 clic.
+              </p>
+            </div>
 
             <Button
               onClick={() => handleCheckout('starter')}
@@ -136,7 +137,7 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
             </Button>
           </Card>
 
-          {/* PREMIUM Card (dominant) */}
+          {/* PREMIUM Card — Hormozi rewrite */}
           <Card className="p-6 md:p-8 relative border-2 border-accent shadow-lg ring-2 ring-accent/20 hover:ring-accent/40 transition-all">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
               <Badge className="bg-accent text-white text-xs font-bold flex items-center gap-1">
@@ -150,6 +151,9 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
                 <Sparkles className="h-6 w-6 text-accent" />
               </div>
               <h3 className="text-2xl font-bold mb-2">Premium</h3>
+              <p className="text-sm text-muted-foreground italic mb-3">
+                Le système complet. Mange bien, dépense moins, ne réfléchis plus.
+              </p>
               <div className="flex items-baseline justify-center gap-1">
                 <span className="text-4xl font-bold">19,99€</span>
                 <span className="text-sm text-muted-foreground">/ mois TTC</span>
@@ -159,10 +163,11 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
 
             <div className="space-y-3 mb-6">
               {[
-                "Rollover : jusqu'à 80 crédits reportables",
-                "Pensé pour menus + scans + ajustements fréquents",
-                "Priorité génération (file plus rapide)",
-                "-10% sur les packs de crédits",
+                "200 crédits/mois — menus + scans frigo + ajustements sans jamais manquer de crédits",
+                "Priorité de génération : tes menus arrivent plus vite que les autres utilisateurs",
+                "Rollover jusqu'à 80 crédits — tes crédits s'accumulent, ils n'expirent pas",
+                "-10% sur tous les packs de crédits supplémentaires",
+                "Pour 7€ de plus que Starter : 2,5x plus de crédits + rollover 4x + tous les avantages Premium",
               ].map((f) => (
                 <div key={f} className="flex items-start gap-3">
                   <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
@@ -171,15 +176,28 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
               ))}
             </div>
 
-            <div className="bg-accent/5 rounded-lg p-3 mb-4">
-              <p className="text-xs text-muted-foreground">
-                <strong>Scénario réel :</strong> menus + 2 scans + ajustements / semaine, sans compter.
-              </p>
+            {/* Value stack block */}
+            <div className="bg-accent/5 rounded-lg p-4 mb-6 space-y-2">
+              <p className="text-sm font-bold">Ce que tu obtiens :</p>
+              <div className="space-y-1 text-xs text-muted-foreground">
+                <div className="flex justify-between">
+                  <span>Menus personnalisés illimités (valeur : 60€/séance diét.)</span>
+                  <span className="font-medium text-accent">inclus</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Scan frigo + suggestions IA (valeur : 20€/utilisation)</span>
+                  <span className="font-medium text-accent">inclus</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Liste de courses automatique (valeur : 2h/sem. de ta vie)</span>
+                  <span className="font-medium text-accent">inclus</span>
+                </div>
+                <div className="border-t border-accent/20 pt-2 mt-2 flex justify-between text-sm font-bold">
+                  <span>Total valeur : ~300€/mois</span>
+                  <span className="text-accent">→ 19,99€</span>
+                </div>
+              </div>
             </div>
-
-            <p className="text-xs text-muted-foreground mb-4">
-              Pour +7€, tu passes à 2,5× plus de crédits + rollover 4× + avantages Premium
-            </p>
 
             <Button
               onClick={() => handleCheckout('premium')}
@@ -192,60 +210,6 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
               Annulable à tout moment • Upgrade en 1 clic
             </p>
           </Card>
-        </div>
-
-        {/* Credits = AI actions block */}
-        <div className="mt-16 max-w-3xl mx-auto">
-          <h3 className="text-xl font-bold text-center mb-6 flex items-center justify-center gap-2">
-            <Zap className="w-5 h-5 text-primary" />
-            Les crédits = actions IA (simple, transparent)
-          </h3>
-          <Card className="overflow-hidden">
-            <div className="divide-y">
-              {CREDIT_COSTS_DISPLAY.map((item) => (
-                <div key={item.label} className="flex items-center justify-between p-4">
-                  <span className="text-sm">{item.label}</span>
-                  <Badge variant="secondary">
-                    {item.cost} crédit{item.cost > 1 ? 's' : ''}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </div>
-
-        {/* FAQ */}
-        <div className="mt-16 max-w-2xl mx-auto">
-          <div className="flex items-center justify-center gap-2 mb-8">
-            <HelpCircle className="w-6 h-6 text-primary" />
-            <h3 className="text-xl font-bold">Questions fréquentes</h3>
-          </div>
-          <div className="space-y-3">
-            <FAQItem
-              q="Puis-je annuler à tout moment ?"
-              a="Oui, tu peux annuler ton abonnement à tout moment. L'accès reste actif jusqu'à la fin de la période payée."
-            />
-            <FAQItem
-              q="Comment fonctionne le rollover ?"
-              a="Les crédits non utilisés sont reportés au mois suivant, dans la limite du cap de rollover (20 pour Starter, 80 pour Premium). Les crédits au-delà du cap sont perdus."
-            />
-            <FAQItem
-              q="Les crédits offerts (bienvenue) sont-ils reconductibles ?"
-              a="Non, les 14 crédits de bienvenue sont offerts une seule fois. Ils n'expirent pas et restent sur ton compte jusqu'à utilisation."
-            />
-            <FAQItem
-              q="Que se passe-t-il si je passe de Starter à Premium ?"
-              a="L'upgrade est immédiat. Tu reçois un complément de crédits proratisé pour le reste du mois en cours. Pas de double facturation."
-            />
-            <FAQItem
-              q="Et si je downgrade de Premium à Starter ?"
-              a="Le downgrade prend effet à la fin de la période payée. Tes crédits restants ne changent pas jusqu'au prochain cycle."
-            />
-            <FAQItem
-              q="Puis-je acheter des crédits en plus de mon abonnement ?"
-              a="Oui ! Les packs de crédits (top-ups) sont disponibles à tout moment. Les abonnés Premium bénéficient de -10% sur tous les packs."
-            />
-          </div>
         </div>
 
         {/* Trust indicators */}
@@ -263,22 +227,3 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
     </section>
   );
 };
-
-function FAQItem({ q, a }: { q: string; a: string }) {
-  const [isOpen, setIsOpen] = useState(false);
-  return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <Card className="overflow-hidden">
-        <CollapsibleTrigger asChild>
-          <button className="w-full p-4 flex items-center justify-between text-left hover:bg-muted/50 transition-colors">
-            <span className="font-medium text-sm">{q}</span>
-            {isOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-          </button>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <div className="px-4 pb-4 text-sm text-muted-foreground">{a}</div>
-        </CollapsibleContent>
-      </Card>
-    </Collapsible>
-  );
-}
