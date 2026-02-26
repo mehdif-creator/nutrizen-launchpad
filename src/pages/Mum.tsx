@@ -7,13 +7,11 @@ import { Benefits } from '@/components/landing/Benefits';
 import { HowItWorks } from '@/components/landing/HowItWorks';
 import { RecipeGallery } from '@/components/landing/RecipeGallery';
 import { ValueStackSection } from '@/components/landing/ValueStackSection';
-
 import { Guarantee } from '@/components/landing/Guarantee';
 import { GuaranteeCard } from '@/components/landing/GuaranteeCard';
 import { CommunityTestimonials } from '@/components/landing/CommunityTestimonials';
 import { ExampleWeek } from '@/components/landing/ExampleWeek';
 import { Pricing } from '@/components/landing/Pricing';
-import { EconomicComparison } from '@/components/landing/EconomicComparison';
 import { FAQ } from '@/components/landing/FAQ';
 import { LeadMagnet } from '@/components/landing/LeadMagnet';
 import { FinalCTA } from '@/components/landing/FinalCTA';
@@ -92,6 +90,19 @@ const mumTestimonials = [
   },
 ];
 
+const mumComparison = {
+  without: [
+    "La question « quoi ce soir ? » chaque jour",
+    "~200€ gaspillés/mois",
+    "Cuisiner 3 versions différentes",
+  ],
+  with: [
+    "10 min le dimanche",
+    "-200€/mois en courses",
+    "Un menu, tout le monde content",
+  ],
+};
+
 const Mum = () => {
   const navigate = useNavigate();
   useReferralTracking();
@@ -118,14 +129,12 @@ const Mum = () => {
       <Benefits copy={mumCopy.benefits} />
       <HowItWorks copy={mumCopy.howItWorks} />
       <ValueStackSection items={mumValueItems} totalValue="~250€/mois" price="12,99€/mois" />
-
       <Guarantee />
       <RecipeGallery />
       <CommunityTestimonials testimonials={mumTestimonials} />
       <ExampleWeek />
       <GuaranteeCard />
-      <Pricing onCtaClick={handleCtaClick} />
-      <EconomicComparison />
+      <Pricing onCtaClick={handleCtaClick} comparison={mumComparison} />
       <FAQ copy={mumCopy.faq} />
       <LeadMagnet copy={mumCopy.leadMagnet} />
       <FinalCTA onCtaClick={handleCtaClick} copy={mumCopy.finalCta} />

@@ -7,13 +7,11 @@ import { Benefits } from '@/components/landing/Benefits';
 import { HowItWorks } from '@/components/landing/HowItWorks';
 import { RecipeGallery } from '@/components/landing/RecipeGallery';
 import { ValueStackSection } from '@/components/landing/ValueStackSection';
-
 import { Guarantee } from '@/components/landing/Guarantee';
 import { GuaranteeCard } from '@/components/landing/GuaranteeCard';
 import { CommunityTestimonials } from '@/components/landing/CommunityTestimonials';
 import { ExampleWeek } from '@/components/landing/ExampleWeek';
 import { Pricing } from '@/components/landing/Pricing';
-import { EconomicComparison } from '@/components/landing/EconomicComparison';
 import { FAQ } from '@/components/landing/FAQ';
 import { LeadMagnet } from '@/components/landing/LeadMagnet';
 import { FinalCTA } from '@/components/landing/FinalCTA';
@@ -92,6 +90,19 @@ const fitTestimonials = [
   },
 ];
 
+const fitComparison = {
+  without: [
+    "~30 min/jour à calculer vos macros",
+    "Résultats qui stagnent",
+    "Mêmes 4 repas en boucle",
+  ],
+  with: [
+    "5 min le dimanche",
+    "Macros toujours alignées avec votre objectif",
+    "+60 recettes hautes en protéines",
+  ],
+};
+
 const Fit = () => {
   const navigate = useNavigate();
   useReferralTracking();
@@ -118,14 +129,12 @@ const Fit = () => {
       <Benefits copy={fitCopy.benefits} />
       <HowItWorks copy={fitCopy.howItWorks} />
       <ValueStackSection items={fitValueItems} totalValue="~250€/mois" price="12,99€/mois" />
-
       <Guarantee />
       <RecipeGallery />
       <CommunityTestimonials testimonials={fitTestimonials} />
       <ExampleWeek />
       <GuaranteeCard />
-      <Pricing onCtaClick={handleCtaClick} />
-      <EconomicComparison />
+      <Pricing onCtaClick={handleCtaClick} comparison={fitComparison} />
       <FAQ copy={fitCopy.faq} />
       <LeadMagnet copy={fitCopy.leadMagnet} />
       <FinalCTA onCtaClick={handleCtaClick} copy={fitCopy.finalCta} />

@@ -1,15 +1,34 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Sparkles, Zap, Shield, Crown, Star } from "lucide-react";
+import { Check, Sparkles, Shield, Crown, Star, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+
+interface ComparisonCopy {
+  without: string[];
+  with: string[];
+}
 
 interface PricingProps {
   onCtaClick: () => void;
   pricingNote?: string;
+  comparison?: ComparisonCopy;
 }
 
-export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
+const defaultComparison: ComparisonCopy = {
+  without: [
+    "~45 min/soir à décider quoi cuisiner",
+    "~200€/mois gaspillés en courses non planifiées",
+    "21 décisions alimentaires par semaine",
+  ],
+  with: [
+    "5 minutes le dimanche — c'est tout",
+    "Économie moyenne de 200€/mois sur les courses",
+    "1 décision par semaine",
+  ],
+};
+
+export const Pricing = ({ onCtaClick, pricingNote, comparison = defaultComparison }: PricingProps) => {
   const navigate = useNavigate();
 
   const handleCheckout = (plan: string) => {
@@ -31,6 +50,43 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
             Plus tu automatises, plus tu gagnes du temps. Les crédits déclenchent les actions IA.
           </p>
           <p className="text-sm text-muted-foreground">Prix TTC.</p>
+        </div>
+
+        {/* Sans vs Avec comparison bar */}
+        <div className="max-w-4xl mx-auto mb-12 rounded-2xl border border-border bg-muted/30 p-6 md:p-8">
+          <div className="grid md:grid-cols-[1fr_auto_1fr] gap-6 md:gap-0">
+            {/* Sans NutriZen */}
+            <div className="space-y-3 md:pr-8">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">Sans NutriZen</p>
+              {comparison.without.map((line) => (
+                <div key={line} className="flex items-start gap-2">
+                  <X className="w-4 h-4 text-destructive/60 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-muted-foreground">{line}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* VS divider */}
+            <div className="hidden md:flex flex-col items-center justify-center">
+              <div className="w-px h-full bg-border relative">
+                <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-muted/80 border border-border rounded-full px-2.5 py-1 text-xs font-bold text-muted-foreground">VS</span>
+              </div>
+            </div>
+            <div className="md:hidden flex items-center justify-center">
+              <span className="bg-muted/80 border border-border rounded-full px-3 py-1 text-xs font-bold text-muted-foreground">VS</span>
+            </div>
+
+            {/* Avec NutriZen */}
+            <div className="space-y-3 md:pl-8">
+              <p className="text-xs font-bold uppercase tracking-wider text-green-500 mb-4">Avec NutriZen</p>
+              {comparison.with.map((line) => (
+                <div key={line} className="flex items-start gap-2">
+                  <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-foreground">{line}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         {pricingNote && (
@@ -58,6 +114,10 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
                 14 crédits offerts (une seule fois)
               </p>
             </div>
+
+            <p className="text-xs text-muted-foreground text-center mb-4 italic">
+              Fonctionnalités limitées — sans liste de courses ni macros
+            </p>
 
             <div className="space-y-3 mb-8">
               {[
@@ -96,13 +156,16 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
                 <span className="text-4xl font-bold">12,99€</span>
                 <span className="text-sm text-muted-foreground">/ mois</span>
               </div>
-              <p className="text-xs text-success font-medium mt-1">
-                Soit ~3,25€/semaine — moins qu'un café
+              <p className="text-xs text-green-500 font-medium mt-1">
+                Soit 3,25€/semaine — moins qu'un café
               </p>
-              <p className="text-sm text-primary font-medium mt-1">80 crédits / mois</p>
+              <p className="text-xs text-muted-foreground italic mt-1">
+                Nos utilisateurs économisent en moyenne 200€/mois en courses
+              </p>
+              <p className="text-sm text-primary font-medium mt-2">80 crédits / mois</p>
             </div>
 
-            <div className="space-y-3 mb-6">
+            <div className="space-y-3 mb-8">
               {[
                 "Menus de la semaine en 30 secondes, adaptés à ton profil",
                 "Liste de courses prête à imprimer",
@@ -115,10 +178,6 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
                 </div>
               ))}
             </div>
-
-            <p className="text-xs text-success text-center mb-4">
-              Nos utilisateurs économisent en moyenne 200€/mois en courses
-            </p>
 
             <Button
               onClick={() => handleCheckout('starter')}
@@ -148,13 +207,16 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
                 <span className="text-4xl font-bold">19,99€</span>
                 <span className="text-sm text-muted-foreground">/ mois</span>
               </div>
-              <p className="text-xs text-success font-medium mt-1">
-                Soit ~5€/semaine — moins qu'un café
+              <p className="text-xs text-green-500 font-medium mt-1">
+                Soit 5€/semaine — moins qu'un déjeuner
               </p>
-              <p className="text-sm text-accent font-medium mt-1">200 crédits / mois</p>
+              <p className="text-xs text-muted-foreground italic mt-1">
+                Économisez jusqu'à 2 400€/an sur votre budget courses
+              </p>
+              <p className="text-sm text-accent font-medium mt-2">200 crédits / mois</p>
             </div>
 
-            <div className="space-y-3 mb-6">
+            <div className="space-y-3 mb-8">
               {[
                 "200 crédits/mois — menus + scans + ajustements illimités",
                 "Priorité de génération : résultats plus rapides",
@@ -167,10 +229,6 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
                 </div>
               ))}
             </div>
-
-            <p className="text-xs text-success text-center mb-4">
-              Nos utilisateurs économisent en moyenne 200€/mois en courses
-            </p>
 
             <Button
               onClick={() => handleCheckout('premium')}
@@ -185,20 +243,16 @@ export const Pricing = ({ onCtaClick, pricingNote }: PricingProps) => {
           </Card>
         </div>
 
-        {/* Comparison row */}
-        <div className="max-w-3xl mx-auto mt-12 bg-muted/30 rounded-xl p-6 text-center space-y-2">
-          <p className="text-sm text-muted-foreground">
-            <strong className="text-foreground">Sans NutriZen :</strong> ~45 min/soir pour planifier + ~200€ gaspillés par mois en courses
-          </p>
-          <p className="text-sm">
-            <strong className="text-accent">Avec NutriZen :</strong> 5 minutes le dimanche — c'est tout.
-          </p>
-        </div>
+        {/* ROI summary line */}
+        <p className="text-center text-sm text-muted-foreground italic mt-10 max-w-xl mx-auto">
+          Pour 12,99€/mois, la plupart de nos utilisateurs économisent plus de{' '}
+          <span className="font-bold text-accent not-italic">15x</span> ce montant sur leur budget courses.
+        </p>
 
         {/* Trust indicators */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-8 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
-            <Shield className="w-4 h-4 text-success" />
+            <Shield className="w-4 h-4 text-green-500" />
             <span>Paiement sécurisé Stripe</span>
           </div>
           <div className="flex items-center gap-2">
