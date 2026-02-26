@@ -37,10 +37,16 @@ export default function Signup() {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { plan, email: email.trim() },
+        body: { plan, email: email.trim(), turnstile_token: '' },
       });
       if (error || !data?.url) {
-        toast({ variant: 'destructive', title: 'Erreur', description: 'Une erreur est survenue. Réessaie ou contacte le support.' });
+        const errorMessage = data?.error?.message
+          || error?.message
+          || 'Une erreur est survenue. Réessaie ou contacte le support.';
+        toast({ variant: 'destructive', title: 'Erreur', description: errorMessage });
+        if (data?.error?.code === 'CONFIG_ERROR') {
+          toast({ title: 'Aide', description: 'Si le problème persiste, contacte le support à support@mynutrizen.fr' });
+        }
         return;
       }
       window.location.href = data.url;

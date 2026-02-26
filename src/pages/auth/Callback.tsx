@@ -37,6 +37,17 @@ export default function Callback() {
     const resolve = (path: string) => {
       if (resolvedRef.current) return;
       resolvedRef.current = true;
+
+      // Grant welcome credits for new users (idempotent — safe on every login)
+      supabase.auth.getUser().then(({ data }) => {
+        if (data?.user?.id) {
+          supabase.rpc('grant_welcome_credits', { p_user_id: data.user.id }).then(
+            () => logger.info('Welcome credits granted or already granted'),
+            () => logger.warn('Welcome credits grant skipped or failed (non-blocking)')
+          );
+        }
+      });
+
       logger.info('Resolving to', { path });
       navigate(path, { replace: true });
     };

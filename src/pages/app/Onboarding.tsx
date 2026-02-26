@@ -189,6 +189,13 @@ export default function Onboarding() {
         throw new Error('Failed to complete onboarding');
       }
 
+      // Grant welcome credits (idempotent — safe to call multiple times)
+      try {
+        await supabase.rpc('grant_welcome_credits', { p_user_id: user.id });
+      } catch (e) {
+        console.warn('[Onboarding] Welcome credits grant failed (non-blocking):', e);
+      }
+
       toast({
         title: '🎉 Parfait, tout est prêt !',
         description: 'On génère ta première semaine de menus...',
