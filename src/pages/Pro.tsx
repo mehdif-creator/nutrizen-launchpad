@@ -9,10 +9,14 @@ import { Briefcase, TrendingUp, Users, Clock } from 'lucide-react';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { useReferralTracking } from '@/hooks/useReferralTracking';
+import { useSeoMeta } from '@/hooks/useSeoMeta';
+import { proCopy } from '@/config/marketingCopy';
 
 const leadSchema = z.object({
   email: z.string().email('Email invalide'),
 });
+
+const miniCardIcons = [Briefcase, TrendingUp, Users, Clock];
 
 export default function Pro() {
   const [email, setEmail] = useState('');
@@ -20,8 +24,8 @@ export default function Pro() {
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // Track referral codes from URL
   useReferralTracking();
+  useSeoMeta(proCopy.seo.title, proCopy.seo.description);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,28 +33,17 @@ export default function Pro() {
     try {
       leadSchema.parse({ email });
     } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez entrer un email valide",
-        variant: "destructive",
-      });
+      toast({ title: "Erreur", description: "Veuillez entrer un email valide", variant: "destructive" });
       return;
     }
 
-    // Check rate limit (max 3 submissions per hour)
     const lastSubmissions = localStorage.getItem('lead_submissions');
     const now = Date.now();
     let submissions: number[] = lastSubmissions ? JSON.parse(lastSubmissions) : [];
-    
-    // Filter out submissions older than 1 hour
     submissions = submissions.filter(time => now - time < 3600000);
     
     if (submissions.length >= 3) {
-      toast({
-        title: "Trop de tentatives",
-        description: "Veuillez réessayer dans une heure",
-        variant: "destructive",
-      });
+      toast({ title: "Trop de tentatives", description: "Veuillez réessayer dans une heure", variant: "destructive" });
       return;
     }
 
@@ -58,31 +51,19 @@ export default function Pro() {
 
     try {
       const { error } = await supabase.functions.invoke('submit-lead', {
-        body: { 
-          email,
-          source: 'pro_landing'
-        }
+        body: { email, source: 'pro_landing' },
       });
 
       if (error) throw error;
 
-      // Update rate limit tracking
       submissions.push(now);
       localStorage.setItem('lead_submissions', JSON.stringify(submissions));
 
-      toast({
-        title: "Inscription réussie !",
-        description: "Nous vous tiendrons informé du lancement de NutriZen Pro",
-      });
-
+      toast({ title: "Inscription réussie !", description: "Nous vous tiendrons informé du lancement de NutriZen Pro" });
       setEmail('');
     } catch (error: any) {
       console.error('Error submitting lead:', error);
-      toast({
-        title: "Erreur",
-        description: error.message || "Une erreur est survenue. Veuillez réessayer.",
-        variant: "destructive",
-      });
+      toast({ title: "Erreur", description: error.message || "Une erreur est survenue. Veuillez réessayer.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -98,48 +79,41 @@ export default function Pro() {
           <div className="container">
             <div className="max-w-3xl mx-auto text-center space-y-6">
               <div className="inline-block px-4 py-2 bg-primary/10 rounded-full text-sm font-medium text-primary mb-4">
-                Bientôt disponible
+                {proCopy.hero.badge}
               </div>
               <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                NutriZen Pro
+                {proCopy.hero.h1}
               </h1>
               <p className="text-xl md:text-2xl text-muted-foreground">
-                L'assistant nutrition intelligent pour les professionnels de la santé
+                {proCopy.hero.subtitle}
               </p>
               
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-8">
-                <div className="flex flex-col items-center gap-2 p-4 bg-background rounded-lg">
-                  <Briefcase className="h-8 w-8 text-primary" />
-                  <span className="text-sm font-medium">Gestion clients</span>
-                </div>
-                <div className="flex flex-col items-center gap-2 p-4 bg-background rounded-lg">
-                  <TrendingUp className="h-8 w-8 text-primary" />
-                  <span className="text-sm font-medium">Suivi détaillé</span>
-                </div>
-                <div className="flex flex-col items-center gap-2 p-4 bg-background rounded-lg">
-                  <Users className="h-8 w-8 text-primary" />
-                  <span className="text-sm font-medium">Multi-patients</span>
-                </div>
-                <div className="flex flex-col items-center gap-2 p-4 bg-background rounded-lg">
-                  <Clock className="h-8 w-8 text-primary" />
-                  <span className="text-sm font-medium">Gain de temps</span>
-                </div>
+                {proCopy.miniCards.map((card, index) => {
+                  const Icon = miniCardIcons[index % miniCardIcons.length];
+                  return (
+                    <div key={card.label} className="flex flex-col items-center gap-2 p-4 bg-background rounded-lg">
+                      <Icon className="h-8 w-8 text-primary" />
+                      <span className="text-sm font-medium">{card.label}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
         </section>
 
-        {/* Lead Magnet Section */}
+        {/* Waitlist Section */}
         <section className="py-20 bg-muted/30">
           <div className="container">
             <div className="max-w-2xl mx-auto">
               <div className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-2xl p-8 md:p-12 shadow-elegant">
                 <div className="text-center space-y-4 mb-8">
                   <h2 className="text-3xl md:text-4xl font-bold">
-                    Soyez parmi les premiers
+                    {proCopy.waitlist.title}
                   </h2>
                   <p className="text-lg text-muted-foreground">
-                    Inscrivez-vous pour être notifié du lancement et bénéficier d'une offre exclusive
+                    {proCopy.waitlist.text}
                   </p>
                 </div>
 
@@ -147,7 +121,7 @@ export default function Pro() {
                   <div className="flex flex-col sm:flex-row gap-4">
                     <Input
                       type="email"
-                      placeholder="votre@email.com"
+                      placeholder={proCopy.waitlist.placeholder}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="flex-1"
@@ -160,7 +134,7 @@ export default function Pro() {
                       size="lg"
                       className="bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] transition-tech shadow-glow"
                     >
-                      {isSubmitting ? 'Envoi...' : 'Me notifier'}
+                      {isSubmitting ? 'Envoi...' : proCopy.waitlist.button}
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground text-center">
@@ -181,66 +155,39 @@ export default function Pro() {
               </h2>
               
               <div className="space-y-8">
-                <div className="flex gap-6 items-start">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
-                    1
+                {proCopy.features.map((feature, index) => (
+                  <div key={feature.title} className="flex gap-6 items-start">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
+                      {index + 1}
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                      <p className="text-muted-foreground">{feature.text}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-xl font-semibold mb-2">Gestion de portefeuille clients</h3>
-                    <p className="text-muted-foreground">
-                      Gérez tous vos patients depuis une interface unique. Accédez rapidement à leur profil, historique et plans nutritionnels personnalisés.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex gap-6 items-start">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
-                    2
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold mb-2">Suivi détaillé et analytics</h3>
-                    <p className="text-muted-foreground">
-                      Visualisez l'évolution de vos patients avec des graphiques détaillés. Identifiez les tendances et ajustez les plans en temps réel.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex gap-6 items-start">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
-                    3
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold mb-2">Génération de rapports professionnels</h3>
-                    <p className="text-muted-foreground">
-                      Créez des rapports nutritionnels professionnels en quelques clics. Personnalisez-les selon vos besoins et partagez-les facilement.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex gap-6 items-start">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
-                    4
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold mb-2">Intégration calendrier et rendez-vous</h3>
-                    <p className="text-muted-foreground">
-                      Synchronisez vos consultations avec les plans nutritionnels. Envoyez des rappels automatiques et suivez l'assiduité de vos patients.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex gap-6 items-start">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
-                    5
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold mb-2">Base de données nutritionnelle complète</h3>
-                    <p className="text-muted-foreground">
-                      Accédez à une base de données exhaustive d'aliments et de recettes. Créez des plans personnalisés en fonction des besoins spécifiques de chaque patient.
-                    </p>
-                  </div>
-                </div>
+                ))}
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="py-24 bg-gradient-to-br from-accent/10 to-primary/10">
+          <div className="container">
+            <div className="max-w-3xl mx-auto text-center space-y-8 animate-fade-in">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
+                Intéressé par NutriZen Pro ?
+              </h2>
+              <Button
+                onClick={() => {
+                  const el = document.querySelector('form');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                size="lg"
+                className="bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] shadow-glow transition-tech text-lg px-12"
+              >
+                {proCopy.finalCtaButton}
+              </Button>
             </div>
           </div>
         </section>

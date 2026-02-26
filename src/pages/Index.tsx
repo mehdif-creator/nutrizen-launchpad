@@ -18,12 +18,13 @@ import { MobileStickyCTA } from '@/components/landing/MobileStickyCTA';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { useNavigate } from 'react-router-dom';
 import { useReferralTracking } from '@/hooks/useReferralTracking';
+import { useSeoMeta } from '@/hooks/useSeoMeta';
+import { mainCopy } from '@/config/marketingCopy';
 
 const Index = () => {
   const navigate = useNavigate();
-  
-  // Track referral codes from URL
   useReferralTracking();
+  useSeoMeta(mainCopy.seo.title, mainCopy.seo.description);
 
   const handleCtaClick = () => {
     navigate('/auth/signup');
@@ -40,10 +41,10 @@ const Index = () => {
     <div className="min-h-screen">
       <PreHeader />
       <Header onCtaClick={handleCtaClick} />
-      <Hero onCtaClick={handleCtaClick} onExampleClick={handleExampleClick} />
-      <Benefits />
+      <Hero onCtaClick={handleCtaClick} onExampleClick={handleExampleClick} copy={mainCopy.hero} />
+      <Benefits copy={mainCopy.benefits} />
       <ProfileQuiz />
-      <HowItWorks />
+      <HowItWorks copy={mainCopy.howItWorks} />
       <ValueStack onCtaClick={handleCtaClick} />
       <Guarantee />
       <RecipeGallery />
@@ -51,8 +52,8 @@ const Index = () => {
       <ExampleWeek />
       <Pricing onCtaClick={handleCtaClick} />
       <EconomicComparison />
-      <FAQ />
-      <FinalCTA onCtaClick={handleCtaClick} />
+      <FAQ copy={mainCopy.faq} />
+      <FinalCTA onCtaClick={handleCtaClick} copy={mainCopy.finalCta} />
       <Footer />
       <MobileStickyCTA onCtaClick={handleCtaClick} />
       <ScrollToTop />

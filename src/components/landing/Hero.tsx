@@ -1,22 +1,50 @@
 import { Button } from "@/components/ui/button";
-import { Star, Check, Clock, ShoppingBag, Heart } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { Star, Check, Clock, ShoppingBag, Heart, Zap } from "lucide-react";
+import type { HeroCopy } from "@/config/marketingCopy";
 
 interface HeroProps {
   onCtaClick: () => void;
   onExampleClick: () => void;
+  copy?: HeroCopy;
 }
 
-export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
-  const { t } = useLanguage();
+const iconMap = {
+  heart: Heart,
+  shopping: ShoppingBag,
+  clock: Clock,
+  zap: Zap,
+};
 
-  const scrollToQuiz = () => {
-    const element = document.getElementById('quiz-profil');
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+export const Hero = ({ onCtaClick, onExampleClick, copy }: HeroProps) => {
+  const handleSecondaryClick = () => {
+    if (copy?.secondaryAction === 'quiz') {
+      const element = document.getElementById('quiz-profil');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
     }
+    onExampleClick();
   };
-  
+
+  const badge = copy?.badge;
+  const h1 = copy?.h1 || 'Fini de te demander "On mange quoi ce soir?"';
+  const subtitle = copy?.subtitle || 'Ton menu de la semaine personnalisé en 30 secondes.';
+  const bullets = copy?.bullets || [
+    { icon: 'heart' as const, bold: 'Un menu qui plaît à toute la famille', text: "— fini les \"j'aime pas ça\"" },
+    { icon: 'shopping' as const, bold: 'Ta liste de courses générée', text: '— courses en 20 min chrono' },
+    { icon: 'clock' as const, bold: 'Des recettes de 15–30 min', text: '— réalistes, pas des recettes de magazine' },
+  ];
+  const primaryCta = copy?.primaryCta || 'Créer mon menu gratuit';
+  const secondaryCta = copy?.secondaryCta || 'Voir un exemple de semaine';
+  const socialProof = copy?.socialProof || '+2 000 familles';
+  const socialProofSuffix = copy?.socialProofSuffix || 'ont retrouvé la sérénité des repas';
+  const heroImage = copy?.heroImage || '/img/hero-default.png';
+  const heroImageAlt = copy?.heroImageAlt || 'Maman sereine qui cuisine avec ses enfants';
+  const floatingTop = copy?.floatingTop || { value: '30s', label: 'Menu personnalisé' };
+  const floatingBottom = copy?.floatingBottom || { value: '5h', label: 'Économisées/semaine' };
+  const trustLine = copy?.trustLine || 'Compte gratuit à vie — Sans carte bancaire, en 30 secondes';
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-background via-secondary/30 to-background">
       <div className="container py-16 md:py-24">
@@ -25,37 +53,34 @@ export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
           <div className="space-y-8 animate-fade-in">
             {/* Social proof */}
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-accent/10 rounded-full text-sm">
-              <span className="text-accent font-semibold">+2 000 familles</span>
-              <span className="text-muted-foreground">ont retrouvé la sérénité des repas</span>
+              <span className="text-accent font-semibold">{socialProof}</span>
+              <span className="text-muted-foreground">{socialProofSuffix}</span>
             </div>
 
             <div className="space-y-4">
+              {badge && (
+                <div className="inline-block px-4 py-2 bg-primary/10 rounded-full text-sm font-medium text-primary mb-2">
+                  {badge}
+                </div>
+              )}
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                Fini de te demander <br className="hidden sm:block" />
-                <span className="text-primary">"On mange quoi ce soir?"</span>
+                {h1}
               </h1>
               <p className="text-xl text-muted-foreground font-medium">
-                Ton menu de la semaine personnalisé en 30 secondes. Adapté à tes enfants, ton temps, et ton budget.
+                {subtitle}
               </p>
               <div className="space-y-3 text-lg pt-2">
-                <p className="flex items-start gap-3">
-                  <Heart className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    <strong>Un menu qui plaît à toute la famille</strong> — fini les "j'aime pas ça"
-                  </span>
-                </p>
-                <p className="flex items-start gap-3">
-                  <ShoppingBag className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    <strong>Ta liste de courses générée</strong> — courses en 20 min chrono
-                  </span>
-                </p>
-                <p className="flex items-start gap-3">
-                  <Clock className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                  <span>
-                    <strong>Des recettes de 15–30 min</strong> — réalistes, pas des recettes de magazine
-                  </span>
-                </p>
+                {bullets.map((bullet, index) => {
+                  const Icon = iconMap[bullet.icon];
+                  return (
+                    <p key={index} className="flex items-start gap-3">
+                      <Icon className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
+                      <span>
+                        <strong>{bullet.bold}</strong> {bullet.text}
+                      </span>
+                    </p>
+                  );
+                })}
               </div>
             </div>
 
@@ -67,19 +92,19 @@ export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
                   size="lg"
                   className="w-full sm:w-auto bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] shadow-glow transition-tech text-base md:text-lg px-6 md:px-8 py-4"
                 >
-                  Créer mon menu gratuit
+                  {primaryCta}
                 </Button>
                 <Button
-                  onClick={scrollToQuiz}
+                  onClick={handleSecondaryClick}
                   variant="outline"
                   size="lg"
                   className="w-full sm:w-auto text-base md:text-lg px-6 md:px-8 py-4"
                 >
-                  Découvrir mon Profil Repas
+                  {secondaryCta}
                 </Button>
               </div>
               <p className="text-sm text-muted-foreground">
-                <strong>Compte gratuit à vie</strong> — Sans carte bancaire, en 30 secondes
+                <strong>{trustLine}</strong>
               </p>
             </div>
 
@@ -116,19 +141,19 @@ export const Hero = ({ onCtaClick, onExampleClick }: HeroProps) => {
           <div className="relative animate-slide-up">
             <div className="aspect-square rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center overflow-hidden">
               <img
-                src="/img/hero-default.png"
-                alt="Maman sereine qui cuisine avec ses enfants"
+                src={heroImage}
+                alt={heroImageAlt}
                 className="w-full h-full object-cover rounded-2xl"
               />
             </div>
             {/* Floating elements */}
             <div className="absolute -top-4 -right-4 bg-card rounded-2xl shadow-card p-4 animate-slide-up-delay border">
-              <div className="text-2xl font-bold text-primary">30s</div>
-              <div className="text-xs text-muted-foreground">Menu personnalisé</div>
+              <div className="text-2xl font-bold text-primary">{floatingTop.value}</div>
+              <div className="text-xs text-muted-foreground">{floatingTop.label}</div>
             </div>
             <div className="absolute -bottom-4 -left-4 bg-card rounded-2xl shadow-card p-4 animate-slide-up-delay border">
-              <div className="text-2xl font-bold text-accent">5h</div>
-              <div className="text-xs text-muted-foreground">Économisées/semaine</div>
+              <div className="text-2xl font-bold text-accent">{floatingBottom.value}</div>
+              <div className="text-xs text-muted-foreground">{floatingBottom.label}</div>
             </div>
           </div>
         </div>
