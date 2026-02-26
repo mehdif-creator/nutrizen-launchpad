@@ -22,13 +22,21 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Authenticate: only service role or cron secret allowed
+  // Authenticate: require service role key or CRON_SECRET (must be configured)
   const authHeader = req.headers.get('Authorization');
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const cronSecret = Deno.env.get('CRON_SECRET');
   const token = authHeader?.replace('Bearer ', '');
 
-  if (token !== serviceRoleKey && (!cronSecret || token !== cronSecret)) {
+  if (!cronSecret) {
+    console.error('[run-credit-resets] CRON_SECRET is not configured — rejecting request');
+    return new Response(
+      JSON.stringify({ success: false, error: 'Server misconfiguration' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  if (token !== serviceRoleKey && token !== cronSecret) {
     console.warn('[run-credit-resets] Unauthorized call attempt');
     return new Response(
       JSON.stringify({ success: false, error: 'Unauthorized' }),
