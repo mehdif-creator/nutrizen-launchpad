@@ -2,40 +2,50 @@ import { Star } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-const testimonials = [
+interface Testimonial {
+  name: string;
+  quote: string;
+  rating: number;
+}
+
+interface CommunityTestimonialsProps {
+  testimonials?: Testimonial[];
+}
+
+const defaultTestimonials: Testimonial[] = [
   {
-    name: 'Marie, 34 ans, Lyon — Infirmière',
-    quote: "Je passais 45 minutes chaque soir à chercher quoi cuisiner. En 3 semaines avec NutriZen, j'ai récupéré plus de 5 heures par semaine et notre budget courses a baissé de 25%.",
+    name: 'Camille, 29 ans, Paris — Chargée de communication',
+    quote: "Je rentrais du travail sans savoir quoi cuisiner et je finissais par commander. En 3 semaines avec NutriZen, j'ai réduit mes commandes de 4 à 1 par mois.",
     rating: 5,
   },
   {
-    name: 'Paul, 41 ans, Bordeaux — Entrepreneur',
-    quote: "J'enchaînais les plats préparés faute de temps. Après 2 mois, j'ai perdu 4 kg sans régime — juste en mangeant des repas équilibrés générés automatiquement.",
+    name: 'Julien, 41 ans, Strasbourg — Comptable',
+    quote: "On jetait environ 30€ de nourriture par semaine sans s'en rendre compte. Depuis qu'on planifie avec NutriZen, notre budget courses a baissé de 180€/mois.",
     rating: 5,
   },
   {
-    name: 'Sonia, 29 ans, Nantes — Jeune maman',
-    quote: "Entre le bébé et le travail, la planification des repas était impossible. En 6 semaines, j'ai divisé notre gaspillage alimentaire par 2 et gagné 2 soirées libres.",
+    name: 'Amandine, 35 ans, Toulouse — Enseignante',
+    quote: "J'avais toujours les mêmes 6 recettes en rotation. En 2 mois j'en ai découvert plus de 40 nouvelles que toute ma famille apprécie.",
     rating: 5,
   },
   {
-    name: 'Julie, 23 ans, Paris — Étudiante',
-    quote: "Avec mes horaires impossibles, je sautais des repas. En 1 mois de NutriZen, budget courses réduit de 30% et je n'ai pas sauté un seul repas.",
+    name: 'Thomas, 33 ans, Lyon — Développeur',
+    quote: "Je passais 40 minutes par soir à chercher une idée de repas. En 6 semaines, j'ai récupéré plus de 4 heures par semaine pour mes projets perso.",
     rating: 5,
   },
   {
-    name: 'Marc, 38 ans, Marseille — Coach sportif',
-    quote: "Sceptique au départ. Après 8 semaines, 12 de mes clients utilisent NutriZen. Le calcul automatique des macros leur fait gagner un temps énorme.",
+    name: 'Laura, 38 ans, Bordeaux — Infirmière',
+    quote: "Avec mes horaires décalés, je mangeais n'importe quoi. Après 1 mois de menus NutriZen, j'ai perdu 3 kg sans aucun régime.",
     rating: 5,
   },
   {
-    name: 'Sophie, 42 ans, Lille — Maman de 4 enfants',
-    quote: "Fini le « qu'est-ce qu'on mange ce soir ? ». En 1 mois, les enfants participent au choix des menus et notre gaspillage a été divisé par 2.",
+    name: 'Nicolas, 45 ans, Rennes — Artisan',
+    quote: "Ma femme et moi on se disputait chaque soir sur le repas. Depuis NutriZen, on valide le menu le dimanche en 5 minutes et c'est réglé.",
     rating: 5,
   },
 ];
 
-export const CommunityTestimonials = () => {
+export const CommunityTestimonials = ({ testimonials = defaultTestimonials }: CommunityTestimonialsProps) => {
   return (
     <section className="py-16 bg-secondary/30">
       <div className="container">

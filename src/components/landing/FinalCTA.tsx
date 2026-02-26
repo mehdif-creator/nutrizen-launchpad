@@ -49,7 +49,7 @@ export const FinalCTA = ({ onCtaClick, copy }: FinalCTAProps) => {
           </div>
 
           <p className="text-sm text-muted-foreground">
-            Rejoignez 4 000+ utilisateurs qui ont arrêté de se demander quoi manger ce soir.
+            {copy?.subtitle || 'Rejoignez +12 000 personnes qui ont arrêté de se demander quoi manger ce soir.'}
           </p>
         </div>
       </div>
