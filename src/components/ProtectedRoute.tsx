@@ -30,7 +30,7 @@ export const ProtectedRoute = ({
   );
 
   // Timeout fallback
-  const timeoutMs = requireAdmin ? 15000 : 8000;
+  const timeoutMs = requireAdmin ? 40000 : 8000;
   useEffect(() => {
     const timer = setTimeout(() => setTimedOut(true), timeoutMs);
     return () => clearTimeout(timer);
@@ -71,7 +71,14 @@ export const ProtectedRoute = ({
       return <Navigate to="/auth/login" replace />;
     }
 
-    // Recheck done and still not admin → deny
+    // Only deny if recheck is definitively done (not just timed out mid-retry)
+    if (adminRecheckState !== 'done') {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
+    }
     if (!denialToastShown.current) {
       denialToastShown.current = true;
       toast.error('Accès refusé — vous n\'avez pas les droits administrateur.');
