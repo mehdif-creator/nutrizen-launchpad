@@ -27,32 +27,44 @@ export default function Signup() {
 
   const validateEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+
   const handlePaidSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setEmailError('');
+    setPaymentError(null);
     if (!validateEmail(email)) {
       setEmailError('Adresse email invalide');
       return;
     }
     setLoading(true);
+
+    const timeoutId = setTimeout(() => {
+      setLoading(false);
+      setPaymentError('La requête a pris trop de temps. Vérifie ta connexion et réessaie.');
+    }, 15_000);
+
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { plan, email: email.trim(), turnstile_token: '' },
       });
+
+      clearTimeout(timeoutId);
+
       if (error || !data?.url) {
         const errorMessage = data?.error?.message
           || error?.message
           || 'Une erreur est survenue. Réessaie ou contacte le support.';
-        toast({ variant: 'destructive', title: 'Erreur', description: errorMessage });
-        if (data?.error?.code === 'CONFIG_ERROR') {
-          toast({ title: 'Aide', description: 'Si le problème persiste, contacte le support à support@mynutrizen.fr' });
-        }
-        return;
+        throw new Error(errorMessage);
       }
+
+      // Redirect to Stripe — do NOT reset loading (page is navigating away)
       window.location.href = data.url;
-    } catch {
-      toast({ variant: 'destructive', title: 'Erreur', description: 'Une erreur est survenue. Réessaie ou contacte le support.' });
-    } finally {
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+      console.error('Payment error:', err);
+      const msg = err?.message || 'Une erreur est survenue. Réessaie ou contacte le support.';
+      setPaymentError(msg);
       setLoading(false);
     }
   };
@@ -125,8 +137,12 @@ export default function Signup() {
 
                 <Button type="submit" className="w-full" size="lg" disabled={loading}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                  Continuer vers le paiement →
+                  {loading ? 'Redirection vers Stripe...' : 'Continuer vers le paiement →'}
                 </Button>
+
+                {paymentError && (
+                  <p className="text-sm text-destructive text-center mt-2">{paymentError}</p>
+                )}
               </form>
 
               <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mt-4 text-xs text-muted-foreground">

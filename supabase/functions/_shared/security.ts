@@ -49,18 +49,30 @@ const ALLOWED_ORIGINS = [
   'https://mynutrizen.fr',
   'https://app.mynutrizen.fr',
   'https://www.mynutrizen.fr',
+  'https://nutrizen-launchpad.lovable.app',
   'http://localhost:5173',
   'http://localhost:3000',
 ];
 
+/** Also allow any *.lovable.app preview subdomain */
+function isAllowedOrigin(origin: string | null): boolean {
+  if (!origin) return false;
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  // Allow Lovable preview domains
+  try {
+    const url = new URL(origin);
+    if (url.hostname.endsWith('.lovable.app')) return true;
+  } catch { /* ignore */ }
+  return false;
+}
+
 /**
  * Get CORS headers with strict origin validation
- * Only allows production domains and localhost — no wildcards, no preview domains.
  */
 export function getCorsHeaders(origin: string | null): Record<string, string> {
-  const isAllowed = !!origin && ALLOWED_ORIGINS.includes(origin);
+  const allowed = isAllowedOrigin(origin);
   return {
-    'Access-Control-Allow-Origin':  isAllowed ? origin : ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Origin':  allowed && origin ? origin : ALLOWED_ORIGINS[0],
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Vary': 'Origin',
