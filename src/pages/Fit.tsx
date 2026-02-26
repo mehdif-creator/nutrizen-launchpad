@@ -4,7 +4,7 @@ import { Hero } from '@/components/landing/Hero';
 import { Benefits } from '@/components/landing/Benefits';
 import { HowItWorks } from '@/components/landing/HowItWorks';
 import { RecipeGallery } from '@/components/landing/RecipeGallery';
-import { ValueStack } from '@/components/landing/ValueStack';
+
 import { Guarantee } from '@/components/landing/Guarantee';
 import { CommunityTestimonials } from '@/components/landing/CommunityTestimonials';
 import { ExampleWeek } from '@/components/landing/ExampleWeek';
@@ -44,7 +44,7 @@ const Fit = () => {
       <Hero onCtaClick={handleCtaClick} onExampleClick={handleExampleClick} copy={fitCopy.hero} />
       <Benefits copy={fitCopy.benefits} />
       <HowItWorks copy={fitCopy.howItWorks} />
-      <ValueStack />
+      
       <Guarantee />
       <RecipeGallery />
       <CommunityTestimonials />

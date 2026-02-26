@@ -106,10 +106,20 @@ export const mainCopy: PageMarketingCopy = {
   },
   faq: {
     items: [
+      // Général
       { question: 'Est-ce gratuit ?', answer: 'Oui. Tu peux commencer sans carte et activer les options quand tu veux.' },
       { question: 'Allergies / aliments à éviter ?', answer: 'Tu les renseignes dans ton profil et NutriZen adapte les menus automatiquement.' },
       { question: 'Je manque de temps pour cuisiner.', answer: 'Active le mode "rapide" : recettes plus simples, temps réduit, moins d\'étapes.' },
       { question: 'Je peux modifier une semaine déjà générée ?', answer: 'Oui. Remplace un repas, régénère une journée, ou demande une substitution en 1 clic.' },
+      { question: 'Les recettes conviennent-elles aux débutants ?', answer: 'Absolument ! Toutes nos recettes sont conçues pour être simples et rapides (20-30 minutes en moyenne). Chaque étape est détaillée clairement, parfait pour tous les niveaux.' },
+      { question: 'Est-ce que mes données sont sécurisées (RGPD) ?', answer: 'Totalement. Nous sommes conformes RGPD. Tes données personnelles ne sont ni vendues ni partagées. Elles servent uniquement à personnaliser tes menus.' },
+      // Abonnement & crédits
+      { question: 'Puis-je annuler à tout moment ?', answer: 'Oui, tu peux annuler ton abonnement à tout moment. L\'accès reste actif jusqu\'à la fin de la période payée.' },
+      { question: 'Comment fonctionne le rollover ?', answer: 'Les crédits non utilisés sont reportés au mois suivant, dans la limite du cap de rollover (20 pour Starter, 80 pour Premium). Les crédits au-delà du cap sont perdus.' },
+      { question: 'Les crédits offerts (bienvenue) sont-ils reconductibles ?', answer: 'Non, les 14 crédits de bienvenue sont offerts une seule fois. Ils n\'expirent pas et restent sur ton compte jusqu\'à utilisation.' },
+      { question: 'Puis-je acheter des crédits en plus de mon abonnement ?', answer: 'Oui ! Les packs de crédits (top-ups) sont disponibles à tout moment. Les abonnés Premium bénéficient de -10% sur tous les packs.' },
+      // Technique
+      { question: 'Comment contacter le support ?', answer: 'Tu peux nous contacter via le formulaire de contact sur le site, par email à support@nutrizen.fr, ou directement depuis ton espace membre. Nous répondons sous 24h en moyenne.' },
     ],
   },
   leadMagnet: {
@@ -171,10 +181,19 @@ export const fitCopy: PageMarketingCopy = {
   },
   faq: {
     items: [
+      // Fit-specific
       { question: 'C\'est adapté à la prise de masse ?', answer: 'Oui. Choisis ton objectif et NutriZen ajuste les portions et la densité énergétique.' },
       { question: 'Je veux sécher sans me prendre la tête.', answer: 'Active l\'option "low-cal" : recettes plus légères et repères plus stricts.' },
       { question: 'Je déteste compter.', answer: 'Utilise les repères par repas : tu suis le plan, tu ajustes seulement si besoin.' },
       { question: 'Je fais du meal prep.', answer: 'Oui. Le mode "meal prep" te propose des recettes compatibles batch cooking.' },
+      // Abonnement & crédits
+      { question: 'Puis-je annuler à tout moment ?', answer: 'Oui, tu peux annuler ton abonnement à tout moment. L\'accès reste actif jusqu\'à la fin de la période payée.' },
+      { question: 'Comment fonctionne le rollover ?', answer: 'Les crédits non utilisés sont reportés au mois suivant, dans la limite du cap de rollover (20 pour Starter, 80 pour Premium). Les crédits au-delà du cap sont perdus.' },
+      { question: 'Les crédits offerts (bienvenue) sont-ils reconductibles ?', answer: 'Non, les 14 crédits de bienvenue sont offerts une seule fois. Ils n\'expirent pas et restent sur ton compte jusqu\'à utilisation.' },
+      { question: 'Puis-je acheter des crédits en plus de mon abonnement ?', answer: 'Oui ! Les packs de crédits (top-ups) sont disponibles à tout moment. Les abonnés Premium bénéficient de -10% sur tous les packs.' },
+      // Général
+      { question: 'Est-ce que mes données sont sécurisées (RGPD) ?', answer: 'Totalement. Nous sommes conformes RGPD. Tes données personnelles ne sont ni vendues ni partagées. Elles servent uniquement à personnaliser tes menus.' },
+      { question: 'Comment contacter le support ?', answer: 'Tu peux nous contacter via le formulaire de contact sur le site, par email à support@nutrizen.fr, ou directement depuis ton espace membre. Nous répondons sous 24h en moyenne.' },
     ],
   },
   leadMagnet: {
@@ -236,10 +255,20 @@ export const mumCopy: PageMarketingCopy = {
   },
   faq: {
     items: [
+      // Mum-specific
       { question: 'Mes enfants sont difficiles, ça marche ?', answer: 'Oui. NutriZen propose des variantes et des alternatives simples (textures, ingrédients, assaisonnements).' },
       { question: 'Je n\'ai pas le temps en semaine.', answer: 'Active le mode rapide et/ou batch cooking pour préparer en une fois.' },
       { question: 'Je veux maîtriser le budget.', answer: 'La liste de courses est structurée et évite les doublons. Tu peux privilégier des ingrédients réutilisables.' },
       { question: 'Je dois changer un repas au dernier moment.', answer: 'Tu peux remplacer une journée, demander une substitution, ou choisir un repas "backup" en 1 clic.' },
+      { question: 'Puis-je utiliser NutriZen pour toute ma famille ?', answer: 'Oui, NutriZen peut générer des menus adaptés pour toute la famille. Tu peux ajuster les portions et les préférences alimentaires pour inclure les enfants.' },
+      // Abonnement & crédits
+      { question: 'Puis-je annuler à tout moment ?', answer: 'Oui, tu peux annuler ton abonnement à tout moment. L\'accès reste actif jusqu\'à la fin de la période payée.' },
+      { question: 'Comment fonctionne le rollover ?', answer: 'Les crédits non utilisés sont reportés au mois suivant, dans la limite du cap de rollover (20 pour Starter, 80 pour Premium). Les crédits au-delà du cap sont perdus.' },
+      { question: 'Les crédits offerts (bienvenue) sont-ils reconductibles ?', answer: 'Non, les 14 crédits de bienvenue sont offerts une seule fois. Ils n\'expirent pas et restent sur ton compte jusqu\'à utilisation.' },
+      { question: 'Puis-je acheter des crédits en plus de mon abonnement ?', answer: 'Oui ! Les packs de crédits (top-ups) sont disponibles à tout moment. Les abonnés Premium bénéficient de -10% sur tous les packs.' },
+      // Général
+      { question: 'Est-ce que mes données sont sécurisées (RGPD) ?', answer: 'Totalement. Nous sommes conformes RGPD. Tes données personnelles ne sont ni vendues ni partagées. Elles servent uniquement à personnaliser tes menus.' },
+      { question: 'Comment contacter le support ?', answer: 'Tu peux nous contacter via le formulaire de contact sur le site, par email à support@nutrizen.fr, ou directement depuis ton espace membre. Nous répondons sous 24h en moyenne.' },
     ],
   },
   leadMagnet: {
