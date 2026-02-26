@@ -1,16 +1,22 @@
 import { Button } from '@/components/ui/button';
+import type { FinalCTACopy } from '@/config/marketingCopy';
 
 interface FinalCTAProps {
   onCtaClick: () => void;
+  copy?: FinalCTACopy;
 }
 
-export const FinalCTA = ({ onCtaClick }: FinalCTAProps) => {
+export const FinalCTA = ({ onCtaClick, copy }: FinalCTAProps) => {
+  const headline = copy?.headline || 'Prêt à manger mieux sans te prendre la tête ?';
+  const button = copy?.button || 'Commencer gratuitement';
+  const subtitle = copy?.subtitle || 'Créer ton compte en 30 secondes — sans carte bancaire';
+
   return (
     <section className="py-24 bg-gradient-to-br from-accent/10 to-primary/10">
       <div className="container">
         <div className="max-w-3xl mx-auto text-center space-y-8 animate-fade-in">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
-            Prêt à manger mieux sans te prendre la tête ?
+            {headline}
           </h2>
           <p className="text-lg text-muted-foreground">
             Rejoins les milliers de familles qui ont simplifié leur quotidien avec NutriZen.
@@ -22,10 +28,10 @@ export const FinalCTA = ({ onCtaClick }: FinalCTAProps) => {
               size="lg"
               className="bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] shadow-glow transition-tech text-lg px-12 w-full sm:w-auto"
             >
-              Commencer gratuitement
+              {button}
             </Button>
             <p className="text-sm text-muted-foreground">
-              Créer ton compte en 30 secondes — sans carte bancaire
+              {subtitle}
             </p>
           </div>
         </div>

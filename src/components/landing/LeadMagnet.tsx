@@ -6,15 +6,25 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
+import type { LeadMagnetCopy } from '@/config/marketingCopy';
 
 const leadSchema = z.object({
   email: z.string().email('Email invalide'),
 });
 
-export const LeadMagnet = () => {
+interface LeadMagnetProps {
+  copy?: LeadMagnetCopy;
+}
+
+export const LeadMagnet = ({ copy }: LeadMagnetProps) => {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+
+  const title = copy?.title || 'Batch-cooking 90 minutes';
+  const text = copy?.text || 'Prépare ta semaine en une session, gagne du temps et de l\'énergie.';
+  const cta = copy?.cta || 'Recevoir le guide gratuit';
+  const source = copy?.source || 'landing_lead_magnet';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,28 +32,17 @@ export const LeadMagnet = () => {
     try {
       leadSchema.parse({ email });
     } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez entrer un email valide",
-        variant: "destructive",
-      });
+      toast({ title: "Erreur", description: "Veuillez entrer un email valide", variant: "destructive" });
       return;
     }
 
-    // Check rate limit (max 3 submissions per hour)
     const lastSubmissions = localStorage.getItem('lead_submissions');
     const now = Date.now();
     let submissions: number[] = lastSubmissions ? JSON.parse(lastSubmissions) : [];
-    
-    // Filter out submissions older than 1 hour
     submissions = submissions.filter(time => now - time < 3600000);
-    
+
     if (submissions.length >= 3) {
-      toast({
-        title: "Trop de tentatives",
-        description: "Veuillez réessayer dans une heure",
-        variant: "destructive",
-      });
+      toast({ title: "Trop de tentatives", description: "Veuillez réessayer dans une heure", variant: "destructive" });
       return;
     }
 
@@ -51,32 +50,19 @@ export const LeadMagnet = () => {
 
     try {
       const { error } = await supabase.functions.invoke('submit-lead', {
-        body: { 
-          email,
-          source: 'landing_lead_magnet',
-          timestamp: new Date().toISOString()
-        }
+        body: { email, source, timestamp: new Date().toISOString() },
       });
 
       if (error) throw error;
 
-      // Update rate limit tracking
       submissions.push(now);
       localStorage.setItem('lead_submissions', JSON.stringify(submissions));
 
-      toast({
-        title: '✅ Guide envoyé !',
-        description: 'Vérifie ta boîte mail, ton guide arrive dans quelques instants.',
-      });
-
+      toast({ title: '✅ Guide envoyé !', description: 'Vérifie ta boîte mail, ton guide arrive dans quelques instants.' });
       setEmail('');
     } catch (error: any) {
       console.error('Error submitting lead:', error);
-      toast({
-        title: "Erreur",
-        description: error.message || "Une erreur est survenue. Veuillez réessayer.",
-        variant: "destructive",
-      });
+      toast({ title: "Erreur", description: error.message || "Une erreur est survenue. Veuillez réessayer.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -91,13 +77,10 @@ export const LeadMagnet = () => {
               <Download className="w-8 h-8 text-white" />
             </div>
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              📘 Télécharge ton guide gratuit
+              📘 {title}
             </h2>
-            <p className="text-xl text-muted-foreground mb-2">
-              <strong>"Batch-cooking 90 minutes"</strong>
-            </p>
             <p className="text-lg text-muted-foreground">
-              Prépare ta semaine en une session, gagne du temps et de l'énergie.
+              {text}
             </p>
           </div>
 
@@ -110,15 +93,13 @@ export const LeadMagnet = () => {
               required
               className="w-full h-12 text-base"
             />
-            
             <Button
               type="submit"
               disabled={isSubmitting}
               className="w-full h-12 bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] shadow-glow transition-tech text-base font-medium"
             >
-              {isSubmitting ? 'Envoi...' : 'Recevoir le guide gratuit'}
+              {isSubmitting ? 'Envoi...' : cta}
             </Button>
-
             <p className="text-sm text-muted-foreground text-center pt-2">
               Zéro spam. 1 ressource utile par semaine.
             </p>

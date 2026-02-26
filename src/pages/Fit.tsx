@@ -18,12 +18,13 @@ import { MobileStickyCTA } from '@/components/landing/MobileStickyCTA';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { useNavigate } from 'react-router-dom';
 import { useReferralTracking } from '@/hooks/useReferralTracking';
+import { useSeoMeta } from '@/hooks/useSeoMeta';
+import { fitCopy } from '@/config/marketingCopy';
 
 const Fit = () => {
   const navigate = useNavigate();
-  
-  // Track referral codes from URL
   useReferralTracking();
+  useSeoMeta(fitCopy.seo.title, fitCopy.seo.description);
 
   const handleCtaClick = () => {
     navigate('/auth/signup');
@@ -40,9 +41,9 @@ const Fit = () => {
     <div className="min-h-screen">
       <PreHeader />
       <Header onCtaClick={handleCtaClick} />
-      <Hero onCtaClick={handleCtaClick} onExampleClick={handleExampleClick} />
-      <Benefits />
-      <HowItWorks />
+      <Hero onCtaClick={handleCtaClick} onExampleClick={handleExampleClick} copy={fitCopy.hero} />
+      <Benefits copy={fitCopy.benefits} />
+      <HowItWorks copy={fitCopy.howItWorks} />
       <ValueStack />
       <Guarantee />
       <RecipeGallery />
@@ -50,9 +51,9 @@ const Fit = () => {
       <ExampleWeek />
       <Pricing onCtaClick={handleCtaClick} />
       <EconomicComparison />
-      <FAQ />
-      <LeadMagnet />
-      <FinalCTA onCtaClick={handleCtaClick} />
+      <FAQ copy={fitCopy.faq} />
+      <LeadMagnet copy={fitCopy.leadMagnet} />
+      <FinalCTA onCtaClick={handleCtaClick} copy={fitCopy.finalCta} />
       <Footer />
       <MobileStickyCTA onCtaClick={handleCtaClick} />
       <ScrollToTop />

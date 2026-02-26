@@ -1,41 +1,39 @@
 import { Card } from '@/components/ui/card';
-import { Target, Sparkles, ShoppingCart, ChefHat } from 'lucide-react';
+import { Target, Sparkles, ShoppingCart } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import type { HowItWorksCopy } from '@/config/marketingCopy';
 
-export const HowItWorks = () => {
+interface HowItWorksProps {
+  copy?: HowItWorksCopy;
+}
+
+export const HowItWorks = ({ copy }: HowItWorksProps) => {
   const { t } = useLanguage();
-  
-  const steps = [
-    {
-      icon: Target,
-      number: '1',
-      title: t('howItWorks.step1.title'),
-      description: t('howItWorks.step1.description')
-    },
-    {
-      icon: Sparkles,
-      number: '2',
-      title: t('howItWorks.step2.title'),
-      description: t('howItWorks.step2.description')
-    },
-    {
-      icon: ShoppingCart,
-      number: '3',
-      title: t('howItWorks.step3.title'),
-      description: t('howItWorks.step3.description')
-    }
-  ];
+
+  const icons = [Target, Sparkles, ShoppingCart];
+
+  const title = copy?.title || t('howItWorks.title');
+  const subtitle = copy?.subtitle || t('howItWorks.subtitle');
+
+  const steps = copy
+    ? copy.steps.map((step, i) => ({
+        icon: icons[i % icons.length],
+        number: String(i + 1),
+        title: step.title,
+        description: step.description,
+      }))
+    : [
+        { icon: Target, number: '1', title: t('howItWorks.step1.title'), description: t('howItWorks.step1.description') },
+        { icon: Sparkles, number: '2', title: t('howItWorks.step2.title'), description: t('howItWorks.step2.description') },
+        { icon: ShoppingCart, number: '3', title: t('howItWorks.step3.title'), description: t('howItWorks.step3.description') },
+      ];
 
   return (
     <section id="comment" className="py-16 bg-gradient-to-b from-secondary/20 to-background">
       <div className="container">
         <div className="text-center mb-12 animate-fade-in">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            {t('howItWorks.title')}
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {t('howItWorks.subtitle')}
-          </p>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">{title}</h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">{subtitle}</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
