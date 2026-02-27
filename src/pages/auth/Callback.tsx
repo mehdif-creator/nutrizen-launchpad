@@ -69,20 +69,26 @@ export default function Callback() {
       return;
     }
 
-    // ── Hard timeout — 15 seconds ───────────────────────────────────────
+    // ── Hard timeout — 30 seconds (increased for slow networks) ─────────
     const hardTimeout = setTimeout(() => {
       fail('La connexion a pris trop de temps. Veuillez réessayer.');
-    }, 15_000);
+    }, 30_000);
 
     // ── PKCE flow: exchange ?code= for session ──────────────────────────
+    // NOTE: detectSessionInUrl is true on the client, so the SDK may
+    // auto-exchange the code. We still try manually as a fallback —
+    // if it fails (code already consumed), we silently rely on the
+    // auth state listener + polling below.
     const code = queryParams.get('code');
     if (code) {
       logger.debug('PKCE code detected, exchanging for session');
       supabase.auth.exchangeCodeForSession(code)
         .then(({ data, error: exchangeError }) => {
           if (exchangeError) {
-            logger.error('Code exchange failed', exchangeError);
-            // Don't fail immediately — the onAuthStateChange listener may still pick up the session
+            logger.warn('Code exchange returned error (may be auto-exchanged already)', {
+              message: exchangeError.message,
+            });
+            // Don't fail — the session may already exist from auto-exchange
             return;
           }
           if (data.session) {
@@ -91,18 +97,9 @@ export default function Callback() {
           }
         })
         .catch((err) => {
-          logger.error('Code exchange threw', err);
+          logger.warn('Code exchange threw (expected if auto-exchanged)', err);
         });
     }
-
-    // ── Immediate session check (hash tokens may already be parsed) ─────
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      logger.debug('getSession() immediate', { hasSession: !!session });
-      if (session) {
-        clearTimeout(hardTimeout);
-        resolve(getDestination());
-      }
-    });
 
     // ── Listen for auth state changes ───────────────────────────────────
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -121,22 +118,35 @@ export default function Callback() {
       }
     );
 
-    // ── Poll as belt-and-suspenders ─────────────────────────────────────
+    // ── Immediate session check (hash tokens or auto-exchange done) ─────
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      logger.debug('getSession() immediate', { hasSession: !!session });
+      if (session) {
+        clearTimeout(hardTimeout);
+        resolve(getDestination());
+      }
+    });
+
+    // ── Poll as belt-and-suspenders (every 750ms, up to 30 attempts) ────
     let retryCount = 0;
     const retryInterval = setInterval(async () => {
       retryCount++;
-      if (resolvedRef.current || retryCount > 20) {
+      if (resolvedRef.current || retryCount > 30) {
         clearInterval(retryInterval);
         return;
       }
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        clearInterval(retryInterval);
-        clearTimeout(hardTimeout);
-        subscription.unsubscribe();
-        resolve(getDestination());
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          clearInterval(retryInterval);
+          clearTimeout(hardTimeout);
+          subscription.unsubscribe();
+          resolve(getDestination());
+        }
+      } catch (e) {
+        logger.warn('Polling getSession error', e);
       }
-    }, 500);
+    }, 750);
 
     return () => {
       clearTimeout(hardTimeout);
