@@ -4497,6 +4497,7 @@ export type Database = {
         | "REFERRAL_GOAL_REACHED"
         | "BADGE_GRANTED"
         | "ADMIN_ADJUST"
+        | "PROFILE_COMPLETED"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4638,6 +4639,7 @@ export const Constants = {
         "REFERRAL_GOAL_REACHED",
         "BADGE_GRANTED",
         "ADMIN_ADJUST",
+        "PROFILE_COMPLETED",
       ],
     },
   },
