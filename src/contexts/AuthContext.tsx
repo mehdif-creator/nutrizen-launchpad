@@ -141,15 +141,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (mounted) {
         logger.warn('Auth loading timeout, forcing loading=false');
         setLoading(false);
-        // DO NOT set adminLoading=false here — let checkAdminRole resolve naturally.
-        // Setting adminLoading=false while isAdmin is still false causes false denials.
       }
-    }, 25000);
+    }, 10000);
 
     // Register listener FIRST so we never miss INITIAL_SESSION with PKCE
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         if (!mounted) return;
+        clearTimeout(loadingTimeout); // Cancel timeout as soon as any auth event fires
 
         logger.debug('Auth event', { event, hasSession: !!newSession });
 
@@ -173,6 +172,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Then check for existing session
     supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
       if (!mounted) return;
+      clearTimeout(loadingTimeout); // Cancel timeout as soon as session is checked
 
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
