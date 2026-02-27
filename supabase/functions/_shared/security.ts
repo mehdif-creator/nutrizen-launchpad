@@ -275,8 +275,8 @@ export async function checkRateLimit(
     });
 
     if (error) {
-      logger.error('Rate limit check failed — failing closed for safety', error);
-      return { allowed: false, tokensRemaining: 0, retryAfter: 60 };
+      logger.warn('Rate limit check failed — failing open to avoid blocking legitimate traffic', error);
+      return { allowed: true, tokensRemaining: config.maxTokens, retryAfter: undefined };
     }
 
     const result = data as { allowed: boolean; tokens_remaining: number; retry_after: number | null };
@@ -295,8 +295,8 @@ export async function checkRateLimit(
       retryAfter: result.retry_after || undefined,
     };
   } catch (err) {
-    logger.error('Rate limit error — failing closed for safety', err);
-    return { allowed: false, tokensRemaining: 0, retryAfter: 60 };
+    logger.warn('Rate limit error — failing open to avoid blocking legitimate traffic', err);
+    return { allowed: true, tokensRemaining: config.maxTokens, retryAfter: undefined };
   }
 }
 
