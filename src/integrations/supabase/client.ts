@@ -19,9 +19,10 @@ if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    persistSession: true,
     autoRefreshToken: true,
+    persistSession: true,
     detectSessionInUrl: true,
     flowType: 'pkce',
-  }
+    storage: window.localStorage,
+  },
 });
