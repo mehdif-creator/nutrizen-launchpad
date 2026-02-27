@@ -67,15 +67,33 @@ Deno.serve(async (req) => {
     const hasValidAccess = isActiveSub || isTrialing;
 
     if (!hasValidAccess) {
-      console.log(`[generate-menu] Access denied — no valid subscription for user ${redactId(user.id)}`);
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error_code: 'NO_SUBSCRIPTION',
-          message: 'Un abonnement actif est requis pour générer un menu.',
-        }),
-        { status: 403, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
-      );
+      // Free plan users can still generate menus using credits
+      // Check if they have enough credits before blocking
+      const { data: walletCheck } = await supabaseClient
+        .from('user_wallets')
+        .select('balance')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      const userBalance = walletCheck?.balance ?? 0;
+      const MENU_COST = 7;
+
+      if (userBalance < MENU_COST) {
+        console.log(`[generate-menu] Access denied — no subscription and insufficient credits (${userBalance}/${MENU_COST}) for user ${redactId(user.id)}`);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error_code: 'NO_ACCESS',
+            message: userBalance === 0
+              ? 'Un abonnement actif ou des crédits sont requis pour générer un menu.'
+              : `Crédits insuffisants. Tu as ${userBalance} crédits, il en faut ${MENU_COST}.`,
+            current_balance: userBalance,
+            required: MENU_COST,
+          }),
+          { status: 403, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
+        );
+      }
+      console.log(`[generate-menu] Free user with ${userBalance} credits — allowing access`);
     }
     // ── End subscription gate ───────────────────────────────────────────────────
 
