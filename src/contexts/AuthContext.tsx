@@ -67,36 +67,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setAdminLoading(false);
         return true;
       }
-      // cached false → don't use cache, retry the RPC
     }
 
     setAdminLoading(true);
     try {
-      let data: boolean | null = null;
-      let lastError: Error | null = null;
-      for (let attempt = 1; attempt <= 4; attempt++) {
-        const { data: rpcData, error: rpcError } = await supabase.rpc('is_admin');
-        if (!rpcError) {
-          data = rpcData;
-          lastError = null;
-          break;
-        }
-        lastError = rpcError;
-        logger.warn(`Admin check attempt ${attempt}/4 failed`, { message: rpcError.message });
-        if (attempt < 4) await new Promise(r => setTimeout(r, 1500 * attempt));
-      }
-      if (lastError) {
-        logger.error('Admin role check failed after 4 attempts', { message: lastError.message });
+      console.log('[checkAdminRole] Checking admin for userId:', userId);
+
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', 'admin')
+        .maybeSingle();
+
+      console.log('[checkAdminRole] Result:', { data, error });
+
+      if (error) {
+        console.error('[checkAdminRole] Query error:', error.message, error.code);
         setIsAdmin(false);
         return false;
       }
-      const result = data === true;
+
+      if (!data) {
+        console.warn('[checkAdminRole] No admin row found for:', userId);
+        setIsAdmin(false);
+        return false;
+      }
+
+      const result = data.role === 'admin';
+      console.log('[checkAdminRole] isAdmin:', result);
       setIsAdmin(result);
       if (result) adminCheckResultRef.current.set(userId, true);
-      logger.debug('Admin check result', { userId: userId.substring(0, 8), isAdmin: result });
       return result;
-    } catch (error) {
-      logger.error('Admin role check exception', error instanceof Error ? error : new Error(String(error)));
+    } catch (err) {
+      console.error('[checkAdminRole] Unexpected error:', err instanceof Error ? err.message : err);
       setIsAdmin(false);
       return false;
     } finally {
