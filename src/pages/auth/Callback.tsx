@@ -48,7 +48,7 @@ export default function Callback() {
         if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION')) {
           console.log('[AuthCallback] Sign-in successful, redirecting...');
           subscription.unsubscribe();
-          navigate(getDestination(), { replace: true });
+          window.location.replace(getDestination());
         }
       },
     );
@@ -59,7 +59,7 @@ export default function Callback() {
 
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session) {
-          navigate(getDestination(), { replace: true });
+          window.location.replace(getDestination());
         } else {
           setError('La connexion a pris trop de temps. Veuillez réessayer.');
         }
