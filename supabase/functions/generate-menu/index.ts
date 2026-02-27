@@ -150,7 +150,7 @@ Deno.serve(async (req) => {
     // Get user's household info for portion calculations
     const { data: profileData, error: profileError } = await supabaseClient
       .from("profiles")
-      .select("household_adults, household_children")
+      .select("household_adults, household_children, kid_portion_ratio, meals_per_day")
       .eq("id", user.id)
       .single();
 
@@ -160,7 +160,9 @@ Deno.serve(async (req) => {
 
     const householdAdults = profileData?.household_adults ?? 1;
     const householdChildren = profileData?.household_children ?? 0;
-    const effectiveHouseholdSize = householdAdults + householdChildren * 0.7;
+    const kidRatio = profileData?.kid_portion_ratio ?? 0.6;
+    const mealsPerDay = profileData?.meals_per_day ?? 2; // 1 or 2
+    const effectiveHouseholdSize = householdAdults + householdChildren * kidRatio;
 
     console.log(`[generate-menu] Household size: ${householdAdults} adults + ${householdChildren} children = ${effectiveHouseholdSize.toFixed(1)} effective portions`);
 
@@ -345,7 +347,7 @@ Deno.serve(async (req) => {
     ) => {
       let query = supabaseClient
         .from("recipes")
-        .select("id, title, prep_time_min, total_time_min, calories_kcal, proteins_g, carbs_g, fats_g, cuisine_type, meal_type, diet_type, allergens, difficulty_level, appliances, image_url, image_path, ingredients_text, ingredient_keys")
+        .select("id, title, prep_time_min, total_time_min, calories_kcal, proteins_g, carbs_g, fats_g, cuisine_type, meal_type, diet_type, allergens, difficulty_level, appliances, image_url, image_path, ingredients_text, ingredient_keys, base_servings, servings")
         .eq("published", true);
 
       console.log(`[generate-menu] Building query for fallback level: F${fallbackLevel}`);
@@ -371,15 +373,18 @@ Deno.serve(async (req) => {
         }
 
         // ALWAYS enforce appliance constraints (but allow recipes with no appliances specified)
-        if (preferences.appliances_owned && Array.isArray(preferences.appliances_owned)) {
-          const ownedAppliances = preferences.appliances_owned;
-          
-          // If user doesn't own airfryer, exclude airfryer recipes
-          // Simple check: only exclude if appliances explicitly contains airfryer
-          if (!ownedAppliances.includes('airfryer')) {
-            query = query.not("appliances", "cs", '{"airfryer"}');
-            console.log(`[generate-menu] Excluding airfryer recipes (not owned)`);
-          }
+        // Check both appliances_owned AND ustensiles (Profile page stores in ustensiles)
+        const ownedAppliances = [
+          ...(preferences.appliances_owned || []),
+          ...(preferences.ustensiles || []),
+        ];
+        const hasAirfryer = ownedAppliances.some((a: string) => 
+          a.toLowerCase().replace(/\s/g, '') === 'airfryer' || 
+          a.toLowerCase() === 'air fryer'
+        );
+        if (!hasAirfryer) {
+          query = query.not("appliances", "cs", '{"airfryer"}');
+          console.log(`[generate-menu] Excluding airfryer recipes (not owned)`);
         }
 
         // F0: Strict filters
@@ -599,26 +604,26 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Select 14 distinct recipes for the week (7 lunch + 7 dinner)
+    // Number of slots needed: if meals_per_day=1, only dinner; if 2, lunch+dinner
+    const totalSlots = mealsPerDay === 1 ? 7 : 14;
     const shuffled = [...recipes].sort(() => Math.random() - 0.5);
-    let selectedRecipes = shuffled.slice(0, Math.min(14, recipes.length));
+    let selectedRecipes = shuffled.slice(0, Math.min(totalSlots, recipes.length));
 
-    // Fill remaining slots if less than 14 recipes available (allow repeats)
-    while (selectedRecipes.length < 14) {
+    while (selectedRecipes.length < totalSlots) {
       const nextIndex = selectedRecipes.length % shuffled.length;
       selectedRecipes.push(shuffled[nextIndex]);
     }
-    
-    // Split into lunch (first 7) and dinner (last 7)
-    const lunchRecipes = selectedRecipes.slice(0, 7);
-    const dinnerRecipes = selectedRecipes.slice(7, 14);
+
+    // If 1 meal/day: only dinner. If 2 meals/day: lunch + dinner
+    const lunchRecipes = mealsPerDay === 1 ? [] : selectedRecipes.slice(0, 7);
+    const dinnerRecipes = mealsPerDay === 1 ? selectedRecipes.slice(0, 7) : selectedRecipes.slice(7, 14);
 
     // ============================================================
     // POST-SELECTION VALIDATION (Defense in Depth)
     // Double-check that NO selected recipe violates restrictions
     // Validate ALL recipes (both lunch and dinner)
     // ============================================================
-    const allSelectedRecipes = [...lunchRecipes, ...dinnerRecipes];
+    const allSelectedRecipes = [...lunchRecipes, ...dinnerRecipes].filter(Boolean);
     const validationResults = allSelectedRecipes.map((recipe: any) => {
       const recipeKeys = recipe.ingredient_keys || [];
       const violations = userRestrictionKeys.filter(k => recipeKeys.includes(k));
@@ -726,16 +731,17 @@ Deno.serve(async (req) => {
       };
     };
     
-    // Build days with both lunch and dinner
+    // Build days with dinner always, lunch only if meals_per_day >= 2
     const days = weekdays.map((dayName, index) => {
-      const lunchRecipe = lunchRecipes[index];
       const dinnerRecipe = dinnerRecipes[index];
-      
-      return {
+      const entry: any = {
         day: dayName,
-        lunch: buildMealEntry(lunchRecipe, index, 'lunch'),
         dinner: buildMealEntry(dinnerRecipe, index, 'dinner'),
       };
+      if (mealsPerDay >= 2 && lunchRecipes[index]) {
+        entry.lunch = buildMealEntry(lunchRecipes[index], index, 'lunch');
+      }
+      return entry;
     });
 
     console.log(`[generate-menu] Upserting menu for week starting: ${weekStartStr}`);
@@ -792,16 +798,18 @@ Deno.serve(async (req) => {
     days.forEach((day, index) => {
       const dayOfWeek = index + 1; // 1-7 for Mon-Sun
       
-      // Add lunch item
-      menuItems.push({
-        weekly_menu_id: menu.menu_id,
-        recipe_id: day.lunch.recipe_id,
-        day_of_week: dayOfWeek,
-        meal_slot: 'lunch',
-        target_servings: day.lunch.servings_used,
-        scale_factor: day.lunch.portion_factor,
-        portion_factor: day.lunch.portion_factor
-      });
+      // Add lunch item only if meals_per_day >= 2
+      if (mealsPerDay >= 2 && day.lunch) {
+        menuItems.push({
+          weekly_menu_id: menu.menu_id,
+          recipe_id: day.lunch.recipe_id,
+          day_of_week: dayOfWeek,
+          meal_slot: 'lunch',
+          target_servings: day.lunch.servings_used,
+          scale_factor: day.lunch.portion_factor,
+          portion_factor: day.lunch.portion_factor
+        });
+      }
       
       // Add dinner item
       menuItems.push({
@@ -833,25 +841,29 @@ Deno.serve(async (req) => {
     console.log(`[generate-menu] Populating user_daily_recipes table for dashboard...`);
     
     // Delete existing entries for this week
+    // Calculate end of week reliably
+    const weekEndDate = new Date(weekStartStr + 'T00:00:00Z');
+    weekEndDate.setUTCDate(weekEndDate.getUTCDate() + 7);
+    const weekEndStr = weekEndDate.toISOString().split('T')[0];
     const { error: deleteRecipesError } = await supabaseClient
       .from("user_daily_recipes")
       .delete()
       .eq("user_id", user.id)
       .gte("date", weekStartStr)
-      .lt("date", new Date(new Date(weekStartStr).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+      .lte("date", weekEndStr); // inclusive to catch Sunday
 
     if (deleteRecipesError) {
       console.error("[generate-menu] Error deleting old daily recipes:", deleteRecipesError);
     }
 
-    // Insert one row per day into user_daily_recipes with BOTH lunch and dinner
+    // Insert one row per day into user_daily_recipes
     const dailyRecipes = days.map((day, index) => {
-      const dayDate = new Date(weekStartStr);
-      dayDate.setDate(dayDate.getDate() + index);
+      const dayDate = new Date(weekStartStr + 'T00:00:00Z');
+      dayDate.setUTCDate(dayDate.getUTCDate() + index);
       return {
         user_id: user.id,
         date: dayDate.toISOString().split('T')[0],
-        lunch_recipe_id: day.lunch.recipe_id,
+        lunch_recipe_id: (mealsPerDay >= 2 && day.lunch) ? day.lunch.recipe_id : null,
         dinner_recipe_id: day.dinner.recipe_id,
         day_of_week: index, // 0=Monday
       };
