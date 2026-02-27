@@ -161,48 +161,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
 
         if (newSession?.user && newSession?.access_token) {
-          // CRITICAL: wait 100ms to ensure JWT is attached to client
-          await new Promise(resolve => setTimeout(resolve, 100));
-
-          setAdminLoading(true);
-
-          try {
-            // Verify token is valid before querying
-            const { data: { session: verifiedSession } } =
-              await supabase.auth.getSession();
-
-            if (!verifiedSession?.access_token) {
-              console.error('[AuthContext] No valid token after session check');
-              if (mounted) {
-                setIsAdmin(false);
-                setAdminLoading(false);
-              }
-              return;
+          // Delegate admin check to checkAdminRole which handles caching and errors
+          // Use a small delay to ensure the JWT token is propagated to RLS
+          setTimeout(() => {
+            if (mounted && newSession?.user) {
+              checkAdminRole(newSession.user.id);
             }
-
-            console.log('[AuthContext] Token verified, checking admin role...');
-
-            const { data, error } = await supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', newSession.user.id)
-              .maybeSingle();
-
-            console.log('[AuthContext] Admin query result:', { data, error });
-
-            if (mounted) {
-              const result = data?.role === 'admin';
-              setIsAdmin(result);
-              if (result) adminCheckResultRef.current.set(newSession.user.id, true);
-              setAdminLoading(false);
-            }
-          } catch (err) {
-            console.error('[AuthContext] Admin check error:', err);
-            if (mounted) {
-              setIsAdmin(false);
-              setAdminLoading(false);
-            }
-          }
+          }, 500);
 
           if (mounted && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
             runInitialSetupOnce(newSession);
