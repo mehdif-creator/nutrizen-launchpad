@@ -122,7 +122,8 @@ export default function Onboarding() {
 
     setSaving(true);
     try {
-      // Save profile data
+      // Save 1: profiles table
+      console.log('[Onboarding] Saving to profiles...');
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
@@ -132,34 +133,47 @@ export default function Onboarding() {
           meals_per_day: profileData.meals_per_day,
           portion_strategy: profileData.portion_strategy,
           onboarding_step: step,
-          onboarding_status: step === 1 ? 'in_progress' : undefined,
+          ...(step === 1 ? { onboarding_status: 'in_progress' } : {}),
         })
         .eq('id', user.id);
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('[Onboarding] profiles UPDATE failed:', profileError);
+        throw profileError;
+      }
+      console.log('[Onboarding] profiles saved OK');
 
-      // Save preferences
+      // Save 2: preferences table
+      console.log('[Onboarding] Saving to preferences...');
       const { error: prefError } = await supabase
         .from('preferences')
         .upsert({
           user_id: user.id,
-          objectif_principal: profileData.objectif_principal,
-          type_alimentation: profileData.type_alimentation,
-          allergies: profileData.allergies,
+          objectif_principal: profileData.objectif_principal ?? null,
+          type_alimentation: profileData.type_alimentation ?? null,
+          allergies: profileData.allergies ?? [],
         }, { onConflict: 'user_id' });
 
-      if (prefError) throw prefError;
+      if (prefError) {
+        console.error('[Onboarding] preferences UPSERT failed:', prefError);
+        throw prefError;
+      }
+      console.log('[Onboarding] preferences saved OK');
 
-      // Mark status as in_progress after first save
       if (step === 1) {
         await updateOnboardingStatus(user.id, { status: 'in_progress', step: 1 });
       }
-    } catch (error) {
-      console.error('[Onboarding] Save error:', error);
+    } catch (error: any) {
+      console.error('[Onboarding] Full error:', {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
+      });
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: 'Impossible de sauvegarder. Réessaie.',
+        description: error?.message || 'Impossible de sauvegarder. Réessaie.',
       });
     } finally {
       setSaving(false);
@@ -190,10 +204,16 @@ export default function Onboarding() {
       }
 
       // Grant welcome credits (idempotent — safe to call multiple times)
-      try {
-        await supabase.rpc('grant_welcome_credits', { p_user_id: user.id });
-      } catch (e) {
-        console.warn('[Onboarding] Welcome credits grant failed (non-blocking):', e);
+      const { data: creditsData, error: creditsError } = await supabase
+        .rpc('grant_welcome_credits', { p_user_id: user.id });
+      if (creditsError) {
+        console.error('[Onboarding] grant_welcome_credits FAILED:', {
+          message: creditsError.message,
+          code: creditsError.code,
+          details: creditsError.details,
+        });
+      } else {
+        console.log('[Onboarding] grant_welcome_credits SUCCESS:', creditsData);
       }
 
       toast({

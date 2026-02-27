@@ -41,6 +41,18 @@ export function useAutoMenuGeneration() {
       });
 
       if (error) {
+        console.error('[generateMenu] Edge Function error:', {
+          message: error.message,
+          context: (error as any).context,
+          status: (error as any).status,
+        });
+        // Try to get the actual error body
+        try {
+          if ((error as any).context?.json) {
+            const body = await (error as any).context.json();
+            console.error('[generateMenu] Error body:', body);
+          }
+        } catch (_) { /* ignore parse error */ }
         logger.error('Error', error);
         setState({ 
           status: 'error', 
