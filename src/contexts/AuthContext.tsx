@@ -152,19 +152,61 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         if (!mounted) return;
-        clearTimeout(loadingTimeout); // Cancel timeout as soon as any auth event fires
+        clearTimeout(loadingTimeout);
 
-        logger.debug('Auth event', { event, hasSession: !!newSession });
+        console.log('[AuthContext] Event:', event, 'User:', newSession?.user?.email);
 
         setSession(newSession);
         setUser(newSession?.user ?? null);
+        setLoading(false);
 
-        if (newSession?.user) {
-          if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-            await checkAdminRole(newSession.user.id);
+        if (newSession?.user && newSession?.access_token) {
+          // CRITICAL: wait 100ms to ensure JWT is attached to client
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          setAdminLoading(true);
+
+          try {
+            // Verify token is valid before querying
+            const { data: { session: verifiedSession } } =
+              await supabase.auth.getSession();
+
+            if (!verifiedSession?.access_token) {
+              console.error('[AuthContext] No valid token after session check');
+              if (mounted) {
+                setIsAdmin(false);
+                setAdminLoading(false);
+              }
+              return;
+            }
+
+            console.log('[AuthContext] Token verified, checking admin role...');
+
+            const { data, error } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', newSession.user.id)
+              .maybeSingle();
+
+            console.log('[AuthContext] Admin query result:', { data, error });
+
+            if (mounted) {
+              const result = data?.role === 'admin';
+              setIsAdmin(result);
+              if (result) adminCheckResultRef.current.set(newSession.user.id, true);
+              setAdminLoading(false);
+            }
+          } catch (err) {
+            console.error('[AuthContext] Admin check error:', err);
+            if (mounted) {
+              setIsAdmin(false);
+              setAdminLoading(false);
+            }
+          }
+
+          if (mounted && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
             runInitialSetupOnce(newSession);
           }
-          // TOKEN_REFRESHED: session updated silently, no admin check
         } else {
           setIsAdmin(false);
           setAdminLoading(false);
