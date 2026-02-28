@@ -153,7 +153,7 @@ export default function DayMenu() {
               mealType="lunch"
               recipe={dayData.lunch}
               effectivePortions={effectivePortions}
-              onViewRecipe={(id) => navigate(`/app/recipes/${id}`)}
+              onViewRecipe={(id) => navigate(`/app/recipes/${id}?portions=${effectivePortions.toFixed(2)}`)}
               onGenerateMeal={() => {
                 toast({
                   title: 'Bientôt disponible',
@@ -167,7 +167,7 @@ export default function DayMenu() {
               mealType="dinner"
               recipe={dayData.dinner}
               effectivePortions={effectivePortions}
-              onViewRecipe={(id) => navigate(`/app/recipes/${id}`)}
+              onViewRecipe={(id) => navigate(`/app/recipes/${id}?portions=${effectivePortions.toFixed(2)}`)}
               onGenerateMeal={() => {
                 toast({
                   title: 'Bientôt disponible',
