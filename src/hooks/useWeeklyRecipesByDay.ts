@@ -17,6 +17,7 @@ export interface RecipeInfo {
   carbs_g: number;
   fats_g: number;
   servings: number;
+  portion_factor?: number;
 }
 
 export interface DayRecipes {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { AppHeader } from '@/components/app/AppHeader';
 import { AppFooter } from '@/components/app/AppFooter';
 import { Button } from '@/components/ui/button';
@@ -40,6 +40,8 @@ interface Recipe {
 export default function RecipeDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const portionMultiplier = Math.max(1, parseFloat(searchParams.get('portions') || '1') || 1);
   const { toast } = useToast();
   const { awardRecipeView } = useAwardXp();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
@@ -188,7 +190,16 @@ export default function RecipeDetail() {
                     <Users className="h-4 w-4 text-primary" />
                     <span className="text-sm text-muted-foreground">Portions</span>
                   </div>
-                  <div className="text-lg font-semibold">{recipe.servings}</div>
+                  <div className="text-lg font-semibold">
+                    {portionMultiplier > 1
+                      ? `${(recipe.servings * portionMultiplier).toFixed(1)}`
+                      : recipe.servings}
+                  </div>
+                  {portionMultiplier > 1 && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Recette de base : {recipe.servings} pers. × {portionMultiplier.toFixed(1)}
+                    </div>
+                  )}
                 </Card>
               )}
               {recipe.calories_kcal && (
@@ -197,7 +208,14 @@ export default function RecipeDetail() {
                     <Flame className="h-4 w-4 text-primary" />
                     <span className="text-sm text-muted-foreground">Calories</span>
                   </div>
-                  <div className="text-lg font-semibold">{Math.round(recipe.calories_kcal)} kcal</div>
+                  <div className="text-lg font-semibold">
+                    {Math.round((recipe.calories_kcal || 0) * portionMultiplier)} kcal
+                  </div>
+                  {portionMultiplier > 1 && (
+                    <div className="text-xs text-muted-foreground">
+                      {recipe.calories_kcal} kcal/pers.
+                    </div>
+                  )}
                 </Card>
               )}
             </div>
@@ -228,12 +246,33 @@ export default function RecipeDetail() {
                   <Card className="p-6">
                     <h2 className="text-xl font-semibold mb-4">Ingrédients</h2>
                     <ul className="space-y-2">
-                      {ingredients.map((ingredient: any, index: number) => (
+                    {ingredients.map((ingredient: any, index: number) => {
+                      let display: string;
+                      if (typeof ingredient === 'string') {
+                        display = ingredient;
+                      } else {
+                        const name = ingredient.name || ingredient.ingredient || '';
+                        const qty = ingredient.quantity ?? ingredient.amount ?? null;
+                        const unit = ingredient.unit || '';
+                        if (qty !== null && portionMultiplier > 1) {
+                          const scaled = qty * portionMultiplier;
+                          const formatted = Number.isInteger(scaled)
+                            ? scaled.toString()
+                            : (Math.round(scaled * 10) / 10).toString();
+                          display = `${formatted}${unit ? ' ' + unit : ''} ${name}`.trim();
+                        } else if (qty !== null) {
+                          display = `${qty}${unit ? ' ' + unit : ''} ${name}`.trim();
+                        } else {
+                          display = name;
+                        }
+                      }
+                      return (
                         <li key={index} className="flex items-start gap-2">
                           <span className="text-primary mt-1">•</span>
-                          <span>{typeof ingredient === 'string' ? ingredient : ingredient.name || ingredient.ingredient}</span>
+                          <span>{display}</span>
                         </li>
-                      ))}
+                      );
+                    })}
                     </ul>
                   </Card>
                 )}
