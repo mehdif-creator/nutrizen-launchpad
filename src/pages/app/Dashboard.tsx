@@ -537,27 +537,61 @@ export default function Dashboard() {
             {/* Liste de courses */}
             <Card className="rounded-2xl border shadow-sm p-4 md:p-5">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm md:text-base font-semibold">Liste de courses ( en développement )</h3>
-                <Button variant="outline" size="sm" className="text-xs">
+                <h3 className="text-sm md:text-base font-semibold flex items-center gap-2">
+                  <ShoppingCart className="h-4 w-4 text-primary" />
+                  Liste de courses
+                </h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={() => navigate('/app/shopping-list')}
+                >
                   <ShoppingCart className="h-3.5 w-3.5 mr-1" />
-                  <span className="hidden sm:inline">Exporter</span>
+                  <span className="hidden sm:inline">Voir la liste</span>
                 </Button>
               </div>
-            {shoppingListLoading ? (
+              {shoppingListLoading ? (
                 <LoadingMessages variant="grocery" isLoading={true} skeletonCount={3} className="py-2" />
               ) : shoppingList.length > 0 ? (
                 <>
-                  <ul className="text-xs md:text-sm text-muted-foreground space-y-1 max-h-48 md:max-h-64 overflow-y-auto">
-                    {shoppingList.map((item, i) => (
-                      <li key={i}>• {item.formatted_display}</li>
+                  <ul className="text-xs md:text-sm text-muted-foreground space-y-1 max-h-36 overflow-y-auto">
+                    {shoppingList.slice(0, 8).map((item, i) => (
+                      <li key={i} className="flex items-start gap-1">
+                        <span className="text-primary mt-0.5">•</span>
+                        <span>{item.formatted_display}</span>
+                      </li>
                     ))}
+                    {shoppingList.length > 8 && (
+                      <li className="text-primary text-xs font-medium pt-1">
+                        + {shoppingList.length - 8} autres articles →
+                      </li>
+                    )}
                   </ul>
-                  <div className="text-xs text-muted-foreground mt-2">Générée depuis ton menu hebdomadaire</div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full mt-2 text-xs text-primary"
+                    onClick={() => navigate('/app/shopping-list')}
+                  >
+                    Voir toute la liste ({shoppingList.length} articles)
+                  </Button>
                 </>
               ) : (
-                <p className="text-xs md:text-sm text-muted-foreground">
-                  Génère ton menu hebdomadaire pour voir ta liste de courses.
-                </p>
+                <div className="text-center py-3">
+                  <p className="text-xs md:text-sm text-muted-foreground mb-2">
+                    Génère ton menu hebdomadaire pour créer ta liste de courses automatiquement.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs"
+                    onClick={() => navigate('/app/shopping-list')}
+                  >
+                    <ShoppingCart className="h-3.5 w-3.5 mr-1" />
+                    Accéder à la liste
+                  </Button>
+                </div>
               )}
             </Card>
 
