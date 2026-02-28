@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
     const householdAdults = profileData?.household_adults ?? 1;
     const householdChildren = profileData?.household_children ?? 0;
     const kidRatio = profileData?.kid_portion_ratio ?? 0.6;
-    const mealsPerDay = profileData?.meals_per_day ?? 2; // 1 or 2
+    // mealsPerDay will be set after preferences are loaded (see below)
     const effectiveHouseholdSize = householdAdults + householdChildren * kidRatio;
 
     console.log(`[generate-menu] Household size: ${householdAdults} adults + ${householdChildren} children = ${effectiveHouseholdSize.toFixed(1)} effective portions`);
@@ -182,6 +182,11 @@ Deno.serve(async (req) => {
     }
 
     console.log("[generate-menu] User preferences:", preferences ? "Found" : "Not found");
+
+    // preferences.repas_par_jour is set by Profile page
+    // profiles.meals_per_day is set by Onboarding — use preferences first
+    const mealsPerDay = preferences?.repas_par_jour ?? profileData?.meals_per_day ?? 2;
+    console.log(`[generate-menu] mealsPerDay=${mealsPerDay} (pref=${preferences?.repas_par_jour}, profile=${profileData?.meals_per_day})`);
 
     // Validate age if present
     if (preferences?.age) {
@@ -383,9 +388,44 @@ Deno.serve(async (req) => {
           a.toLowerCase() === 'air fryer'
         );
         if (!hasAirfryer) {
-          query = query.not("appliances", "cs", '{"airfryer"}');
-          console.log(`[generate-menu] Excluding airfryer recipes (not owned)`);
+          // appliances is text[] — use {value} syntax (no quotes)
+          query = query.not("appliances", "cs", "{airfryer}");
+          // Also filter cooking_method text[] (confirmed populated for airfryer recipes)
+          query = query.not("cooking_method", "cs", "{airfryer}");
+          // Fallback: ingredients_text for any untagged recipes
+          query = query.not("ingredients_text", "ilike", "%airfryer%");
+          console.log(`[generate-menu] Excluding airfryer recipes (array + cooking_method + text fallback)`);
         }
+
+        // ── HARD FILTER: Dairy exclusion ──────────────────────────
+        // produits_laitiers = "Sans" → exclude all dairy
+        if (preferences.produits_laitiers === 'Sans') {
+          if (!userRestrictionKeys.includes('dairy')) {
+            userRestrictionKeys.push('dairy');
+            console.log(`[generate-menu] Hard filter: dairy excluded (produits_laitiers=Sans)`);
+          }
+        }
+
+        // ── HARD FILTER: Spice level ──────────────────────────────
+        // spice_level in DB: "doux", "moyen", "épicé"
+        // Profile values: "Doux", "Moyen", "Épicé", "Très épicé"
+        if (preferences.niveau_epices) {
+          const spice = preferences.niveau_epices.toLowerCase();
+          if (spice === 'doux' || spice === 'sans épices') {
+            // Only allow "doux" recipes
+            query = query.eq("spice_level", "doux");
+            console.log(`[generate-menu] Hard filter: spice_level=doux only`);
+          } else if (spice === 'moyen') {
+            // Allow "doux" and "moyen"
+            query = query.in("spice_level", ["doux", "moyen"]);
+            console.log(`[generate-menu] Hard filter: spice_level doux+moyen only`);
+          }
+          // "Épicé" and "Très épicé" → no restriction
+        }
+
+        // ── HARD FILTER: autres_allergies free text (porc etc.) ───
+        // Already handled via restriction_dictionary above
+        // (no change needed here, already implemented)
 
         // F0: Strict filters
         if (fallbackLevel === 0) {
@@ -455,6 +495,78 @@ Deno.serve(async (req) => {
               query = query.eq("difficulty_level", difficulty);
               console.log(`[generate-menu] Difficulty: ${difficulty}`);
             }
+          }
+
+          // ── SOFT FILTER: Cooking method preference ────────────────
+          if (preferences.mode_cuisson_prefere && 
+              Array.isArray(preferences.mode_cuisson_prefere) && 
+              preferences.mode_cuisson_prefere.length > 0) {
+            const cookingMap: Record<string, string[]> = {
+              'Grillé':  ['grillé', 'plancha', 'barbecue', 'rôti'],
+              'Mijoté':  ['mijoté', 'ragoût', 'braisé', 'curry'],
+              'Vapeur':  ['vapeur'],
+              'Cru':     ['cru', 'mariné'],
+            };
+            const dbMethods: string[] = [];
+            for (const pref of preferences.mode_cuisson_prefere) {
+              const mapped = cookingMap[pref];
+              if (mapped) dbMethods.push(...mapped);
+            }
+            if (dbMethods.length > 0) {
+              const orFilter = dbMethods.map(m => `cooking_method.cs.{${m}}`).join(',');
+              query = query.or(orFilter);
+              console.log(`[generate-menu] F0: Cooking methods: ${dbMethods.join(', ')}`);
+            }
+          }
+
+          // ── SOFT FILTER: Salt level ───────────────────────────────
+          if (preferences.niveau_sel) {
+            const sel = preferences.niveau_sel.toLowerCase();
+            if (sel === 'sans sel') {
+              query = query.eq("salt_level", "bas");
+              console.log(`[generate-menu] F0: salt_level=bas (sans sel)`);
+            } else if (sel === 'peu salé') {
+              query = query.in("salt_level", ["bas", "normal"]);
+              console.log(`[generate-menu] F0: salt_level bas+normal (peu salé)`);
+            }
+          }
+
+          // ── SOFT FILTER: High fiber recipes ──────────────────────
+          if (preferences.recettes_riches_fibres === true) {
+            query = query.not("ingredients_text", "ilike", "%-")
+              .or("ingredient_keywords.cs.{high_fiber},ingredients_text.ilike.%légumineuse%,ingredients_text.ilike.%lentille%,ingredients_text.ilike.%haricot%,ingredients_text.ilike.%quinoa%");
+            console.log(`[generate-menu] F0: High fiber filter active`);
+          }
+
+          // ── SOFT FILTER: Macro distribution ──────────────────────
+          if (preferences.repartition_macros) {
+            const macros = preferences.repartition_macros.toLowerCase();
+            if (macros === 'pauvre en glucides' || macros === 'low carb') {
+              query = query.lte("carbs_g", 35);
+              console.log(`[generate-menu] F0: Low carb filter: carbs_g <= 35`);
+            } else if (macros === 'riche en protéines') {
+              query = query.gte("proteins_g", 25);
+              console.log(`[generate-menu] F0: High protein filter: proteins_g >= 25`);
+            }
+          }
+
+          // ── SOFT FILTER: Calorie objective alignment ──────────────
+          if (!preferences.objectif_calorique && preferences.objectif_principal) {
+            const obj = preferences.objectif_principal.toLowerCase();
+            if (obj.includes('perte') || obj.includes('poids')) {
+              query = query.lte("calories_kcal", 550);
+              console.log(`[generate-menu] F0: Low calorie bias (perte de poids): <= 550 kcal`);
+            } else if (obj.includes('muscle') || obj.includes('prise')) {
+              query = query.gte("calories_kcal", 450);
+              console.log(`[generate-menu] F0: High calorie bias (prise de muscle): >= 450 kcal`);
+            }
+          }
+
+          // ── SOFT FILTER: Limit added sugar ───────────────────────
+          if (preferences.limiter_sucre === true) {
+            query = query.not("ingredients_text", "ilike", "%sucre ajouté%");
+            query = query.not("ingredients_text", "ilike", "%sirop%");
+            console.log(`[generate-menu] F0: Limiting added sugar recipes`);
           }
         }
         
