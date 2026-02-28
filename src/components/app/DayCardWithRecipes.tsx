@@ -15,6 +15,7 @@ interface Recipe {
   prep_min: number;
   total_min: number;
   calories: number;
+  portion_factor?: number;
   macros: {
     proteins_g: number;
     carbs_g: number | null;
@@ -144,7 +145,12 @@ function MealSlot({
         </Button>
       </div>
       <Button
-        onClick={() => navigate(`/app/recipes/${recipe.recipe_id}`)}
+        onClick={() => {
+          const pf = recipe.portion_factor && recipe.portion_factor > 1
+            ? `?portions=${recipe.portion_factor.toFixed(2)}`
+            : '';
+          navigate(`/app/recipes/${recipe.recipe_id}${pf}`);
+        }}
         size="sm"
         variant="ghost"
         className="w-full text-xs mt-1"
