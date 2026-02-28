@@ -1,32 +1,61 @@
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Sparkles, ShoppingCart, Check } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Sparkles, Zap, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('BuyCredits');
 
-export function BuyCreditsSection() {
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+const PACKS = [
+  {
+    id: 'topup_30',
+    credits: 30,
+    price: '9,99 €',
+    icon: Zap,
+    color: 'from-blue-500/10 to-blue-600/5',
+    border: 'border-blue-500/20',
+    badge: null,
+    perCredit: '0,33 €/crédit',
+  },
+  {
+    id: 'topup_80',
+    credits: 80,
+    price: '19,99 €',
+    icon: Sparkles,
+    color: 'from-primary/10 to-primary/5',
+    border: 'border-primary/30',
+    badge: 'Populaire',
+    perCredit: '0,25 €/crédit',
+  },
+  {
+    id: 'topup_200',
+    credits: 200,
+    price: '39,99 €',
+    icon: Star,
+    color: 'from-amber-500/10 to-amber-600/5',
+    border: 'border-amber-500/20',
+    badge: 'Meilleur prix',
+    perCredit: '0,20 €/crédit',
+  },
+];
 
-  const handleBuyCredits = async () => {
-    setLoading(true);
+export function BuyCreditsSection() {
+  const [loadingPack, setLoadingPack] = useState<string | null>(null);
+
+  const handleBuy = async (packId: string) => {
+    setLoadingPack(packId);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      
       if (!session) {
         toast.info('Connecte-toi pour acheter des crédits');
-        navigate('/credits');
         return;
       }
 
-      logger.debug('Creating checkout for pack_m');
       const { data, error } = await supabase.functions.invoke('create-credits-checkout', {
-        body: { pack_id: 'pack_m' },
+        body: { pack_id: packId },
       });
 
       if (error) {
@@ -38,69 +67,71 @@ export function BuyCreditsSection() {
       if (data?.url) {
         window.location.href = data.url;
       } else {
-        logger.error('No URL in response', new Error('Missing checkout URL'), { data });
         toast.error('URL de paiement non reçue. Réessaie.');
       }
-    } catch (error) {
-      logger.error('Unexpected error', error instanceof Error ? error : new Error(String(error)));
+    } catch (err) {
+      logger.error('Unexpected error', err instanceof Error ? err : new Error(String(err)));
       toast.error('Erreur réseau. Vérifie ta connexion.');
     } finally {
-      setLoading(false);
+      setLoadingPack(null);
     }
   };
 
   return (
-    <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-      <div className="space-y-4">
-        <div className="flex items-start gap-4">
-          <div className="p-3 rounded-full bg-primary/20">
-            <Sparkles className="h-6 w-6 text-primary" />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-xl font-bold mb-2">Crédits Zen x15</h3>
-            <p className="text-muted-foreground text-sm mb-4">
-              Des crédits supplémentaires qui ne périment jamais ! Idéal pour utiliser tes fonctionnalités préférées sans limite.
-            </p>
-            
-            <div className="space-y-2 mb-4">
-              <div className="flex items-center gap-2 text-sm">
-                <Check className="h-4 w-4 text-primary" />
-                <span>15 Crédits Zen non expirants</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Check className="h-4 w-4 text-primary" />
-                <span>Utilisables sur swap, InspiFrigo et ScanRepas</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Check className="h-4 w-4 text-primary" />
-                <span>Valables à vie sur ton compte</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-3xl font-bold text-primary">4,99 €</p>
-                <p className="text-xs text-muted-foreground">Paiement unique</p>
-              </div>
-              <Button
-                size="lg"
-                onClick={handleBuyCredits}
-                disabled={loading}
-                className="gap-2"
-              >
-                <ShoppingCart className="h-5 w-5" />
-                {loading ? 'Chargement...' : 'Acheter maintenant'}
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        <div className="pt-4 border-t border-border/50">
-          <p className="text-xs text-muted-foreground">
-            💡 <strong>Astuce :</strong> Tes crédits achetés sont toujours utilisés en dernier, après tes crédits d'abonnement mensuels. Ainsi, tu maximises la durée de vie de tes crédits non expirants !
-          </p>
-        </div>
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <Sparkles className="h-6 w-6 text-primary" />
+        <h2 className="text-2xl font-bold">Acheter des Crédits Zen</h2>
       </div>
-    </Card>
+
+      <p className="text-muted-foreground text-sm">
+        Les crédits n'expirent jamais. Utilisables sur swap, InspiFrigo et ScanRepas.
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {PACKS.map((pack) => {
+          const Icon = pack.icon;
+          const isLoading = loadingPack === pack.id;
+          return (
+            <Card
+              key={pack.id}
+              className={`relative p-6 bg-gradient-to-br ${pack.color} ${pack.border} flex flex-col items-center text-center gap-4`}
+            >
+              {pack.badge && (
+                <Badge className="absolute -top-2.5 right-3 bg-primary text-primary-foreground text-xs">
+                  {pack.badge}
+                </Badge>
+              )}
+
+              <div className="p-3 rounded-full bg-background/80">
+                <Icon className="h-6 w-6 text-primary" />
+              </div>
+
+              <div>
+                <p className="text-3xl font-bold">{pack.credits}</p>
+                <p className="text-sm text-muted-foreground">crédits</p>
+              </div>
+
+              <div>
+                <p className="text-xl font-semibold">{pack.price}</p>
+                <p className="text-xs text-muted-foreground">{pack.perCredit}</p>
+              </div>
+
+              <Button
+                className="w-full"
+                onClick={() => handleBuy(pack.id)}
+                disabled={loadingPack !== null}
+              >
+                {isLoading ? 'Chargement...' : 'Acheter'}
+              </Button>
+            </Card>
+          );
+        })}
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        💡 Tes crédits achetés sont utilisés en dernier, après tes crédits d'abonnement mensuels.
+      </p>
+    </div>
   );
 }
