@@ -17,54 +17,17 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { LoadingMessages } from '@/components/common/LoadingMessages';
+import {
+  mergeShoppingItems,
+  CATEGORY_ORDER,
+  CATEGORY_ICONS,
+  type RawShoppingItem,
+  type MergedShoppingItem,
+} from '@/lib/shoppingListUtils';
 
-interface ShoppingItem {
-  ingredient_name: string;
-  total_quantity: number;
-  unit: string;
-  formatted_display: string;
+interface DisplayItem extends MergedShoppingItem {
   checked: boolean;
-  category: string;
 }
-
-function getCategory(name: string): string {
-  const n = name.toLowerCase();
-  if (/poulet|boeuf|porc|veau|agneau|dinde|saumon|thon|cabillaud|crevette|viande|poisson|filet/.test(n))
-    return 'Viandes & Poissons';
-  if (/lait|fromage|crème|beurre|yaourt|yogourt|feta|mozzarella|parmesan|gruyère|ricotta/.test(n))
-    return 'Produits laitiers';
-  if (/tomate|carotte|oignon|ail|courgette|poivron|épinard|salade|brocoli|champignon|concombre|laitue|radis|betterave|aubergine|chou|poireau|asperge|artichaut|fenouil|navet|céleri/.test(n))
-    return 'Fruits & Légumes';
-  if (/pomme|poire|banane|orange|citron|mangue|ananas|fraise|framboise|raisin|melon|pastèque/.test(n))
-    return 'Fruits & Légumes';
-  if (/riz|pâte|spaghetti|nouille|quinoa|semoule|boulgour|pain|farine|pomme de terre|lentille|pois chiche|haricot|couscous|tapioca/.test(n))
-    return 'Féculents';
-  if (/huile|vinaigre|sel|poivre|épice|sucre|miel|sauce|bouillon|moutarde|ketchup|mayonnaise|tahini|soja|miso|curry|cumin|paprika|thym|romarin|basilic|persil|coriandre/.test(n))
-    return 'Épicerie';
-  if (/eau|jus|boisson|café|thé|vin|bière/.test(n))
-    return 'Boissons';
-  return 'Divers';
-}
-
-const categoryOrder = [
-  'Viandes & Poissons',
-  'Fruits & Légumes',
-  'Féculents',
-  'Produits laitiers',
-  'Épicerie',
-  'Boissons',
-  'Divers',
-];
-
-const categoryIcons: Record<string, string> = {
-  'Fruits & Légumes': '🥦',
-  'Viandes & Poissons': '🥩',
-  'Produits laitiers': '🧀',
-  'Féculents': '🍚',
-  'Épicerie': '🫙',
-  'Boissons': '🥤',
-  'Divers': '📦',
-};
 
 const STORAGE_KEY_PREFIX = 'nutrizen_shopping_checked_';
 
@@ -73,7 +36,7 @@ export default function ShoppingList() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [items, setItems] = useState<ShoppingItem[]>([]);
+  const [items, setItems] = useState<DisplayItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [weekStart, setWeekStart] = useState('');
@@ -119,18 +82,24 @@ export default function ShoppingList() {
 
       if (error) throw error;
 
-      const checkedState = loadCheckedState();
-
-      const parsed: ShoppingItem[] = (data || []).map((row: any) => ({
+      const rawItems: RawShoppingItem[] = (data || []).map((row: any) => ({
         ingredient_name: row.ingredient_name,
         total_quantity: row.total_quantity,
         unit: row.unit,
         formatted_display: row.formatted_display,
-        checked: checkedState[row.ingredient_name] ?? false,
-        category: getCategory(row.ingredient_name),
       }));
 
-      setItems(parsed);
+      // Merge & deduplicate through the pipeline
+      const merged = mergeShoppingItems(rawItems);
+
+      const checkedState = loadCheckedState();
+
+      const displayItems: DisplayItem[] = merged.map(m => ({
+        ...m,
+        checked: checkedState[m.normalizedKey] ?? false,
+      }));
+
+      setItems(displayItems);
     } catch (err) {
       console.error('Error fetching shopping list:', err);
       toast({
@@ -148,31 +117,30 @@ export default function ShoppingList() {
     fetchList();
   }, [fetchList]);
 
-  const handleToggle = (ingredientName: string, checked: boolean) => {
+  const handleToggle = (key: string, checked: boolean) => {
     setItems(prev => prev.map(item =>
-      item.ingredient_name === ingredientName ? { ...item, checked } : item
+      item.normalizedKey === key ? { ...item, checked } : item
     ));
     const current = loadCheckedState();
-    current[ingredientName] = checked;
+    current[key] = checked;
     saveCheckedState(current);
   };
 
   const handleCheckAll = (checked: boolean) => {
     setItems(prev => prev.map(item => ({ ...item, checked })));
     const newState: Record<string, boolean> = {};
-    items.forEach(item => { newState[item.ingredient_name] = checked; });
+    items.forEach(item => { newState[item.normalizedKey] = checked; });
     saveCheckedState(newState);
   };
 
   const handleExportCSV = () => {
     const BOM = '\uFEFF';
-    const header = 'Catégorie;Article;Quantité;Unité;Coché';
+    const header = 'Catégorie;Article;Quantité;Coché';
     const rows = items.map(item =>
       [
         item.category,
-        `"${item.ingredient_name.replace(/"/g, '""')}"`,
-        String(item.total_quantity).replace('.', ','),
-        item.unit,
+        `"${item.displayName.replace(/"/g, '""')}"`,
+        `"${item.displayQty.replace(/"/g, '""')}"`,
         item.checked ? 'Oui' : 'Non',
       ].join(';')
     );
@@ -190,11 +158,11 @@ export default function ShoppingList() {
   const formatDate = (d: string) =>
     new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
-  const grouped = categoryOrder.reduce((acc, cat) => {
+  const grouped = CATEGORY_ORDER.reduce((acc, cat) => {
     const catItems = items.filter(i => i.category === cat);
     if (catItems.length > 0) acc[cat] = catItems;
     return acc;
-  }, {} as Record<string, ShoppingItem[]>);
+  }, {} as Record<string, DisplayItem[]>);
 
   const checkedCount = items.filter(i => i.checked).length;
   const totalCount = items.length;
@@ -302,7 +270,7 @@ export default function ShoppingList() {
             <Card key={category} className="p-4 md:p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-semibold text-lg flex items-center gap-2">
-                  <span>{categoryIcons[category] || '📦'}</span>
+                  <span>{CATEGORY_ICONS[category] || '📦'}</span>
                   {category}
                 </h2>
                 <Badge variant="outline" className="text-xs">
@@ -313,11 +281,11 @@ export default function ShoppingList() {
               <ul className="space-y-2">
                 {catItems.map(item => (
                   <li
-                    key={item.ingredient_name}
+                    key={item.normalizedKey}
                     className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
                       item.checked ? 'bg-muted/50' : 'hover:bg-muted/30'
                     }`}
-                    onClick={() => handleToggle(item.ingredient_name, !item.checked)}
+                    onClick={() => handleToggle(item.normalizedKey, !item.checked)}
                   >
                     <div
                       className={`h-5 w-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
@@ -333,7 +301,7 @@ export default function ShoppingList() {
                         item.checked ? 'line-through text-muted-foreground' : ''
                       }`}
                     >
-                      {item.formatted_display}
+                      {item.displayQty} {item.displayName}
                     </span>
                   </li>
                 ))}
