@@ -824,8 +824,10 @@ Deno.serve(async (req) => {
     
     // Helper to build a meal entry
     const buildMealEntry = (recipe: any, dayIndex: number, mealType: 'lunch' | 'dinner') => {
-      const baseServings = recipe.base_servings || recipe.servings || 2;
-      const portionFactor = roundedServings / baseServings;
+      // Use recipe.servings (what ingredients are written for, usually 1 person)
+      // NOT base_servings (which is a batch/yield field, often 4)
+      const recipeServings = recipe.servings || 1;
+      const portionFactor = effectiveHouseholdSize / recipeServings;
       
       return {
         recipe_id: recipe.id,
@@ -838,8 +840,8 @@ Deno.serve(async (req) => {
         carbs_g: Math.round((recipe.carbs_g || 0) * portionFactor),
         fats_g: Math.round((recipe.fats_g || 0) * portionFactor),
         portion_factor: portionFactor,
-        servings_used: roundedServings,
-        base_servings: baseServings,
+        servings_used: effectiveHouseholdSize,
+        base_servings: recipeServings,
       };
     };
     
