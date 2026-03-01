@@ -1,18 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AppHeader } from '@/components/app/AppHeader';
 import { AppFooter } from '@/components/app/AppFooter';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { 
-  ShoppingCart, 
-  Download, 
-  RefreshCw, 
-  Check, 
-  X, 
+import {
+  ShoppingCart,
+  Download,
+  RefreshCw,
+  Check,
+  X,
   ChefHat,
-  AlertCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,311 +18,187 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { LoadingMessages } from '@/components/common/LoadingMessages';
 
-interface GroceryItem {
-  ingredient_key: string;
-  name: string;
-  quantity: number;
+interface ShoppingItem {
+  ingredient_name: string;
+  total_quantity: number;
   unit: string;
-  recipe_sources: string[];
-  category: string;
+  formatted_display: string;
   checked: boolean;
+  category: string;
 }
 
-interface GroceryList {
-  id: string;
-  weekly_menu_id: string;
-  generated_at: string;
-  items: GroceryItem[];
+function getCategory(name: string): string {
+  const n = name.toLowerCase();
+  if (/poulet|boeuf|porc|veau|agneau|dinde|saumon|thon|cabillaud|crevette|viande|poisson|filet/.test(n))
+    return 'Viandes & Poissons';
+  if (/lait|fromage|crème|beurre|yaourt|yogourt|feta|mozzarella|parmesan|gruyère|ricotta/.test(n))
+    return 'Produits laitiers';
+  if (/tomate|carotte|oignon|ail|courgette|poivron|épinard|salade|brocoli|champignon|concombre|laitue|radis|betterave|aubergine|chou|poireau|asperge|artichaut|fenouil|navet|céleri/.test(n))
+    return 'Fruits & Légumes';
+  if (/pomme|poire|banane|orange|citron|mangue|ananas|fraise|framboise|raisin|melon|pastèque/.test(n))
+    return 'Fruits & Légumes';
+  if (/riz|pâte|spaghetti|nouille|quinoa|semoule|boulgour|pain|farine|pomme de terre|lentille|pois chiche|haricot|couscous|tapioca/.test(n))
+    return 'Féculents';
+  if (/huile|vinaigre|sel|poivre|épice|sucre|miel|sauce|bouillon|moutarde|ketchup|mayonnaise|tahini|soja|miso|curry|cumin|paprika|thym|romarin|basilic|persil|coriandre/.test(n))
+    return 'Épicerie';
+  if (/eau|jus|boisson|café|thé|vin|bière/.test(n))
+    return 'Boissons';
+  return 'Divers';
 }
 
-// Category icons mapping
+const categoryOrder = [
+  'Viandes & Poissons',
+  'Fruits & Légumes',
+  'Féculents',
+  'Produits laitiers',
+  'Épicerie',
+  'Boissons',
+  'Divers',
+];
+
 const categoryIcons: Record<string, string> = {
   'Fruits & Légumes': '🥦',
   'Viandes & Poissons': '🥩',
   'Produits laitiers': '🧀',
   'Féculents': '🍚',
   'Épicerie': '🫙',
-  'Surgelés': '🧊',
   'Boissons': '🥤',
   'Divers': '📦',
 };
+
+const STORAGE_KEY_PREFIX = 'nutrizen_shopping_checked_';
 
 export default function ShoppingList() {
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
-  
-  const [groceryList, setGroceryList] = useState<GroceryList | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRegenerating, setIsRegenerating] = useState(false);
-  const [weekStart, setWeekStart] = useState<string>('');
 
-  // Calculate current week start
+  const [items, setItems] = useState<ShoppingItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [weekStart, setWeekStart] = useState('');
+
   useEffect(() => {
     const now = new Date();
-    const dayOfWeek = now.getDay();
+    const dayOfWeek = now.getUTCDay();
     const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    const weekStartDate = new Date(now);
-    weekStartDate.setDate(now.getDate() + diff);
-    weekStartDate.setHours(0, 0, 0, 0);
-    setWeekStart(weekStartDate.toISOString().split('T')[0]);
+    const weekStartMs = Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate() + diff
+    );
+    setWeekStart(new Date(weekStartMs).toISOString().split('T')[0]);
   }, []);
 
-  // Fetch grocery list
-  useEffect(() => {
-    if (!user?.id || !weekStart) return;
+  const storageKey = user?.id ? `${STORAGE_KEY_PREFIX}${weekStart}` : null;
 
-    const fetchGroceryList = async () => {
-      setIsLoading(true);
-      try {
-        // First get the weekly menu
-        const { data: menu, error: menuError } = await supabase
-          .from('user_weekly_menus')
-          .select('menu_id')
-          .eq('user_id', user.id)
-          .eq('week_start', weekStart)
-          .maybeSingle();
-
-        if (menuError) throw menuError;
-
-        if (!menu) {
-          setGroceryList(null);
-          setIsLoading(false);
-          return;
-        }
-
-        // Then get the grocery list for this menu
-        const { data: list, error: listError } = await supabase
-          .from('grocery_lists')
-          .select('*')
-          .eq('weekly_menu_id', menu.menu_id)
-          .maybeSingle();
-
-        if (listError && listError.code !== 'PGRST116') throw listError;
-
-        if (list) {
-          // Parse items if needed
-          const items = Array.isArray(list.items) 
-            ? list.items 
-            : (typeof list.items === 'string' ? JSON.parse(list.items) : []);
-          
-          setGroceryList({
-            id: list.id,
-            weekly_menu_id: list.weekly_menu_id,
-            generated_at: list.generated_at,
-            items: items as GroceryItem[],
-          });
-        } else {
-          // No list yet - generate one
-          await handleRegenerate(menu.menu_id);
-        }
-      } catch (error) {
-        console.error('Error fetching grocery list:', error);
-        toast({
-          title: 'Erreur',
-          description: 'Impossible de charger la liste de courses.',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchGroceryList();
-  }, [user?.id, weekStart]);
-
-  const handleRegenerate = async (menuId?: string) => {
-    if (!user?.id) return;
-
-    setIsRegenerating(true);
+  const loadCheckedState = useCallback((): Record<string, boolean> => {
+    if (!storageKey) return {};
     try {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) throw new Error('Not authenticated');
+      return JSON.parse(localStorage.getItem(storageKey) || '{}');
+    } catch {
+      return {};
+    }
+  }, [storageKey]);
 
-      const { data, error } = await supabase.functions.invoke('generate-grocery-list', {
-        body: menuId ? { weekly_menu_id: menuId } : {},
-        headers: {
-          Authorization: `Bearer ${session.session.access_token}`,
-        },
-      });
+  const saveCheckedState = useCallback((checked: Record<string, boolean>) => {
+    if (!storageKey) return;
+    localStorage.setItem(storageKey, JSON.stringify(checked));
+  }, [storageKey]);
+
+  const fetchList = useCallback(async (showRefreshing = false) => {
+    if (!user?.id || !weekStart) return;
+    if (showRefreshing) setIsRefreshing(true);
+    else setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase.rpc(
+        'get_shopping_list_from_weekly_menu',
+        { p_user_id: user.id, p_week_start: weekStart }
+      );
 
       if (error) throw error;
 
-      if (data.success && data.items) {
-        setGroceryList({
-          id: data.grocery_list_id,
-          weekly_menu_id: menuId || '',
-          generated_at: data.generated_at || new Date().toISOString(),
-          items: data.items,
-        });
-        toast({
-          title: '✅ Liste mise à jour',
-          description: `${data.items.length} ingrédients dans ta liste.`,
-        });
-      }
-    } catch (error) {
-      console.error('Error regenerating grocery list:', error);
+      const checkedState = loadCheckedState();
+
+      const parsed: ShoppingItem[] = (data || []).map((row: any) => ({
+        ingredient_name: row.ingredient_name,
+        total_quantity: row.total_quantity,
+        unit: row.unit,
+        formatted_display: row.formatted_display,
+        checked: checkedState[row.ingredient_name] ?? false,
+        category: getCategory(row.ingredient_name),
+      }));
+
+      setItems(parsed);
+    } catch (err) {
+      console.error('Error fetching shopping list:', err);
       toast({
         title: 'Erreur',
-        description: 'Impossible de régénérer la liste.',
+        description: 'Impossible de charger la liste de courses.',
         variant: 'destructive',
       });
     } finally {
-      setIsRegenerating(false);
+      setIsLoading(false);
+      setIsRefreshing(false);
     }
+  }, [user?.id, weekStart, loadCheckedState, toast]);
+
+  useEffect(() => {
+    fetchList();
+  }, [fetchList]);
+
+  const handleToggle = (ingredientName: string, checked: boolean) => {
+    setItems(prev => prev.map(item =>
+      item.ingredient_name === ingredientName ? { ...item, checked } : item
+    ));
+    const current = loadCheckedState();
+    current[ingredientName] = checked;
+    saveCheckedState(current);
   };
 
-  const handleToggleItem = async (ingredientKey: string, checked: boolean) => {
-    if (!groceryList?.id) return;
-
-    // Optimistic update
-    setGroceryList(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        items: prev.items.map(item =>
-          item.ingredient_key === ingredientKey ? { ...item, checked } : item
-        ),
-      };
-    });
-
-    // Persist to database
-    try {
-      const { error } = await supabase.rpc('update_grocery_item_checked', {
-        p_grocery_list_id: groceryList.id,
-        p_ingredient_key: ingredientKey,
-        p_checked: checked,
-      });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error updating item:', error);
-      // Revert optimistic update
-      setGroceryList(prev => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          items: prev.items.map(item =>
-            item.ingredient_key === ingredientKey ? { ...item, checked: !checked } : item
-          ),
-        };
-      });
-    }
-  };
-
-  const handleCheckAll = async (checked: boolean) => {
-    if (!groceryList) return;
-
-    setGroceryList(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        items: prev.items.map(item => ({ ...item, checked })),
-      };
-    });
-
-    // Persist all changes
-    for (const item of groceryList.items) {
-      await supabase.rpc('update_grocery_item_checked', {
-        p_grocery_list_id: groceryList.id,
-        p_ingredient_key: item.ingredient_key,
-        p_checked: checked,
-      });
-    }
+  const handleCheckAll = (checked: boolean) => {
+    setItems(prev => prev.map(item => ({ ...item, checked })));
+    const newState: Record<string, boolean> = {};
+    items.forEach(item => { newState[item.ingredient_name] = checked; });
+    saveCheckedState(newState);
   };
 
   const handleExportCSV = () => {
-    if (!groceryList?.items) return;
-
-    // CSV header
-    const header = ['Catégorie', 'Article', 'Quantité', 'Unité', 'Coché'];
-    
-    // Build CSV rows
-    const rows = groceryList.items.map(item => [
-      item.category || 'Divers',
-      // Escape quotes in name
-      `"${(item.name || '').replace(/"/g, '""')}"`,
-      item.quantity.toString().replace('.', ','), // French decimal separator
-      item.unit || 'pièce',
-      item.checked ? 'Oui' : 'Non',
-    ]);
-
-    // Combine into CSV content with BOM for Excel compatibility
     const BOM = '\uFEFF';
-    const csvContent = BOM + [header.join(';'), ...rows.map(r => r.join(';'))].join('\r\n');
-
-    // Download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+    const header = 'Catégorie;Article;Quantité;Unité;Coché';
+    const rows = items.map(item =>
+      [
+        item.category,
+        `"${item.ingredient_name.replace(/"/g, '""')}"`,
+        String(item.total_quantity).replace('.', ','),
+        item.unit,
+        item.checked ? 'Oui' : 'Non',
+      ].join(';')
+    );
+    const csv = BOM + [header, ...rows].join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `liste-courses-${weekStart}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-
-    toast({
-      title: '📥 Liste téléchargée',
-      description: 'Ta liste de courses est prête au format CSV.',
-    });
+    toast({ title: '📥 Liste téléchargée', description: 'Format CSV prêt pour Excel.' });
   };
 
-  const handleExportText = () => {
-    if (!groceryList?.items) return;
+  const formatDate = (d: string) =>
+    new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
-    // Group by category
-    const grouped = groceryList.items.reduce((acc, item) => {
-      const cat = item.category || 'Divers';
-      if (!acc[cat]) acc[cat] = [];
-      acc[cat].push(item);
-      return acc;
-    }, {} as Record<string, GroceryItem[]>);
-
-    // Build text content
-    let content = `Liste de courses - Semaine du ${formatDate(weekStart)}\n\n`;
-    
-    Object.entries(grouped).forEach(([category, items]) => {
-      content += `${categoryIcons[category] || '📦'} ${category}\n`;
-      items.forEach(item => {
-        const check = item.checked ? '✓' : '○';
-        content += `  ${check} ${item.name} (${item.quantity} ${item.unit})\n`;
-      });
-      content += '\n';
-    });
-
-    // Download as text file
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `liste-courses-${weekStart}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-
-    toast({
-      title: '📥 Liste téléchargée',
-      description: 'Ta liste de courses est prête.',
-    });
-  };
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('fr-FR', { 
-      day: 'numeric', 
-      month: 'long',
-      year: 'numeric',
-    });
-  };
-
-  // Group items by category
-  const groupedItems = groceryList?.items.reduce((acc, item) => {
-    const cat = item.category || 'Divers';
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(item);
+  const grouped = categoryOrder.reduce((acc, cat) => {
+    const catItems = items.filter(i => i.category === cat);
+    if (catItems.length > 0) acc[cat] = catItems;
     return acc;
-  }, {} as Record<string, GroceryItem[]>) || {};
+  }, {} as Record<string, ShoppingItem[]>);
 
-  const checkedCount = groceryList?.items.filter(i => i.checked).length || 0;
-  const totalCount = groceryList?.items.length || 0;
+  const checkedCount = items.filter(i => i.checked).length;
+  const totalCount = items.length;
+  const progress = totalCount > 0 ? Math.round((checkedCount / totalCount) * 100) : 0;
 
   if (isLoading) {
     return (
@@ -332,9 +206,9 @@ export default function ShoppingList() {
         <AppHeader />
         <main className="flex-1 container py-8 px-4">
           <div className="py-12">
-            <LoadingMessages 
-              variant="grocery" 
-              isLoading={true} 
+            <LoadingMessages
+              variant="grocery"
+              isLoading={true}
               skeletonCount={4}
               minDisplayMs={400}
             />
@@ -345,7 +219,7 @@ export default function ShoppingList() {
     );
   }
 
-  if (!groceryList || groceryList.items.length === 0) {
+  if (items.length === 0) {
     return (
       <div className="min-h-screen flex flex-col">
         <AppHeader />
@@ -384,21 +258,28 @@ export default function ShoppingList() {
                 Semaine du {formatDate(weekStart)}
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-sm">
-                {checkedCount}/{totalCount} cochés
-              </Badge>
-            </div>
+            <Badge variant="secondary" className="text-sm self-start sm:self-auto">
+              {checkedCount}/{totalCount} cochés
+            </Badge>
           </div>
-          
+
+          {/* Progress bar */}
+          <div className="w-full h-2 bg-secondary rounded-full overflow-hidden mb-4">
+            <div
+              className="h-full bg-primary transition-all duration-500"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+
+          {/* Actions */}
           <div className="flex flex-wrap gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => handleRegenerate()}
-              disabled={isRegenerating}
+            <Button
+              variant="outline"
+              onClick={() => fetchList(true)}
+              disabled={isRefreshing}
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isRegenerating ? 'animate-spin' : ''}`} />
-              Régénérer
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Actualiser
             </Button>
             <Button variant="outline" onClick={() => handleCheckAll(true)}>
               <Check className="h-4 w-4 mr-2" />
@@ -410,57 +291,50 @@ export default function ShoppingList() {
             </Button>
             <Button onClick={handleExportCSV}>
               <Download className="h-4 w-4 mr-2" />
-              Exporter (CSV)
+              Exporter CSV
             </Button>
           </div>
         </div>
 
-        {/* Info banner */}
-        <Card className="p-3 mb-6 bg-muted/50">
-          <p className="text-sm text-muted-foreground flex items-center gap-2">
-            <AlertCircle className="h-4 w-4" />
-            Basé sur ton menu de la semaine. Les quantités sont adaptées à ton foyer.
-          </p>
-        </Card>
-
-        {/* Shopping list by category */}
+        {/* List by category */}
         <div className="space-y-4">
-          {Object.entries(groupedItems).map(([category, items]) => (
+          {Object.entries(grouped).map(([category, catItems]) => (
             <Card key={category} className="p-4 md:p-6">
-              <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <span>{categoryIcons[category] || '📦'}</span>
-                {category}
-                <Badge variant="outline" className="ml-auto text-xs">
-                  {items.filter(i => i.checked).length}/{items.length}
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold text-lg flex items-center gap-2">
+                  <span>{categoryIcons[category] || '📦'}</span>
+                  {category}
+                </h2>
+                <Badge variant="outline" className="text-xs">
+                  {catItems.filter(i => i.checked).length}/{catItems.length}
                 </Badge>
-              </h2>
-              
-              <ul className="space-y-3">
-                {items.map((item) => (
-                  <li 
-                    key={item.ingredient_key}
-                    className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${
+              </div>
+
+              <ul className="space-y-2">
+                {catItems.map(item => (
+                  <li
+                    key={item.ingredient_name}
+                    className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
                       item.checked ? 'bg-muted/50' : 'hover:bg-muted/30'
                     }`}
+                    onClick={() => handleToggle(item.ingredient_name, !item.checked)}
                   >
-                    <Checkbox
-                      id={item.ingredient_key}
-                      checked={item.checked}
-                      onCheckedChange={(checked) => 
-                        handleToggleItem(item.ingredient_key, checked as boolean)
-                      }
-                    />
-                    <label
-                      htmlFor={item.ingredient_key}
-                      className={`flex-1 cursor-pointer ${
+                    <div
+                      className={`h-5 w-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                        item.checked
+                          ? 'bg-primary border-primary'
+                          : 'border-muted-foreground/40'
+                      }`}
+                    >
+                      {item.checked && <Check className="h-3 w-3 text-primary-foreground" />}
+                    </div>
+                    <span
+                      className={`flex-1 text-sm ${
                         item.checked ? 'line-through text-muted-foreground' : ''
                       }`}
                     >
-                      <span className="font-medium">{item.name}</span>
-                      <span className="text-sm text-muted-foreground ml-2">
-                        ({item.quantity} {item.unit})
-                      </span>
-                    </label>
+                      {item.formatted_display}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -468,12 +342,17 @@ export default function ShoppingList() {
           ))}
         </div>
 
-        {/* Generated timestamp */}
-        {groceryList.generated_at && (
-          <p className="text-xs text-muted-foreground text-center mt-6">
-            Dernière mise à jour : {new Date(groceryList.generated_at).toLocaleString('fr-FR')}
-          </p>
+        {progress === 100 && totalCount > 0 && (
+          <div className="text-center py-8">
+            <p className="text-4xl mb-2">🎉</p>
+            <p className="font-semibold text-lg">Courses terminées !</p>
+            <p className="text-sm text-muted-foreground">Tout est dans le panier.</p>
+          </div>
         )}
+
+        <p className="text-xs text-muted-foreground text-center mt-6">
+          {totalCount} articles • Adapté à ton foyer
+        </p>
       </main>
 
       <AppFooter />
