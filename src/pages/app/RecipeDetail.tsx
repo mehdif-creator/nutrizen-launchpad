@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { AppHeader } from '@/components/app/AppHeader';
 import { AppFooter } from '@/components/app/AppFooter';
@@ -13,6 +13,8 @@ import { storagePublicBaseUrl } from '@/lib/supabaseUrls';
 import { RecipeMacrosCard } from '@/components/app/RecipeMacrosCard';
 import { SubstitutionsTab } from '@/components/recipe/SubstitutionsTab';
 import { useAwardXp } from '@/hooks/useAwardXp';
+import { useAuth } from '@/contexts/AuthContext';
+import { useEffectivePortions } from '@/hooks/useEffectivePortions';
 
 interface Recipe {
   id: string;
@@ -41,12 +43,26 @@ export default function RecipeDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const portionMultiplier = Math.max(1, parseFloat(searchParams.get('portions') || '1') || 1);
+  const urlPortions = searchParams.get('portions');
   const { toast } = useToast();
   const { awardRecipeView } = useAwardXp();
+  const { user } = useAuth();
+  const { data: effectivePortions } = useEffectivePortions(user?.id);
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('recipe');
+
+  // Compute portionMultiplier: URL param takes priority, otherwise derive from profile
+  const portionMultiplier = useMemo(() => {
+    if (urlPortions) {
+      return Math.max(0.1, parseFloat(urlPortions) || 1);
+    }
+    if (effectivePortions && recipe) {
+      const baseServings = recipe.servings || 1;
+      return effectivePortions.effective_servings_per_meal / baseServings;
+    }
+    return 1;
+  }, [urlPortions, effectivePortions, recipe]);
 
   useEffect(() => {
     const loadRecipe = async () => {
