@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { AppHeader } from '@/components/app/AppHeader';
 import { AppFooter } from '@/components/app/AppFooter';
 import { Button } from '@/components/ui/button';
@@ -42,8 +42,6 @@ interface Recipe {
 export default function RecipeDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const urlPortions = searchParams.get('portions');
   const { toast } = useToast();
   const { awardRecipeView } = useAwardXp();
   const { user } = useAuth();
@@ -52,17 +50,14 @@ export default function RecipeDetail() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('recipe');
 
-  // Compute portionMultiplier: URL param takes priority, otherwise derive from profile
+  // Always derive portions from household profile (ignore URL param)
   const portionMultiplier = useMemo(() => {
-    if (urlPortions) {
-      return Math.max(0.1, parseFloat(urlPortions) || 1);
-    }
     if (effectivePortions && recipe) {
       const baseServings = recipe.servings || 1;
       return effectivePortions.effective_servings_per_meal / baseServings;
     }
     return 1;
-  }, [urlPortions, effectivePortions, recipe]);
+  }, [effectivePortions, recipe]);
 
   useEffect(() => {
     const loadRecipe = async () => {
@@ -207,11 +202,11 @@ export default function RecipeDetail() {
                     <span className="text-sm text-muted-foreground">Portions</span>
                   </div>
                   <div className="text-lg font-semibold">
-                    {portionMultiplier > 1
+                    {portionMultiplier !== 1
                       ? `${(recipe.servings * portionMultiplier).toFixed(1)}`
                       : recipe.servings}
                   </div>
-                  {portionMultiplier > 1 && (
+                  {portionMultiplier !== 1 && (
                     <div className="text-xs text-muted-foreground mt-1">
                       Recette de base : {recipe.servings} pers. × {portionMultiplier.toFixed(1)}
                     </div>
@@ -227,7 +222,7 @@ export default function RecipeDetail() {
                   <div className="text-lg font-semibold">
                     {Math.round((recipe.calories_kcal || 0) * portionMultiplier)} kcal
                   </div>
-                  {portionMultiplier > 1 && (
+                  {portionMultiplier !== 1 && (
                     <div className="text-xs text-muted-foreground">
                       {recipe.calories_kcal} kcal/pers.
                     </div>
@@ -270,7 +265,7 @@ export default function RecipeDetail() {
                         const name = ingredient.name || ingredient.ingredient || '';
                         const qty = ingredient.quantity ?? ingredient.amount ?? null;
                         const unit = ingredient.unit || '';
-                        if (qty !== null && portionMultiplier > 1) {
+                        if (qty !== null && portionMultiplier !== 1) {
                           const scaled = qty * portionMultiplier;
                           const formatted = Number.isInteger(scaled)
                             ? scaled.toString()
