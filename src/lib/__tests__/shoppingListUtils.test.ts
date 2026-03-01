@@ -13,7 +13,7 @@ describe('mergeShoppingItems', () => {
 
     expect(merged).toHaveLength(1);
     expect(merged[0].displayName.toLowerCase()).toContain('concombre');
-    expect(merged[0].displayQty).toBe('114g');
+    expect(merged[0].displayQty).toBe('114 g');
   });
 
   it('recovers spoon unit from ingredient name when backend sends piece', () => {
@@ -82,6 +82,6 @@ describe('mergeShoppingItems', () => {
 
     expect(merged).toHaveLength(1);
     // 93g + (1.6*300g) + 155g = 728g
-    expect(merged[0].displayQty).toBe('728g');
+    expect(merged[0].displayQty).toBe('728 g');
   });
 });
