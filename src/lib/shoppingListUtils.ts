@@ -114,10 +114,55 @@ function canonicalizeUnit(unit: string): string {
   if (u === 'millilitre' || u === 'millilitres') return 'ml';
   if (u === 'centilitre' || u === 'centilitres') return 'cl';
   if (u === 'litre' || u === 'litres') return 'l';
-  if (/^(tbsp|c\.?\s*à\s*s(?:oupe)?|cuillère[s]?\s*à\s*soupe|càs|cas)$/i.test(u)) return 'tbsp';
-  if (/^(tsp|c\.?\s*à\s*c(?:afé)?|cuillère[s]?\s*à\s*café|càc|cac)$/i.test(u)) return 'tsp';
+  if (/^(tbsp|tablespoon|c\.?\s*à\s*s(?:oupe)?|cuillère[s]?\s*à\s*soupe|càs|cas)$/i.test(u)) return 'tbsp';
+  if (/^(tsp|teaspoon|c\.?\s*à\s*c(?:afé)?|cuillère[s]?\s*à\s*café|càc|cac)$/i.test(u)) return 'tsp';
   if (/^(pincée|pincee|pinch|pincées|pincees)$/.test(u)) return 'pinch';
+  if (u === 'bunch' || u === 'botte') return 'bunch';
+  if (u === 'handful' || u === 'poignée') return 'handful';
+  if (u === 'slice' || u === 'tranche' || u === 'tranches') return 'slice';
+  if (u === 'clove' || u === 'gousse') return 'clove';
+  if (u === 'sprig' || u === 'brin') return 'sprig';
+  if (u === 'leaf' || u === 'leaves' || u === 'feuille' || u === 'feuilles') return 'leaf';
+  if (u === 'head' || u === 'tête') return 'head';
+  if (u === 'stalk' || u === 'tige') return 'stalk';
+  if (u === 'can' || u === 'boîte' || u === 'boite') return 'can';
+  if (u === 'bag' || u === 'sachet') return 'bag';
+  if (u === 'pack' || u === 'paquet') return 'pack';
+  if (u === 'jar' || u === 'bocal') return 'jar';
+  if (u === 'cup' || u === 'tasse') return 'cup';
+  if (u === 'oz') return 'oz';
+  if (u === 'lb') return 'lb';
   return u;
+}
+
+/** Translate canonical unit to French display label. */
+function unitToFrench(canonical: string, qty: number): string {
+  const plural = qty > 1;
+  switch (canonical) {
+    case 'piece': return '';
+    case 'g': return 'g';
+    case 'kg': return 'kg';
+    case 'ml': return 'ml';
+    case 'cl': return 'cl';
+    case 'l': return 'l';
+    case 'tbsp': return 'c. à soupe';
+    case 'tsp': return 'c. à café';
+    case 'pinch': return plural ? 'pincées' : 'pincée';
+    case 'bunch': return plural ? 'bottes' : 'botte';
+    case 'handful': return plural ? 'poignées' : 'poignée';
+    case 'slice': return plural ? 'tranches' : 'tranche';
+    case 'clove': return plural ? 'gousses' : 'gousse';
+    case 'sprig': return plural ? 'brins' : 'brin';
+    case 'leaf': return plural ? 'feuilles' : 'feuille';
+    case 'head': return plural ? 'têtes' : 'tête';
+    case 'stalk': return plural ? 'tiges' : 'tige';
+    case 'can': return plural ? 'boîtes' : 'boîte';
+    case 'bag': return plural ? 'sachets' : 'sachet';
+    case 'pack': return plural ? 'paquets' : 'paquet';
+    case 'jar': return plural ? 'bocaux' : 'bocal';
+    case 'cup': return plural ? 'tasses' : 'tasse';
+    default: return canonical;
+  }
 }
 
 /** Convert a quantity to grams when possible. Returns null if can't convert. */
@@ -129,6 +174,8 @@ export function toGrams(
   const u = canonicalizeUnit(unit);
   if (u === 'g') return { grams: qty };
   if (u === 'kg') return { grams: qty * 1000 };
+  if (u === 'oz') return { grams: qty * 28.35 };
+  if (u === 'lb') return { grams: qty * 453.6 };
   if (u === 'piece') {
     if (shouldKeepAsCount(normName)) return null;
     const w = findPieceWeight(normName);
@@ -279,6 +326,12 @@ function formatSpoonOrPinchFromMl(ml: number): string {
 
   const roundQuarter = (n: number) => Math.max(0.25, Math.round(n * 4) / 4);
 
+  // Upgrade to cl if large
+  if (ml >= 150) {
+    const cl = Math.round(ml / 10);
+    return `${cl} cl`;
+  }
+
   if (ml >= 12.5) {
     const tbsp = roundQuarter(ml / 15);
     return `${formatCompactNumber(tbsp)} c. à soupe`;
@@ -295,6 +348,10 @@ function formatVolumeQty(ml: number, preferSpoons: boolean): string {
     const liters = Math.round((ml / 1000) * 10) / 10;
     return `${formatCompactNumber(liters)} l`;
   }
+  if (ml >= 100) {
+    const cl = Math.round(ml / 10);
+    return `${cl} cl`;
+  }
   return `${Math.round(ml)} ml`;
 }
 
@@ -304,10 +361,17 @@ export function formatShoppingQty(grams: number | null, unit: string, qty: numbe
       const kg = Math.round(grams / 100) / 10;
       return `${formatCompactNumber(kg)} kg`;
     }
-    return `${Math.round(grams)}g`;
+    return `${Math.round(grams)} g`;
   }
 
   const u = canonicalizeUnit(unit);
+
+  if (u === 'pinch') {
+    if (qty > 3) return '1 c. à café';
+    const rounded = Math.max(1, Math.round(qty));
+    return `${rounded} ${rounded > 1 ? 'pincées' : 'pincée'}`;
+  }
+
   if (u === 'piece') {
     return formatCompactNumber(roundCountQuantity(qty));
   }
@@ -317,15 +381,36 @@ export function formatShoppingQty(grams: number | null, unit: string, qty: numbe
     if (ml !== null) return formatVolumeQty(ml, u === 'tbsp' || u === 'tsp');
   }
 
+  // Other named units — translate to French
+  const frLabel = unitToFrench(u, qty);
   if (qty < 10) {
     const rounded = Math.round(qty * 10) / 10;
-    return `${formatCompactNumber(rounded)}${u ? ' ' + u : ''}`;
+    return `${formatCompactNumber(roundCountQuantity(rounded))}${frLabel ? ' ' + frLabel : ''}`;
   }
-  return `${Math.round(qty)}${u ? ' ' + u : ''}`;
+  return `${Math.round(qty)}${frLabel ? ' ' + frLabel : ''}`;
 }
 
 // --------------------------------------------------------------------------
-// 6. Main merge pipeline
+// 6. French display line builder
+// --------------------------------------------------------------------------
+
+const VOWELS = /^[aeéèêëiîïoôuûùüœæyhAEÉÈÊËIÎÏOÔUÛÙÜŒÆYH]/;
+
+/** Build a complete display line: "310 g d'agneau haché" */
+function buildDisplayLine(qty: string, name: string): string {
+  if (!qty) return name;
+  const lowerName = name.charAt(0).toLowerCase() + name.slice(1);
+  // If qty already ends with a unit abbreviation glued to number (e.g. "310 g"), add connector
+  // If qty is just a number (countable), no connector needed
+  const isJustNumber = /^\d[\d.,/½¼¾]*$/.test(qty.trim());
+  if (isJustNumber) return `${qty} ${lowerName}`;
+  // Add "de" / "d'" connector
+  const connector = VOWELS.test(lowerName) ? "d'" : 'de ';
+  return `${qty} ${connector}${lowerName}`;
+}
+
+// --------------------------------------------------------------------------
+// 7. Main merge pipeline
 // --------------------------------------------------------------------------
 
 export interface RawShoppingItem {
@@ -338,6 +423,7 @@ export interface RawShoppingItem {
 export interface MergedShoppingItem {
   displayName: string;
   displayQty: string;
+  displayLine: string;
   category: string;
   normalizedKey: string;
 }
@@ -440,10 +526,12 @@ export function mergeShoppingItems(raw: RawShoppingItem[]): MergedShoppingItem[]
     }
 
     const displayQty = qtyParts.join(' + ');
+    const displayLine = buildDisplayLine(displayQty, bestName);
 
     results.push({
       displayName: bestName,
       displayQty,
+      displayLine,
       category,
       normalizedKey: normKey,
     });

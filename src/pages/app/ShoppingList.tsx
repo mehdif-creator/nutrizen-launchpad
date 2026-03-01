@@ -135,12 +135,11 @@ export default function ShoppingList() {
 
   const handleExportCSV = () => {
     const BOM = '\uFEFF';
-    const header = 'Catégorie;Article;Quantité;Coché';
+    const header = 'Catégorie;Article;Coché';
     const rows = items.map(item =>
       [
         item.category,
-        `"${item.displayName.replace(/"/g, '""')}"`,
-        `"${item.displayQty.replace(/"/g, '""')}"`,
+        `"${item.displayLine.replace(/"/g, '""')}"`,
         item.checked ? 'Oui' : 'Non',
       ].join(';')
     );
@@ -301,7 +300,7 @@ export default function ShoppingList() {
                         item.checked ? 'line-through text-muted-foreground' : ''
                       }`}
                     >
-                      {item.displayQty} {item.displayName}
+                      {item.displayLine}
                     </span>
                   </li>
                 ))}
