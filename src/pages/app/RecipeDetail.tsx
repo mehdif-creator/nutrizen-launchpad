@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { storagePublicBaseUrl } from '@/lib/supabaseUrls';
 import { RecipeMacrosCard } from '@/components/app/RecipeMacrosCard';
 import { SubstitutionsTab } from '@/components/recipe/SubstitutionsTab';
+import { scaleIngredientText, formatQuantity } from '@/lib/portions';
 import { useAwardXp } from '@/hooks/useAwardXp';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffectivePortions } from '@/hooks/useEffectivePortions';
@@ -260,19 +261,14 @@ export default function RecipeDetail() {
                     {ingredients.map((ingredient: any, index: number) => {
                       let display: string;
                       if (typeof ingredient === 'string') {
-                        display = ingredient;
+                        display = scaleIngredientText(ingredient, portionMultiplier);
                       } else {
                         const name = ingredient.name || ingredient.ingredient || '';
                         const qty = ingredient.quantity ?? ingredient.amount ?? null;
                         const unit = ingredient.unit || '';
-                        if (qty !== null && portionMultiplier !== 1) {
+                        if (qty !== null) {
                           const scaled = qty * portionMultiplier;
-                          const formatted = Number.isInteger(scaled)
-                            ? scaled.toString()
-                            : (Math.round(scaled * 10) / 10).toString();
-                          display = `${formatted}${unit ? ' ' + unit : ''} ${name}`.trim();
-                        } else if (qty !== null) {
-                          display = `${qty}${unit ? ' ' + unit : ''} ${name}`.trim();
+                          display = `${formatQuantity(scaled)}${unit ? ' ' + unit : ''} ${name}`.trim();
                         } else {
                           display = name;
                         }
