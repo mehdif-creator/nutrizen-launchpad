@@ -18,23 +18,26 @@
 const PREP_WORDS_RE =
   /\b(râpée?s?|émincée?s?|coupée?s?|haché?e?s?|frais|fraîche?s?|en fines? tranches?|en lamelles?|en dés|en rondelles?|en morceaux|nouveau|nouvelle|nouveaux|nouvelles|ciselée?s?|pelée?s?|tranchée?s?|fondues?|séchée?s?|surgelée?s?|décortiquée?s?|nettoyée?s?|lavée?s?|pressée?s?|égoutée?s?|égouttée?s?|finement|grossièrement)\b/gi;
 
-const LEADING_DE = /^d[e'u]\s+/i;
+const LEADING_DE = /^(?:de|du|des|d'|la|le|les|l')\s+/i;
 const TRAILING_S_RE = /s$/;
 
 export function normalizeIngredientName(name: string): string {
   let n = name
     .toLowerCase()
-    .replace(/[()]/g, '')
-    .replace(PREP_WORDS_RE, '')
+    .replace(/[()]/g, ' ')
+    .replace(/[.,;:]/g, ' ')
+    .replace(/[’]/g, "'")
+    .replace(PREP_WORDS_RE, ' ')
+    .replace(/\b(?:r[aâ]p[eé]e?s?|é?minc[eé]e?s?|coup[eé]e?s?|hach[eé]e?s?|frais|fra[iî]che?s?|en fines? tranches?|en lamelles?|en d[eé]s|en rondelles?|en morceaux)\b/gi, ' ')
+    .replace(/\s+(?:coup[eé]e?s?|hach[eé]e?s?|r[aâ]p[eé]e?s?|é?minc[eé]e?s?).*$/gi, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
 
-  // Strip leading "de ", "d'"
+  // Strip leading "de", "du", "d'", articles
   n = n.replace(LEADING_DE, '').trim();
 
-  // Remove trailing plural 's' for matching (but keep irregular words)
-  // Only strip if word is >3 chars to avoid breaking "riz", "sel", etc.
-  if (n.length > 3 && TRAILING_S_RE.test(n)) {
+  // Remove trailing plural 's' for matching (but keep common non-plural endings)
+  if (n.length > 3 && TRAILING_S_RE.test(n) && !/(ais|ois|ous|us|is|as)$/.test(n)) {
     n = n.replace(/s$/, '');
   }
 
@@ -78,6 +81,20 @@ const PIECE_TO_GRAMS: Record<string, number> = {
   céleri: 40,
 };
 
+const PREFER_COUNT_ITEMS = [
+  "gousse d'ail",
+  'ail',
+  'oeuf',
+  'œuf',
+  'citron',
+  'citron vert',
+  'orange',
+];
+
+function shouldKeepAsCount(norm: string): boolean {
+  return PREFER_COUNT_ITEMS.some((k) => norm === k || norm.includes(k));
+}
+
 function findPieceWeight(norm: string): number | null {
   // Exact match first
   if (PIECE_TO_GRAMS[norm] !== undefined) return PIECE_TO_GRAMS[norm];
@@ -88,19 +105,46 @@ function findPieceWeight(norm: string): number | null {
   return null;
 }
 
+/** Normalize unit aliases used across RPC and UI. */
+function canonicalizeUnit(unit: string): string {
+  const u = unit.toLowerCase().trim();
+  if (!u || u === 'pièce' || u === 'piece' || u === 'pcs' || u === 'pc') return 'piece';
+  if (u === 'gr' || u === 'gramme' || u === 'grammes') return 'g';
+  if (u === 'kilogramme' || u === 'kilogrammes') return 'kg';
+  if (u === 'millilitre' || u === 'millilitres') return 'ml';
+  if (u === 'centilitre' || u === 'centilitres') return 'cl';
+  if (u === 'litre' || u === 'litres') return 'l';
+  if (/^(tbsp|c\.?\s*à\s*s(?:oupe)?|cuillère[s]?\s*à\s*soupe|càs|cas)$/i.test(u)) return 'tbsp';
+  if (/^(tsp|c\.?\s*à\s*c(?:afé)?|cuillère[s]?\s*à\s*café|càc|cac)$/i.test(u)) return 'tsp';
+  if (/^(pincée|pincee|pinch|pincées|pincees)$/.test(u)) return 'pinch';
+  return u;
+}
+
 /** Convert a quantity to grams when possible. Returns null if can't convert. */
 export function toGrams(
   qty: number,
   unit: string,
   normName: string,
 ): { grams: number } | null {
-  const u = unit.toLowerCase().trim();
-  if (u === 'g' || u === 'gr') return { grams: qty };
+  const u = canonicalizeUnit(unit);
+  if (u === 'g') return { grams: qty };
   if (u === 'kg') return { grams: qty * 1000 };
-  if (u === '' || u === 'pièce' || u === 'piece') {
+  if (u === 'piece') {
+    if (shouldKeepAsCount(normName)) return null;
     const w = findPieceWeight(normName);
     if (w) return { grams: qty * w };
   }
+  return null;
+}
+
+/** Convert compatible volume units to ml when possible. */
+function toMilliliters(qty: number, unit: string): number | null {
+  const u = canonicalizeUnit(unit);
+  if (u === 'ml') return qty;
+  if (u === 'cl') return qty * 10;
+  if (u === 'l') return qty * 1000;
+  if (u === 'tbsp') return qty * 15;
+  if (u === 'tsp') return qty * 5;
   return null;
 }
 
@@ -118,8 +162,30 @@ const JUICE_PER_FRUIT: Record<string, number> = {
 const JUICE_RE =
   /^jus\s+de\s+(.+)$/i;
 
-const TBSP_RE = /c\.\s*à\s*s(?:oupe)?|cuillère[s]?\s*à\s*soupe|tbsp/i;
-const TSP_RE = /c\.\s*à\s*c(?:afé)?|cuillère[s]?\s*à\s*café|tsp/i;
+const INLINE_TBSP_RE =
+  /^(?:c\.?\s*à\s*s(?:oupe)?|cuillère[s]?\s*à\s*soupe|tbsp)\s*(?:de\s+|d')?(.+)$/i;
+const INLINE_TSP_RE =
+  /^(?:c\.?\s*à\s*c(?:afé)?|cuillère[s]?\s*à\s*café|tsp)\s*(?:de\s+|d')?(.+)$/i;
+
+function extractInlineUnitFromName(name: string): { cleanName: string; inlineUnit: string | null } {
+  const trimmed = name.trim();
+  const tbsp = trimmed.match(INLINE_TBSP_RE);
+  if (tbsp) return { cleanName: tbsp[1].trim(), inlineUnit: 'tbsp' };
+
+  const tsp = trimmed.match(INLINE_TSP_RE);
+  if (tsp) return { cleanName: tsp[1].trim(), inlineUnit: 'tsp' };
+
+  return { cleanName: trimmed, inlineUnit: null };
+}
+
+function spoonToMl(unit: string, qty: number): number | null {
+  const u = canonicalizeUnit(unit);
+  if (u === 'tbsp') return qty * 15;
+  if (u === 'tsp') return qty * 5;
+  if (u === 'ml') return qty;
+  if (u === 'cl') return qty * 10;
+  return null;
+}
 
 function isJuiceOf(normName: string): string | null {
   const m = normName.match(JUICE_RE);
@@ -134,12 +200,6 @@ function isJuiceOf(normName: string): string | null {
   return null;
 }
 
-function spoonToMl(unit: string, qty: number): number | null {
-  if (TBSP_RE.test(unit)) return qty * 15;
-  if (TSP_RE.test(unit)) return qty * 5;
-  return null;
-}
-
 // --------------------------------------------------------------------------
 // 4. Category assignment
 // --------------------------------------------------------------------------
@@ -147,8 +207,8 @@ function spoonToMl(unit: string, qty: number): number | null {
 // Order matters: first match wins. More specific keywords first.
 const CATEGORY_RULES: Array<[RegExp, string]> = [
   // Viandes & Poissons
-  [/agneau|boeuf|bœuf|porc|veau|dinde|poulet|canard|lapin|magret|entrecôte|escalope|filet de .*(poulet|dinde|porc|boeuf|bœuf)/i, 'Viandes & Poissons'],
-  [/saumon|thon|cabillaud|crevette|moule|sardine|truite|bar|lieu|merlu|colin|sole|dorade|gambas|calamars?|poisson|anchois|maquereau/i, 'Viandes & Poissons'],
+  [/\b(agneau|boeuf|bœuf|porc|veau|dinde|poulet|canard|lapin|magret|entrecôte|escalope)\b|\bfilet de\s+.*\b(poulet|dinde|porc|boeuf|bœuf)\b/i, 'Viandes & Poissons'],
+  [/\b(saumon|thon|cabillaud|crevette|moule|sardine|truite|bar|lieu|merlu|colin|sole|dorade|gambas|calamars?|poisson|anchois|maquereau)\b/i, 'Viandes & Poissons'],
 
   // Fruits & Légumes (must come before Épicerie to catch "oignon" etc.)
   [/oignon|carotte|concombre|courgette|aubergine|poivron|tomate|brocoli|chou|épinard|salade|laitue|radis|betterave|poireau|asperge|artichaut|fenouil|navet|céleri|champignon|endive|cresson|roquette|mâche|haricot[s]?\s*vert/i, 'Fruits & Légumes'],
@@ -202,20 +262,66 @@ export function getCategory(ingredientName: string): string {
 // 5. Quantity formatting
 // --------------------------------------------------------------------------
 
+function formatCompactNumber(value: number): string {
+  const rounded = Math.round(value * 100) / 100;
+  if (Number.isInteger(rounded)) return `${rounded}`;
+  return rounded.toFixed(2).replace(/\.00$/, '').replace(/(\.\d*[1-9])0$/, '$1');
+}
+
+function roundCountQuantity(qty: number): number {
+  if (qty <= 4) return Math.round(qty * 2) / 2;
+  return Math.round(qty);
+}
+
+function formatSpoonOrPinchFromMl(ml: number): string {
+  // Less than 0.1 tsp ≈ 0.5 ml => display pinch
+  if (ml < 0.5) return '1 pincée';
+
+  const roundQuarter = (n: number) => Math.max(0.25, Math.round(n * 4) / 4);
+
+  if (ml >= 12.5) {
+    const tbsp = roundQuarter(ml / 15);
+    return `${formatCompactNumber(tbsp)} c. à soupe`;
+  }
+
+  const tsp = roundQuarter(ml / 5);
+  return `${formatCompactNumber(tsp)} c. à café`;
+}
+
+function formatVolumeQty(ml: number, preferSpoons: boolean): string {
+  if (preferSpoons) return formatSpoonOrPinchFromMl(ml);
+  if (ml < 0.5) return '1 pincée';
+  if (ml >= 1000) {
+    const liters = Math.round((ml / 1000) * 10) / 10;
+    return `${formatCompactNumber(liters)} l`;
+  }
+  return `${Math.round(ml)} ml`;
+}
+
 export function formatShoppingQty(grams: number | null, unit: string, qty: number): string {
   if (grams !== null) {
     if (grams >= 1000) {
       const kg = Math.round(grams / 100) / 10;
-      return `${kg} kg`;
+      return `${formatCompactNumber(kg)} kg`;
     }
     return `${Math.round(grams)}g`;
   }
-  // Non-gram units — keep as-is with rounding
+
+  const u = canonicalizeUnit(unit);
+  if (u === 'piece') {
+    return formatCompactNumber(roundCountQuantity(qty));
+  }
+
+  if (u === 'tbsp' || u === 'tsp' || u === 'ml' || u === 'cl' || u === 'l') {
+    const ml = toMilliliters(qty, u);
+    if (ml !== null) return formatVolumeQty(ml, u === 'tbsp' || u === 'tsp');
+  }
+
   if (qty < 10) {
     const rounded = Math.round(qty * 10) / 10;
-    return `${rounded}${unit ? ' ' + unit : ''}`;
+    return `${formatCompactNumber(rounded)}${u ? ' ' + u : ''}`;
   }
-  return `${Math.round(qty)}${unit ? ' ' + unit : ''}`;
+  return `${Math.round(qty)}${u ? ' ' + u : ''}`;
 }
 
 // --------------------------------------------------------------------------
@@ -238,9 +344,10 @@ export interface MergedShoppingItem {
 
 interface Bucket {
   grams: number;
-  nonGramQty: number;
-  nonGramUnit: string;
-  hasGrams: boolean;
+  volumeMl: number;
+  countQty: number;
+  otherUnits: Record<string, number>;
+  hasSpoonSource: boolean;
   displayNames: string[];
 }
 
@@ -248,29 +355,36 @@ export function mergeShoppingItems(raw: RawShoppingItem[]): MergedShoppingItem[]
   const buckets = new Map<string, Bucket>();
 
   for (const item of raw) {
-    const norm = normalizeIngredientName(item.ingredient_name);
+    const { cleanName, inlineUnit } = extractInlineUnitFromName(item.ingredient_name);
+    const norm = normalizeIngredientName(cleanName);
 
     // Check if this is juice that should merge into whole fruit
     const fruitBase = isJuiceOf(norm);
     let effectiveNorm = fruitBase ?? norm;
     let effectiveQty = item.total_quantity;
-    let effectiveUnit = item.unit;
+    let effectiveUnit = canonicalizeUnit(item.unit ?? '');
+
+    // Recover spoon units accidentally parsed as "piece" in backend
+    if (inlineUnit && (effectiveUnit === 'piece' || !effectiveUnit)) {
+      effectiveUnit = inlineUnit;
+    }
 
     if (fruitBase) {
-      // Convert juice spoons → ml → whole fruit count
-      const ml = spoonToMl(item.unit, item.total_quantity);
+      // Convert juice spoon/volume → ml → whole fruit count
+      const ml = spoonToMl(effectiveUnit, effectiveQty) ?? toMilliliters(effectiveQty, effectiveUnit);
       if (ml !== null) {
         const perFruit = JUICE_PER_FRUIT[fruitBase] ?? 30;
         effectiveQty = ml / perFruit;
-        effectiveUnit = '';
+        effectiveUnit = 'piece';
       }
     }
 
     const bucket = buckets.get(effectiveNorm) ?? {
       grams: 0,
-      nonGramQty: 0,
-      nonGramUnit: '',
-      hasGrams: false,
+      volumeMl: 0,
+      countQty: 0,
+      otherUnits: {},
+      hasSpoonSource: false,
       displayNames: [],
     };
 
@@ -278,16 +392,23 @@ export function mergeShoppingItems(raw: RawShoppingItem[]): MergedShoppingItem[]
     const converted = toGrams(effectiveQty, effectiveUnit, effectiveNorm);
     if (converted) {
       bucket.grams += converted.grams;
-      bucket.hasGrams = true;
     } else {
-      // Can't convert – accumulate in original unit
-      bucket.nonGramQty += effectiveQty;
-      if (!bucket.nonGramUnit && effectiveUnit) bucket.nonGramUnit = effectiveUnit;
+      // Try to normalize all volume-like units to ml
+      const volumeMl = toMilliliters(effectiveQty, effectiveUnit);
+      if (volumeMl !== null) {
+        bucket.volumeMl += volumeMl;
+        if (effectiveUnit === 'tbsp' || effectiveUnit === 'tsp') bucket.hasSpoonSource = true;
+      } else if (effectiveUnit === 'piece' || effectiveUnit === '') {
+        bucket.countQty += effectiveQty;
+      } else {
+        bucket.otherUnits[effectiveUnit] = (bucket.otherUnits[effectiveUnit] ?? 0) + effectiveQty;
+      }
     }
 
-    // Collect display name variants (prefer the longest / most descriptive)
-    if (!bucket.displayNames.includes(item.ingredient_name)) {
-      bucket.displayNames.push(item.ingredient_name);
+    // Collect display name variants (prefer clean and descriptive names)
+    const displayCandidate = cleanName || item.ingredient_name;
+    if (!bucket.displayNames.includes(displayCandidate)) {
+      bucket.displayNames.push(displayCandidate);
     }
 
     buckets.set(effectiveNorm, bucket);
@@ -297,22 +418,28 @@ export function mergeShoppingItems(raw: RawShoppingItem[]): MergedShoppingItem[]
   const results: MergedShoppingItem[] = [];
 
   for (const [normKey, bucket] of buckets) {
-    // Pick display name: prefer shortest clean form, capitalize
     const bestName = pickDisplayName(bucket.displayNames, normKey);
     const category = getCategory(bestName);
 
-    let displayQty: string;
+    const qtyParts: string[] = [];
 
-    if (bucket.hasGrams && bucket.nonGramQty > 0) {
-      // Mixed: show grams + extra
-      const gPart = formatShoppingQty(bucket.grams, 'g', bucket.grams);
-      const oPart = formatShoppingQty(null, bucket.nonGramUnit, bucket.nonGramQty);
-      displayQty = `${gPart} + ${oPart}`;
-    } else if (bucket.hasGrams) {
-      displayQty = formatShoppingQty(bucket.grams, 'g', bucket.grams);
-    } else {
-      displayQty = formatShoppingQty(null, bucket.nonGramUnit, bucket.nonGramQty);
+    if (bucket.grams > 0) {
+      qtyParts.push(formatShoppingQty(bucket.grams, 'g', bucket.grams));
     }
+
+    if (bucket.volumeMl > 0) {
+      qtyParts.push(formatVolumeQty(bucket.volumeMl, bucket.hasSpoonSource));
+    }
+
+    if (bucket.countQty > 0) {
+      qtyParts.push(formatShoppingQty(null, 'piece', bucket.countQty));
+    }
+
+    for (const [unit, qty] of Object.entries(bucket.otherUnits).sort((a, b) => a[0].localeCompare(b[0], 'fr'))) {
+      if (qty > 0) qtyParts.push(formatShoppingQty(null, unit, qty));
+    }
+
+    const displayQty = qtyParts.join(' + ');
 
     results.push({
       displayName: bestName,
@@ -322,7 +449,7 @@ export function mergeShoppingItems(raw: RawShoppingItem[]): MergedShoppingItem[]
     });
   }
 
-  // Sort by category order, then alphabetically
+  // Sort by category order, then alphabetically within category
   results.sort((a, b) => {
     const catA = CATEGORY_ORDER.indexOf(a.category);
     const catB = CATEGORY_ORDER.indexOf(b.category);
