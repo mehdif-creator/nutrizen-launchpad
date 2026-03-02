@@ -186,7 +186,14 @@ export default function ScanRepas() {
         throw new Error(`Erreur serveur : ${response.status}`);
       }
 
-      const json = await response.json();
+      // n8n may return text instead of JSON — handle both cases
+      const raw = await response.text();
+      let json: any;
+      try {
+        json = JSON.parse(raw);
+      } catch {
+        throw new Error('Réponse invalide du serveur');
+      }
 
       // Handle array wrapper from n8n
       const data: ScanRepasResponse = Array.isArray(json) ? json[0] : json;
