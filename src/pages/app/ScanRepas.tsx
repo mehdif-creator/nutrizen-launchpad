@@ -3,258 +3,226 @@ import { AppHeader } from '@/components/app/AppHeader';
 import { AppFooter } from '@/components/app/AppFooter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Camera, Upload, Loader2, Brain, RefreshCw, AlertCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Camera, Upload, Loader2, Brain, RefreshCw, AlertCircle, AlertTriangle, Lightbulb, Info } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAutomationJob } from '@/hooks/useAutomationJob';
 import { InsufficientCreditsModal } from '@/components/app/InsufficientCreditsModal';
-import { createLogger } from '@/lib/logger';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
-const logger = createLogger('ScanRepas');
+// ─── Types ───────────────────────────────────────────────────────────────────
 
-interface FoodItem {
-  name: string;
-  quantity: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
+interface Aliment {
+  nom: string;
+  quantité: string;
+  calories: number | null;
+  protéines: number | null;
+  glucides: number | null;
+  lipides: number | null;
 }
 
-interface AnalysisResult {
-  food: FoodItem[];
+interface Incertitude {
+  champ: string;
+  raison: string;
+  valeur_possible: null;
+}
+
+interface ScanRepasResponse {
+  status: 'succès' | 'erreur';
+  nom_du_plat: string;
+  description: string;
+  aliments: Aliment[];
   total: {
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
+    calories: number | null;
+    protéines: number | null;
+    glucides: number | null;
+    lipides: number | null;
   };
-  analyse_nutritionnelle?: string;
+  micronutriments_notables: string[];
+  analyse_nutritionnelle: string;
+  recommandations: string[];
+  confiance_estimation: number;
+  hypotheses: string[];
+  incertitudes: Incertitude[];
 }
 
-// Counter animation hook
-const useCountUp = (end: number, duration: number = 800, start: number = 0) => {
-  const [count, setCount] = useState(start);
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
+function validateImage(file: File): string | null {
+  const MAX_SIZE = 10 * 1024 * 1024;
+  const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic'];
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    return 'Format non supporté. Utilisez JPG, PNG ou WebP.';
+  }
+  if (file.size > MAX_SIZE) {
+    return 'Image trop lourde (max 10 Mo).';
+  }
+  return null;
+}
+
+function macro(v: number | null | undefined): string {
+  return v != null ? String(Math.round(v)) : '—';
+}
+
+function confidenceColor(c: number): string {
+  if (c >= 70) return 'bg-green-500/15 text-green-700 border-green-300';
+  if (c >= 40) return 'bg-orange-500/15 text-orange-700 border-orange-300';
+  return 'bg-red-500/15 text-red-700 border-red-300';
+}
+
+// ─── Counter animation hook ──────────────────────────────────────────────────
+
+const useCountUp = (end: number, duration = 800, start = 0) => {
+  const [count, setCount] = useState(start);
   useEffect(() => {
     if (end === start) return;
-    
     let startTime: number;
-    const animate = (currentTime: number) => {
-      if (!startTime) startTime = currentTime;
-      const progress = Math.min((currentTime - startTime) / duration, 1);
-      setCount(Math.floor(progress * (end - start) + start));
-      
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
+    const animate = (t: number) => {
+      if (!startTime) startTime = t;
+      const p = Math.min((t - startTime) / duration, 1);
+      setCount(Math.floor(p * (end - start) + start));
+      if (p < 1) requestAnimationFrame(animate);
     };
-    
     requestAnimationFrame(animate);
   }, [end, duration, start]);
-
   return count;
 };
 
-// Generate a stable idempotency key from file content
-async function generateIdempotencyKey(file: File): Promise<string> {
-  const buffer = await file.arrayBuffer();
-  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return `scan_repas_${hashHex.substring(0, 16)}_${Date.now()}`;
-}
+// ─── Webhook URL ─────────────────────────────────────────────────────────────
+
+const WEBHOOK_URL = 'https://n8n.srv1005117.hstgr.cloud/webhook/Nutrizen-analyse-repas';
+
+// ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function ScanRepas() {
+  const { subscription } = useAuth();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [result, setResult] = useState<ScanRepasResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
-  const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
+  const [creditsInfo, setCreditsInfo] = useState<{ current: number; required: number } | null>(null);
 
-  const {
-    status,
-    result,
-    error,
-    creditsInfo,
-    isLoading,
-    isInsufficientCredits,
-    startJob,
-    reset: resetJob,
-  } = useAutomationJob({
-    onSuccess: (jobResult) => {
-      logger.debug('Job success', { jobResult });
-      if (jobResult.food && jobResult.total) {
-        setAnalysisResult({
-          food: jobResult.food,
-          total: jobResult.total,
-          analyse_nutritionnelle: jobResult.analyse_nutritionnelle,
-        });
-        toast.success('Analyse terminée avec succès !');
-      }
-    },
-    onError: (errorMsg, errorCode) => {
-      logger.error('Job error', new Error(errorMsg || 'Unknown'), { errorCode });
-      if (errorCode !== 'INSUFFICIENT_CREDITS') {
-        toast.error(errorMsg || 'Erreur lors de l\'analyse');
-      }
-    },
-  });
+  // ── File handling ────────────────────────────────────────────────────────
 
-  // Handle insufficient credits
-  useEffect(() => {
-    if (isInsufficientCredits && creditsInfo) {
-      setCreditsModalOpen(true);
-    }
-  }, [isInsufficientCredits, creditsInfo]);
+  const pickFile = (file: File) => {
+    const err = validateImage(file);
+    if (err) { toast.error(err); return; }
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    setResult(null);
+    setError(null);
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
-      setAnalysisResult(null);
-      resetJob();
-    } else {
-      toast.error('Veuillez sélectionner une image');
-    }
-  };
-
-  const handleAnalyze = useCallback(async () => {
-    if (!selectedFile) {
-      toast.error('Veuillez sélectionner une image');
-      return;
-    }
-
-    logger.debug('Starting analysis', { 
-      fileName: selectedFile.name, 
-      fileSize: selectedFile.size,
-      fileType: selectedFile.type 
-    });
-
-    try {
-      // Generate idempotency key from file content
-      const key = await generateIdempotencyKey(selectedFile);
-      setIdempotencyKey(key);
-
-      // Convert file to base64 for payload
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64Data = reader.result as string;
-        
-        const jobResult = await startJob('scan_repas', {
-          image_base64: base64Data,
-          file_name: selectedFile.name,
-          file_type: selectedFile.type,
-        }, key);
-
-        logger.debug('Job started', { jobResult });
-      };
-      reader.readAsDataURL(selectedFile);
-    } catch (err) {
-      logger.error('Error starting job', err instanceof Error ? err : new Error(String(err)));
-      toast.error('Erreur lors du démarrage de l\'analyse');
-    }
-  }, [selectedFile, startJob]);
-
-  const handleRetry = useCallback(() => {
-    resetJob();
-    if (selectedFile && idempotencyKey) {
-      // Generate new idempotency key for retry
-      handleAnalyze();
-    }
-  }, [resetJob, selectedFile, idempotencyKey, handleAnalyze]);
-
-  const handleReset = () => {
-    setSelectedFile(null);
-    setPreviewUrl(null);
-    setAnalysisResult(null);
-    setIdempotencyKey(null);
-    resetJob();
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
+    const f = e.target.files?.[0];
+    if (f) pickFile(f);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) {
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
-      setAnalysisResult(null);
-      resetJob();
-    } else {
-      toast.error('Veuillez sélectionner une image');
-    }
+    const f = e.dataTransfer.files[0];
+    if (f) pickFile(f);
   };
 
-  // Render loading state
-  const renderLoadingState = () => (
-    <Card className="shadow-lg animate-fade-in border-0">
-      <CardContent className="p-12">
-        <div className="flex flex-col items-center gap-6 text-center">
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary to-white rounded-full blur-xl opacity-50 animate-pulse" />
-            <Loader2 className="h-16 w-16 text-primary animate-spin relative z-10" />
-          </div>
-          <div>
-            <p className="text-xl font-semibold mb-2">
-              {status === 'queued' ? 'En file d\'attente... 🍃' : 'Analyse en cours... 🍃'}
-            </p>
-            <p className="text-muted-foreground">
-              {status === 'queued' 
-                ? 'Votre demande sera traitée dans quelques instants' 
-                : 'Respire un instant, on analyse ton repas'}
-            </p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  // ── Credits check ────────────────────────────────────────────────────────
 
-  // Render error state
-  const renderErrorState = () => (
-    <Card className="shadow-lg animate-fade-in border-0 border-l-4 border-l-destructive">
-      <CardContent className="p-8">
-        <div className="flex flex-col items-center gap-6 text-center">
-          <AlertCircle className="h-16 w-16 text-destructive" />
-          <div>
-            <p className="text-xl font-semibold mb-2 text-destructive">
-              Erreur lors de l'analyse
-            </p>
-            <p className="text-muted-foreground mb-4">
-              {error || 'Une erreur inattendue est survenue'}
-            </p>
-          </div>
-          <div className="flex gap-4">
-            <Button onClick={handleRetry} variant="default" className="gap-2">
-              <RefreshCw className="h-4 w-4" />
-              Réessayer
-            </Button>
-            <Button onClick={handleReset} variant="outline">
-              Nouvelle photo
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  const checkCredits = async (userId: string): Promise<boolean> => {
+    const { data, error: creditsError } = await supabase.rpc('check_and_consume_credits', {
+      p_user_id: userId,
+      p_feature: 'scanrepas',
+      p_cost: 1,
+    });
+    if (creditsError) {
+      setError('Erreur lors de la vérification des crédits.');
+      return false;
+    }
+    const parsed = data as Record<string, any>;
+    if (!parsed?.success) {
+      setCreditsInfo({ current: (parsed?.current_balance as number) ?? 0, required: (parsed?.required as number) ?? 1 });
+      setCreditsModalOpen(true);
+      return false;
+    }
+    return true;
+  };
+
+  // ── Analysis ─────────────────────────────────────────────────────────────
+
+  const handleAnalyze = useCallback(async () => {
+    if (!selectedFile) return;
+
+    setLoading(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      // Auth check
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setError('Veuillez vous connecter.'); setLoading(false); return; }
+
+      // Credits check
+      const ok = await checkCredits(user.id);
+      if (!ok) { setLoading(false); return; }
+
+      // Send to webhook
+      const formData = new FormData();
+      formData.append('image', selectedFile);
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+      const response = await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`Erreur serveur : ${response.status}`);
+      }
+
+      const json = await response.json();
+
+      // Handle array wrapper from n8n
+      const data: ScanRepasResponse = Array.isArray(json) ? json[0] : json;
+
+      if (data.status === 'erreur' || !data.aliments) {
+        throw new Error("L'analyse a échoué. Vérifiez que l'image montre bien un repas et réessayez.");
+      }
+
+      setResult(data);
+      toast.success('Analyse terminée !');
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        setError('Délai dépassé — réessayez avec une image plus légère.');
+      } else {
+        setError(err?.message || "L'analyse a échoué. Vérifiez que l'image montre bien un repas et réessayez.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedFile]);
+
+  const handleReset = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setResult(null);
+    setError(null);
+  };
+
+  // ── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#F9FFF9] to-white">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/30">
       <AppHeader />
-      
+
       <main className="flex-1 container py-8 max-w-5xl">
-        {/* Hero Section */}
+        {/* Hero */}
         <div className="text-center mb-12 animate-fade-in">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-primary/80 to-accent bg-clip-text text-transparent">
             Analyse ton repas en 1 clic 🍽️
@@ -264,34 +232,63 @@ export default function ScanRepas() {
           </p>
         </div>
 
-        {/* Loading State */}
-        {isLoading && renderLoadingState()}
+        {/* Loading */}
+        {loading && (
+          <Card className="shadow-lg animate-fade-in border-0">
+            <CardContent className="p-12">
+              <div className="flex flex-col items-center gap-6 text-center">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary to-background rounded-full blur-xl opacity-50 animate-pulse" />
+                  <Loader2 className="h-16 w-16 text-primary animate-spin relative z-10" />
+                </div>
+                <div>
+                  <p className="text-xl font-semibold mb-2">Analyse en cours... 🍃</p>
+                  <p className="text-muted-foreground">Respire un instant, on analyse ton repas</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-        {/* Error State */}
-        {status === 'error' && !isInsufficientCredits && renderErrorState()}
+        {/* Error */}
+        {error && !loading && (
+          <Card className="shadow-lg animate-fade-in border-0 border-l-4 border-l-destructive">
+            <CardContent className="p-8">
+              <div className="flex flex-col items-center gap-6 text-center">
+                <AlertCircle className="h-16 w-16 text-destructive" />
+                <div>
+                  <p className="text-xl font-semibold mb-2 text-destructive">Erreur lors de l'analyse</p>
+                  <p className="text-muted-foreground mb-4">{error}</p>
+                </div>
+                <div className="flex gap-4">
+                  <Button onClick={handleAnalyze} variant="default" className="gap-2">
+                    <RefreshCw className="h-4 w-4" /> Réessayer
+                  </Button>
+                  <Button onClick={handleReset} variant="outline">Nouvelle photo</Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-        {/* Upload Form */}
-        {!isLoading && status !== 'error' && !analysisResult && (
+        {/* Upload form */}
+        {!loading && !error && !result && (
           <Card className="shadow-lg animate-slide-up border-0 overflow-hidden" style={{ borderRadius: '1.5rem' }}>
             <CardContent className="p-8">
               <div className="space-y-6">
                 {previewUrl ? (
-                  <div className="relative rounded-[1.5rem] overflow-hidden border-2 border-border shadow-[rgba(0,0,0,0.05)_2px_2px_5px]">
-                    <img 
-                      src={previewUrl} 
-                      alt="Aperçu" 
-                      className="w-full h-auto max-h-96 object-contain"
-                    />
+                  <div className="relative rounded-[1.5rem] overflow-hidden border-2 border-border shadow-sm">
+                    <img src={previewUrl} alt="Aperçu" className="w-full h-auto max-h-96 object-contain" />
                   </div>
                 ) : (
-                  <div 
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                    onDragLeave={() => setIsDragging(false)}
                     onDrop={handleDrop}
                     className={`border-2 border-dashed rounded-[1.5rem] p-12 text-center transition-all duration-300 cursor-pointer ${
-                      isDragging 
-                        ? 'border-primary bg-primary/5 scale-105 shadow-[0_0_20px_rgba(95,178,102,0.3)]' 
-                        : 'border-muted-foreground/30 hover:border-primary hover:scale-105 hover:shadow-[0_0_15px_rgba(95,178,102,0.2)]'
+                      isDragging
+                        ? 'border-primary bg-primary/5 scale-105'
+                        : 'border-muted-foreground/30 hover:border-primary hover:scale-105'
                     }`}
                   >
                     <div className="flex flex-col items-center gap-4">
@@ -299,70 +296,37 @@ export default function ScanRepas() {
                         <Camera className="h-12 w-12 text-primary" />
                       </div>
                       <div>
-                        <p className="text-lg font-medium mb-2">📸 Dépose ton repas ici ou prends une photo</p>
-                        <p className="text-sm text-muted-foreground">
-                          Glisse ton image ou utilise les boutons ci-dessous
-                        </p>
+                        <p className="text-lg font-medium mb-2">📸 Prenez en photo votre repas</p>
+                        <p className="text-sm text-muted-foreground">Glissez votre image ou utilisez les boutons ci-dessous</p>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="flex-1">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                      id="camera-input"
-                    />
+                    <input type="file" accept="image/*" capture="environment" onChange={handleFileSelect} className="hidden" id="camera-input" />
                     <label htmlFor="camera-input" className="w-full">
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        className="w-full"
-                        asChild
-                      >
-                        <span className="cursor-pointer">
-                          <Camera className="mr-2 h-4 w-4" />
-                          Prendre une photo
-                        </span>
+                      <Button type="button" variant="outline" className="w-full" asChild>
+                        <span className="cursor-pointer"><Camera className="mr-2 h-4 w-4" />Prendre une photo</span>
                       </Button>
                     </label>
                   </div>
-
                   <div className="flex-1">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                      id="file-input"
-                    />
+                    <input type="file" accept="image/*" onChange={handleFileSelect} className="hidden" id="file-input" />
                     <label htmlFor="file-input" className="w-full">
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        className="w-full"
-                        asChild
-                      >
-                        <span className="cursor-pointer">
-                          <Upload className="mr-2 h-4 w-4" />
-                          Choisir un fichier
-                        </span>
+                      <Button type="button" variant="outline" className="w-full" asChild>
+                        <span className="cursor-pointer"><Upload className="mr-2 h-4 w-4" />Choisir un fichier</span>
                       </Button>
                     </label>
                   </div>
                 </div>
 
                 {selectedFile && (
-                  <Button 
+                  <Button
                     onClick={handleAnalyze}
-                    disabled={isLoading}
-                    className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white shadow-lg transition-all duration-300 hover:scale-105"
+                    disabled={loading}
+                    className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-primary-foreground shadow-lg"
                     size="lg"
                     style={{ borderRadius: '1rem' }}
                   >
@@ -374,153 +338,218 @@ export default function ScanRepas() {
           </Card>
         )}
 
-        {/* Results */}
-        {analysisResult && (
-          <div className="space-y-6">
-            {/* Summary Card */}
-            <SummaryCard total={analysisResult.total} />
-
-            {/* Nutritional Analysis */}
-            {analysisResult.analyse_nutritionnelle && (
-              <Card 
-                className="shadow-[rgba(0,0,0,0.05)_2px_2px_5px] border-0"
-                style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out 0.2s both' }}
-              >
-                <CardHeader className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-                  <CardTitle className="text-xl flex items-center gap-2">
-                    <Brain className="h-5 w-5" />
-                    Analyse nutritionnelle
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <p className="text-sm leading-relaxed text-foreground/90">
-                    {analysisResult.analyse_nutritionnelle}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Food Items Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {analysisResult.food.map((item, index) => (
-                <Card 
-                  key={index} 
-                  className="shadow-[rgba(0,0,0,0.05)_2px_2px_5px] border-0 hover:shadow-lg transition-all duration-300 hover:scale-105"
-                  style={{ 
-                    borderRadius: '1.5rem',
-                    animation: `fadeIn 0.5s ease-out ${(index * 0.1) + 0.4}s both`
-                  }}
-                >
-                  <CardContent className="p-6">
-                    <div className="space-y-3">
-                      <div>
-                        <h3 className="font-bold text-lg">{item.name}</h3>
-                        <p className="text-sm text-muted-foreground">Quantité : {item.quantity}</p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">🔥</span>
-                          <span className="text-accent font-semibold">{item.calories} kcal</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">💪</span>
-                          <span className="text-blue-500 font-semibold">{item.protein} g</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">🌾</span>
-                          <span className="text-yellow-600 font-semibold">{item.carbs} g</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">🥑</span>
-                          <span className="text-primary font-semibold">{item.fat} g</span>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            <style>{`
-              @keyframes fadeIn {
-                from {
-                  opacity: 0;
-                  transform: translateY(20px);
-                }
-                to {
-                  opacity: 1;
-                  transform: translateY(0);
-                }
-              }
-            `}</style>
-
-            <div className="flex justify-center">
-              <Button 
-                onClick={handleReset}
-                size="lg"
-                className="bg-gradient-to-r from-accent to-primary hover:opacity-90 text-white shadow-lg transition-all duration-300 hover:scale-110 hover:animate-bounce"
-                style={{ borderRadius: '1rem' }}
-              >
-                🔁 Analyser un autre repas
-              </Button>
-            </div>
-          </div>
-        )}
+        {/* ── Results ─────────────────────────────────────────────────────── */}
+        {result && <ResultsView data={result} onReset={handleReset} />}
       </main>
 
       <AppFooter />
 
-      {/* Insufficient Credits Modal */}
       <InsufficientCreditsModal
         open={creditsModalOpen}
         onOpenChange={setCreditsModalOpen}
-        currentBalance={creditsInfo?.current || 0}
-        required={creditsInfo?.required || 2}
+        currentBalance={creditsInfo?.current ?? 0}
+        required={creditsInfo?.required ?? 1}
         feature="scanrepas"
       />
+
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
 
-// Summary Card Component with count-up animation
-function SummaryCard({ total }: { total: { calories: number; protein: number; carbs: number; fat: number } }) {
-  const calories = useCountUp(total.calories);
-  const protein = useCountUp(total.protein);
-  const carbs = useCountUp(total.carbs);
-  const fat = useCountUp(total.fat);
+// ─── Results View ────────────────────────────────────────────────────────────
+
+function ResultsView({ data, onReset }: { data: ScanRepasResponse; onReset: () => void }) {
+  return (
+    <div className="space-y-6">
+      {/* Dish name & description */}
+      <Card className="shadow-lg border-0 overflow-hidden" style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out both' }}>
+        <CardHeader className="bg-gradient-to-r from-primary to-accent text-primary-foreground pb-4">
+          <CardTitle className="text-2xl">{data.nom_du_plat}</CardTitle>
+          <p className="text-primary-foreground/80 text-sm mt-1">{data.description}</p>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-3 flex-wrap">
+            <Badge className={`text-sm px-3 py-1 border ${confidenceColor(data.confiance_estimation)}`}>
+              Confiance : {data.confiance_estimation}%
+            </Badge>
+            {data.micronutriments_notables?.map((m, i) => (
+              <Badge key={i} variant="secondary" className="text-xs">{m}</Badge>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Summary macros */}
+      <SummaryCard total={data.total} />
+
+      {/* Ingredients table */}
+      <Card className="shadow-sm border-0 overflow-hidden" style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out 0.2s both' }}>
+        <CardHeader>
+          <CardTitle className="text-lg">Détail des aliments</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="text-left p-3 font-medium">Aliment</th>
+                  <th className="text-left p-3 font-medium">Quantité</th>
+                  <th className="text-right p-3 font-medium">Calories</th>
+                  <th className="text-right p-3 font-medium">Protéines</th>
+                  <th className="text-right p-3 font-medium">Glucides</th>
+                  <th className="text-right p-3 font-medium">Lipides</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.aliments.map((a, i) => (
+                  <tr key={i} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                    <td className="p-3 font-medium">{a.nom}</td>
+                    <td className="p-3 text-muted-foreground">{a.quantité}</td>
+                    <td className="p-3 text-right">{macro(a.calories)}</td>
+                    <td className="p-3 text-right">{macro(a.protéines)}</td>
+                    <td className="p-3 text-right">{macro(a.glucides)}</td>
+                    <td className="p-3 text-right">{macro(a.lipides)}</td>
+                  </tr>
+                ))}
+                <tr className="bg-muted/50 font-bold">
+                  <td className="p-3" colSpan={2}>Total</td>
+                  <td className="p-3 text-right">{macro(data.total.calories)}</td>
+                  <td className="p-3 text-right">{macro(data.total.protéines)}</td>
+                  <td className="p-3 text-right">{macro(data.total.glucides)}</td>
+                  <td className="p-3 text-right">{macro(data.total.lipides)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Nutritional analysis */}
+      {data.analyse_nutritionnelle && (
+        <Card className="shadow-sm border-0" style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out 0.3s both' }}>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Brain className="h-5 w-5 text-primary" /> Analyse nutritionnelle
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm leading-relaxed text-foreground/90">{data.analyse_nutritionnelle}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Recommendations */}
+      {data.recommandations?.length > 0 && (
+        <Card className="shadow-sm border-0" style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out 0.4s both' }}>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Lightbulb className="h-5 w-5 text-accent" /> Recommandations
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {data.recommandations.map((r, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm">
+                  <span className="text-accent mt-0.5">•</span>
+                  <span>{r}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Hypotheses */}
+      {data.hypotheses?.length > 0 && (
+        <Card className="shadow-sm border-0 bg-muted/30" style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out 0.45s both' }}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
+              <Info className="h-4 w-4" /> Hypothèses retenues
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-1">
+              {data.hypotheses.map((h, i) => (
+                <li key={i} className="text-xs text-muted-foreground">— {h}</li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Uncertainties */}
+      {data.incertitudes?.length > 0 && (
+        <Card className="shadow-sm border-0 border-l-4 border-l-yellow-400 bg-yellow-50/50 dark:bg-yellow-900/10" style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out 0.5s both' }}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2 text-yellow-700 dark:text-yellow-400">
+              <AlertTriangle className="h-4 w-4" /> Incertitudes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {data.incertitudes.map((inc, i) => (
+                <li key={i} className="text-sm">
+                  <span className="font-medium">{inc.champ}</span>{' '}
+                  <span className="text-muted-foreground">— {inc.raison}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Reset button */}
+      <div className="flex justify-center pt-2">
+        <Button
+          onClick={onReset}
+          size="lg"
+          className="bg-gradient-to-r from-accent to-primary hover:opacity-90 text-primary-foreground shadow-lg"
+          style={{ borderRadius: '1rem' }}
+        >
+          🔁 Analyser un autre repas
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Summary Card ────────────────────────────────────────────────────────────
+
+function SummaryCard({ total }: { total: ScanRepasResponse['total'] }) {
+  const cal = useCountUp(total.calories ?? 0);
+  const prot = useCountUp(total.protéines ?? 0);
+  const carbs = useCountUp(total.glucides ?? 0);
+  const fat = useCountUp(total.lipides ?? 0);
 
   return (
-    <Card 
-      className="shadow-[rgba(0,0,0,0.05)_2px_2px_5px] border-0 overflow-hidden"
-      style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out 0.6s both' }}
-    >
-      <CardHeader className="bg-gradient-to-r from-primary to-accent text-white">
-        <CardTitle className="text-2xl flex items-center gap-2">
-          <span className="text-3xl">📊</span>
-          Résumé total
-        </CardTitle>
-      </CardHeader>
+    <Card className="shadow-sm border-0 overflow-hidden" style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out 0.1s both' }}>
       <CardContent className="p-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="text-center space-y-2">
-            <div className="text-4xl">🔥</div>
-            <p className="text-sm text-muted-foreground">Calories totales</p>
-            <p className="text-3xl font-bold text-accent">{calories} kcal</p>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="text-center space-y-1">
+            <div className="text-3xl">🔥</div>
+            <p className="text-xs text-muted-foreground">Calories</p>
+            <p className="text-2xl font-bold text-accent">{cal} kcal</p>
           </div>
-          <div className="text-center space-y-2">
-            <div className="text-4xl">💪</div>
-            <p className="text-sm text-muted-foreground">Protéines totales</p>
-            <p className="text-3xl font-bold text-blue-500">{protein} g</p>
+          <div className="text-center space-y-1">
+            <div className="text-3xl">💪</div>
+            <p className="text-xs text-muted-foreground">Protéines</p>
+            <p className="text-2xl font-bold text-blue-500">{prot} g</p>
           </div>
-          <div className="text-center space-y-2">
-            <div className="text-4xl">🌾</div>
-            <p className="text-sm text-muted-foreground">Glucides totaux</p>
-            <p className="text-3xl font-bold text-yellow-600">{carbs} g</p>
+          <div className="text-center space-y-1">
+            <div className="text-3xl">🌾</div>
+            <p className="text-xs text-muted-foreground">Glucides</p>
+            <p className="text-2xl font-bold text-yellow-600">{carbs} g</p>
           </div>
-          <div className="text-center space-y-2">
-            <div className="text-4xl">🥑</div>
-            <p className="text-sm text-muted-foreground">Lipides totaux</p>
-            <p className="text-3xl font-bold text-primary">{fat} g</p>
+          <div className="text-center space-y-1">
+            <div className="text-3xl">🥑</div>
+            <p className="text-xs text-muted-foreground">Lipides</p>
+            <p className="text-2xl font-bold text-primary">{fat} g</p>
           </div>
         </div>
       </CardContent>
