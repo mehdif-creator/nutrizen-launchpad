@@ -191,7 +191,7 @@ export default function ScanRepas() {
       // Handle array wrapper from n8n
       const data: ScanRepasResponse = Array.isArray(json) ? json[0] : json;
 
-      if (data.status === 'erreur' || !data.aliments) {
+      if (data.status !== 'succès' || !data.aliments) {
         throw new Error("L'analyse a échoué. Vérifiez que l'image montre bien un repas et réessayez.");
       }
 
