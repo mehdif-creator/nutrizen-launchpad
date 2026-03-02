@@ -90,7 +90,7 @@ const useCountUp = (end: number, duration = 800, start = 0) => {
 
 // ─── Webhook URL ─────────────────────────────────────────────────────────────
 
-const WEBHOOK_URL = 'https://n8n.srv1005117.hstgr.cloud/webhook-test/Nutrizen-analyse-repas';
+const WEBHOOK_URL = 'https://n8n.srv1005117.hstgr.cloud/webhook/Nutrizen-analyse-repas';
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
