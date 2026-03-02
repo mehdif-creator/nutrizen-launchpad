@@ -172,7 +172,7 @@ export default function ScanRepas() {
       formData.append('image', selectedFile);
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
 
       const response = await fetch(WEBHOOK_URL, {
         method: 'POST',
@@ -182,17 +182,30 @@ export default function ScanRepas() {
 
       clearTimeout(timeoutId);
 
+      // Read body as text first (n8n may return non-JSON on errors)
+      const raw = await response.text();
+      console.log('[ScanRepas] Status:', response.status, '| Content-Type:', response.headers.get('content-type'));
+      console.log('[ScanRepas] Body preview:', raw.substring(0, 300));
+
       if (!response.ok) {
-        throw new Error(`Erreur serveur : ${response.status}`);
+        // Try to extract error message from n8n response
+        let detail = '';
+        try {
+          const errJson = JSON.parse(raw);
+          detail = errJson?.message || errJson?.error || '';
+        } catch {
+          if (raw.trim().startsWith('<!') || raw.includes('<html')) {
+            detail = 'Le serveur a renvoyé une page HTML au lieu de JSON.';
+          }
+        }
+        throw new Error(`Erreur serveur (${response.status})${detail ? ' : ' + detail : '. Vérifiez que le workflow n8n est actif.'}`);
       }
 
-      // n8n may return text instead of JSON — handle both cases
-      const raw = await response.text();
       let json: any;
       try {
         json = JSON.parse(raw);
       } catch {
-        throw new Error('Réponse invalide du serveur');
+        throw new Error('Réponse invalide du serveur (JSON attendu).');
       }
 
       // Handle array wrapper from n8n
