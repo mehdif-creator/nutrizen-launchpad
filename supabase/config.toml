@@ -189,3 +189,10 @@ verify_jwt = false
 [functions.pinterest-oauth-callback.rate_limit]
 limit = 10
 period = "1h"
+
+[functions.analyse-repas]
+verify_jwt = false
+
+[functions.analyse-repas.rate_limit]
+limit = 30
+period = "1h"

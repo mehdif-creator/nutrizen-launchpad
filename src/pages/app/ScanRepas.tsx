@@ -88,9 +88,9 @@ const useCountUp = (end: number, duration = 800, start = 0) => {
   return count;
 };
 
-// ─── Webhook URL ─────────────────────────────────────────────────────────────
+// ─── Edge Function URL ───────────────────────────────────────────────────────
 
-const WEBHOOK_URL = 'https://n8n.srv1005117.hstgr.cloud/webhook/Nutrizen-analyse-repas';
+const ANALYSE_REPAS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyse-repas`;
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
@@ -174,8 +174,14 @@ export default function ScanRepas() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000);
 
-      const response = await fetch(WEBHOOK_URL, {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const response = await fetch(ANALYSE_REPAS_URL, {
         method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session?.access_token ?? ''}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
         body: formData,
         signal: controller.signal,
       });
@@ -198,7 +204,7 @@ export default function ScanRepas() {
             detail = 'Le serveur a renvoyé une page HTML au lieu de JSON.';
           }
         }
-        throw new Error(`Erreur serveur (${response.status})${detail ? ' : ' + detail : '. Vérifiez que le workflow n8n est actif.'}`);
+        throw new Error(`Erreur serveur (${response.status})${detail ? ' : ' + detail : ''}`);
       }
 
       let json: any;
@@ -208,7 +214,6 @@ export default function ScanRepas() {
         throw new Error('Réponse invalide du serveur (JSON attendu).');
       }
 
-      // Handle array wrapper from n8n
       const data: ScanRepasResponse = Array.isArray(json) ? json[0] : json;
 
       if (data.status !== 'succès' || !data.aliments) {
