@@ -1,4 +1,3 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from '../_shared/deps.ts';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { checkRateLimit, rateLimitExceededResponse } from '../_shared/rateLimit.ts';
@@ -17,10 +16,9 @@ const SUBSTITUTION_COST = 5;
 const CACHE_DAYS = 30;
 
 function getCorsHeaders(origin: string | null): Record<string, string> {
-  const isAllowed = origin && ALLOWED_ORIGINS.some(o => origin.startsWith(o.replace('https://', '').replace('http://', '')));
   return {
     'Access-Control-Allow-Origin': origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
   };
 }
@@ -89,7 +87,6 @@ Deno.serve(async (req) => {
       cost:       60,
     });
     if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
-    // ── End rate limiting ──────────────────────────────────────────────────────
 
     // Parse and validate input
     const body = await req.json();
@@ -120,8 +117,6 @@ Deno.serve(async (req) => {
     }
 
     // Check and consume credits (idempotent)
-    const idempotencyKey = `substitution:${cacheKey}:${new Date().toISOString().split('T')[0]}`;
-    
     const { data: creditsResult, error: creditsError } = await supabaseAdmin.rpc('check_and_consume_credits', {
       p_user_id: user.id,
       p_feature: 'substitution',
@@ -153,40 +148,41 @@ Deno.serve(async (req) => {
 
     console.log('Credits consumed for substitution, user:', user.id);
     
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+    // Check OpenAI API key
+    const openaiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openaiKey) {
+      throw new Error('OPENAI_API_KEY is not configured');
     }
 
     // Build prompt with constraints
     let constraintText = '';
     if (constraints) {
       if (constraints.allergies?.length) {
-        constraintText += ` Evite les allergenes: ${constraints.allergies.join(', ')}.`;
+        constraintText += ` Évite les allergènes: ${constraints.allergies.join(', ')}.`;
       }
       if (constraints.diet) {
-        constraintText += ` Regime: ${constraints.diet}.`;
+        constraintText += ` Régime: ${constraints.diet}.`;
       }
       if (constraints.dislikes?.length) {
-        constraintText += ` A eviter: ${constraints.dislikes.join(', ')}.`;
+        constraintText += ` À éviter: ${constraints.dislikes.join(', ')}.`;
       }
     }
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Authorization': `Bearer ${openaiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'gpt-4o',
+        max_tokens: 1000,
         messages: [
           {
             role: 'system',
-            content: `Tu es un expert en nutrition et cuisine. Suggere 5 alternatives saines pour remplacer un ingredient donne.${constraintText}
-            
-Reponds UNIQUEMENT en JSON valide avec ce format:
+            content: `Tu es un expert en nutrition et cuisine. Suggère 5 alternatives saines pour remplacer un ingrédient donné.${constraintText}
+
+Réponds UNIQUEMENT en JSON valide, sans markdown, avec ce format:
 {
   "substitutions": [
     {
@@ -199,7 +195,7 @@ Reponds UNIQUEMENT en JSON valide avec ce format:
           },
           {
             role: 'user',
-            content: `Suggere 5 alternatives saines pour remplacer: ${ingredient}`
+            content: `Suggère 5 alternatives saines pour remplacer: ${ingredient}`
           }
         ],
         temperature: 0.7,
@@ -207,8 +203,9 @@ Reponds UNIQUEMENT en JSON valide avec ce format:
     });
 
     if (!response.ok) {
-      console.error('AI gateway error:', response.status);
-      throw new Error('AI gateway error');
+      const errBody = await response.text();
+      console.error('[suggest-substitution] OpenAI error:', response.status, errBody.substring(0, 500));
+      throw new Error('OpenAI API error');
     }
 
     const data = await response.json();
@@ -216,7 +213,6 @@ Reponds UNIQUEMENT en JSON valide avec ce format:
     
     let substitutionData;
     try {
-      // Clean potential markdown code blocks
       const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       substitutionData = JSON.parse(cleanContent);
     } catch (e) {
@@ -251,7 +247,6 @@ Reponds UNIQUEMENT en JSON valide avec ce format:
   } catch (error) {
     console.error('Error suggesting substitution:', error);
     
-    // Handle validation errors
     if (error instanceof z.ZodError) {
       return new Response(
         JSON.stringify({ 

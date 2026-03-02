@@ -14,7 +14,7 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
   const isAllowed = origin && ALLOWED_ORIGINS.includes(origin);
   return {
     'Access-Control-Allow-Origin': isAllowed ? origin : ALLOWED_ORIGINS[0],
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
   };
 }
@@ -23,7 +23,6 @@ Deno.serve(async (req) => {
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
   
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -64,28 +63,27 @@ Deno.serve(async (req) => {
       cost:       600,
     });
     if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
-    // ── End rate limiting ──────────────────────────────────────────────────────
 
     console.log('User authenticated:', user.id);
 
     // Check and consume credits BEFORE running analysis
-    console.log('[analyze-fridge] Checking credits for user:', user.id)
+    console.log('[analyze-fridge] Checking credits for user:', user.id);
     const { data: creditsCheck, error: creditsError } = await supabaseClient.rpc('check_and_consume_credits', {
       p_user_id: user.id,
       p_feature: 'inspifrigo',
       p_cost: 1
-    })
+    });
 
     if (creditsError) {
-      console.error('[analyze-fridge] Credits check error:', creditsError)
+      console.error('[analyze-fridge] Credits check error:', creditsError);
       return new Response(
         JSON.stringify({ error: 'Erreur lors de la vérification des crédits' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      );
     }
 
     if (!creditsCheck.success) {
-      console.log('[analyze-fridge] Insufficient credits:', creditsCheck)
+      console.log('[analyze-fridge] Insufficient credits:', creditsCheck);
       return new Response(
         JSON.stringify({ 
           error_code: creditsCheck.error_code,
@@ -94,22 +92,10 @@ Deno.serve(async (req) => {
           required: creditsCheck.required
         }),
         { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      );
     }
 
-    console.log('[analyze-fridge] Credits consumed, proceeding with analysis')
-
-    // Check subscription status (legacy check, kept for backwards compatibility)
-    const { data: subscription, error: subError } = await supabaseClient
-      .from('subscriptions')
-      .select('status, trial_end')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    // Subscription check is now optional - credits are the primary gate
-    if (subError) {
-      console.warn('Subscription check warning:', subError);
-    }
+    console.log('[analyze-fridge] Credits consumed, proceeding with analysis');
 
     // Get the form data from the request
     const formData = await req.formData();
@@ -130,67 +116,96 @@ Deno.serve(async (req) => {
       throw new Error('Invalid image type. Allowed: JPEG, PNG, WebP');
     }
 
-    console.log('Image received, forwarding to n8n webhook...');
+    // Convert image to base64
+    const arrayBuffer = await image.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 8192) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+    }
+    const base64 = btoa(binary);
+    const mimeType = image.type || 'image/jpeg';
 
-    // Use webhook URL from environment variable
-    const webhookUrl = Deno.env.get('N8N_ANALYZE_FRIDGE_WEBHOOK');
-    if (!webhookUrl) {
-      console.error('N8N_ANALYZE_FRIDGE_WEBHOOK not configured');
-      throw new Error('Webhook configuration missing');
+    // Check OpenAI API key
+    const openaiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openaiKey) {
+      console.error('[analyze-fridge] OPENAI_API_KEY not set');
+      throw new Error('Configuration manquante côté serveur');
     }
 
-    // Forward to n8n webhook
-    const n8nFormData = new FormData();
-    n8nFormData.append('image', image);
+    console.log('[analyze-fridge] Calling OpenAI GPT-4o...');
 
-    const response = await fetch(webhookUrl, {
+    const prompt = `Analyse cette photo de frigo ou d'ingrédients et retourne UNIQUEMENT un objet JSON valide, sans markdown ni texte autour, avec exactement ces champs :
+{
+  "status": "succès",
+  "plat": {
+    "nom": "Nom du plat suggéré",
+    "description": "Description courte du plat",
+    "ingredients_identifiés": [{ "nom": "nom de l'ingrédient", "quantité_estimée": "quantité" }],
+    "recette": {
+      "étapes": ["étape 1", "étape 2"],
+      "temps_préparation": "15 min",
+      "temps_cuisson": "20 min",
+      "portions": 4
+    },
+    "note_nutritionnelle": "Commentaire nutritionnel"
+  }
+}
+Tous les champs en français. Propose un seul plat réalisable avec les ingrédients visibles.`;
+
+    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
-      body: n8nFormData,
-      signal: AbortSignal.timeout(90000), // 90 second timeout
+      headers: {
+        'Authorization': `Bearer ${openaiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        max_tokens: 1500,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image_url',
+              image_url: { url: `data:${mimeType};base64,${base64}` }
+            },
+            { type: 'text', text: prompt }
+          ]
+        }]
+      }),
+      signal: AbortSignal.timeout(90000),
     });
 
-    console.log('n8n response status:', response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('n8n error response:', errorText);
-      throw new Error(`n8n webhook error: ${response.status}`);
+    if (!openaiResponse.ok) {
+      const errBody = await openaiResponse.text();
+      console.error('[analyze-fridge] OpenAI error:', openaiResponse.status, errBody.substring(0, 500));
+      throw new Error(`Erreur OpenAI (${openaiResponse.status})`);
     }
 
-    const data = await response.json();
-    console.log('n8n response received');
+    const data = await openaiResponse.json();
+    const content: string = data.choices?.[0]?.message?.content ?? '';
+    const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
-    // Extract output from response (handle both array and direct object)
-    let output;
-    if (Array.isArray(data) && data.length > 0 && data[0].output) {
-      output = data[0].output;
-    } else if (data.output) {
-      output = data.output;
-    } else {
-      output = data;
+    let result: Record<string, unknown>;
+    try {
+      result = JSON.parse(cleaned);
+    } catch {
+      console.error('[analyze-fridge] Failed to parse GPT response:', cleaned.substring(0, 300));
+      throw new Error('Réponse IA invalide (JSON attendu)');
     }
 
-    if (!output || output.status !== 'succès') {
-      console.error('Invalid response format:', data);
-      throw new Error('Invalid response format from n8n');
-    }
-
-    console.log('Analysis successful, returning data');
+    console.log('[analyze-fridge] Analysis successful');
 
     return new Response(
-      JSON.stringify(output),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      JSON.stringify(result),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    // Log full error details server-side
     console.error('Error in analyze-fridge function:', error);
     
-    // Return generic error message to client
     const userMessage = error instanceof Error && 
-      (error.message.includes('Image') || error.message.includes('subscription') || error.message.includes('Trial') || error.message.includes('configuration'))
+      (error.message.includes('Image') || error.message.includes('configuration') || error.message.includes('OpenAI'))
       ? error.message 
       : 'Unable to analyze fridge contents. Please try again.';
     
