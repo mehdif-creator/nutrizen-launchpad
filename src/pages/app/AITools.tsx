@@ -25,28 +25,36 @@ export default function AITools() {
     setPhotoMacrosResult(null);
 
     try {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64Image = reader.result as string;
+      const base64Image = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('Impossible de lire le fichier'));
+        reader.readAsDataURL(file);
+      });
 
-        const { data, error } = await supabase.functions.invoke('analyze-food-photo', {
-          body: { image: base64Image }
-        });
+      const { data, error } = await supabase.functions.invoke('analyze-food-photo', {
+        body: { image: base64Image }
+      });
 
-        if (error) throw error;
+      if (error) {
+        console.error('Edge Function error (analyze-food-photo):', error);
+        throw new Error(error.message ?? 'Analyse échouée');
+      }
 
-        setPhotoMacrosResult(data);
-        toast({
-          title: 'Analyse terminée !',
-          description: 'Les informations nutritionnelles ont été calculées',
-        });
-      };
-      reader.readAsDataURL(file);
+      if (!data) {
+        throw new Error('Réponse vide du serveur');
+      }
+
+      setPhotoMacrosResult(data);
+      toast({
+        title: 'Analyse terminée !',
+        description: 'Les informations nutritionnelles ont été calculées',
+      });
     } catch (error) {
       console.error('Error analyzing photo:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible d\'analyser la photo',
+        description: error instanceof Error ? error.message : 'Impossible d\'analyser la photo',
         variant: 'destructive',
       });
     } finally {
@@ -59,28 +67,36 @@ export default function AITools() {
     setFridgeRecipesResult(null);
 
     try {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64Image = reader.result as string;
+      const base64Image = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('Impossible de lire le fichier'));
+        reader.readAsDataURL(file);
+      });
 
-        const { data, error } = await supabase.functions.invoke('analyze-fridge-photo', {
-          body: { image: base64Image }
-        });
+      const { data, error } = await supabase.functions.invoke('analyze-fridge-photo', {
+        body: { image: base64Image }
+      });
 
-        if (error) throw error;
+      if (error) {
+        console.error('Edge Function error (analyze-fridge-photo):', error);
+        throw new Error(error.message ?? 'Analyse échouée');
+      }
 
-        setFridgeRecipesResult(data);
-        toast({
-          title: 'Recettes générées !',
-          description: 'Des recettes ont été créées avec tes ingrédients',
-        });
-      };
-      reader.readAsDataURL(file);
+      if (!data) {
+        throw new Error('Réponse vide du serveur');
+      }
+
+      setFridgeRecipesResult(data);
+      toast({
+        title: 'Recettes générées !',
+        description: 'Des recettes ont été créées avec tes ingrédients',
+      });
     } catch (error) {
       console.error('Error analyzing fridge:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible d\'analyser le frigo',
+        description: error instanceof Error ? error.message : 'Impossible d\'analyser le frigo',
         variant: 'destructive',
       });
     } finally {

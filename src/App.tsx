@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { useReferralTracking } from '@/hooks/useReferralTracking';
 import { useAffiliateTracking } from '@/hooks/useAffiliateTracking';
 
@@ -111,7 +112,7 @@ const App = () => {
         <Route path="/app" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/app/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/app/onboarding" element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />
-        <Route path="/app/meal-plan" element={<ProtectedRoute><MealPlan /></ProtectedRoute>} />
+        <Route path="/app/meal-plan" element={<ProtectedRoute><ErrorBoundary><MealPlan /></ErrorBoundary></ProtectedRoute>} />
         <Route path="/app/menu-history" element={<ProtectedRoute><MenuHistory /></ProtectedRoute>} />
         <Route path="/app/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/app/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
@@ -119,10 +120,10 @@ const App = () => {
         <Route path="/app/referral" element={<ProtectedRoute><Referral /></ProtectedRoute>} />
         <Route path="/app/gamification" element={<ProtectedRoute><Gamification /></ProtectedRoute>} />
         <Route path="/app/ai-tools" element={<ProtectedRoute><AITools /></ProtectedRoute>} />
-        <Route path="/app/scan-repas" element={<ProtectedRoute><ScanRepas /></ProtectedRoute>} />
-        <Route path="/app/inspi-frigo" element={<ProtectedRoute><InspiFrigo /></ProtectedRoute>} />
-        <Route path="/app/recipes/:id" element={<ProtectedRoute><RecipeDetail /></ProtectedRoute>} />
-        <Route path="/app/shopping-list" element={<ProtectedRoute><ShoppingList /></ProtectedRoute>} />
+        <Route path="/app/scan-repas" element={<ProtectedRoute><ErrorBoundary><ScanRepas /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/app/inspi-frigo" element={<ProtectedRoute><ErrorBoundary><InspiFrigo /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/app/recipes/:id" element={<ProtectedRoute><ErrorBoundary><RecipeDetail /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/app/shopping-list" element={<ProtectedRoute><ErrorBoundary><ShoppingList /></ErrorBoundary></ProtectedRoute>} />
         <Route path="/app/supabase-debug" element={<ProtectedRoute requireAdmin><SupabaseDebug /></ProtectedRoute>} />
         <Route path="/app/famille-plus" element={<ProtectedRoute><FamillePlus /></ProtectedRoute>} />
         <Route path="/app/day-menu/:date" element={<ProtectedRoute><DayMenu /></ProtectedRoute>} />
