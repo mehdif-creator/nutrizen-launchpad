@@ -237,16 +237,20 @@ export default function Profile() {
       try {
         const { data: session } = await supabase.auth.getSession();
         if (session.session) {
-          await supabase.functions.invoke('generate-menu', {
+          const { error: menuErr } = await supabase.functions.invoke('generate-menu', {
             headers: {
               Authorization: `Bearer ${session.session.access_token}`,
             },
           });
           
-          toast({
-            title: '🎉 Menu mis à jour !',
-            description: 'Ton menu hebdomadaire a été régénéré.',
-          });
+          if (menuErr) {
+            console.error('Edge Function error (generate-menu):', menuErr);
+          } else {
+            toast({
+              title: '🎉 Menu mis à jour !',
+              description: 'Ton menu hebdomadaire a été régénéré.',
+            });
+          }
         }
       } catch (menuError) {
         console.error('Error regenerating menu:', menuError);
