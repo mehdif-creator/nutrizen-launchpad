@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { t } from '@/i18n/translations';
 import { queryClient } from '@/lib/queryClient';
 import { createLogger } from '@/lib/logger';
+import { callEdgeFunction } from '@/lib/edgeFn';
 
 const logger = createLogger('useMenuGeneration');
 
@@ -33,22 +33,7 @@ export function useMenuGeneration() {
     setLastError(null);
 
     try {
-      const { data: session } = await supabase.auth.getSession();
-      
-      if (!session.session) {
-        throw new Error('No active session');
-      }
-
-      const { data, error } = await supabase.functions.invoke('generate-menu', {
-        headers: {
-          Authorization: `Bearer ${session.session.access_token}`,
-        },
-      });
-
-      if (error) {
-        logger.error('Error', error);
-        throw error;
-      }
+      const data = await callEdgeFunction<any>('generate-menu');
 
       logger.debug('Response received', { data });
 

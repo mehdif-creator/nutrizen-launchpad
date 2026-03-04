@@ -3605,7 +3605,7 @@ export type Database = {
       check_images_integrity: { Args: never; Returns: Json }
       check_stuck_jobs: { Args: { p_minutes?: number }; Returns: Json }
       cleanup_expired_tokens: { Args: never; Returns: undefined }
-      cleanup_oauth_states: { Args: { p_ttl?: unknown }; Returns: number }
+      cleanup_oauth_states: { Args: { p_ttl?: string }; Returns: number }
       cleanup_old_checkout_sessions: { Args: never; Returns: undefined }
       compute_recipe_macros: {
         Args: { p_recipe_id: string }
@@ -3616,7 +3616,7 @@ export type Database = {
         Returns: Json
       }
       consume_oauth_state: {
-        Args: { p_state: string; p_ttl?: unknown }
+        Args: { p_state: string; p_ttl?: string }
         Returns: boolean
       }
       deduct_week_regeneration_credits: {
