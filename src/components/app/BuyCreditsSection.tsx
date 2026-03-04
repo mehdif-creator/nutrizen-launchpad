@@ -2,7 +2,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, Zap, Star } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { callEdgeFunction } from '@/lib/edgeFn';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { createLogger } from '@/lib/logger';
@@ -48,21 +48,7 @@ export function BuyCreditsSection() {
   const handleBuy = async (packId: string) => {
     setLoadingPack(packId);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.info('Connecte-toi pour acheter des crédits');
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke('create-credits-checkout', {
-        body: { pack_id: packId },
-      });
-
-      if (error) {
-        logger.error('Checkout error', error instanceof Error ? error : new Error(String(error)));
-        toast.error('Erreur lors de la création du paiement. Réessaie.');
-        return;
-      }
+      const data = await callEdgeFunction<{ url?: string }>('create-credits-checkout', { pack_id: packId });
 
       if (data?.url) {
         window.location.href = data.url;
@@ -70,8 +56,13 @@ export function BuyCreditsSection() {
         toast.error('URL de paiement non reçue. Réessaie.');
       }
     } catch (err) {
-      logger.error('Unexpected error', err instanceof Error ? err : new Error(String(err)));
-      toast.error('Erreur réseau. Vérifie ta connexion.');
+      logger.error('Checkout error', err instanceof Error ? err : new Error(String(err)));
+      const msg = err instanceof Error ? err.message : 'Erreur réseau. Vérifie ta connexion.';
+      if (msg.includes('session')) {
+        toast.info('Connecte-toi pour acheter des crédits');
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setLoadingPack(null);
     }
