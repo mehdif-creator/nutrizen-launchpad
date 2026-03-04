@@ -163,8 +163,10 @@ Deno.serve(async (req) => {
     const kidRatio = profileData?.kid_portion_ratio ?? 0.6;
     // mealsPerDay will be set after preferences are loaded (see below)
     const effectiveHouseholdSize = householdAdults + householdChildren * kidRatio;
+    const roundedHouseholdServings = Math.max(1, Math.round(effectiveHouseholdSize));
 
     console.log(`[generate-menu] Household size: ${householdAdults} adults + ${householdChildren} children = ${effectiveHouseholdSize.toFixed(1)} effective portions`);
+    console.log(`[generate-menu] Target servings per meal: ${roundedHouseholdServings}`);
 
     // Parse and validate input
     const body = await req.json().catch(() => ({}));
@@ -840,7 +842,7 @@ Deno.serve(async (req) => {
         carbs_g: Math.round((recipe.carbs_g || 0) * portionFactor),
         fats_g: Math.round((recipe.fats_g || 0) * portionFactor),
         portion_factor: portionFactor,
-        servings_used: effectiveHouseholdSize,
+        servings_used: roundedHouseholdServings,
         base_servings: recipeServings,
       };
     };
@@ -943,7 +945,7 @@ Deno.serve(async (req) => {
 
     if (itemsError) {
       console.error("[generate-menu] Error inserting menu items:", itemsError);
-      // Continue anyway - the menu was saved successfully
+      throw new Error("Failed to save menu items");
     } else {
       console.log(`[generate-menu] Inserted ${menuItems.length} menu items for shopping list generation`);
     }
@@ -979,7 +981,6 @@ Deno.serve(async (req) => {
         date: dayDate.toISOString().split('T')[0],
         lunch_recipe_id: (mealsPerDay >= 2 && day.lunch) ? day.lunch.recipe_id : null,
         dinner_recipe_id: day.dinner.recipe_id,
-        day_of_week: index, // 0=Monday
       };
     });
 
@@ -989,6 +990,7 @@ Deno.serve(async (req) => {
 
     if (dailyRecipesError) {
       console.error("[generate-menu] Error upserting daily recipes:", dailyRecipesError);
+      throw new Error("Failed to save daily recipes");
     } else {
       console.log(`[generate-menu] Inserted ${dailyRecipes.length} daily recipe entries for dashboard`);
     }
