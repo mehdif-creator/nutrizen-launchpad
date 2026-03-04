@@ -26,9 +26,13 @@ const AutomationQueue: React.FC = () => {
     setProcessingId(item.id);
     try {
       addToast("Lancement de la publication...", "info");
+      const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(`${functionsBaseUrl()}/pinterest-publish`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({
           board_id: item.board_slug,
           title: item.pin_title,

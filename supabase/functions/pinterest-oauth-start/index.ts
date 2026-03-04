@@ -65,10 +65,10 @@ Deno.serve(async (req: Request) => {
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
 
-    // Store state in DB for validation during callback, bound to user
+    // Store state in DB for validation during callback
     const { error: insertErr } = await supabase
       .from("oauth_states")
-      .insert({ state, user_id: user.id });
+      .insert({ state });
 
     if (insertErr) {
       console.error("[pinterest-oauth-start] Failed to store state:", insertErr);
