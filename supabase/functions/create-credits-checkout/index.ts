@@ -8,11 +8,27 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CREATE-CREDITS-CHECKOUT] ${step}${detailsStr}`);
 };
 
-// Credit pack configurations — price IDs from env, never hardcoded
-const CREDIT_PACKS: Record<string, { credits: number; priceEnvKey: string; name: string }> = {
-  topup_30:  { credits: 30,  priceEnvKey: 'STRIPE_PRICE_TOPUP_30',  name: 'Pack 30 crédits' },
-  topup_80:  { credits: 80,  priceEnvKey: 'STRIPE_PRICE_TOPUP_80',  name: 'Pack 80 crédits' },
-  topup_200: { credits: 200, priceEnvKey: 'STRIPE_PRICE_TOPUP_200', name: 'Pack 200 crédits' },
+// Credit pack configurations
+const CREDIT_PACKS: Record<string, { credits: number; priceEnvKey: string; fallbackPriceId: string; name: string }> = {
+  topup_30:  { credits: 30,  priceEnvKey: 'STRIPE_PRICE_TOPUP_30',  fallbackPriceId: 'price_1T4gEoIDcb01YPK1GYDA8CY3', name: 'Pack 30 crédits' },
+  topup_80:  { credits: 80,  priceEnvKey: 'STRIPE_PRICE_TOPUP_80',  fallbackPriceId: 'price_1T4gEpIDcb01YPK10oJKnH9I', name: 'Pack 80 crédits' },
+  topup_200: { credits: 200, priceEnvKey: 'STRIPE_PRICE_TOPUP_200', fallbackPriceId: 'price_1T4gEqIDcb01YPK11HbsZcT0', name: 'Pack 200 crédits' },
+};
+
+const resolvePriceId = (pack: { priceEnvKey: string; fallbackPriceId: string }): string => {
+  const fromEnv = Deno.env.get(pack.priceEnvKey)?.trim();
+
+  if (!fromEnv) {
+    logStep('Missing price secret, using fallback', { key: pack.priceEnvKey });
+    return pack.fallbackPriceId;
+  }
+
+  if (!fromEnv.startsWith('price_')) {
+    logStep('Invalid price secret format, using fallback', { key: pack.priceEnvKey });
+    return pack.fallbackPriceId;
+  }
+
+  return fromEnv;
 };
 
 Deno.serve(async (req) => {
@@ -81,10 +97,20 @@ Deno.serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    // Get price ID from environment
-    const priceId = Deno.env.get(pack.priceEnvKey);
-    if (!priceId) {
-      throw new Error(`Price ID for ${pack.name} not configured. Please add ${pack.priceEnvKey} to secrets.`);
+    // Resolve price ID (secret first, then safe fallback)
+    const configuredPriceId = Deno.env.get(pack.priceEnvKey)?.trim();
+    let priceId = resolvePriceId(pack);
+
+    try {
+      await stripe.prices.retrieve(priceId);
+    } catch {
+      if (configuredPriceId && configuredPriceId.startsWith('price_') && configuredPriceId !== pack.fallbackPriceId) {
+        logStep('Configured price not found, retrying fallback', { key: pack.priceEnvKey });
+        priceId = pack.fallbackPriceId;
+        await stripe.prices.retrieve(priceId);
+      } else {
+        throw new Error(`Price ID invalide pour ${pack.name}. Vérifie ${pack.priceEnvKey}.`);
+      }
     }
 
     logStep("Using price", { packId, credits: pack.credits });
