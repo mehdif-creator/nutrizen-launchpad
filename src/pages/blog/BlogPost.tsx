@@ -107,7 +107,7 @@ function injectInternalLinks(html: string, related: ReturnType<typeof useBlogArt
 export default function BlogPost() {
   const { slug } = useParams();
   const { user } = useAuth();
-  const { article, relatedArticles, loading } = useBlogArticleBySlug(slug);
+  const { article, relatedArticles, validSlugs, loading } = useBlogArticleBySlug(slug);
 
   useArticleSeoHead(article);
 
@@ -151,11 +151,12 @@ export default function BlogPost() {
   const faqItems = draftMeta?.faq as { q: string; a: string }[] | undefined;
 
   // Build the article HTML with placeholders replaced and internal links injected
+  const pricingUrl = '/pricing';
   let rawHtml = article.source === 'seo_factory'
     ? (article.draft_html || article.content || '')
     : (article.content || '');
 
-  // Replace image placeholders with real URLs
+  // 1. Replace image placeholders with real URLs
   if (images && images.length > 0) {
     images.forEach((img: any, index: number) => {
       const n = index + 1;
@@ -165,10 +166,35 @@ export default function BlogPost() {
       rawHtml = rawHtml.split(`{{IMAGE_${n}_ALT}}`).join(alt);
     });
   }
-  // Remove any remaining unreplaced placeholders
   rawHtml = rawHtml.replace(/\{\{IMAGE_\d+_URL\}\}/g, '');
   rawHtml = rawHtml.replace(/\{\{IMAGE_\d+_ALT\}\}/g, '');
-  rawHtml = rawHtml.split('{{NUTRIZEN_CTA_URL}}').join('https://mynutrizen.fr');
+
+  // 2. Replace ALL CTA URLs with the real pricing page
+  rawHtml = rawHtml.split('{{NUTRIZEN_CTA_URL}}').join(pricingUrl);
+  rawHtml = rawHtml.split('https://mynutrizen.fr/auth/signup').join(pricingUrl);
+  rawHtml = rawHtml.split('https://mynutrizen.fr/signup').join(pricingUrl);
+  // Replace bare homepage URLs in href attributes with pricing
+  rawHtml = rawHtml.replace(/href="https:\/\/mynutrizen\.fr\/?"/g, `href="${pricingUrl}"`);
+
+  // 3. Sanitize internal /blog/ links — redirect broken slugs to /blog
+  rawHtml = rawHtml.replace(
+    /href="(?:https:\/\/mynutrizen\.fr)?\/blog\/([^"]+)"/g,
+    (_match: string, linkSlug: string) => {
+      if (validSlugs.has(linkSlug)) {
+        return `href="/blog/${linkSlug}"`;
+      }
+      return `href="/blog" title="Voir tous nos articles"`;
+    }
+  );
+
+  // 4. Force external links to open in new tab
+  rawHtml = rawHtml.replace(
+    /<a\s+([^>]*?)href="(https?:\/\/(?!mynutrizen\.fr)[^"]+)"([^>]*?)>/g,
+    (_match: string, before: string, url: string, after: string) => {
+      if (before.includes('target=') || after.includes('target=')) return _match;
+      return `<a ${before}href="${url}" target="_blank" rel="noopener noreferrer"${after}>`;
+    }
+  );
 
   const htmlContent = article.source === 'seo_factory'
     ? injectInternalLinks(rawHtml, relatedArticles)
@@ -260,7 +286,7 @@ export default function BlogPost() {
             <p className="text-muted-foreground mb-4">
               Laisse-nous générer tes menus et ta liste de courses automatiquement.
             </p>
-            <Link to="/signup">
+            <Link to="/pricing">
               <Button>Commencer gratuitement</Button>
             </Link>
           </div>
@@ -268,28 +294,47 @@ export default function BlogPost() {
           {/* Related Articles */}
           {relatedArticles.length > 0 && (
             <section className="mt-12 pt-8 border-t-2 border-border">
-              <h2 className="text-xl font-bold mb-6">Articles qui pourraient vous intéresser</h2>
+              <h2 className="text-xl font-bold mb-2">Articles qui pourraient vous intéresser</h2>
+              <p className="text-sm text-muted-foreground mb-6">Continuez à explorer nos conseils nutrition</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {relatedArticles.map((ra) => (
-                  <Link key={ra.id} to={`/blog/${ra.slug}`}>
-                    <Card className="overflow-hidden hover:shadow-lg transition-all h-full">
-                      {ra.cover_url && (
-                        <img
-                          src={ra.cover_url}
-                          alt={ra.title}
-                          className="w-full h-36 object-cover"
-                          loading="lazy"
-                        />
-                      )}
-                      <div className="p-4">
-                        <h3 className="font-semibold text-sm mb-1 line-clamp-2">{ra.title}</h3>
-                        {ra.excerpt && (
-                          <p className="text-xs text-muted-foreground line-clamp-2">{ra.excerpt}</p>
-                        )}
-                      </div>
-                    </Card>
-                  </Link>
-                ))}
+                {relatedArticles.map((ra) => {
+                  const raImage = ra.cover_url || (ra.image_urls as any)?.[0]?.url || (ra.image_urls as any)?.[0];
+                  const raTitle = ra.title || (ra.outline as any)?.title || ra.slug;
+                  const raExcerpt = ra.excerpt || (ra.outline as any)?.excerpt || (ra.outline as any)?.meta_description;
+                  return (
+                    <Link key={ra.id} to={`/blog/${ra.slug}`}>
+                      <Card className="overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all h-full border border-border">
+                        <div className="h-40 overflow-hidden bg-muted">
+                          {raImage ? (
+                            <img
+                              src={raImage}
+                              alt={raTitle}
+                              className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-4xl">🥗</div>
+                          )}
+                        </div>
+                        <div className="p-4">
+                          {ra.cluster_context && (
+                            <span className="inline-block text-xs font-semibold uppercase tracking-wide text-primary bg-primary/10 px-2 py-0.5 rounded-full mb-2">
+                              {ra.cluster_context}
+                            </span>
+                          )}
+                          <h3 className="font-semibold text-sm mb-1 line-clamp-2">{raTitle}</h3>
+                          {raExcerpt && (
+                            <p className="text-xs text-muted-foreground line-clamp-2">{raExcerpt}</p>
+                          )}
+                          <div className="flex justify-between items-center mt-3 pt-3 border-t border-border text-xs text-muted-foreground">
+                            <span>{formatDateFr(ra.published_at)}</span>
+                            <span className="text-primary font-semibold">Lire →</span>
+                          </div>
+                        </div>
+                      </Card>
+                    </Link>
+                  );
+                })}
               </div>
             </section>
           )}

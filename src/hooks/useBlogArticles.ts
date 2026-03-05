@@ -96,6 +96,7 @@ export function useBlogArticles() {
 export function useBlogArticleBySlug(slug: string | undefined) {
   const [article, setArticle] = useState<BlogArticle | null>(null);
   const [relatedArticles, setRelatedArticles] = useState<BlogArticle[]>([]);
+  const [validSlugs, setValidSlugs] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -144,14 +145,17 @@ export function useBlogArticleBySlug(slug: string | undefined) {
         .order('published_at', { ascending: false })
         .limit(10);
 
-      const allRelated = [
+      const allMapped = [
         ...(relatedManual || []).map(mapBlogPost),
         ...(relatedSeo || []).map(mapSeoArticle),
-      ]
-        .filter(a => {
-          const aSlug = a.slug;
-          return aSlug !== slug;
-        })
+      ];
+
+      // Build set of all valid published slugs
+      const slugSet = new Set(allMapped.map(a => a.slug).filter(Boolean));
+      setValidSlugs(slugSet);
+
+      const allRelated = allMapped
+        .filter(a => a.slug !== slug)
         .sort((a, b) => new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime())
         .slice(0, 3);
 
@@ -161,5 +165,5 @@ export function useBlogArticleBySlug(slug: string | undefined) {
     fetch();
   }, [slug]);
 
-  return { article, relatedArticles, loading };
+  return { article, relatedArticles, validSlugs, loading };
 }
