@@ -1,9 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders } from "../_shared/security.ts";
+import { requireAdmin } from "../_shared/auth.ts";
 
 function getAdminClient() {
   return createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -69,20 +66,31 @@ OUTPUT SCHEMA:
 `;
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // --- JWT validation + admin role check ---
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
     }
+    const token = authHeader.replace("Bearer ", "");
+    const adminClient = getAdminClient();
+    const { data: { user }, error: authError } = await adminClient.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Invalid or expired token" }), { status: 401, headers: corsHeaders });
+    }
+    await requireAdmin(adminClient, user.id);
+    // --- end auth ---
 
     const { article_id, cta_url } = await req.json();
     if (!article_id) {
       return new Response(JSON.stringify({ error: "article_id is required" }), { status: 400, headers: corsHeaders });
     }
 
-    const adminClient = getAdminClient();
     const { data: article, error } = await adminClient.from("seo_articles").select("*").eq("id", article_id).single();
     if (error) throw new Error(`Article not found: ${error.message}`);
 
@@ -154,7 +162,6 @@ Return only the JSON object.
         finalHtml = finalHtml.replaceAll(placeholder, "");
       }
     }
-    // Replace any remaining CTA URL placeholder
     finalHtml = finalHtml.replaceAll("{{NUTRIZEN_CTA_URL}}", ctaUrl);
 
     await adminClient.from("seo_articles").update({
@@ -177,8 +184,10 @@ Return only the JSON object.
 
   } catch (err) {
     console.error("[seo-draft] Error:", err);
-    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    const status = (err as any)?.status || (msg === "Admin access required" ? 403 : 500);
+    return new Response(JSON.stringify({ error: msg }), {
+      status, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

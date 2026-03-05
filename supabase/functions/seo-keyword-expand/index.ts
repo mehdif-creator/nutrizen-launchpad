@@ -1,9 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders } from "../_shared/security.ts";
+import { requireAdmin } from "../_shared/auth.ts";
 
 async function callOpenAI(systemPrompt: string, userPrompt: string, temperature: number, maxTokens: number) {
   const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
@@ -31,6 +28,10 @@ async function callOpenAI(systemPrompt: string, userPrompt: string, temperature:
 
   const data = await res.json();
   return JSON.parse(data.choices?.[0]?.message?.content || "{}");
+}
+
+function getAdminClient() {
+  return createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 }
 
 const KEYWORD_EXPAND_SYSTEM_PROMPT = `
@@ -61,13 +62,25 @@ OUTPUT SCHEMA:
 `;
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // --- JWT validation + admin role check ---
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
     }
+    const token = authHeader.replace("Bearer ", "");
+    const adminClient = getAdminClient();
+    const { data: { user }, error: authError } = await adminClient.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Invalid or expired token" }), { status: 401, headers: corsHeaders });
+    }
+    await requireAdmin(adminClient, user.id);
+    // --- end auth ---
 
     const { seed_keyword, cluster_context, existing_keywords } = await req.json();
     if (!seed_keyword) {
@@ -95,8 +108,10 @@ All keywords in French. Return only the JSON object.
 
   } catch (err) {
     console.error("[seo-keyword-expand] Error:", err);
-    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    const status = (err as any)?.status || (msg === "Admin access required" ? 403 : 500);
+    return new Response(JSON.stringify({ error: msg }), {
+      status, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

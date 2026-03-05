@@ -1,22 +1,31 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders } from "../_shared/security.ts";
+import { requireAdmin } from "../_shared/auth.ts";
 
 function getAdminClient() {
   return createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 }
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // --- JWT validation + admin role check ---
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
     }
+    const token = authHeader.replace("Bearer ", "");
+    const adminClient = getAdminClient();
+    const { data: { user }, error: authError } = await adminClient.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Invalid or expired token" }), { status: 401, headers: corsHeaders });
+    }
+    await requireAdmin(adminClient, user.id);
+    // --- end auth ---
 
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     if (!ANTHROPIC_API_KEY) {
@@ -28,7 +37,6 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "article_id is required" }), { status: 400, headers: corsHeaders });
     }
 
-    const adminClient = getAdminClient();
     const { data: article, error } = await adminClient.from("seo_articles").select("*").eq("id", article_id).single();
     if (error) throw new Error(`Article not found: ${error.message}`);
 
@@ -36,7 +44,6 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: `Invalid status: ${article.status}. Expected draft_done.` }), { status: 400, headers: corsHeaders });
     }
 
-    // Get competitor snippets from SERP data
     const competitorSnippets = ((article.serp_snapshot as any[]) || [])
       .slice(0, 3)
       .map((r: any) => `Title: ${r.title}\nSnippet: ${r.snippet}\nURL: ${r.link}`);
@@ -95,7 +102,6 @@ ${article.draft_html}
 Apply the scoring rubric strictly. Output only the QA JSON object.
 `;
 
-    // Call Claude API
     const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -121,8 +127,7 @@ Apply the scoring rubric strictly. Output only the QA JSON object.
 
     const claudeData = await claudeRes.json();
     const qaText = claudeData.content?.[0]?.text || "{}";
-    
-    // Extract JSON from response (Claude may wrap in markdown)
+
     let qaResult: any;
     try {
       const jsonMatch = qaText.match(/\{[\s\S]*\}/);
@@ -153,8 +158,10 @@ Apply the scoring rubric strictly. Output only the QA JSON object.
 
   } catch (err) {
     console.error("[seo-qa] Error:", err);
-    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    const status = (err as any)?.status || (msg === "Admin access required" ? 403 : 500);
+    return new Response(JSON.stringify({ error: msg }), {
+      status, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

@@ -1,9 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders } from "../_shared/security.ts";
+import { requireAdmin } from "../_shared/auth.ts";
 
 async function callOpenAI(systemPrompt: string, userPrompt: string, temperature: number, maxTokens: number) {
   const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
@@ -64,17 +61,6 @@ function getAdminClient() {
   );
 }
 
-function authenticateRequest(req: Request) {
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    throw new Error("Unauthorized");
-  }
-  return authHeader;
-}
-
-// ──────────────────────────────────────────────
-// BRIEF SYSTEM PROMPT (inlined for Edge Function)
-// ──────────────────────────────────────────────
 const BRIEF_SYSTEM_PROMPT = `
 You are a senior SEO strategist and content director specializing in the French nutrition and wellness market. You work for NutriZen, a French nutrition app that helps users plan meals, track calories, and achieve their health goals.
 
@@ -119,16 +105,31 @@ OUTPUT SCHEMA (strict JSON, all text values in French):
 `;
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    authenticateRequest(req);
+    // --- JWT validation + admin role check ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const adminClient = getAdminClient();
+    const { data: { user }, error: authError } = await adminClient.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Invalid or expired token" }), { status: 401, headers: corsHeaders });
+    }
+    await requireAdmin(adminClient, user.id);
+    // --- end auth ---
+
     const { article_id } = await req.json();
     if (!article_id) {
       return new Response(JSON.stringify({ error: "article_id is required" }), { status: 400, headers: corsHeaders });
     }
 
-    const adminClient = getAdminClient();
     const article = await getArticle(adminClient, article_id);
 
     if (article.status !== "serp_done") {
@@ -169,9 +170,7 @@ Produce the brief JSON now. All text values in French.
   } catch (err) {
     console.error("[seo-brief] Error:", err);
     const msg = err instanceof Error ? err.message : "Unknown error";
-    if (msg === "Unauthorized") {
-      return new Response(JSON.stringify({ error: msg }), { status: 401, headers: corsHeaders });
-    }
-    return new Response(JSON.stringify({ error: msg }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const status = (err as any)?.status || (msg === "Admin access required" ? 403 : 500);
+    return new Response(JSON.stringify({ error: msg }), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
