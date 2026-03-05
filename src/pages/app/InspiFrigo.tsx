@@ -3,12 +3,9 @@ import { AppHeader } from "@/components/app/AppHeader";
 import { AppFooter } from "@/components/app/AppFooter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Camera, Upload, Loader2, RefreshCw, AlertCircle, Coins } from "lucide-react";
+import { Camera, Upload, Loader2, RefreshCw, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { callEdgeFunction } from "@/lib/edgeFn";
-import { InsufficientCreditsModal } from "@/components/app/InsufficientCreditsModal";
 import { useQueryClient } from "@tanstack/react-query";
-import { FEATURE_COSTS } from "@/lib/featureCosts";
 
 interface Ingredient {
   nom: string;
@@ -42,11 +39,8 @@ export default function InspiFrigo() {
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [creditsModalOpen, setCreditsModalOpen] = useState(false);
-  const [creditsInfo, setCreditsInfo] = useState<{ current: number; required: number } | null>(null);
 
   const queryClient = useQueryClient();
-  const cost = FEATURE_COSTS.inspi_frigo;
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -71,39 +65,26 @@ export default function InspiFrigo() {
     setAnalysisResult(null);
 
     try {
-      // Generate unique request_id per click (idempotency)
-      const requestId = crypto.randomUUID();
+      // Send image directly to n8n webhook as multipart/form-data
+      const formData = new FormData();
+      formData.append('image', selectedFile);
 
-      // Convert file to base64
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(selectedFile);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 60000);
+
+      const response = await fetch('https://n8n.srv1005117.hstgr.cloud/webhook/analyse-frigo', {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal,
       });
 
-      const data = await callEdgeFunction<Record<string, any>>('analyze-fridge', {
-        image_base64: base64,
-        request_id: requestId,
-      });
+      clearTimeout(timeout);
 
-      // Handle duplicate
-      if (data.duplicate) {
-        toast.info("Cette image a déjà été analysée.");
-        setIsLoading(false);
-        return;
+      if (!response.ok) {
+        throw new Error(`Erreur serveur (${response.status}). Veuillez réessayer.`);
       }
 
-      // Handle insufficient credits (edge fn returns 402 which throws)
-      if (data.error_code === 'INSUFFICIENT_CREDITS') {
-        setCreditsInfo({
-          current: data.current_balance || 0,
-          required: data.required || cost,
-        });
-        setCreditsModalOpen(true);
-        setIsLoading(false);
-        return;
-      }
+      const data = await response.json();
 
       // Success
       if (data.plat) {
@@ -112,7 +93,6 @@ export default function InspiFrigo() {
           plat: data.plat,
         });
         toast.success('Analyse terminée avec succès !');
-        // Invalidate credits cache so dashboard updates
         queryClient.invalidateQueries({ queryKey: ['credits'] });
         queryClient.invalidateQueries({ queryKey: ['user-dashboard'] });
         queryClient.invalidateQueries({ queryKey: ['gamification'] });
@@ -120,29 +100,15 @@ export default function InspiFrigo() {
         throw new Error(data.error || 'Réponse inattendue du serveur');
       }
     } catch (err: any) {
-      const msg = err?.message || 'Erreur lors de l\'analyse';
-
-      // Check if it's an insufficient credits error from the thrown error
-      if (msg.includes('insuffisant') || msg.includes('INSUFFICIENT')) {
-        try {
-          const parsed = JSON.parse(err.message);
-          setCreditsInfo({
-            current: parsed.current_balance || 0,
-            required: parsed.required || cost,
-          });
-          setCreditsModalOpen(true);
-        } catch {
-          setCreditsInfo({ current: 0, required: cost });
-          setCreditsModalOpen(true);
-        }
-      } else {
-        setError(msg);
-        toast.error(msg);
-      }
+      const msg = err?.name === 'AbortError'
+        ? 'L\'analyse a pris trop de temps. Veuillez réessayer.'
+        : (err?.message || 'Erreur lors de l\'analyse');
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
-  }, [selectedFile, queryClient, cost]);
+  }, [selectedFile, queryClient]);
 
   const handleReset = () => {
     setSelectedFile(null);
@@ -188,8 +154,7 @@ export default function InspiFrigo() {
             Prends une photo de ton frigo ou de tes ingrédients, et découvre des recettes adaptées à ce que tu as sous la main.
           </p>
           <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
-            <Coins className="h-4 w-4" />
-            Coût : {cost} crédits
+            ✨ Gratuit — propulsé par n8n
           </div>
         </div>
 
@@ -302,7 +267,7 @@ export default function InspiFrigo() {
                     size="lg"
                     style={{ borderRadius: "1rem" }}
                   >
-                    Analyser mon frigo ({cost} crédits)
+                    Analyser mon frigo
                   </Button>
                 )}
               </div>
@@ -410,13 +375,6 @@ export default function InspiFrigo() {
 
       <AppFooter />
 
-      <InsufficientCreditsModal
-        open={creditsModalOpen}
-        onOpenChange={setCreditsModalOpen}
-        currentBalance={creditsInfo?.current || 0}
-        required={creditsInfo?.required || cost}
-        feature="inspifrigo"
-      />
     </div>
   );
 }
