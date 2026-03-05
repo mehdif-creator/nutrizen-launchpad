@@ -109,13 +109,56 @@ NUTRIZEN CTA URL: ${ctaUrl}
 
 Write the complete article now. All content in French.
 Minimum ${(article.outline as any)?.estimated_word_count || 1500} words.
+
+EXIGENCES DE LONGUEUR ABSOLUES (non négociables) :
+- L'article DOIT faire minimum 1500 mots dans le champ word_count
+- Chaque section H2 DOIT contenir minimum 200 mots de contenu
+- La section deliverable (tableau, checklist ou plan) DOIT être présente et faire au minimum 300 mots avec des données concrètes
+- Les réponses FAQ DOIVENT faire minimum 3 phrases chacune
+- Si une section semble courte, développe avec des exemples concrets, des chiffres, des variantes de recettes, des conseils pratiques
+
+STRUCTURE OBLIGATOIRE à respecter dans content_html :
+1. Introduction avec hook (150-200 mots)
+2. Au moins 5 sections H2 avec contenu développé (200+ mots chacune)
+3. Au moins 1 tableau HTML complet avec 3+ colonnes et 5+ lignes
+4. La section 'En pratique' ou 'Notre sélection' avec un deliverable concret
+5. Section FAQ avec 5 questions/réponses développées
+6. Conclusion avec résumé et CTA final
+
+Ne génère PAS un article court. Prends le temps de développer chaque point avec des exemples réels, des variantes, des conseils.
+
 Return only the JSON object.
 `;
 
-    const draft = await callOpenAI(DRAFT_SYSTEM_PROMPT, userPrompt, 0.6, 4000);
+    const draft = await callOpenAI(DRAFT_SYSTEM_PROMPT, userPrompt, 0.7, 8000);
+
+    // Replace CTA placeholders with actual HTML blocks
+    let finalHtml = draft.content_html || "";
+    const ctaBlocks = (draft.cta_blocks as any[]) || [];
+    const ctaMap: Record<string, any> = {};
+    for (const block of ctaBlocks) {
+      if (block.position) ctaMap[block.position] = block;
+    }
+
+    for (const pos of ["top", "middle", "bottom"]) {
+      const placeholder = `{{CTA_${pos.toUpperCase()}}}`;
+      const block = ctaMap[pos];
+      if (block) {
+        const ctaHtml = `<div class="cta-block cta-${pos}" style="background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 1px solid #86efac; border-radius: 12px; padding: 24px; margin: 32px 0; text-align: center;">
+  <h3 style="color: #166534; margin: 0 0 8px 0; font-size: 18px;">${block.headline || ""}</h3>
+  <p style="color: #15803d; margin: 0 0 16px 0; font-size: 14px;">${block.body || ""}</p>
+  <a href="${ctaUrl}" style="display: inline-block; background: #16a34a; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">${block.cta_text || "Découvrir NutriZen"}</a>
+</div>`;
+        finalHtml = finalHtml.replaceAll(placeholder, ctaHtml);
+      } else {
+        finalHtml = finalHtml.replaceAll(placeholder, "");
+      }
+    }
+    // Replace any remaining CTA URL placeholder
+    finalHtml = finalHtml.replaceAll("{{NUTRIZEN_CTA_URL}}", ctaUrl);
 
     await adminClient.from("seo_articles").update({
-      draft_html: draft.content_html,
+      draft_html: finalHtml,
       draft_meta: {
         word_count: draft.word_count,
         faq: draft.faq,

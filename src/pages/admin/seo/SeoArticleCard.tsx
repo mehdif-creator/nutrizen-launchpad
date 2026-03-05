@@ -36,13 +36,47 @@ export function SeoArticleCard({ article, onRefresh, onDelete, onOpenDetail }: P
     ? article.qa_score >= 75 ? 'bg-green-600' : article.qa_score >= 60 ? 'bg-orange-500' : 'bg-red-600'
     : '';
 
+  const autoImproveLoop = async (articleId: string) => {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      toast({ title: `Amélioration automatique en cours… (tentative ${attempt}/3)` });
+      setBusy('seo-improve');
+      await new Promise(r => setTimeout(r, 2000));
+      try {
+        await callEdgeFunction('seo-improve', { article_id: articleId });
+        await callEdgeFunction('seo-qa', { article_id: articleId });
+      } catch (e: any) {
+        toast({ title: 'Erreur amélioration', description: e.message, variant: 'destructive' });
+        break;
+      }
+      onRefresh();
+      // Re-fetch article to check result
+      const { data: updated } = await supabase.from('seo_articles').select('qa_pass, qa_score, improve_attempts').eq('id', articleId).single();
+      if (updated?.qa_pass === true) {
+        toast({ title: `✅ Article amélioré et validé — Score : ${updated.qa_score}/100` });
+        setBusy(null);
+        onRefresh();
+        return;
+      }
+      if (attempt >= 3) {
+        toast({ title: 'Révision manuelle requise', description: '3 tentatives échouées.', variant: 'destructive' });
+      }
+    }
+    setBusy(null);
+    onRefresh();
+  };
+
   const callStep = async (fnName: string, payload: Record<string, unknown>, label: string) => {
     setBusy(fnName);
     toast({ title: `En cours : ${label}…` });
     try {
-      await callEdgeFunction(fnName, payload);
+      const result = await callEdgeFunction(fnName, payload);
       toast({ title: `${label} terminé ✓` });
       onRefresh();
+      // Auto-improve if QA failed
+      if (fnName === 'seo-qa' && result && (result as any).pass_fail === 'fail') {
+        await autoImproveLoop(payload.article_id as string);
+        return;
+      }
     } catch (e: any) {
       toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
       onRefresh();
@@ -93,7 +127,6 @@ export function SeoArticleCard({ article, onRefresh, onDelete, onOpenDetail }: P
 
   const handleAutoPipeline = async () => {
     setAutoPipeline(true);
-    // Determine starting index based on current status
     const statusToSeqIdx: Record<string, number> = {
       pending: 0, serp_done: 1, brief_done: 2, outline_done: 3, images_done: 4, draft_done: 5,
     };
@@ -112,8 +145,14 @@ export function SeoArticleCard({ article, onRefresh, onDelete, onOpenDetail }: P
         if (fn === 'seo-draft') {
           payload.cta_url = window.location.origin;
         }
-        await callEdgeFunction(fn, payload);
+        const result = await callEdgeFunction(fn, payload);
         onRefresh();
+
+        // After QA, auto-improve if failed
+        if (fn === 'seo-qa' && result && (result as any).pass_fail === 'fail') {
+          setAutoStep('Amélioration auto');
+          await autoImproveLoop(article.id);
+        }
       }
       toast({ title: 'Pipeline terminé ✓', description: `QA finalisé pour « ${article.keyword} ».` });
     } catch (e: any) {
@@ -191,11 +230,19 @@ export function SeoArticleCard({ article, onRefresh, onDelete, onOpenDetail }: P
             </Button>
           )}
 
-          {/* Improve */}
+          {/* Manual improve - only when auto-improve exhausted */}
           {article.status === 'qa_done' && article.qa_pass === false && (article.improve_attempts ?? 0) < 3 && (
             <Button size="sm" variant="outline" onClick={handleImprove} disabled={isBusy}>
               {busy === 'seo-improve' ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="mr-1 h-3.5 w-3.5" />}
               Améliorer ({article.improve_attempts ?? 0}/3)
+            </Button>
+          )}
+
+          {/* Revision manuelle requise after 3 failed attempts */}
+          {article.status === 'qa_done' && article.qa_pass === false && (article.improve_attempts ?? 0) >= 3 && (
+            <Button size="sm" variant="outline" className="border-orange-400 text-orange-600" onClick={handlePublish} disabled={isBusy}>
+              {busy === 'publish' ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
+              ⚠️ Forcer la publication
             </Button>
           )}
 
