@@ -2139,6 +2139,95 @@ export type Database = {
         }
         Relationships: []
       }
+      seo_articles: {
+        Row: {
+          blog_post_id: string | null
+          brief: Json | null
+          cluster_context: string | null
+          created_at: string
+          created_by: string | null
+          cta_blocks: Json | null
+          draft_html: string | null
+          draft_meta: Json | null
+          error_message: string | null
+          id: string
+          image_urls: Json | null
+          improve_attempts: number | null
+          keyword: string
+          outline: Json | null
+          paa_questions: string[] | null
+          qa_pass: boolean | null
+          qa_result: Json | null
+          qa_score: number | null
+          quality_flags: Json | null
+          related_keywords: string[] | null
+          schema_json: Json | null
+          serp_snapshot: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          blog_post_id?: string | null
+          brief?: Json | null
+          cluster_context?: string | null
+          created_at?: string
+          created_by?: string | null
+          cta_blocks?: Json | null
+          draft_html?: string | null
+          draft_meta?: Json | null
+          error_message?: string | null
+          id?: string
+          image_urls?: Json | null
+          improve_attempts?: number | null
+          keyword: string
+          outline?: Json | null
+          paa_questions?: string[] | null
+          qa_pass?: boolean | null
+          qa_result?: Json | null
+          qa_score?: number | null
+          quality_flags?: Json | null
+          related_keywords?: string[] | null
+          schema_json?: Json | null
+          serp_snapshot?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          blog_post_id?: string | null
+          brief?: Json | null
+          cluster_context?: string | null
+          created_at?: string
+          created_by?: string | null
+          cta_blocks?: Json | null
+          draft_html?: string | null
+          draft_meta?: Json | null
+          error_message?: string | null
+          id?: string
+          image_urls?: Json | null
+          improve_attempts?: number | null
+          keyword?: string
+          outline?: Json | null
+          paa_questions?: string[] | null
+          qa_pass?: boolean | null
+          qa_result?: Json | null
+          qa_score?: number | null
+          quality_flags?: Json | null
+          related_keywords?: string[] | null
+          schema_json?: Json | null
+          serp_snapshot?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seo_articles_blog_post_id_fkey"
+            columns: ["blog_post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shopping_aisles: {
         Row: {
           aisle: string
