@@ -4,11 +4,12 @@ import { AppFooter } from '@/components/app/AppFooter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Camera, Upload, Loader2, Brain, RefreshCw, AlertCircle, AlertTriangle, Lightbulb, Info } from 'lucide-react';
+import { Camera, Upload, Loader2, Brain, RefreshCw, AlertCircle, AlertTriangle, Lightbulb, Info, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { InsufficientCreditsModal } from '@/components/app/InsufficientCreditsModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { getFeatureCost } from '@/lib/featureCosts';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -91,7 +92,7 @@ const useCountUp = (end: number, duration = 800, start = 0) => {
 // ─── Edge Function URL ───────────────────────────────────────────────────────
 
 const ANALYSE_REPAS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyse-repas`;
-
+const SCAN_COST = getFeatureCost('scan_repas');
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function ScanRepas() {
@@ -128,26 +129,7 @@ export default function ScanRepas() {
     if (f) pickFile(f);
   };
 
-  // ── Credits check ────────────────────────────────────────────────────────
-
-  const checkCredits = async (userId: string): Promise<boolean> => {
-    const { data, error: creditsError } = await supabase.rpc('check_and_consume_credits', {
-      p_user_id: userId,
-      p_feature: 'scanrepas',
-      p_cost: 1,
-    });
-    if (creditsError) {
-      setError('Erreur lors de la vérification des crédits.');
-      return false;
-    }
-    const parsed = data as Record<string, any>;
-    if (!parsed?.success) {
-      setCreditsInfo({ current: (parsed?.current_balance as number) ?? 0, required: (parsed?.required as number) ?? 1 });
-      setCreditsModalOpen(true);
-      return false;
-    }
-    return true;
-  };
+  // Credits are now debited server-side in the analyse-repas edge function
 
   // ── Analysis ─────────────────────────────────────────────────────────────
 
@@ -163,13 +145,13 @@ export default function ScanRepas() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setError('Veuillez vous connecter.'); setLoading(false); return; }
 
-      // Credits check
-      const ok = await checkCredits(user.id);
-      if (!ok) { setLoading(false); return; }
+      // Generate unique request_id for idempotency
+      const requestId = crypto.randomUUID();
 
-      // Send to webhook
+      // Send to edge function (credits are debited server-side)
       const formData = new FormData();
       formData.append('image', selectedFile);
+      formData.append('request_id', requestId);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000);
@@ -194,10 +176,19 @@ export default function ScanRepas() {
       console.log('[ScanRepas] Body preview:', raw.substring(0, 300));
 
       if (!response.ok) {
-        // Try to extract error message from n8n response
         let detail = '';
         try {
           const errJson = JSON.parse(raw);
+          // Handle insufficient credits from server
+          if (response.status === 402 || errJson?.error_code === 'INSUFFICIENT_CREDITS') {
+            setCreditsInfo({ 
+              current: errJson?.current_balance ?? 0, 
+              required: errJson?.required ?? SCAN_COST 
+            });
+            setCreditsModalOpen(true);
+            setLoading(false);
+            return;
+          }
           detail = errJson?.message || errJson?.error || '';
         } catch {
           if (raw.trim().startsWith('<!') || raw.includes('<html')) {
@@ -255,6 +246,10 @@ export default function ScanRepas() {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Prends une photo de ton repas et découvre instantanément ses apports nutritionnels.
           </p>
+          <div className="flex items-center justify-center gap-2 mt-4 text-sm text-muted-foreground bg-muted/50 px-4 py-2 rounded-full w-fit mx-auto">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span>Coût : {SCAN_COST} crédit{SCAN_COST > 1 ? 's' : ''} par analyse</span>
+          </div>
         </div>
 
         {/* Loading */}
@@ -373,7 +368,7 @@ export default function ScanRepas() {
         open={creditsModalOpen}
         onOpenChange={setCreditsModalOpen}
         currentBalance={creditsInfo?.current ?? 0}
-        required={creditsInfo?.required ?? 1}
+        required={creditsInfo?.required ?? SCAN_COST}
         feature="scanrepas"
       />
 

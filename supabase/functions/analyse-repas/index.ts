@@ -22,25 +22,26 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !data?.claims) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return new Response(
         JSON.stringify({ status: "erreur", message: "Token invalide ou expiré" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const userId = data.claims.sub;
-    console.log(`[analyse-repas] Authenticated user: ${userId}`);
+    console.log(`[analyse-repas] Authenticated user: ${user.id}`);
 
-    // ── Parse image ─────────────────────────────────────────────────────
+    // ── Parse form data ─────────────────────────────────────────────────
     const formData = await req.formData();
     const image = formData.get("image") as File | null;
+    const requestId = formData.get("request_id") as string | null;
 
     if (!image) {
       return new Response(
@@ -49,6 +50,100 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ── Read cost from feature_costs table ───────────────────────────────
+    const { data: costRow } = await supabaseAdmin
+      .from('feature_costs')
+      .select('cost')
+      .eq('feature', 'scan_repas')
+      .single();
+    const SCAN_COST = costRow?.cost ?? 4;
+
+    // ── Idempotency check ───────────────────────────────────────────────
+    if (requestId) {
+      const { data: existing } = await supabaseAdmin
+        .from('credit_transactions')
+        .select('id')
+        .eq('idempotency_key', `scanrepas:${requestId}`)
+        .maybeSingle();
+      
+      if (existing) {
+        console.log('[analyse-repas] Duplicate request_id, skipping charge');
+        // Don't re-charge but still process the image
+      } else {
+        // Consume credits
+        const { data: creditsResult, error: creditsError } = await supabaseAdmin.rpc('check_and_consume_credits', {
+          p_user_id: user.id,
+          p_feature: 'scanrepas',
+          p_cost: SCAN_COST,
+        });
+
+        if (creditsError) {
+          console.error('[analyse-repas] Credits error:', creditsError);
+          return new Response(
+            JSON.stringify({ status: "erreur", message: "Erreur lors de la vérification des crédits." }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+
+        const creditsData = creditsResult as { success: boolean; error_code?: string; current_balance?: number };
+        if (!creditsData.success) {
+          return new Response(
+            JSON.stringify({ 
+              status: "erreur",
+              error_code: "INSUFFICIENT_CREDITS",
+              message: "Crédits insuffisants",
+              current_balance: creditsData.current_balance,
+              required: SCAN_COST,
+            }),
+            { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+
+        // Tag transaction with idempotency key
+        if (requestId) {
+          await supabaseAdmin
+            .from('credit_transactions')
+            .update({ idempotency_key: `scanrepas:${requestId}` })
+            .eq('user_id', user.id)
+            .eq('feature', 'scanrepas')
+            .is('idempotency_key', null)
+            .order('created_at', { ascending: false })
+            .limit(1);
+        }
+      }
+    } else {
+      // No request_id: consume credits without idempotency (backward compat)
+      const { data: creditsResult, error: creditsError } = await supabaseAdmin.rpc('check_and_consume_credits', {
+        p_user_id: user.id,
+        p_feature: 'scanrepas',
+        p_cost: SCAN_COST,
+      });
+
+      if (creditsError) {
+        return new Response(
+          JSON.stringify({ status: "erreur", message: "Erreur lors de la vérification des crédits." }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      const creditsData = creditsResult as { success: boolean; error_code?: string; current_balance?: number };
+      if (!creditsData.success) {
+        return new Response(
+          JSON.stringify({ 
+            status: "erreur",
+            error_code: "INSUFFICIENT_CREDITS",
+            message: "Crédits insuffisants",
+            current_balance: creditsData.current_balance,
+            required: SCAN_COST,
+          }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
+    console.log(`[analyse-repas] Credits consumed (cost: ${SCAN_COST})`);
+
+    // ── Encode image ────────────────────────────────────────────────────
     const arrayBuffer = await image.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
     let binary = "";

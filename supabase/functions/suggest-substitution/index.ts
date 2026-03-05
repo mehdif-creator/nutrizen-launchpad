@@ -12,7 +12,6 @@ const ALLOWED_ORIGINS = [
   'https://nutrizen-launchpad.lovable.app',
 ];
 
-const SUBSTITUTION_COST = 5;
 const CACHE_DAYS = 30;
 
 function getCorsHeaders(origin: string | null): Record<string, string> {
@@ -27,6 +26,7 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
 const SubstitutionSchema = z.object({
   ingredient: z.string().trim().min(1, { message: "Ingredient name required" }).max(100, { message: "Ingredient name too long" }),
   recipe_id: z.string().uuid().optional(),
+  request_id: z.string().uuid().optional(),
   constraints: z.object({
     allergies: z.array(z.string()).optional(),
     diet: z.string().optional(),
@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
     // Parse and validate input
     const body = await req.json();
     const validatedInput = SubstitutionSchema.parse(body);
-    const { ingredient, recipe_id, constraints } = validatedInput;
+    const { ingredient, recipe_id, constraints, request_id } = validatedInput;
     
     const cacheKey = generateCacheKey(user.id, ingredient, recipe_id);
 
@@ -116,7 +116,36 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check and consume credits (idempotent)
+    // Read cost from feature_costs table (single source of truth)
+    const { data: costRow } = await supabaseAdmin
+      .from('feature_costs')
+      .select('cost')
+      .eq('feature', 'substitutions')
+      .single();
+    const SUBSTITUTION_COST = costRow?.cost ?? 1;
+
+    // Idempotency check: if request_id already consumed, return success without re-charging
+    if (request_id) {
+      const { data: existing } = await supabaseAdmin
+        .from('credit_transactions')
+        .select('id')
+        .eq('idempotency_key', `substitution:${request_id}`)
+        .maybeSingle();
+      
+      if (existing) {
+        console.log('[suggest-substitution] Duplicate request_id, skipping charge');
+        return new Response(JSON.stringify({ 
+          substitutions: [],
+          cached: false,
+          credits_charged: 0,
+          duplicate: true,
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // Check and consume credits
     const { data: creditsResult, error: creditsError } = await supabaseAdmin.rpc('check_and_consume_credits', {
       p_user_id: user.id,
       p_feature: 'substitution',
@@ -137,7 +166,7 @@ Deno.serve(async (req) => {
       console.log('Insufficient credits for user:', user.id);
       return new Response(
         JSON.stringify({ 
-          error: 'Insufficient credits',
+          error: 'Crédits insuffisants',
           error_code: 'INSUFFICIENT_CREDITS',
           current_balance: creditsData.current_balance,
           required: SUBSTITUTION_COST,
@@ -146,7 +175,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Credits consumed for substitution, user:', user.id);
+    // Tag the transaction with idempotency key
+    if (request_id) {
+      await supabaseAdmin
+        .from('credit_transactions')
+        .update({ idempotency_key: `substitution:${request_id}` })
+        .eq('user_id', user.id)
+        .eq('feature', 'substitution')
+        .is('idempotency_key', null)
+        .order('created_at', { ascending: false })
+        .limit(1);
+    }
+
+    console.log(`Credits consumed for substitution (cost: ${SUBSTITUTION_COST}), user:`, user.id);
     
     // Check OpenAI API key
     const openaiKey = Deno.env.get('OPENAI_API_KEY');
@@ -241,6 +282,7 @@ Réponds UNIQUEMENT en JSON valide, sans markdown, avec ce format:
       ...substitutionData,
       cached: false,
       credits_charged: SUBSTITUTION_COST,
+      cost: SUBSTITUTION_COST,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

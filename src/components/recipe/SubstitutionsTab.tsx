@@ -29,7 +29,7 @@ interface SubstitutionsTabProps {
   ingredients: Array<string | { name?: string; ingredient?: string }>;
 }
 
-const SUBSTITUTION_COST = getFeatureCost('substitutions');
+const SUBSTITUTION_COST = getFeatureCost('substitutions'); // 1 credit (from featureCosts.ts, synced with DB)
 
 export function SubstitutionsTab({ recipeId, ingredients }: SubstitutionsTabProps) {
   const { user } = useAuth();
@@ -50,6 +50,9 @@ export function SubstitutionsTab({ recipeId, ingredients }: SubstitutionsTabProp
 
   const handleFindSubstitutions = async () => {
     if (!selectedIngredient || !user?.id) return;
+
+    // Generate unique request_id for idempotency
+    const requestId = crypto.randomUUID();
 
     setIsLoading(true);
     setSubstitutions([]);
@@ -74,6 +77,7 @@ export function SubstitutionsTab({ recipeId, ingredients }: SubstitutionsTabProp
         body: {
           ingredient: selectedIngredient,
           recipe_id: recipeId,
+          request_id: requestId,
         },
         headers: {
           Authorization: `Bearer ${session.session.access_token}`,
