@@ -60,39 +60,6 @@ export default function InspiFrigo() {
     setError(null);
     setAnalysisResult(null);
 
-    // Vérification et déduction des crédits AVANT l'appel IA
-    let creditCheck;
-    try {
-      creditCheck = await callEdgeFunction<any>('deduct-credits', {
-        feature: 'inspi_frigo',
-        cost: cost,
-      });
-    } catch (err: any) {
-      const msg = err?.message || '';
-      try {
-        const parsed = JSON.parse(msg);
-        setCreditsInfo({
-          current: parsed.current_balance || 0,
-          required: parsed.required || cost,
-        });
-      } catch {
-        setCreditsInfo({ current: 0, required: cost });
-      }
-      setCreditsModalOpen(true);
-      setIsLoading(false);
-      return;
-    }
-
-    if (creditCheck?.error_code === 'INSUFFICIENT_CREDITS') {
-      setCreditsInfo({
-        current: creditCheck.current_balance || 0,
-        required: creditCheck.required || cost,
-      });
-      setCreditsModalOpen(true);
-      setIsLoading(false);
-      return;
-    }
-
     try {
       // Convert file to base64
       const base64 = await new Promise<string>((resolve, reject) => {
@@ -102,16 +69,27 @@ export default function InspiFrigo() {
         reader.readAsDataURL(selectedFile);
       });
 
-      // Call secure Edge Function (OpenAI key stays server-side)
-      const parsed = await callEdgeFunction<AnalysisResult>('analyze-fridge-photo', {
+      // Call Edge Function (handles credits + OpenAI in one atomic call)
+      const result = await callEdgeFunction<AnalysisResult & { error_code?: string; current_balance?: number; required?: number }>('analyze-fridge-photo', {
         image: base64,
       });
 
-      if ((parsed as any).error) {
-        throw new Error((parsed as any).error);
+      // Check for insufficient credits response
+      if ((result as any).error_code === 'INSUFFICIENT_CREDITS') {
+        setCreditsInfo({
+          current: (result as any).current_balance || 0,
+          required: (result as any).required || cost,
+        });
+        setCreditsModalOpen(true);
+        setIsLoading(false);
+        return;
       }
 
-      setAnalysisResult(parsed);
+      if ((result as any).error) {
+        throw new Error((result as any).error);
+      }
+
+      setAnalysisResult(result);
       toast.success("Analyse terminée !");
       queryClient.invalidateQueries({ queryKey: ["credits"] });
       queryClient.invalidateQueries({ queryKey: ["user-dashboard"] });
@@ -119,6 +97,23 @@ export default function InspiFrigo() {
 
     } catch (err: any) {
       const msg = err?.message || "Erreur lors de l'analyse";
+
+      // Try to parse insufficient credits from error message
+      if (msg.includes('INSUFFICIENT') || msg.includes('insuffisants')) {
+        try {
+          const parsed = JSON.parse(msg);
+          setCreditsInfo({
+            current: parsed.current_balance || 0,
+            required: parsed.required || cost,
+          });
+          setCreditsModalOpen(true);
+          setIsLoading(false);
+          return;
+        } catch {
+          // Not a JSON error, fall through
+        }
+      }
+
       setError(msg);
       toast.error(msg);
     } finally {
