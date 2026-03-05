@@ -150,10 +150,29 @@ export default function BlogPost() {
   const draftMeta = article.draft_meta as any;
   const faqItems = draftMeta?.faq as { q: string; a: string }[] | undefined;
 
-  // Build the article HTML with internal links injected
+  // Build the article HTML with placeholders replaced and internal links injected
+  let rawHtml = article.source === 'seo_factory'
+    ? (article.draft_html || article.content || '')
+    : (article.content || '');
+
+  // Replace image placeholders with real URLs
+  if (images && images.length > 0) {
+    images.forEach((img: any, index: number) => {
+      const n = index + 1;
+      const url = typeof img === 'string' ? img : img?.url || '';
+      const alt = typeof img === 'string' ? article.title : img?.alt || '';
+      rawHtml = rawHtml.split(`{{IMAGE_${n}_URL}}`).join(url);
+      rawHtml = rawHtml.split(`{{IMAGE_${n}_ALT}}`).join(alt);
+    });
+  }
+  // Remove any remaining unreplaced placeholders
+  rawHtml = rawHtml.replace(/\{\{IMAGE_\d+_URL\}\}/g, '');
+  rawHtml = rawHtml.replace(/\{\{IMAGE_\d+_ALT\}\}/g, '');
+  rawHtml = rawHtml.split('{{NUTRIZEN_CTA_URL}}').join('https://mynutrizen.fr');
+
   const htmlContent = article.source === 'seo_factory'
-    ? injectInternalLinks(article.draft_html || article.content || '', relatedArticles)
-    : article.content || '';
+    ? injectInternalLinks(rawHtml, relatedArticles)
+    : rawHtml;
 
   // Check if FAQ is already well-rendered in HTML
   const htmlHasFaq = htmlContent.toLowerCase().includes('<details') || htmlContent.toLowerCase().includes('faq');
@@ -176,11 +195,11 @@ export default function BlogPost() {
           <header className="mb-8">
             <div className="flex gap-2 mb-4">
               {article.tags?.map((tag) => (
-                <Badge key={tag} className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                <Badge key={tag} className="bg-secondary text-secondary-foreground">
                   {tag}
                 </Badge>
               )) || (
-                <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                <Badge className="bg-secondary text-secondary-foreground">
                   {article.cluster_context || 'Nutrition'}
                 </Badge>
               )}
