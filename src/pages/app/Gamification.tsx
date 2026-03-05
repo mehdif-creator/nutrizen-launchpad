@@ -1,13 +1,14 @@
 import { AppHeader } from '@/components/app/AppHeader';
 import { AppFooter } from '@/components/app/AppFooter';
+import { ProgressionCardV2 } from '@/components/gamification/ProgressionCardV2';
+import { ActivityFeedV2 } from '@/components/gamification/ActivityFeedV2';
+import { PointRulesCard } from '@/components/gamification/PointRulesCard';
+import { BadgesCarousel } from '@/components/gamification/BadgesCarousel';
+import { ReferralWidget } from '@/components/gamification/ReferralWidget';
 import { WalletCard } from '@/components/gamification/WalletCard';
 import { StreakWidget } from '@/components/gamification/StreakWidget';
-import { BadgesCarousel } from '@/components/gamification/BadgesCarousel';
-import { ActivityFeed } from '@/components/gamification/ActivityFeed';
-import { ReferralWidget } from '@/components/gamification/ReferralWidget';
-import { ScoreZenWidget } from '@/components/gamification/ScoreZenWidget';
-import { WeeklyChallenges } from '@/components/gamification/WeeklyChallenges';
-import { useDashboard, useAwardAppOpen } from '@/hooks/useGamificationDashboard';
+import { useDashboard } from '@/hooks/useGamificationDashboard';
+import { useEmitAppOpen } from '@/hooks/useGamificationV2';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -15,12 +16,12 @@ import { motion } from 'framer-motion';
 
 export default function Gamification() {
   const { data: dashboard, isLoading } = useDashboard();
-  const awardAppOpen = useAwardAppOpen();
+  const emitAppOpen = useEmitAppOpen();
   const navigate = useNavigate();
 
-  // Award app open on mount (once per day)
+  // Award app open on mount (once per day, idempotent)
   useEffect(() => {
-    awardAppOpen.mutate();
+    emitAppOpen();
   }, []);
 
   const handleBuyCredits = () => {
@@ -43,31 +44,6 @@ export default function Gamification() {
     );
   }
 
-  if (!dashboard) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <AppHeader />
-        <main className="flex-1 container mx-auto px-4 py-8">
-          <p className="text-center text-muted-foreground">
-            Erreur de chargement du dashboard
-          </p>
-        </main>
-        <AppFooter />
-      </div>
-    );
-  }
-
-  // Calculate Score Zen from dashboard data
-  const scoreZen = Math.min(100, Math.max(0, 
-    50 + 
-    (dashboard.streak.current_streak_days * 5) + 
-    (dashboard.badges.length * 3) +
-    Math.floor(dashboard.wallet.points_total / 50)
-  ));
-
-  // Get current week number
-  const weekNumber = Math.ceil((new Date().getTime() - new Date(new Date().getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
-
   return (
     <div className="min-h-screen flex flex-col">
       <AppHeader />
@@ -81,63 +57,56 @@ export default function Gamification() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2">
-              {dashboard.profile.display_name ? `Salut, ${dashboard.profile.display_name}!` : 'Ton Tableau de Bord'}
+              {dashboard?.profile.display_name
+                ? `Salut, ${dashboard.profile.display_name} !`
+                : 'Ton Tableau de Bord'}
             </h1>
             <p className="text-muted-foreground">
-              Gagne des points, débloque des badges et profite de tes récompenses
+              Gagne des points, monte de niveau et profite de tes récompenses
             </p>
           </div>
 
-          {/* Score Zen - NEW PROMINENT POSITION */}
-          <ScoreZenWidget
-            score={scoreZen}
-            weeklyChange={dashboard.streak.current_streak_days > 0 ? 12 : -5}
-            level={Math.min(4, Math.floor(dashboard.wallet.points_total / 250) + 1)}
-            levelName={
-              dashboard.wallet.points_total < 250 ? 'Apprenti Zen' :
-              dashboard.wallet.points_total < 500 ? 'Cuisinier Serein' :
-              dashboard.wallet.points_total < 1000 ? 'Maître Zen' : 'Zen Master'
-            }
-            nextLevelAt={
-              dashboard.wallet.points_total < 250 ? 250 :
-              dashboard.wallet.points_total < 500 ? 500 :
-              dashboard.wallet.points_total < 1000 ? 1000 : 2000
-            }
-            streak={dashboard.streak.current_streak_days}
-          />
+          {/* V2 Progression Card (reads from user_gamification_state) */}
+          <ProgressionCardV2 />
 
-          {/* Weekly Challenges - NEW */}
-          <WeeklyChallenges weekNumber={weekNumber} />
+          {/* Point Rules */}
+          <PointRulesCard />
 
-          {/* Wallet */}
-          <WalletCard
-            points={dashboard.wallet.points_total}
-            credits={dashboard.wallet.credits_total}
-            lifetimePoints={dashboard.wallet.lifetime_points}
-            onBuyCredits={handleBuyCredits}
-          />
+          {/* Wallet (still from legacy dashboard) */}
+          {dashboard && (
+            <WalletCard
+              points={dashboard.wallet.points_total}
+              credits={dashboard.wallet.credits_total}
+              lifetimePoints={dashboard.wallet.lifetime_points}
+              onBuyCredits={handleBuyCredits}
+            />
+          )}
 
           {/* Streak */}
-          <StreakWidget
-            currentStreak={dashboard.streak.current_streak_days}
-            longestStreak={dashboard.streak.longest_streak_days}
-          />
+          {dashboard && (
+            <StreakWidget
+              currentStreak={dashboard.streak.current_streak_days}
+              longestStreak={dashboard.streak.longest_streak_days}
+            />
+          )}
 
           {/* Badges */}
-          <BadgesCarousel earnedBadges={dashboard.badges} />
+          {dashboard && <BadgesCarousel earnedBadges={dashboard.badges} />}
 
           {/* Two Column Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Activity Feed */}
-            <ActivityFeed events={dashboard.recentEvents} />
+            {/* V2 Activity Feed */}
+            <ActivityFeedV2 />
 
             {/* Referral */}
-            <ReferralWidget
-              referralCode={dashboard.profile.referral_code}
-              activeReferrals={dashboard.activeReferrals}
-              freeMonthsEarned={dashboard.wallet.free_months_earned}
-              freeMonthsUsed={dashboard.wallet.free_months_used}
-            />
+            {dashboard && (
+              <ReferralWidget
+                referralCode={dashboard.profile.referral_code}
+                activeReferrals={dashboard.activeReferrals}
+                freeMonthsEarned={dashboard.wallet.free_months_earned}
+                freeMonthsUsed={dashboard.wallet.free_months_used}
+              />
+            )}
           </div>
         </motion.div>
       </main>
