@@ -26,10 +26,11 @@ interface Recipe {
 interface DayCardWithRecipesProps {
   day: string;
   date?: string; // YYYY-MM-DD format for linking to day menu
+  dayIndex?: number; // 0-6 day index for swap
   lunchRecipe?: Recipe | null;
   dinnerRecipe?: Recipe | null;
   onValidate?: (recipeId: string, mealType: 'lunch' | 'dinner') => void;
-  onSwap?: (recipeId: string, mealType: 'lunch' | 'dinner') => void;
+  onSwap?: (recipeId: string, mealType: 'lunch' | 'dinner', dayIndex: number) => void;
   onGenerateMeal?: (mealType: 'lunch' | 'dinner') => void;
   swapsRemaining?: number;
   householdAdults?: number;
@@ -41,18 +42,22 @@ interface DayCardWithRecipesProps {
 function MealSlot({
   recipe,
   mealType,
+  dayIndex,
   onValidate,
   onSwap,
   onGenerateMeal,
   swapsRemaining,
+  swapping,
   navigate,
 }: {
   recipe: Recipe | null | undefined;
   mealType: 'lunch' | 'dinner';
+  dayIndex: number;
   onValidate?: (recipeId: string, mealType: 'lunch' | 'dinner') => void;
-  onSwap?: (recipeId: string, mealType: 'lunch' | 'dinner') => void;
+  onSwap?: (recipeId: string, mealType: 'lunch' | 'dinner', dayIndex: number) => void;
   onGenerateMeal?: (mealType: 'lunch' | 'dinner') => void;
   swapsRemaining: number;
+  swapping?: boolean;
   navigate: (path: string) => void;
 }) {
   const Icon = mealType === 'lunch' ? Sun : Moon;
@@ -135,13 +140,13 @@ function MealSlot({
           Valider
         </Button>
         <Button
-          onClick={() => onSwap?.(recipe.recipe_id, mealType)}
+          onClick={() => onSwap?.(recipe.recipe_id, mealType, dayIndex)}
           size="sm"
           variant="outline"
-          disabled={swapsRemaining <= 0}
+          disabled={swapsRemaining <= 0 || swapping}
           className="text-xs"
         >
-          Swap {swapsRemaining > 0 ? `(${swapsRemaining})` : '(0)'}
+          {swapping ? 'Swap...' : `Swap ${swapsRemaining > 0 ? `(${swapsRemaining})` : '(0)'}`}
         </Button>
       </div>
       <Button
@@ -164,16 +169,18 @@ function MealSlot({
 export function DayCardWithRecipes({
   day,
   date,
+  dayIndex = 0,
   lunchRecipe,
   dinnerRecipe,
   onValidate,
   onSwap,
   onGenerateMeal,
   swapsRemaining = 0,
+  swapping,
   householdAdults = 1,
   householdChildren = 0,
   'data-onboarding-target': dataOnboardingTarget,
-}: DayCardWithRecipesProps) {
+}: DayCardWithRecipesProps & { swapping?: boolean }) {
   const navigate = useNavigate();
   const effectiveSize = (householdAdults + householdChildren * 0.7).toFixed(1);
 
@@ -219,19 +226,23 @@ export function DayCardWithRecipes({
         <MealSlot
           recipe={lunchRecipe}
           mealType="lunch"
+          dayIndex={dayIndex}
           onValidate={onValidate}
           onSwap={onSwap}
           onGenerateMeal={onGenerateMeal}
           swapsRemaining={swapsRemaining}
+          swapping={swapping}
           navigate={navigate}
         />
         <MealSlot
           recipe={dinnerRecipe}
           mealType="dinner"
+          dayIndex={dayIndex}
           onValidate={onValidate}
           onSwap={onSwap}
           onGenerateMeal={onGenerateMeal}
           swapsRemaining={swapsRemaining}
+          swapping={swapping}
           navigate={navigate}
         />
       </div>

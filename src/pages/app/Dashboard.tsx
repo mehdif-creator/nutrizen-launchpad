@@ -92,6 +92,7 @@ export default function Dashboard() {
   }, [user?.id]);
 
   const [generating, setGenerating] = useState(false);
+  const [swapping, setSwapping] = useState(false);
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
   const [creditsError, setCreditsError] = useState<{
     currentBalance: number;
@@ -162,10 +163,15 @@ export default function Dashboard() {
 
   const loading = statsLoading || menuLoading;
 
-  const handleSwap = async (recipeId: string, mealType: 'lunch' | 'dinner') => {
-    if (!user?.id || !menu) return;
+  const handleSwap = async (recipeId: string, mealType: 'lunch' | 'dinner', dayIndex: number) => {
+    if (!user?.id || !menu || swapping) return;
+
+    // Generate unique request_id for idempotency (prevents double-charge on double-click)
+    const requestId = crypto.randomUUID();
 
     try {
+      setSwapping(true);
+
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
         throw new Error("No session");
@@ -189,6 +195,8 @@ export default function Dashboard() {
         body: {
           recipe_id: recipeId,
           meal_type: mealType,
+          day: dayIndex,
+          request_id: requestId,
         },
       });
 
@@ -197,18 +205,20 @@ export default function Dashboard() {
       if (data.success) {
         toast({
           title: "Recette changée !",
-          description: `Il te reste ${data.creditsRemaining} Crédits Zen.`,
+          description: `Nouvelle recette : ${data.newRecipe?.title || 'OK'}. Il te reste ${data.creditsRemaining} Crédits Zen.`,
         });
-        // Explicitly invalidate all queries for immediate UI update
+        // Invalidate all queries for immediate UI update
         invalidateAll();
       } else if (data.error_code === 'INSUFFICIENT_CREDITS') {
-        // Show credits modal
         setCreditsError({
           currentBalance: data.current_balance || 0,
           required: data.required || 1,
           feature: 'swap',
         });
         setCreditsModalOpen(true);
+      } else if (data.error_code === 'DUPLICATE_REQUEST') {
+        // Idempotent: already processed, just refresh UI
+        invalidateAll();
       } else {
         toast({
           title: "Erreur",
@@ -223,6 +233,8 @@ export default function Dashboard() {
         description: "Une erreur est survenue lors du swap.",
         variant: "destructive",
       });
+    } finally {
+      setSwapping(false);
     }
   };
 
@@ -476,6 +488,7 @@ export default function Dashboard() {
                     key={`${dayData.day_name}-${i}`}
                     day={dayData.day_name}
                     date={dayData.date}
+                    dayIndex={dayData.day_index}
                     lunchRecipe={dayData.lunch ? {
                       recipe_id: dayData.lunch.recipe_id,
                       title: dayData.lunch.title,
@@ -507,6 +520,7 @@ export default function Dashboard() {
                     onValidate={handleValidateMeal}
                     onSwap={handleSwap}
                     swapsRemaining={stats.credits_zen}
+                    swapping={swapping}
                     householdAdults={householdAdults}
                     householdChildren={householdChildren}
                     data-onboarding-target={i === 0 ? "meal-card" : undefined}
