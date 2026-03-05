@@ -46,6 +46,7 @@ const AdminConversion = lazy(() => import('./pages/admin/AdminConversion'));
 const AdminMacrosMaintenance = lazy(() => import('./pages/admin/AdminMacrosMaintenance'));
 const AdminHealth = lazy(() => import('./pages/admin/AdminHealth'));
 const AutomationIndex = lazy(() => import('./pages/admin/AutomationIndex'));
+const AdminSeoFactory = lazy(() => import('./pages/admin/AdminSeoFactory'));
 
 // KPI Detail Pages
 const KpiMrr = lazy(() => import('./pages/admin/kpis/KpiMrr'));
@@ -140,6 +141,7 @@ const App = () => {
         <Route path="/admin/macros-maintenance" element={<ProtectedRoute requireAdmin><AdminMacrosMaintenance /></ProtectedRoute>} />
         <Route path="/admin/health" element={<ProtectedRoute requireAdmin><AdminHealth /></ProtectedRoute>} />
         <Route path="/admin/automation/*" element={<ProtectedRoute requireAdmin><AutomationIndex /></ProtectedRoute>} />
+        <Route path="/admin/seo-factory" element={<ProtectedRoute requireAdmin><AdminSeoFactory /></ProtectedRoute>} />
 
         {/* Admin KPI Detail Pages */}
         <Route path="/admin/kpis/mrr" element={<ProtectedRoute requireAdmin><KpiMrr /></ProtectedRoute>} />
