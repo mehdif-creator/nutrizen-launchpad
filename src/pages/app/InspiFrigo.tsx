@@ -60,7 +60,7 @@ export default function InspiFrigo() {
     setError(null);
     setAnalysisResult(null);
 
-    // Vérification et déduction des crédits AVANT l'appel OpenAI
+    // Vérification et déduction des crédits AVANT l'appel IA
     let creditCheck;
     try {
       creditCheck = await callEdgeFunction<any>('deduct-credits', {
@@ -94,89 +94,22 @@ export default function InspiFrigo() {
     }
 
     try {
+      // Convert file to base64
       const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
-        reader.onloadend = () => resolve((reader.result as string).split(",")[1]);
+        reader.onloadend = () => resolve(reader.result as string);
         reader.onerror = reject;
         reader.readAsDataURL(selectedFile);
       });
 
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-4o",
-          max_tokens: 2000,
-          messages: [
-            {
-              role: "system",
-              content: `Tu es un chef cuisinier expert et nutritionniste. 
-Ton rôle est d'analyser une photo de frigo ou d'ingrédients, puis de proposer des recettes réalisables.
-
-INSTRUCTIONS :
-- Identifie précisément tous les ingrédients visibles sur la photo avec leur quantité estimée.
-- Propose entre 2 et 4 recettes réalisables UNIQUEMENT avec ces ingrédients (sel, poivre, huile, eau autorisés).
-- Chaque recette doit être simple, pratique et détaillée.
-- Réponds UNIQUEMENT en JSON valide, sans markdown, sans texte autour.
-
-FORMAT DE RÉPONSE OBLIGATOIRE :
-{
-  "ingredients_identifies": [
-    { "nom": "string", "quantite": "string" }
-  ],
-  "recettes": [
-    {
-      "nom": "string",
-      "description": "string (1 phrase accrocheuse)",
-      "difficulte": "Facile | Moyen | Difficile",
-      "temps_preparation": "string (ex: 10 min)",
-      "temps_cuisson": "string (ex: 20 min)",
-      "portions": number,
-      "ingredients_necessaires": ["string"],
-      "etapes": ["string"],
-      "note_nutritionnelle": "string"
-    }
-  ]
-}
-
-Si l'image est illisible ou ne contient pas d'ingrédients, retourne :
-{ "error": "Image non exploitable" }`
-            },
-            {
-              role: "user",
-              content: [
-                {
-                  type: "image_url",
-                  image_url: {
-                    url: `data:image/jpeg;base64,${base64}`,
-                    detail: "high"
-                  }
-                },
-                {
-                  type: "text",
-                  text: "Analyse cette photo et propose-moi des recettes avec ce que tu vois."
-                }
-              ]
-            }
-          ]
-        }),
+      // Call secure Edge Function (OpenAI key stays server-side)
+      const parsed = await callEdgeFunction<AnalysisResult>('analyze-fridge-photo', {
+        image: base64,
       });
 
-      if (!response.ok) {
-        throw new Error(`Erreur OpenAI : ${response.status}`);
+      if ((parsed as any).error) {
+        throw new Error((parsed as any).error);
       }
-
-      const openaiData = await response.json();
-      const content = openaiData.choices?.[0]?.message?.content;
-
-      if (!content) throw new Error("Réponse vide d'OpenAI");
-
-      const parsed = JSON.parse(content);
-
-      if (parsed.error) throw new Error(parsed.error);
 
       setAnalysisResult(parsed);
       toast.success("Analyse terminée !");
