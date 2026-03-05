@@ -32,7 +32,7 @@ function mapSeoArticle(a: any): BlogArticle {
     excerpt: outline?.excerpt || null,
     cover_url: images?.[0]?.url || images?.[0] || null,
     tags: a.cluster_context ? [a.cluster_context] : null,
-    published_at: a.published_at || a.created_at,
+    published_at: a.created_at,
     content: a.draft_html,
     author: 'NutriZen',
     cluster_context: a.cluster_context,

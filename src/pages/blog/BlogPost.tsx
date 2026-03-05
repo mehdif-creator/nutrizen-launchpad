@@ -209,7 +209,7 @@ export default function BlogPost() {
 
           {/* Article Content */}
           <article
-            className="prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-a:text-primary"
+            className="article-content prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-a:text-primary"
             dangerouslySetInnerHTML={{ __html: htmlContent }}
           />
 
