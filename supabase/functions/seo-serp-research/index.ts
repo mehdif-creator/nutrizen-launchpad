@@ -1,29 +1,31 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getCorsHeaders } from "../_shared/security.ts";
+import { requireAdmin } from "../_shared/auth.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+function getAdminClient() {
+  return createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+}
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // --- JWT validation + admin role check ---
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
     }
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const { data: claims, error: claimsErr } = await supabase.auth.getClaims(authHeader.replace("Bearer ", ""));
-    if (claimsErr || !claims?.claims?.sub) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+    const token = authHeader.replace("Bearer ", "");
+    const adminClient = getAdminClient();
+    const { data: { user }, error: authError } = await adminClient.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Invalid or expired token" }), { status: 401, headers: corsHeaders });
     }
+    await requireAdmin(adminClient, user.id);
+    // --- end auth ---
 
     const { keyword, cluster_context, article_id } = await req.json();
     if (!keyword) {
@@ -53,7 +55,6 @@ Deno.serve(async (req) => {
 
     const serpData = await serpRes.json();
 
-    // Extract organic results snapshot
     const organicResults = (serpData.organic_results || []).slice(0, 10).map((r: any) => ({
       position: r.position,
       title: r.title,
@@ -62,19 +63,10 @@ Deno.serve(async (req) => {
       displayed_link: r.displayed_link,
     }));
 
-    // Extract PAA questions
     const paaQuestions = (serpData.related_questions || []).map((q: any) => q.question).filter(Boolean);
-
-    // Extract related searches
     const relatedKeywords = (serpData.related_searches || []).map((s: any) => s.query).filter(Boolean);
 
     const serpSnapshot = JSON.stringify(organicResults, null, 2);
-
-    // Create or update seo_articles row
-    const adminClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
 
     let rowId = article_id;
     if (!rowId) {
@@ -87,7 +79,7 @@ Deno.serve(async (req) => {
           serp_snapshot: organicResults,
           paa_questions: paaQuestions,
           related_keywords: relatedKeywords,
-          created_by: claims.claims.sub,
+          created_by: user.id,
         })
         .select("id")
         .single();
@@ -124,8 +116,10 @@ Deno.serve(async (req) => {
 
   } catch (err) {
     console.error("[seo-serp-research] Error:", err);
-    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    const status = (err as any)?.status || (msg === "Admin access required" ? 403 : 500);
+    return new Response(JSON.stringify({ error: msg }), {
+      status, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
