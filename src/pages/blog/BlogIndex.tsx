@@ -1,14 +1,14 @@
-import { Link } from 'react-router-dom';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/landing/Header';
 import { Footer } from '@/components/landing/Footer';
 import { AppHeader } from '@/components/app/AppHeader';
 import { AppFooter } from '@/components/app/AppFooter';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useBlogArticles } from '@/hooks/useBlogArticles';
+import { useBlogArticles, BlogArticle } from '@/hooks/useBlogArticles';
 import { useSeoMeta } from '@/hooks/useSeoMeta';
+import { Search, X } from 'lucide-react';
 
 function formatDate(dateStr: string | null) {
   if (!dateStr) return '';
@@ -17,9 +17,126 @@ function formatDate(dateStr: string | null) {
   });
 }
 
+function normalize(str: string): string {
+  return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function highlightText(text: string, query: string): string {
+  if (!query.trim() || !text) return text;
+  const escaped = query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+  return text.replace(regex, '<mark class="bg-yellow-200 rounded-sm px-0.5">$1</mark>');
+}
+
+function getReadingTime(article: BlogArticle): number {
+  return parseInt(article.outline?.reading_time_minutes || '5', 10);
+}
+
+function getTitle(article: BlogArticle): string {
+  return article.outline?.title || article.title || '';
+}
+
+function getExcerpt(article: BlogArticle): string {
+  return article.outline?.excerpt || article.excerpt || '';
+}
+
 export default function BlogIndex() {
   const { user } = useAuth();
   const { articles, loading } = useBlogArticles();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // State from URL params
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('categorie') || 'Tous');
+  const [readingTimeFilter, setReadingTimeFilter] = useState(searchParams.get('duree') || '');
+  const [sortBy, setSortBy] = useState(searchParams.get('tri') || 'recent');
+
+  // Debounced search
+  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  // Sync state → URL
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (debouncedQuery) params.set('q', debouncedQuery);
+    if (selectedCategory && selectedCategory !== 'Tous') params.set('categorie', selectedCategory);
+    if (readingTimeFilter) params.set('duree', readingTimeFilter);
+    if (sortBy && sortBy !== 'recent') params.set('tri', sortBy);
+    setSearchParams(params, { replace: true });
+  }, [debouncedQuery, selectedCategory, readingTimeFilter, sortBy, setSearchParams]);
+
+  // Extract unique categories
+  const categories = useMemo(() => {
+    const cats = new Set<string>();
+    articles.forEach(a => {
+      const c = a.cluster_context || a.tags?.[0];
+      if (c) cats.add(c);
+    });
+    return ['Tous', ...Array.from(cats).sort((a, b) => a.localeCompare(b, 'fr'))];
+  }, [articles]);
+
+  // Combined filtering + sorting
+  const filteredArticles = useMemo(() => {
+    let result = [...articles];
+
+    // 1. Text search
+    if (debouncedQuery.trim()) {
+      const q = normalize(debouncedQuery);
+      result = result.filter(a => {
+        const fields = [
+          getTitle(a),
+          getExcerpt(a),
+          a.outline?.meta_description,
+          (a as any).keyword,
+          a.cluster_context,
+        ].filter(Boolean).join(' ');
+        return normalize(fields).includes(q);
+      });
+    }
+
+    // 2. Category
+    if (selectedCategory && selectedCategory !== 'Tous') {
+      result = result.filter(a =>
+        (a.cluster_context || a.tags?.[0]) === selectedCategory
+      );
+    }
+
+    // 3. Reading time
+    if (readingTimeFilter) {
+      result = result.filter(a => {
+        const t = getReadingTime(a);
+        if (readingTimeFilter === 'short') return t <= 3;
+        if (readingTimeFilter === 'medium') return t > 3 && t <= 7;
+        if (readingTimeFilter === 'long') return t > 7;
+        return true;
+      });
+    }
+
+    // 4. Sort
+    result.sort((a, b) => {
+      if (sortBy === 'oldest')
+        return new Date(a.published_at || 0).getTime() - new Date(b.published_at || 0).getTime();
+      if (sortBy === 'score')
+        return (b.qa_score || 0) - (a.qa_score || 0);
+      if (sortBy === 'az')
+        return getTitle(a).localeCompare(getTitle(b), 'fr');
+      return new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime();
+    });
+
+    return result;
+  }, [articles, debouncedQuery, selectedCategory, readingTimeFilter, sortBy]);
+
+  const hasActiveFilters = debouncedQuery.trim() !== '' || selectedCategory !== 'Tous' || readingTimeFilter !== '';
+
+  const resetAllFilters = useCallback(() => {
+    setSearchQuery('');
+    setSelectedCategory('Tous');
+    setReadingTimeFilter('');
+    setSortBy('recent');
+  }, []);
 
   useSeoMeta(
     'Blog NutriZen — Conseils nutrition & recettes healthy',
@@ -27,55 +144,127 @@ export default function BlogIndex() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background">
       {user ? <AppHeader /> : <Header onCtaClick={() => {}} />}
 
       <main className="flex-1 container py-16">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold mb-4">Blog NutriZen</h1>
-          <p className="text-xl text-muted-foreground mb-12">
-            Conseils nutrition, astuces cuisine et guides pratiques
-          </p>
+        <div className="max-w-5xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold mb-3 text-foreground">Blog NutriZen</h1>
+            <p className="text-lg text-muted-foreground">
+              Conseils nutrition, astuces cuisine et guides pratiques
+            </p>
+          </div>
 
+          {/* Search bar */}
+          <div className="max-w-[600px] mx-auto mb-8 relative">
+            <input
+              type="text"
+              placeholder="Rechercher un article, une recette, un conseil..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full py-4 pl-5 pr-12 text-base border-2 border-border rounded-full bg-background text-foreground placeholder:text-muted-foreground outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm"
+            />
+            <Search className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          </div>
+
+          {/* Filters row */}
+          <div className="flex flex-wrap items-center justify-center gap-2.5 mb-10 px-4">
+            {/* Category pills */}
+            {categories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-4 py-2 text-sm font-medium rounded-full border-2 transition-all cursor-pointer
+                  ${selectedCategory === cat
+                    ? 'bg-primary border-primary text-primary-foreground'
+                    : 'bg-background border-border text-foreground hover:bg-secondary hover:border-primary/40'
+                  }`}
+              >
+                {cat}
+              </button>
+            ))}
+
+            {/* Separator */}
+            <div className="w-px h-6 bg-border mx-1 hidden sm:block" />
+
+            {/* Reading time */}
+            <select
+              value={readingTimeFilter}
+              onChange={e => setReadingTimeFilter(e.target.value)}
+              className="px-4 py-2 border-2 border-border rounded-full bg-background text-sm text-foreground cursor-pointer outline-none appearance-none pr-8 hover:border-primary/40 transition-colors"
+            >
+              <option value="">⏱ Durée</option>
+              <option value="short">≤ 3 min</option>
+              <option value="medium">3 – 7 min</option>
+              <option value="long">&gt; 7 min</option>
+            </select>
+
+            {/* Sort */}
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value)}
+              className="px-4 py-2 border-2 border-border rounded-full bg-background text-sm text-foreground cursor-pointer outline-none appearance-none pr-8 hover:border-primary/40 transition-colors"
+            >
+              <option value="recent">📅 Récents</option>
+              <option value="oldest">📅 Anciens</option>
+              <option value="score">⭐ Score SEO</option>
+              <option value="az">🔤 A → Z</option>
+            </select>
+
+            {/* Clear filters */}
+            {hasActiveFilters && (
+              <button
+                onClick={resetAllFilters}
+                className="flex items-center gap-1.5 px-4 py-2 text-sm text-muted-foreground border border-border rounded-full hover:bg-secondary transition-colors cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+                Effacer
+              </button>
+            )}
+
+            {/* Count */}
+            {!loading && (
+              <span className="text-sm text-muted-foreground ml-auto">
+                {filteredArticles.length} article{filteredArticles.length > 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+
+          {/* Content */}
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {[1, 2, 3].map(i => (
-                <Skeleton key={i} className="h-80 rounded-xl" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <Skeleton key={i} className="h-80 rounded-2xl" />
               ))}
             </div>
-          ) : articles.length === 0 ? (
-            <p className="text-muted-foreground text-center py-12">Aucun article publié pour le moment.</p>
+          ) : filteredArticles.length === 0 ? (
+            /* Empty state */
+            <div className="text-center py-20">
+              <div className="text-5xl mb-4">🔍</div>
+              <h3 className="text-xl font-semibold text-foreground mb-2">
+                Aucun article trouvé
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                Essayez avec d'autres mots-clés ou une autre catégorie.
+              </p>
+              <button
+                onClick={resetAllFilters}
+                className="px-6 py-2.5 bg-primary text-primary-foreground rounded-full font-semibold cursor-pointer hover:opacity-90 transition-opacity"
+              >
+                Réinitialiser les filtres
+              </button>
+            </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {articles.map((post) => (
-                <Link key={post.id} to={`/blog/${post.slug}`}>
-                  <Card className="overflow-hidden hover:shadow-lg transition-all h-full">
-                    {post.cover_url && (
-                      <img
-                        src={post.cover_url}
-                        alt={post.title}
-                        className="w-full h-48 object-cover"
-                        loading="lazy"
-                      />
-                    )}
-                    <div className="p-6">
-                      <div className="flex gap-2 mb-3">
-                        {post.tags?.map((tag) => (
-                          <Badge key={tag} variant="secondary">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                      <h2 className="text-2xl font-bold mb-2 hover:text-primary transition-colors">
-                        {post.title}
-                      </h2>
-                      {post.excerpt && (
-                        <p className="text-muted-foreground mb-4">{post.excerpt}</p>
-                      )}
-                      <p className="text-sm text-muted-foreground">{formatDate(post.published_at)}</p>
-                    </div>
-                  </Card>
-                </Link>
+            /* Article grid */
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredArticles.map(article => (
+                <ArticleCard
+                  key={article.id}
+                  article={article}
+                  searchQuery={debouncedQuery}
+                />
               ))}
             </div>
           )}
@@ -84,5 +273,62 @@ export default function BlogIndex() {
 
       {user ? <AppFooter /> : <Footer />}
     </div>
+  );
+}
+
+function ArticleCard({ article, searchQuery }: { article: BlogArticle; searchQuery: string }) {
+  const title = getTitle(article);
+  const excerpt = getExcerpt(article);
+  const coverUrl = article.cover_url || (article.image_urls as any)?.[0]?.url || null;
+  const category = article.cluster_context || article.tags?.[0] || 'Nutrition';
+  const readingTime = getReadingTime(article);
+
+  return (
+    <Link to={`/blog/${article.slug}`} className="group block">
+      <article className="border border-border rounded-2xl overflow-hidden bg-card flex flex-col h-full transition-all duration-200 group-hover:shadow-xl group-hover:-translate-y-1 group-hover:border-primary/40">
+        {/* Image */}
+        <div className="h-[200px] overflow-hidden bg-muted flex-shrink-0">
+          {coverUrl ? (
+            <img
+              src={coverUrl}
+              alt={title}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-4xl">🥗</div>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="p-5 flex-1 flex flex-col">
+          <span className="inline-block self-start bg-secondary text-primary text-xs font-semibold px-2.5 py-1 rounded-full mb-2.5 uppercase tracking-wide">
+            {category}
+          </span>
+
+          <h2
+            className="text-[1.0625rem] font-bold text-foreground mb-2.5 leading-snug line-clamp-2"
+            dangerouslySetInnerHTML={{ __html: highlightText(title, searchQuery) }}
+          />
+
+          {excerpt && (
+            <p
+              className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1 line-clamp-3"
+              dangerouslySetInnerHTML={{ __html: highlightText(excerpt, searchQuery) }}
+            />
+          )}
+
+          <div className="flex justify-between items-center pt-3.5 border-t border-border mt-auto">
+            <div className="flex gap-3 text-xs text-muted-foreground">
+              <span>📅 {formatDate(article.published_at)}</span>
+              <span>⏱ {readingTime} min</span>
+            </div>
+            <span className="text-xs text-primary font-semibold">
+              Lire →
+            </span>
+          </div>
+        </div>
+      </article>
+    </Link>
   );
 }
