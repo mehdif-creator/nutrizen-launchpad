@@ -196,3 +196,59 @@ verify_jwt = false
 [functions.analyse-repas.rate_limit]
 limit = 30
 period = "1h"
+
+[functions.seo-serp-research]
+verify_jwt = false
+
+[functions.seo-serp-research.rate_limit]
+limit = 20
+period = "1h"
+
+[functions.seo-brief]
+verify_jwt = false
+
+[functions.seo-brief.rate_limit]
+limit = 20
+period = "1h"
+
+[functions.seo-outline]
+verify_jwt = false
+
+[functions.seo-outline.rate_limit]
+limit = 20
+period = "1h"
+
+[functions.seo-image-gen]
+verify_jwt = false
+
+[functions.seo-image-gen.rate_limit]
+limit = 10
+period = "1h"
+
+[functions.seo-draft]
+verify_jwt = false
+
+[functions.seo-draft.rate_limit]
+limit = 20
+period = "1h"
+
+[functions.seo-qa]
+verify_jwt = false
+
+[functions.seo-qa.rate_limit]
+limit = 20
+period = "1h"
+
+[functions.seo-improve]
+verify_jwt = false
+
+[functions.seo-improve.rate_limit]
+limit = 20
+period = "1h"
+
+[functions.seo-keyword-expand]
+verify_jwt = false
+
+[functions.seo-keyword-expand.rate_limit]
+limit = 20
+period = "1h"
