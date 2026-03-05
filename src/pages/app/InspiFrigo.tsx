@@ -69,7 +69,7 @@ export default function InspiFrigo() {
       formData.append("image", selectedFile);
 
       const response = await fetch(
-        "https://n8n.srv1005117.hstgr.cloud/webhook/analyse-frigo",
+        "https://n8n.srv1005117.hstgr.cloud/webhook-test/analyse-frigo",
         {
           method: "POST",
           body: formData,
