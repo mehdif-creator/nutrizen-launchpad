@@ -71,6 +71,7 @@ export function subscribeToUserStats(
 
 /**
  * Subscribe to user_gamification changes for a specific user
+ * @deprecated Use realtime in useGamificationV2 instead
  */
 export function subscribeToGamification(
   userId: string,
@@ -83,7 +84,7 @@ export function subscribeToGamification(
       {
         event: '*',
         schema: 'public',
-        table: 'user_gamification',
+        table: 'user_gamification_state',
         filter: `user_id=eq.${userId}`,
       },
       (payload) => {

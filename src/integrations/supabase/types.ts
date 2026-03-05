@@ -825,6 +825,51 @@ export type Database = {
         }
         Relationships: []
       }
+      gamification_levels: {
+        Row: {
+          level: number
+          min_points: number
+          name_fr: string
+        }
+        Insert: {
+          level: number
+          min_points: number
+          name_fr: string
+        }
+        Update: {
+          level?: number
+          min_points?: number
+          name_fr?: string
+        }
+        Relationships: []
+      }
+      gamification_point_rules: {
+        Row: {
+          active: boolean
+          event_type: string
+          label_fr: string
+          max_per_day: number | null
+          points: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          event_type: string
+          label_fr?: string
+          max_per_day?: number | null
+          points?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          event_type?: string
+          label_fr?: string
+          max_per_day?: number | null
+          points?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       grocery_lists: {
         Row: {
           generated_at: string
@@ -2944,6 +2989,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_gamification_state: {
+        Row: {
+          last_activity_date: string | null
+          level: number
+          streak_days: number
+          total_points: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          last_activity_date?: string | null
+          level?: number
+          streak_days?: number
+          total_points?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          last_activity_date?: string | null
+          level?: number
+          streak_days?: number
+          total_points?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_points: {
         Row: {
           created_at: string | null
@@ -3843,6 +3915,14 @@ export type Database = {
       }
       fn_cleanup_expired_credits: { Args: never; Returns: undefined }
       fn_consume_credit: { Args: { p_count: number }; Returns: boolean }
+      fn_emit_gamification_event: {
+        Args: {
+          p_event_type: string
+          p_idempotency_key?: string
+          p_meta?: Json
+        }
+        Returns: Json
+      }
       fn_get_dashboard: { Args: never; Returns: Json }
       fn_points_to_credits: { Args: { p_points: number }; Returns: boolean }
       fn_touch_streak_today: { Args: never; Returns: undefined }
