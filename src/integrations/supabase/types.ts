@@ -2228,6 +2228,36 @@ export type Database = {
           },
         ]
       }
+      share_links: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          plan_id: string | null
+          token: string
+          user_id: string
+          week_start_date: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan_id?: string | null
+          token?: string
+          user_id: string
+          week_start_date: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan_id?: string | null
+          token?: string
+          user_id?: string
+          week_start_date?: string
+        }
+        Relationships: []
+      }
       shopping_aisles: {
         Row: {
           aisle: string
@@ -4327,6 +4357,7 @@ export type Database = {
           week_start: string
         }[]
       }
+      get_shared_week_plan: { Args: { p_token: string }; Returns: Json }
       get_shopping_list_from_menu: {
         Args: {
           p_exclude?: string[]
