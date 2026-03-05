@@ -1,159 +1,125 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { createClient } from '../_shared/deps.ts';
-import { ImageUploadSchema, validate } from '../_shared/validation.ts';
-import { checkRateLimit, rateLimitExceededResponse } from '../_shared/rateLimit.ts';
-import { getCorsHeaders } from '../_shared/security.ts';
+import { withSecurity, SecurityContext, Logger } from '../_shared/security.ts';
+
+interface AnalyzeFridgeBody {
+  image: string; // base64 data URL
+}
+
+const SYSTEM_PROMPT = `Tu es un chef cuisinier expert et nutritionniste. 
+Ton rôle est d'analyser une photo de frigo ou d'ingrédients, puis de proposer des recettes réalisables.
+
+INSTRUCTIONS :
+- Identifie précisément tous les ingrédients visibles sur la photo avec leur quantité estimée.
+- Propose entre 2 et 4 recettes réalisables UNIQUEMENT avec ces ingrédients (sel, poivre, huile, eau autorisés).
+- Chaque recette doit être simple, pratique et détaillée.
+- Réponds UNIQUEMENT en JSON valide, sans markdown, sans texte autour.
+
+FORMAT DE RÉPONSE OBLIGATOIRE :
+{
+  "ingredients_identifies": [
+    { "nom": "string", "quantite": "string" }
+  ],
+  "recettes": [
+    {
+      "nom": "string",
+      "description": "string (1 phrase accrocheuse)",
+      "difficulte": "Facile | Moyen | Difficile",
+      "temps_preparation": "string (ex: 10 min)",
+      "temps_cuisson": "string (ex: 20 min)",
+      "portions": number,
+      "ingredients_necessaires": ["string"],
+      "etapes": ["string"],
+      "note_nutritionnelle": "string"
+    }
+  ]
+}
+
+Si l'image est illisible ou ne contient pas d'ingrédients, retourne :
+{ "error": "Image non exploitable" }`;
 
 Deno.serve(async (req) => {
-  const origin = req.headers.get('origin');
-  const corsHeaders = getCorsHeaders(origin);
-  
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  return withSecurity<AnalyzeFridgeBody>(
+    req,
+    {
+      requireAuth: true,
+      rateLimit: { maxTokens: 10, refillRate: 10, cost: 1 },
+    },
+    async (context: SecurityContext, body: AnalyzeFridgeBody, logger: Logger) => {
+      const { image } = body;
 
-  try {
-    // Verify authentication
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    
-    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
-
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    
-    if (authError || !user) {
-      console.error('Authentication error:', authError);
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // ── Rate limiting ─────────────────────────────────────────────────────────
-    const rl = await checkRateLimit(supabaseClient, {
-      identifier: `user:${user.id}`,
-      endpoint:   'analyze-fridge-photo',
-      maxTokens:  5,
-      refillRate: 5,
-      cost:       600,
-    });
-    if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
-    // ── End rate limiting ──────────────────────────────────────────────────────
-
-    // Check subscription status
-    const { data: subscription, error: subError } = await supabaseClient
-      .from('subscriptions')
-      .select('status, trial_end')
-      .eq('user_id', user.id)
-      .single();
-
-    if (subError || !subscription) {
-      console.error('Subscription check error:', subError);
-      return new Response(
-        JSON.stringify({ error: 'No active subscription found' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Validate subscription is active or trialing
-    if (subscription.status !== 'active' && subscription.status !== 'trialing') {
-      return new Response(
-        JSON.stringify({ error: 'Active subscription required' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Check if trial has expired
-    if (subscription.status === 'trialing' && subscription.trial_end) {
-      const trialEnd = new Date(subscription.trial_end);
-      if (trialEnd < new Date()) {
-        return new Response(
-          JSON.stringify({ error: 'Trial expired' }),
-          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      if (!image || typeof image !== 'string') {
+        throw new Error('Le champ "image" est requis (base64 data URL).');
       }
+
+      const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+      if (!OPENAI_API_KEY) {
+        throw new Error('OPENAI_API_KEY is not configured');
+      }
+
+      // Extract raw base64 from data URL if needed
+      const base64Data = image.includes(',') ? image.split(',')[1] : image;
+
+      logger.info('Calling OpenAI GPT-4o for fridge analysis', { userId: context.userId });
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          max_tokens: 2000,
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: `data:image/jpeg;base64,${base64Data}`,
+                    detail: 'high',
+                  },
+                },
+                {
+                  type: 'text',
+                  text: 'Analyse cette photo et propose-moi des recettes avec ce que tu vois.',
+                },
+              ],
+            },
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        logger.error('OpenAI API error', new Error(errorText));
+        throw new Error(`Erreur OpenAI : ${response.status}`);
+      }
+
+      const openaiData = await response.json();
+      const content = openaiData.choices?.[0]?.message?.content;
+
+      if (!content) {
+        throw new Error("Réponse vide d'OpenAI");
+      }
+
+      // Clean potential markdown fencing
+      const cleaned = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+
+      if (parsed.error) {
+        throw new Error(parsed.error);
+      }
+
+      logger.info('Fridge analysis completed', {
+        userId: context.userId,
+        ingredientsCount: parsed.ingredients_identifies?.length,
+        recipesCount: parsed.recettes?.length,
+      });
+
+      return parsed;
     }
-
-    console.log('Subscription validated for user:', user.id);
-    
-    // Validate image upload
-    const { image } = validate(ImageUploadSchema, await req.json());
-    
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
-    }
-
-    // Extract base64 data
-    const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
-
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'system',
-            content: 'Tu es un chef créatif. Analyse les photos de frigo/ingrédients et suggère 3-5 recettes adaptées. Réponds UNIQUEMENT en JSON avec le champ: recipes (array d\'objets avec title, description, ingredients array).'
-          },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: 'Analyse ce frigo et propose-moi 3 à 5 recettes que je peux faire avec ces ingrédients.'
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:image/jpeg;base64,${base64Data}`
-                }
-              }
-            ]
-          }
-        ],
-        temperature: 0.7,
-      }),
-    });
-
-    const data = await response.json();
-    const content = data.choices[0].message.content;
-    
-    // Parse JSON response
-    const recipesData = JSON.parse(content);
-
-    return new Response(JSON.stringify(recipesData), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  } catch (error) {
-    console.error('Error analyzing fridge:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return new Response(JSON.stringify({ 
-      error: errorMessage,
-      // Fallback response
-      recipes: [{
-        title: 'Erreur',
-        description: 'Impossible d\'analyser l\'image pour le moment.',
-        ingredients: []
-      }]
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
+  );
 });
