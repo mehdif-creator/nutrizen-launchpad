@@ -3,33 +3,26 @@ import { AppHeader } from "@/components/app/AppHeader";
 import { AppFooter } from "@/components/app/AppFooter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Camera, Upload, Loader2, RefreshCw, AlertCircle } from "lucide-react";
+import { Camera, Upload, Loader2, RefreshCw, AlertCircle, Coins } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-
-interface Ingredient {
-  nom: string;
-  quantité_estimée: string;
-}
-
-interface Recette {
-  étapes: string[];
-  temps_préparation: string;
-  temps_cuisson: string;
-  portions: number;
-}
-
-interface Plat {
-  nom: string;
-  description: string;
-  ingredients_identifiés: Ingredient[];
-  recette: Recette;
-  note_nutritionnelle?: string;
-}
+import { callEdgeFunction } from "@/lib/edgeFn";
+import { InsufficientCreditsModal } from "@/components/app/InsufficientCreditsModal";
+import { FEATURE_COSTS } from "@/lib/featureCosts";
 
 interface AnalysisResult {
-  status: string;
-  plat: Plat;
+  ingredients_identifies: { nom: string; quantite: string }[];
+  recettes: {
+    nom: string;
+    description: string;
+    difficulte: string;
+    temps_preparation: string;
+    temps_cuisson: string;
+    portions: number;
+    ingredients_necessaires: string[];
+    etapes: string[];
+    note_nutritionnelle: string;
+  }[];
 }
 
 export default function InspiFrigo() {
@@ -39,8 +32,11 @@ export default function InspiFrigo() {
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [creditsModalOpen, setCreditsModalOpen] = useState(false);
+  const [creditsInfo, setCreditsInfo] = useState<{ current: number; required: number } | null>(null);
 
   const queryClient = useQueryClient();
+  const cost = FEATURE_COSTS.inspi_frigo;
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -64,36 +60,130 @@ export default function InspiFrigo() {
     setError(null);
     setAnalysisResult(null);
 
+    // Vérification et déduction des crédits AVANT l'appel OpenAI
+    let creditCheck;
     try {
-      const formData = new FormData();
-      formData.append("image", selectedFile);
+      creditCheck = await callEdgeFunction<any>('deduct-credits', {
+        feature: 'inspi_frigo',
+        cost: cost,
+      });
+    } catch (err: any) {
+      const msg = err?.message || '';
+      try {
+        const parsed = JSON.parse(msg);
+        setCreditsInfo({
+          current: parsed.current_balance || 0,
+          required: parsed.required || cost,
+        });
+      } catch {
+        setCreditsInfo({ current: 0, required: cost });
+      }
+      setCreditsModalOpen(true);
+      setIsLoading(false);
+      return;
+    }
 
-      const response = await fetch(
-        "https://n8n.srv1005117.hstgr.cloud/webhook-test/analyse-frigo",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+    if (creditCheck?.error_code === 'INSUFFICIENT_CREDITS') {
+      setCreditsInfo({
+        current: creditCheck.current_balance || 0,
+        required: creditCheck.required || cost,
+      });
+      setCreditsModalOpen(true);
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(selectedFile);
+      });
+
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          max_tokens: 2000,
+          messages: [
+            {
+              role: "system",
+              content: `Tu es un chef cuisinier expert et nutritionniste. 
+Ton rôle est d'analyser une photo de frigo ou d'ingrédients, puis de proposer des recettes réalisables.
+
+INSTRUCTIONS :
+- Identifie précisément tous les ingrédients visibles sur la photo avec leur quantité estimée.
+- Propose entre 2 et 4 recettes réalisables UNIQUEMENT avec ces ingrédients (sel, poivre, huile, eau autorisés).
+- Chaque recette doit être simple, pratique et détaillée.
+- Réponds UNIQUEMENT en JSON valide, sans markdown, sans texte autour.
+
+FORMAT DE RÉPONSE OBLIGATOIRE :
+{
+  "ingredients_identifies": [
+    { "nom": "string", "quantite": "string" }
+  ],
+  "recettes": [
+    {
+      "nom": "string",
+      "description": "string (1 phrase accrocheuse)",
+      "difficulte": "Facile | Moyen | Difficile",
+      "temps_preparation": "string (ex: 10 min)",
+      "temps_cuisson": "string (ex: 20 min)",
+      "portions": number,
+      "ingredients_necessaires": ["string"],
+      "etapes": ["string"],
+      "note_nutritionnelle": "string"
+    }
+  ]
+}
+
+Si l'image est illisible ou ne contient pas d'ingrédients, retourne :
+{ "error": "Image non exploitable" }`
+            },
+            {
+              role: "user",
+              content: [
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: `data:image/jpeg;base64,${base64}`,
+                    detail: "high"
+                  }
+                },
+                {
+                  type: "text",
+                  text: "Analyse cette photo et propose-moi des recettes avec ce que tu vois."
+                }
+              ]
+            }
+          ]
+        }),
+      });
 
       if (!response.ok) {
-        throw new Error(`Erreur serveur : ${response.status}`);
+        throw new Error(`Erreur OpenAI : ${response.status}`);
       }
 
-      const data = await response.json();
+      const openaiData = await response.json();
+      const content = openaiData.choices?.[0]?.message?.content;
 
-      if (data.plat) {
-        setAnalysisResult({
-          status: data.status || "succès",
-          plat: data.plat,
-        });
-        toast.success("Analyse terminée avec succès !");
-        queryClient.invalidateQueries({ queryKey: ["credits"] });
-        queryClient.invalidateQueries({ queryKey: ["user-dashboard"] });
-        queryClient.invalidateQueries({ queryKey: ["gamification"] });
-      } else {
-        throw new Error(data.error || "Réponse inattendue du serveur");
-      }
+      if (!content) throw new Error("Réponse vide d'OpenAI");
+
+      const parsed = JSON.parse(content);
+
+      if (parsed.error) throw new Error(parsed.error);
+
+      setAnalysisResult(parsed);
+      toast.success("Analyse terminée !");
+      queryClient.invalidateQueries({ queryKey: ["credits"] });
+      queryClient.invalidateQueries({ queryKey: ["user-dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["gamification"] });
+
     } catch (err: any) {
       const msg = err?.message || "Erreur lors de l'analyse";
       setError(msg);
@@ -101,7 +191,7 @@ export default function InspiFrigo() {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedFile, queryClient]);
+  }, [selectedFile, queryClient, cost]);
 
   const handleReset = () => {
     setSelectedFile(null);
@@ -145,6 +235,10 @@ export default function InspiFrigo() {
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Prends une photo de ton frigo ou de tes ingrédients, et découvre des recettes adaptées à ce que tu as sous la main.
+          </p>
+          <p className="text-sm text-muted-foreground mt-2 flex items-center justify-center gap-1">
+            <Coins className="h-4 w-4" />
+            Coût : {cost} crédits
           </p>
         </div>
 
@@ -257,7 +351,7 @@ export default function InspiFrigo() {
                     size="lg"
                     style={{ borderRadius: "1rem" }}
                   >
-                    Analyser mon frigo
+                    Analyser mon frigo ({cost} crédits)
                   </Button>
                 )}
               </div>
@@ -268,94 +362,69 @@ export default function InspiFrigo() {
         {/* Results */}
         {analysisResult && (
           <div className="space-y-6">
-            <Card className="shadow-[rgba(0,0,0,0.05)_2px_2px_5px] border-0" style={{ borderRadius: "1.5rem", animation: "fadeIn 0.5s ease-out" }}>
+            {/* Ingrédients détectés */}
+            <Card className="border-0 shadow-lg" style={{ borderRadius: "1.5rem" }}>
               <CardHeader>
-                <CardTitle className="text-3xl flex items-center gap-2">
-                  <span className="text-4xl">🍽️</span>
-                  {analysisResult.plat.nom}
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  🧺 Ingrédients détectés
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <p className="text-lg text-muted-foreground">{analysisResult.plat.description}</p>
-
-                <div className="flex flex-wrap gap-4 text-sm">
-                  <div className="px-4 py-2 bg-gradient-to-r from-primary/10 to-accent/10 rounded-full font-medium">
-                    ⏱️ Préparation: {analysisResult.plat.recette.temps_préparation}
-                  </div>
-                  <div className="px-4 py-2 bg-gradient-to-r from-primary/10 to-accent/10 rounded-full font-medium">
-                    🔥 Cuisson: {analysisResult.plat.recette.temps_cuisson}
-                  </div>
-                  <div className="px-4 py-2 bg-gradient-to-r from-primary/10 to-accent/10 rounded-full font-medium">
-                    👥 {analysisResult.plat.recette.portions} portion(s)
-                  </div>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {analysisResult.ingredients_identifies.map((ing, i) => (
+                    <span key={i} className="px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                      {ing.nom} — {ing.quantite}
+                    </span>
+                  ))}
                 </div>
-
-                <div>
-                  <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
-                    <span className="text-2xl">🧺</span>
-                    Ingrédients identifiés
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {analysisResult.plat.ingredients_identifiés.map((ingredient, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-3 bg-gradient-to-r from-primary/5 to-accent/5 rounded-lg"
-                        style={{ animation: `fadeIn 0.5s ease-out ${index * 0.1}s both` }}
-                      >
-                        <span className="font-medium">{ingredient.nom}</span>
-                        <span className="text-sm text-muted-foreground">{ingredient.quantité_estimée}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
-                    <span className="text-2xl">📝</span>
-                    Étapes de préparation
-                  </h3>
-                  <ol className="space-y-3">
-                    {analysisResult.plat.recette.étapes.map((etape, index) => (
-                      <li
-                        key={index}
-                        className="flex gap-3 p-3 bg-gradient-to-r from-primary/5 to-accent/5 rounded-lg"
-                        style={{ animation: `fadeIn 0.5s ease-out ${index * 0.1}s both` }}
-                      >
-                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold">
-                          {index + 1}
-                        </span>
-                        <span className="flex-1">{etape}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-
-                {analysisResult.plat.note_nutritionnelle && (
-                  <div className="p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg">
-                    <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
-                      <span className="text-xl">💚</span>
-                      Note nutritionnelle
-                    </h3>
-                    <p className="text-sm text-muted-foreground">{analysisResult.plat.note_nutritionnelle}</p>
-                  </div>
-                )}
               </CardContent>
             </Card>
 
-            <style>{`
-              @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(20px); }
-                to { opacity: 1; transform: translateY(0); }
-              }
-            `}</style>
+            {/* Recettes */}
+            <h2 className="text-2xl font-bold text-center">🍽️ Recettes possibles</h2>
+            {analysisResult.recettes.map((recette, index) => (
+              <Card key={index} className="border-0 shadow-lg" style={{ borderRadius: "1.5rem" }}>
+                <CardHeader>
+                  <CardTitle className="text-2xl">{recette.nom}</CardTitle>
+                  <p className="text-muted-foreground">{recette.description}</p>
+                  <div className="flex flex-wrap gap-3 mt-2 text-sm">
+                    <span className="px-3 py-1 bg-primary/10 rounded-full">⏱️ Prépa : {recette.temps_preparation}</span>
+                    <span className="px-3 py-1 bg-primary/10 rounded-full">🔥 Cuisson : {recette.temps_cuisson}</span>
+                    <span className="px-3 py-1 bg-primary/10 rounded-full">👥 {recette.portions} portion(s)</span>
+                    <span className="px-3 py-1 bg-primary/10 rounded-full">📊 {recette.difficulte}</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold mb-2">🛒 Ingrédients nécessaires</h4>
+                    <ul className="grid grid-cols-2 gap-1">
+                      {recette.ingredients_necessaires.map((ing, i) => (
+                        <li key={i} className="text-sm text-muted-foreground flex items-center gap-1">
+                          <span className="text-primary">•</span> {ing}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">📝 Étapes</h4>
+                    <ol className="space-y-2">
+                      {recette.etapes.map((etape, i) => (
+                        <li key={i} className="flex gap-3 text-sm p-2 bg-primary/5 rounded-lg">
+                          <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold flex-shrink-0">{i + 1}</span>
+                          {etape}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                  <div className="p-3 bg-green-50 rounded-lg text-sm text-green-700">
+                    💚 {recette.note_nutritionnelle}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
 
             <div className="flex justify-center">
-              <Button
-                onClick={handleReset}
-                size="lg"
-                className="bg-gradient-to-r from-accent to-primary hover:opacity-90 text-white shadow-lg transition-all duration-300 hover:scale-110"
-                style={{ borderRadius: "1rem" }}
-              >
+              <Button onClick={handleReset} size="lg" className="bg-gradient-to-r from-accent to-primary text-white" style={{ borderRadius: "1rem" }}>
                 🔁 Analyser une autre photo
               </Button>
             </div>
@@ -365,6 +434,13 @@ export default function InspiFrigo() {
 
       <AppFooter />
 
+      <InsufficientCreditsModal
+        open={creditsModalOpen}
+        onOpenChange={setCreditsModalOpen}
+        currentBalance={creditsInfo?.current ?? 0}
+        required={creditsInfo?.required ?? cost}
+        feature="inspifrigo"
+      />
     </div>
   );
 }
