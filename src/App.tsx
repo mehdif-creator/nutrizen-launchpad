@@ -86,6 +86,7 @@ const PostCheckoutProfile = lazy(() => import('./pages/PostCheckoutProfile'));
 const Credits = lazy(() => import('./pages/Credits'));
 const About = lazy(() => import('./pages/About'));
 const PinterestOAuthCallback = lazy(() => import('./pages/oauth/PinterestOAuthCallback'));
+const SharedWeekPlan = lazy(() => import('./pages/share/SharedWeekPlan'));
 
 const App = () => {
   // Track referral codes from URL
@@ -169,6 +170,9 @@ const App = () => {
         <Route path="/legal/cgv" element={<CGV />} />
         <Route path="/legal/confidentialite" element={<Confidentialite />} />
         <Route path="/legal/resiliation" element={<Resiliation />} />
+
+        {/* Share (public, no auth wall) */}
+        <Route path="/share/week/:token" element={<SharedWeekPlan />} />
 
         {/* OAuth Callbacks (public, no auth wall) */}
         <Route path="/oauth/pinterest/callback" element={<PinterestOAuthCallback />} />

@@ -29,6 +29,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ProgressionCard } from "@/components/gamification/ProgressionCard";
 import { useGamification } from "@/hooks/useGamification";
 import { LoadingMessages } from "@/components/common/LoadingMessages";
+import { ShareWeekCard } from "@/components/dashboard/ShareWeekCard";
 
 const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -610,22 +611,7 @@ export default function Dashboard() {
             </Card>
 
             {/* Partage Social */}
-            <Card className="rounded-2xl border shadow-sm bg-primary text-primary-foreground p-4 md:p-5">
-              <div className="text-sm md:text-base font-semibold mb-1">Partage ta semaine Zen</div>
-              <div className="text-primary-foreground/90 text-xs md:text-sm mb-3">
-                Montre tes menus planifiés en 3 minutes — inspire un ami et gagne +5 crédits.
-              </div>
-              <Button
-                variant="secondary"
-                className="w-full text-xs md:text-sm"
-                onClick={() =>
-                  toast({ title: "Partage en développement", description: "Fonctionnalité bientôt disponible." })
-                }
-              >
-                <Share2 className="h-4 w-4 mr-2" />
-                Partager un aperçu
-              </Button>
-            </Card>
+            <ShareWeekCard weekStart={menu?.week_start} hasMenu={hasMenu} />
 
             {/* Invite & gagne */}
             <Card className="rounded-2xl border shadow-sm p-4 md:p-5">
