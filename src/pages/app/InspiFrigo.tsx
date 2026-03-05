@@ -1,15 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { AppHeader } from "@/components/app/AppHeader";
 import { AppFooter } from "@/components/app/AppFooter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Camera, Upload, Loader2, RefreshCw, AlertCircle } from "lucide-react";
+import { Camera, Upload, Loader2, RefreshCw, AlertCircle, Coins } from "lucide-react";
 import { toast } from "sonner";
-import { useAutomationJob } from "@/hooks/useAutomationJob";
+import { callEdgeFunction } from "@/lib/edgeFn";
 import { InsufficientCreditsModal } from "@/components/app/InsufficientCreditsModal";
-import { createLogger } from "@/lib/logger";
-
-const logger = createLogger('InspiFrigo');
+import { useQueryClient } from "@tanstack/react-query";
+import { FEATURE_COSTS } from "@/lib/featureCosts";
 
 interface Ingredient {
   nom: string;
@@ -36,57 +35,18 @@ interface AnalysisResult {
   plat: Plat;
 }
 
-// Generate a stable idempotency key from file content
-async function generateIdempotencyKey(file: File): Promise<string> {
-  const buffer = await file.arrayBuffer();
-  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return `inspi_frigo_${hashHex.substring(0, 16)}_${Date.now()}`;
-}
-
 export default function InspiFrigo() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
-  const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
+  const [creditsInfo, setCreditsInfo] = useState<{ current: number; required: number } | null>(null);
 
-  const {
-    status,
-    result,
-    error,
-    creditsInfo,
-    isLoading,
-    isInsufficientCredits,
-    startJob,
-    reset: resetJob,
-  } = useAutomationJob({
-    onSuccess: (jobResult) => {
-      logger.debug('Job success', { jobResult });
-      if (jobResult.plat || jobResult.status === 'succès') {
-        setAnalysisResult({
-          status: jobResult.status || 'succès',
-          plat: jobResult.plat,
-        });
-        toast.success('Analyse terminée avec succès !');
-      }
-    },
-    onError: (errorMsg, errorCode) => {
-      logger.error('Job error', new Error(errorMsg || 'Unknown'), { errorCode });
-      if (errorCode !== 'INSUFFICIENT_CREDITS') {
-        toast.error(errorMsg || 'Erreur lors de l\'analyse');
-      }
-    },
-  });
-
-  // Handle insufficient credits
-  useEffect(() => {
-    if (isInsufficientCredits && creditsInfo) {
-      setCreditsModalOpen(true);
-    }
-  }, [isInsufficientCredits, creditsInfo]);
+  const queryClient = useQueryClient();
+  const cost = FEATURE_COSTS.inspi_frigo;
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -94,7 +54,7 @@ export default function InspiFrigo() {
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
       setAnalysisResult(null);
-      resetJob();
+      setError(null);
     } else {
       toast.error("Veuillez sélectionner une image");
     }
@@ -106,50 +66,89 @@ export default function InspiFrigo() {
       return;
     }
 
-    logger.debug('Starting analysis...', { 
-      fileName: selectedFile.name, 
-      fileSize: selectedFile.size,
-      fileType: selectedFile.type 
-    });
+    setIsLoading(true);
+    setError(null);
+    setAnalysisResult(null);
 
     try {
-      // Generate idempotency key from file content
-      const key = await generateIdempotencyKey(selectedFile);
-      setIdempotencyKey(key);
+      // Generate unique request_id per click (idempotency)
+      const requestId = crypto.randomUUID();
 
-      // Convert file to base64 for payload
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64Data = reader.result as string;
-        
-        const jobResult = await startJob('inspi_frigo', {
-          image_base64: base64Data,
-          file_name: selectedFile.name,
-          file_type: selectedFile.type,
-        }, key);
+      // Convert file to base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(selectedFile);
+      });
 
-        logger.debug('Job started', { jobResult });
-      };
-      reader.readAsDataURL(selectedFile);
-    } catch (err) {
-      logger.error('Error starting job', err instanceof Error ? err : new Error(String(err)));
-      toast.error('Erreur lors du démarrage de l\'analyse');
+      const data = await callEdgeFunction<Record<string, any>>('analyze-fridge', {
+        image_base64: base64,
+        request_id: requestId,
+      });
+
+      // Handle duplicate
+      if (data.duplicate) {
+        toast.info("Cette image a déjà été analysée.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Handle insufficient credits (edge fn returns 402 which throws)
+      if (data.error_code === 'INSUFFICIENT_CREDITS') {
+        setCreditsInfo({
+          current: data.current_balance || 0,
+          required: data.required || cost,
+        });
+        setCreditsModalOpen(true);
+        setIsLoading(false);
+        return;
+      }
+
+      // Success
+      if (data.plat) {
+        setAnalysisResult({
+          status: data.status || 'succès',
+          plat: data.plat,
+        });
+        toast.success('Analyse terminée avec succès !');
+        // Invalidate credits cache so dashboard updates
+        queryClient.invalidateQueries({ queryKey: ['credits'] });
+        queryClient.invalidateQueries({ queryKey: ['user-dashboard'] });
+        queryClient.invalidateQueries({ queryKey: ['gamification'] });
+      } else {
+        throw new Error(data.error || 'Réponse inattendue du serveur');
+      }
+    } catch (err: any) {
+      const msg = err?.message || 'Erreur lors de l\'analyse';
+
+      // Check if it's an insufficient credits error from the thrown error
+      if (msg.includes('insuffisant') || msg.includes('INSUFFICIENT')) {
+        try {
+          const parsed = JSON.parse(err.message);
+          setCreditsInfo({
+            current: parsed.current_balance || 0,
+            required: parsed.required || cost,
+          });
+          setCreditsModalOpen(true);
+        } catch {
+          setCreditsInfo({ current: 0, required: cost });
+          setCreditsModalOpen(true);
+        }
+      } else {
+        setError(msg);
+        toast.error(msg);
+      }
+    } finally {
+      setIsLoading(false);
     }
-  }, [selectedFile, startJob]);
-
-  const handleRetry = useCallback(() => {
-    resetJob();
-    if (selectedFile && idempotencyKey) {
-      handleAnalyze();
-    }
-  }, [resetJob, selectedFile, idempotencyKey, handleAnalyze]);
+  }, [selectedFile, queryClient, cost]);
 
   const handleReset = () => {
     setSelectedFile(null);
     setPreviewUrl(null);
     setAnalysisResult(null);
-    setIdempotencyKey(null);
-    resetJob();
+    setError(null);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -164,69 +163,16 @@ export default function InspiFrigo() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith("image/")) {
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
       setAnalysisResult(null);
-      resetJob();
+      setError(null);
     } else {
       toast.error("Veuillez sélectionner une image");
     }
   };
-
-  // Render loading state
-  const renderLoadingState = () => (
-    <Card className="shadow-lg animate-fade-in border-0">
-      <CardContent className="p-12">
-        <div className="flex flex-col items-center gap-6 text-center">
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary to-white rounded-full blur-xl opacity-50 animate-pulse" />
-            <Loader2 className="h-16 w-16 text-primary animate-spin relative z-10" />
-          </div>
-          <div>
-            <p className="text-xl font-semibold mb-2">
-              {status === 'queued' ? 'En file d\'attente... 🍃' : 'Analyse en cours... 🍃'}
-            </p>
-            <p className="text-muted-foreground">
-              {status === 'queued' 
-                ? 'Votre demande sera traitée dans quelques instants' 
-                : 'Prépare-toi à cuisiner !'}
-            </p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  // Render error state
-  const renderErrorState = () => (
-    <Card className="shadow-lg animate-fade-in border-0 border-l-4 border-l-destructive">
-      <CardContent className="p-8">
-        <div className="flex flex-col items-center gap-6 text-center">
-          <AlertCircle className="h-16 w-16 text-destructive" />
-          <div>
-            <p className="text-xl font-semibold mb-2 text-destructive">
-              Erreur lors de l'analyse
-            </p>
-            <p className="text-muted-foreground mb-4">
-              {error || 'Une erreur inattendue est survenue'}
-            </p>
-          </div>
-          <div className="flex gap-4">
-            <Button onClick={handleRetry} variant="default" className="gap-2">
-              <RefreshCw className="h-4 w-4" />
-              Réessayer
-            </Button>
-            <Button onClick={handleReset} variant="outline">
-              Nouvelle photo
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#F9FFF9] to-white">
@@ -239,19 +185,58 @@ export default function InspiFrigo() {
             Trouve des idées de recettes à partir de ton frigo
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Prends une photo de ton frigo ou de tes ingrédients, et découvre des recettes adaptées à ce que tu as sous
-            la main.
+            Prends une photo de ton frigo ou de tes ingrédients, et découvre des recettes adaptées à ce que tu as sous la main.
           </p>
+          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
+            <Coins className="h-4 w-4" />
+            Coût : {cost} crédits
+          </div>
         </div>
 
         {/* Loading State */}
-        {isLoading && renderLoadingState()}
+        {isLoading && (
+          <Card className="shadow-lg animate-fade-in border-0">
+            <CardContent className="p-12">
+              <div className="flex flex-col items-center gap-6 text-center">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary to-white rounded-full blur-xl opacity-50 animate-pulse" />
+                  <Loader2 className="h-16 w-16 text-primary animate-spin relative z-10" />
+                </div>
+                <div>
+                  <p className="text-xl font-semibold mb-2">Analyse en cours... 🍃</p>
+                  <p className="text-muted-foreground">Notre IA analyse votre photo, patientez quelques secondes.</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Error State */}
-        {status === 'error' && !isInsufficientCredits && renderErrorState()}
+        {error && !isLoading && (
+          <Card className="shadow-lg animate-fade-in border-0 border-l-4 border-l-destructive">
+            <CardContent className="p-8">
+              <div className="flex flex-col items-center gap-6 text-center">
+                <AlertCircle className="h-16 w-16 text-destructive" />
+                <div>
+                  <p className="text-xl font-semibold mb-2 text-destructive">Erreur lors de l'analyse</p>
+                  <p className="text-muted-foreground mb-4">{error}</p>
+                </div>
+                <div className="flex gap-4">
+                  <Button onClick={handleAnalyze} variant="default" className="gap-2">
+                    <RefreshCw className="h-4 w-4" />
+                    Réessayer
+                  </Button>
+                  <Button onClick={handleReset} variant="outline">
+                    Nouvelle photo
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Upload Form */}
-        {!isLoading && status !== 'error' && !analysisResult && (
+        {!isLoading && !error && !analysisResult && (
           <Card className="shadow-lg animate-slide-up border-0 overflow-hidden" style={{ borderRadius: "1.5rem" }}>
             <CardContent className="p-8">
               <div className="space-y-6">
@@ -275,27 +260,16 @@ export default function InspiFrigo() {
                         <Camera className="h-12 w-12 text-primary" />
                       </div>
                       <div>
-                        <p className="text-lg font-medium mb-2">
-                          📸 Dépose une photo de ton frigo ici ou prends une photo
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Glisse ton image ou utilise les boutons ci-dessous
-                        </p>
+                        <p className="text-lg font-medium mb-2">📸 Dépose une photo de ton frigo ici ou prends une photo</p>
+                        <p className="text-sm text-muted-foreground">Glisse ton image ou utilise les boutons ci-dessous</p>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4">
                   <label className="flex-1">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
+                    <input type="file" accept="image/*" capture="environment" onChange={handleFileSelect} className="hidden" />
                     <Button
                       type="button"
                       variant="outline"
@@ -306,7 +280,6 @@ export default function InspiFrigo() {
                       Prendre une photo
                     </Button>
                   </label>
-
                   <label className="flex-1">
                     <input type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
                     <Button
@@ -329,7 +302,7 @@ export default function InspiFrigo() {
                     size="lg"
                     style={{ borderRadius: "1rem" }}
                   >
-                    Analyser mon frigo
+                    Analyser mon frigo ({cost} crédits)
                   </Button>
                 )}
               </div>
@@ -340,11 +313,7 @@ export default function InspiFrigo() {
         {/* Results */}
         {analysisResult && (
           <div className="space-y-6">
-            {/* Plat suggéré */}
-            <Card
-              className="shadow-[rgba(0,0,0,0.05)_2px_2px_5px] border-0"
-              style={{ borderRadius: "1.5rem", animation: "fadeIn 0.5s ease-out" }}
-            >
+            <Card className="shadow-[rgba(0,0,0,0.05)_2px_2px_5px] border-0" style={{ borderRadius: "1.5rem", animation: "fadeIn 0.5s ease-out" }}>
               <CardHeader>
                 <CardTitle className="text-3xl flex items-center gap-2">
                   <span className="text-4xl">🍽️</span>
@@ -354,7 +323,6 @@ export default function InspiFrigo() {
               <CardContent className="space-y-6">
                 <p className="text-lg text-muted-foreground">{analysisResult.plat.description}</p>
 
-                {/* Info rapide */}
                 <div className="flex flex-wrap gap-4 text-sm">
                   <div className="px-4 py-2 bg-gradient-to-r from-primary/10 to-accent/10 rounded-full font-medium">
                     ⏱️ Préparation: {analysisResult.plat.recette.temps_préparation}
@@ -367,7 +335,6 @@ export default function InspiFrigo() {
                   </div>
                 </div>
 
-                {/* Ingrédients détectés */}
                 <div>
                   <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
                     <span className="text-2xl">🧺</span>
@@ -387,7 +354,6 @@ export default function InspiFrigo() {
                   </div>
                 </div>
 
-                {/* Étapes de la recette */}
                 <div>
                   <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
                     <span className="text-2xl">📝</span>
@@ -409,7 +375,6 @@ export default function InspiFrigo() {
                   </ol>
                 </div>
 
-                {/* Note nutritionnelle */}
                 {analysisResult.plat.note_nutritionnelle && (
                   <div className="p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg">
                     <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
@@ -424,14 +389,8 @@ export default function InspiFrigo() {
 
             <style>{`
               @keyframes fadeIn {
-                from {
-                  opacity: 0;
-                  transform: translateY(20px);
-                }
-                to {
-                  opacity: 1;
-                  transform: translateY(0);
-                }
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
               }
             `}</style>
 
@@ -451,12 +410,11 @@ export default function InspiFrigo() {
 
       <AppFooter />
 
-      {/* Insufficient Credits Modal */}
       <InsufficientCreditsModal
         open={creditsModalOpen}
         onOpenChange={setCreditsModalOpen}
         currentBalance={creditsInfo?.current || 0}
-        required={creditsInfo?.required || 2}
+        required={creditsInfo?.required || cost}
         feature="inspifrigo"
       />
     </div>
