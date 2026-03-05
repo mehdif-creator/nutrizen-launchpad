@@ -26,8 +26,8 @@ import { useShoppingList } from "@/hooks/useShoppingList";
 import { useCreditsReset } from "@/hooks/useCreditsReset";
 import { useEffectivePortions } from "@/hooks/useEffectivePortions";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ProgressionCard } from "@/components/gamification/ProgressionCard";
-import { useGamification } from "@/hooks/useGamification";
+import { ProgressionCardV2 } from "@/components/gamification/ProgressionCardV2";
+import { useGamificationState } from "@/hooks/useGamificationV2";
 import { LoadingMessages } from "@/components/common/LoadingMessages";
 import { ShareWeekCard } from "@/components/dashboard/ShareWeekCard";
 
@@ -61,8 +61,8 @@ export default function Dashboard() {
     householdChildren 
   } = useWeeklyMenu(user?.id);
   
-  // Gamification data
-  const { gamification, isLoading: gamificationLoading } = useGamification(user?.id);
+  // Gamification V2 (realtime-backed)
+  useGamificationState(); // subscribes to realtime for instant dashboard updates
   
   // Get weekly recipes grouped by day (lunch + dinner)
   const { days: weeklyDays, isLoading: weeklyDaysLoading, hasDays } = useWeeklyRecipesByDay(user?.id);
@@ -534,14 +534,7 @@ export default function Dashboard() {
           {/* Right: Sidebar */}
           <aside className="space-y-4 md:space-y-6">
             {/* Progression Card */}
-            <ProgressionCard
-              points={gamification.points}
-              level={gamification.level}
-              xpToNext={gamification.xp_to_next}
-              streakDays={gamification.streak_days}
-              badgesCount={gamification.badges_count}
-              isLoading={gamificationLoading}
-            />
+            <ProgressionCardV2 />
 
             {/* Credits Display & Purchase */}
             <div className="space-y-4" id="credits">
