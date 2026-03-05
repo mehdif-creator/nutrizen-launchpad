@@ -53,7 +53,8 @@ const UseSwapSchema = z.object({
   recipe_id: z.string().uuid().optional(),
   meal_type: z.enum(['lunch', 'dinner']).optional(),
   meal_plan_id: z.string().uuid().optional(),
-  day: z.number().int().min(0).max(6).optional(),
+  day: z.number().int().min(0).max(6),
+  request_id: z.string().uuid().optional(),
 }).strict();
 
 Deno.serve(async (req) => {
@@ -102,6 +103,24 @@ Deno.serve(async (req) => {
     const body = await req.json()
     const validatedInput = UseSwapSchema.parse(body)
 
+    // ── Idempotency check ─────────────────────────────────────────────────────
+    const requestId = validatedInput.request_id;
+    if (requestId) {
+      const { data: existing } = await supabaseClient
+        .from('credit_transactions')
+        .select('id')
+        .eq('idempotency_key', `swap:${requestId}`)
+        .maybeSingle();
+      
+      if (existing) {
+        console.log('[use-swap] Duplicate request_id detected, returning success without re-charging');
+        return new Response(
+          JSON.stringify({ success: true, error_code: 'DUPLICATE_REQUEST', creditsRemaining: null }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     // Check and consume credits
     console.log('[use-swap] Checking credits for user:', user.id)
     const { data: creditsCheck, error: creditsError } = await supabaseClient.rpc('check_and_consume_credits', {
@@ -129,6 +148,18 @@ Deno.serve(async (req) => {
         }),
         { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
+    }
+
+    // Tag the transaction with idempotency key if provided
+    if (requestId) {
+      await supabaseClient
+        .from('credit_transactions')
+        .update({ idempotency_key: `swap:${requestId}` })
+        .eq('user_id', user.id)
+        .eq('feature', 'swap')
+        .is('idempotency_key', null)
+        .order('created_at', { ascending: false })
+        .limit(1);
     }
 
     // ============================================================
@@ -394,7 +425,14 @@ Deno.serve(async (req) => {
         creditsRemaining: creditsCheck.new_balance,
         newRecipe: {
           id: randomRecipe.id,
-          title: randomRecipe.title
+          title: randomRecipe.title,
+          image_url: randomRecipe.image_url || randomRecipe.image_path || null,
+          prep_time_min: randomRecipe.prep_time_min || 0,
+          total_time_min: randomRecipe.total_time_min || 0,
+          calories_kcal: randomRecipe.calories_kcal || 0,
+          proteins_g: randomRecipe.proteins_g || 0,
+          carbs_g: randomRecipe.carbs_g || 0,
+          fats_g: randomRecipe.fats_g || 0,
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
