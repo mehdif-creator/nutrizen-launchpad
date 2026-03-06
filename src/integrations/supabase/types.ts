@@ -756,6 +756,42 @@ export type Database = {
         }
         Relationships: []
       }
+      email_schedule: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          metadata: Json | null
+          scheduled_at: string
+          sent_at: string | null
+          status: string
+          template_key: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          metadata?: Json | null
+          scheduled_at: string
+          sent_at?: string | null
+          status?: string
+          template_key: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          metadata?: Json | null
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+          template_key?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       feature_costs: {
         Row: {
           cost: number

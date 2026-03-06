@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { KpiCardLink } from '@/components/admin/kpis/KpiCardLink';
+import { EmailCampaignSection } from '@/components/admin/EmailCampaignSection';
 
 interface Stats {
   totalUsers: number;
@@ -156,6 +157,11 @@ export default function AdminDashboard() {
             <KpiCardLink to="/admin/kpis/ratings" title="Notations" value={stats.totalRatings} subtitle={`${stats.avgRatingScore.toFixed(1)} ⭐ moyenne`} icon={Star} iconColor="text-yellow-500" />
             <KpiCardLink to="/admin/kpis/points-total" title="Points totaux" value={stats.totalPoints.toLocaleString()} subtitle="Gamification" icon={Star} iconColor="text-amber-500" />
           </div>
+        </div>
+
+        {/* Email Campaign */}
+        <div className="mb-6">
+          <EmailCampaignSection />
         </div>
 
         {/* Quick Actions */}

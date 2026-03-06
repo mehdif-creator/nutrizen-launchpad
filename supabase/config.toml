@@ -252,3 +252,10 @@ verify_jwt = false
 [functions.seo-keyword-expand.rate_limit]
 limit = 20
 period = "1h"
+
+[functions.brevo-onboarding]
+verify_jwt = false
+
+[functions.brevo-onboarding.rate_limit]
+limit = 30
+period = "1h"

@@ -283,6 +283,30 @@ Deno.serve(async (req) => {
             logStep("Referral error (non-blocking)", { error: String(e) });
           }
         }
+
+        // Trigger Brevo onboarding sequence (non-blocking)
+        if (userId) {
+          try {
+            const planTier = planMeta?.tier || 'starter';
+            const planName = planTier === 'premium' ? 'Premium' : 'Starter';
+            const brevoUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/brevo-onboarding`;
+            await fetch(brevoUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${serviceRoleKey}`,
+              },
+              body: JSON.stringify({
+                action: 'trigger_sequence',
+                user_id: userId,
+                plan_name: planName,
+              }),
+            });
+            logStep("Brevo onboarding triggered", { userId: redactId(userId), planName });
+          } catch (e) {
+            logStep("Brevo onboarding error (non-blocking)", { error: String(e) });
+          }
+        }
       }
     }
 
