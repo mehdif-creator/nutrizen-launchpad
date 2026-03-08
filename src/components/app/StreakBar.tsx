@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Flame, Trophy, Award, Sparkles } from "lucide-react";
-import { useGamification } from "@/hooks/useGamification";
+import { useGamificationState, useLevels, getLevelName as getLevelNameV2 } from "@/hooks/useGamificationV2";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
