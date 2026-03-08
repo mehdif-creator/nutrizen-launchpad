@@ -329,7 +329,7 @@ export default function Dashboard() {
             </div>
           <div className="flex flex-wrap items-center gap-2" data-onboarding-target="generate-menu">
               <Button onClick={handleRegenWeek} size="sm" disabled={generating}>
-                {generating ? "Génération..." : "Régénérer la semaine (7 crédits)"}
+                {generating ? "Génération..." : "Régénérer la semaine"}
               </Button>
               {hasDays && (
                 <Button
