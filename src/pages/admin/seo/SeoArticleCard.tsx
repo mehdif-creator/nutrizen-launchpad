@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, Trash2, Play, Zap, ExternalLink, AlertCircle, RotateCcw } from 'lucide-react';
+import { Loader2, Trash2, Play, Zap, ExternalLink, AlertCircle, RotateCcw, ImageIcon } from 'lucide-react';
 import { callEdgeFunction } from '@/lib/edgeFn';
 import { supabase } from '@/integrations/supabase/client';
+// supabase import already present for functions.invoke
 import { useToast } from '@/hooks/use-toast';
 import { SeoProgressBar } from './SeoProgressBar';
 import { STATUS_LABELS, NEXT_STEP, AUTO_PIPELINE_SEQUENCE, AUTO_PIPELINE_LABELS } from './types';
@@ -274,6 +275,33 @@ export function SeoArticleCard({ article, onRefresh, onDelete, onOpenDetail }: P
           {article.error_message && (
             <Button size="sm" variant="outline" onClick={handleRetry} disabled={isBusy}>
               <RotateCcw className="mr-1 h-3.5 w-3.5" />Réessayer
+            </Button>
+          )}
+
+          {/* Refresh images per article */}
+          {article.image_urls && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={async () => {
+                setBusy('seo-image-refresh');
+                try {
+                  const { data, error } = await supabase.functions.invoke('seo-image-refresh', {
+                    body: { article_id: article.id },
+                  });
+                  if (error) throw error;
+                  toast({ title: data.refreshed_count > 0 ? '🖼️ Images régénérées ✓' : 'Aucune image expirée' });
+                  onRefresh();
+                } catch (e: any) {
+                  toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
+                } finally {
+                  setBusy(null);
+                }
+              }}
+              disabled={isBusy}
+            >
+              {busy === 'seo-image-refresh' ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <ImageIcon className="mr-1 h-3.5 w-3.5" />}
+              Images
             </Button>
           )}
 

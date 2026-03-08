@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
+// Fix 3: useState needed for image error fallback in ArticleCard
 import { Link, useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/landing/Header';
 import { Footer } from '@/components/landing/Footer';
@@ -276,27 +277,70 @@ export default function BlogIndex() {
   );
 }
 
+function parseImageUrls(raw: unknown): { url: string; alt: string; type: string }[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === 'string') {
+    try { return JSON.parse(raw); } catch { return []; }
+  }
+  return [];
+}
+
+const categoryGradients: Record<string, string> = {
+  'Nutrition': 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 50%, #86efac 100%)',
+  'Recettes': 'linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fcd34d 100%)',
+  'Sport': 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #93c5fd 100%)',
+  'Bien-être': 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 50%, #f9a8d4 100%)',
+  'Budget': 'linear-gradient(135deg, #ede9fe 0%, #ddd6fe 50%, #c4b5fd 100%)',
+};
+
+const categoryEmojis: Record<string, string> = {
+  'Nutrition': '🥗',
+  'Recettes': '🍳',
+  'Sport': '💪',
+  'Bien-être': '🧘',
+  'Budget': '💡',
+};
+
 function ArticleCard({ article, searchQuery }: { article: BlogArticle; searchQuery: string }) {
+  const [imgError, setImgError] = useState(false);
   const title = getTitle(article);
   const excerpt = getExcerpt(article);
-  const coverUrl = article.cover_url || (article.image_urls as any)?.[0]?.url || null;
   const category = article.cluster_context || article.tags?.[0] || 'Nutrition';
   const readingTime = getReadingTime(article);
+
+  // Fix 1: Parse image_urls safely
+  const imageUrls = parseImageUrls(article.image_urls);
+  const heroImage = imageUrls.find(img => img.type === 'hero') || imageUrls[0] || null;
+  const heroUrl = heroImage?.url || article.cover_url || null;
+  const heroAlt = heroImage?.alt || title;
+
+  const fallbackGradient = categoryGradients[category] || 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)';
+  const fallbackEmoji = categoryEmojis[category] || '🥦';
 
   return (
     <Link to={`/blog/${article.slug}`} className="group block">
       <article className="border border-border rounded-2xl overflow-hidden bg-card flex flex-col h-full transition-all duration-200 group-hover:shadow-xl group-hover:-translate-y-1 group-hover:border-primary/40">
-        {/* Image */}
-        <div className="h-[200px] overflow-hidden bg-muted flex-shrink-0">
-          {coverUrl ? (
+        {/* Image with fallback */}
+        <div
+          className="h-[200px] overflow-hidden flex-shrink-0"
+          style={{ background: fallbackGradient }}
+        >
+          {heroUrl && !imgError ? (
             <img
-              src={coverUrl}
-              alt={title}
+              src={heroUrl}
+              alt={heroAlt}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+              onError={() => setImgError(true)}
               loading="lazy"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-4xl">🥗</div>
+            <div className="w-full h-full flex flex-col items-center justify-center gap-2" style={{ background: fallbackGradient }}>
+              <span className="text-5xl">{fallbackEmoji}</span>
+              <span className="text-xs font-semibold uppercase tracking-wider opacity-70" style={{ color: '#166534' }}>
+                {category}
+              </span>
+            </div>
           )}
         </div>
 

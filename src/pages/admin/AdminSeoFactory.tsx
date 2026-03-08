@@ -2,7 +2,9 @@ import { useState, useMemo } from 'react';
 import { AppFooter } from '@/components/app/AppFooter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, RefreshCw, FileText, Search } from 'lucide-react';
+import { ArrowLeft, RefreshCw, FileText, Search, ImageIcon } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 import { SeoCreateForm } from './seo/SeoCreateForm';
 import { SeoArticleCard } from './seo/SeoArticleCard';
@@ -18,6 +20,24 @@ export default function AdminSeoFactory() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'date' | 'score' | 'status'>('date');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { toast } = useToast();
+
+  const handleRefreshAllImages = async () => {
+    setIsRefreshing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('seo-image-refresh', {
+        body: { refresh_all: true },
+      });
+      if (error) throw error;
+      toast({ title: `🖼️ Images régénérées : ${data.refreshed_count} article(s) mis à jour` });
+      await refetch();
+    } catch (err: any) {
+      toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const filteredArticles = useMemo(() => {
     let list = articles;
@@ -49,6 +69,10 @@ export default function AdminSeoFactory() {
             <Button variant="ghost" size="icon"><ArrowLeft className="h-5 w-5" /></Button>
           </Link>
           <h1 className="text-3xl font-bold flex-1">SEO Factory</h1>
+          <Button variant="outline" size="sm" onClick={handleRefreshAllImages} disabled={isRefreshing}>
+            <ImageIcon className="mr-2 h-4 w-4" />
+            {isRefreshing ? 'Régénération…' : '🖼️ Régénérer les images'}
+          </Button>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
             <RefreshCw className="mr-2 h-4 w-4" />Actualiser
           </Button>
