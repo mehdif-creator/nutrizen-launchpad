@@ -16,6 +16,7 @@ import { InsufficientCreditsModal } from "@/components/app/InsufficientCreditsMo
 import { BuyCreditsSection } from "@/components/app/BuyCreditsSection";
 import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useStreakUpdate } from "@/hooks/useStreakUpdate";
 import { Navigate, useNavigate, Link } from "react-router-dom";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useWeeklyMenu } from "@/hooks/useWeeklyMenu";
