@@ -1,6 +1,6 @@
 import "https://deno.land/std@0.168.0/dotenv/load.ts";
 import { createClient } from "../_shared/deps.ts";
-import { getCorsHeaders } from "../_shared/security.ts";
+import { getCorsHeaders, logEdgeFunctionError } from "../_shared/security.ts";
 
 Deno.serve(async (req) => {
   const origin = req.headers.get("origin");
