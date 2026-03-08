@@ -214,6 +214,6 @@ export function EmailCampaignSection({ embedded = false }: { embedded?: boolean 
           <p className="text-sm text-muted-foreground">Aucun envoi récent</p>
         )}
       </div>
-    </Card>
+    </Wrapper>
   );
 }

@@ -186,6 +186,7 @@ export default function AdminDashboard() {
               <Link to="/admin/conversion"><Button variant="outline" className="w-full justify-start"><TrendingUp className="mr-2 h-4 w-4" />Funnel de conversion</Button></Link>
               <Link to="/admin/automation"><Button variant="outline" className="w-full justify-start"><Zap className="mr-2 h-4 w-4" />NutriZen Automation</Button></Link>
               <Link to="/admin/seo-factory"><Button variant="outline" className="w-full justify-start"><FileText className="mr-2 h-4 w-4" />SEO Factory</Button></Link>
+              <Button variant="outline" className="w-full justify-start" onClick={() => setMailingOpen(true)}><Mail className="mr-2 h-4 w-4" />Mailing</Button>
             </div>
           </Card>
           <Card className="p-6">
