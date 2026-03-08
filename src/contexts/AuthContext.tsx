@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, useState, useCallback, useRef, Re
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { trackDailyLogin } from '@/utils/gamification';
 import { createLogger } from '@/lib/logger';
 import { clearOnboardingCache } from '@/lib/onboarding/status';
 
