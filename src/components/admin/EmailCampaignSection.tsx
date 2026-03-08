@@ -39,7 +39,7 @@ interface CampaignStatus {
   scheduled: ScheduledEmail[];
 }
 
-export function EmailCampaignSection() {
+export function EmailCampaignSection({ embedded = false }: { embedded?: boolean }) {
   const [status, setStatus] = useState<CampaignStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [setupLoading, setSetupLoading] = useState(false);
