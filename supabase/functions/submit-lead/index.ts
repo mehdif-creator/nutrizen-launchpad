@@ -46,7 +46,32 @@ Deno.serve(async (req) => {
 
     // Validate and sanitize input
     const validatedData = leadSchema.parse(body);
-    const { email, source, timestamp } = validatedData;
+    const { email, source, timestamp, listId } = validatedData;
+
+    // Add contact to Brevo list if listId provided
+    if (listId) {
+      const brevoApiKey = Deno.env.get('BREVO_API_KEY');
+      if (brevoApiKey) {
+        try {
+          const brevoRes = await fetch('https://api.brevo.com/v3/contacts', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'api-key': brevoApiKey,
+            },
+            body: JSON.stringify({
+              email: email.toLowerCase().trim(),
+              listIds: [listId],
+              updateEnabled: true,
+            }),
+          });
+          console.log('Brevo contact upsert:', brevoRes.status);
+        } catch (brevoErr) {
+          console.error('Brevo contact upsert failed:', brevoErr);
+          // Non-blocking: continue even if Brevo fails
+        }
+      }
+    }
 
     // Forward to n8n webhook
     const n8nWebhookBase = Deno.env.get('N8N_WEBHOOK_BASE');
