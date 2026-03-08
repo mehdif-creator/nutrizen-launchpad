@@ -1,6 +1,6 @@
 import { AppFooter } from '@/components/app/AppFooter';
 import { Card } from '@/components/ui/card';
-import { Users, Ticket, TrendingUp, Crown, Star, Calendar, Activity, Percent, Euro, UserMinus, UserPlus, BarChart3, Stethoscope, Zap, FileText } from 'lucide-react';
+import { Users, Ticket, TrendingUp, Crown, Star, Calendar, Activity, Percent, Euro, UserMinus, UserPlus, BarChart3, Stethoscope, Zap, FileText, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { KpiCardLink } from '@/components/admin/kpis/KpiCardLink';
 import { EmailCampaignSection } from '@/components/admin/EmailCampaignSection';
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 interface Stats {
   totalUsers: number;
   activeSubscribers: number;
