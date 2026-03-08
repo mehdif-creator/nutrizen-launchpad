@@ -331,6 +331,38 @@ export default function Dashboard() {
               <Button onClick={handleRegenWeek} size="sm" disabled={generating}>
                 {generating ? "Génération..." : "Régénérer la semaine (7 crédits)"}
               </Button>
+              {hasDays && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const ws = getCurrentWeekStart();
+                      // Fetch shopping list raw items for PDF
+                      const { data: rawData } = await supabase.rpc(
+                        'get_shopping_list_from_weekly_menu',
+                        { p_user_id: user!.id, p_week_start: ws }
+                      );
+                      const rawItems: RawShoppingItem[] = (rawData || []).map((r: any) => ({
+                        ingredient_name: r.ingredient_name,
+                        total_quantity: r.total_quantity,
+                        unit: r.unit,
+                        formatted_display: r.formatted_display,
+                      }));
+                      const merged = mergeShoppingItems(rawItems);
+                      const hhLabel = formatHouseholdDisplay(householdAdults, householdChildren);
+                      exportWeeklyPackPdf(ws, weeklyDays, merged, hhLabel);
+                      toast({ title: "📥 PDF téléchargé", description: "Pack complet de la semaine." });
+                    } catch (err) {
+                      console.error('PDF export error:', err);
+                      toast({ title: "Erreur", description: "Impossible de générer le PDF.", variant: "destructive" });
+                    }
+                  }}
+                >
+                  <FileDown className="h-4 w-4 mr-1" />
+                  Export PDF
+                </Button>
+              )}
             </div>
           </div>
 

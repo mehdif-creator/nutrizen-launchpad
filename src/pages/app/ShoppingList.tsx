@@ -11,7 +11,9 @@ import {
   Check,
   X,
   ChefHat,
+  FileDown,
 } from 'lucide-react';
+import { exportShoppingListPdf } from '@/lib/pdfExport';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
