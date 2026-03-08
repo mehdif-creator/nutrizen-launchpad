@@ -1,7 +1,7 @@
 import { createClient } from '../_shared/deps.ts';
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { checkRateLimit, rateLimitExceededResponse } from '../_shared/rateLimit.ts';
-import { getCorsHeaders, getSecurityHeaders } from '../_shared/security.ts';
+import { getCorsHeaders, getSecurityHeaders, logEdgeFunctionError } from '../_shared/security.ts';
 
 // Input validation schema
 const GenerateMenuSchema = z.object({
@@ -1011,6 +1011,7 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error("[generate-menu] Error:", error);
+    await logEdgeFunctionError('generate-menu', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
       JSON.stringify({ error: errorMessage }),

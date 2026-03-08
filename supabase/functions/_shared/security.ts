@@ -460,6 +460,7 @@ export async function withSecurity<T = unknown>(
     }
 
     logger.error('Unhandled error', error);
+    await logEdgeFunctionError(endpoint, error).catch(() => {});
     
     return new Response(
       JSON.stringify({
@@ -531,4 +532,33 @@ export function getSecurityHeaders(): Record<string, string> {
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'X-Permitted-Cross-Domain-Policies': 'none',
   };
+}
+
+/**
+ * Log an unhandled edge function error to the database for monitoring.
+ * Fire-and-forget — never throws.
+ */
+export async function logEdgeFunctionError(
+  functionName: string,
+  error: unknown,
+  userId?: string,
+  requestId?: string,
+): Promise<void> {
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!supabaseUrl || !serviceKey) return;
+
+    const { createClient: cc } = await import('./deps.ts');
+    const admin = cc(supabaseUrl, serviceKey);
+    await admin.from('edge_function_errors').insert({
+      function_name: functionName,
+      error_message: error instanceof Error ? error.message : String(error),
+      error_stack: error instanceof Error ? error.stack?.substring(0, 2000) : null,
+      user_id: userId || null,
+      request_id: requestId || null,
+    });
+  } catch {
+    // silently ignore — monitoring should never break the app
+  }
 }

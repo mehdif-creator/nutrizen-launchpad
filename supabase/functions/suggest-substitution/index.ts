@@ -288,6 +288,18 @@ Réponds UNIQUEMENT en JSON valide, sans markdown, avec ce format:
     });
   } catch (error) {
     console.error('Error suggesting substitution:', error);
+    // Fire-and-forget error logging
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const { createClient: cc } = await import('../_shared/deps.ts');
+      const admin = cc(supabaseUrl, serviceKey);
+      await admin.from('edge_function_errors').insert({
+        function_name: 'suggest-substitution',
+        error_message: error instanceof Error ? error.message : String(error),
+        error_stack: error instanceof Error ? error.stack?.substring(0, 2000) : null,
+      });
+    } catch { /* ignore */ }
     
     if (error instanceof z.ZodError) {
       return new Response(

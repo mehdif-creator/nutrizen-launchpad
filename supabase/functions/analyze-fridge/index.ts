@@ -6,7 +6,7 @@
  * Credits: atomic + idempotent via request_id
  */
 import { createClient } from '../_shared/deps.ts';
-import { getCorsHeaders, generateRequestId, Logger } from '../_shared/security.ts';
+import { getCorsHeaders, generateRequestId, Logger, logEdgeFunctionError } from '../_shared/security.ts';
 
 const FEATURE_KEY = 'inspi_frigo';
 const DEFAULT_COST = 6;
@@ -305,6 +305,7 @@ Tous les champs en français. Propose un seul plat réalisable avec les ingrédi
 
   } catch (error) {
     logger.error('Unhandled error', error);
+    await logEdgeFunctionError('analyze-fridge', error);
     return new Response(
       JSON.stringify({ error: 'Erreur inattendue. Veuillez réessayer.' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

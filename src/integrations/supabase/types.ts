@@ -720,6 +720,36 @@ export type Database = {
         }
         Relationships: []
       }
+      edge_function_errors: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          error_stack: string | null
+          function_name: string
+          id: number
+          request_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          error_stack?: string | null
+          function_name: string
+          id?: number
+          request_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          error_stack?: string | null
+          function_name?: string
+          id?: number
+          request_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       email_events: {
         Row: {
           created_at: string
@@ -1646,6 +1676,27 @@ export type Database = {
           stripe_customer_id?: string | null
           updated_at?: string | null
           welcome_credits_granted?: boolean
+        }
+        Relationships: []
+      }
+      rate_limit_buckets: {
+        Row: {
+          endpoint: string
+          identifier: string
+          last_refill: string
+          tokens: number
+        }
+        Insert: {
+          endpoint: string
+          identifier: string
+          last_refill?: string
+          tokens?: number
+        }
+        Update: {
+          endpoint?: string
+          identifier?: string
+          last_refill?: string
+          tokens?: number
         }
         Relationships: []
       }
@@ -3940,6 +3991,16 @@ export type Database = {
       }
       check_credit_consistency: { Args: never; Returns: Json }
       check_images_integrity: { Args: never; Returns: Json }
+      check_rate_limit: {
+        Args: {
+          p_cost?: number
+          p_endpoint: string
+          p_identifier: string
+          p_max_tokens?: number
+          p_refill_rate?: number
+        }
+        Returns: Json
+      }
       check_stuck_jobs: { Args: { p_minutes?: number }; Returns: Json }
       cleanup_expired_tokens: { Args: never; Returns: undefined }
       cleanup_oauth_states: { Args: { p_ttl?: string }; Returns: number }

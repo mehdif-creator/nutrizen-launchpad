@@ -1,6 +1,6 @@
 import "https://deno.land/std@0.168.0/dotenv/load.ts";
 import { createClient } from "../_shared/deps.ts";
-import { getCorsHeaders } from "../_shared/security.ts";
+import { getCorsHeaders, logEdgeFunctionError } from "../_shared/security.ts";
 
 Deno.serve(async (req) => {
   const origin = req.headers.get("origin");
@@ -234,6 +234,7 @@ Le champ confiance_estimation est un entier de 0 à 100.`;
     });
   } catch (error) {
     console.error("[analyse-repas] Unhandled error:", error);
+    await logEdgeFunctionError('analyse-repas', error);
     const origin = req.headers.get("origin");
     const corsHeaders = getCorsHeaders(origin);
     return new Response(
