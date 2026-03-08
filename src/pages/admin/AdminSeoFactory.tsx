@@ -3,7 +3,7 @@ import { AppFooter } from '@/components/app/AppFooter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, RefreshCw, FileText, Search, ImageIcon } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { callEdgeFunction } from '@/lib/edgeFn';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 import { SeoCreateForm } from './seo/SeoCreateForm';
@@ -26,14 +26,48 @@ export default function AdminSeoFactory() {
   const handleRefreshAllImages = async () => {
     setIsRefreshing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('seo-image-refresh', {
-        body: { refresh_all: true },
+      console.log('[admin] Calling seo-image-refresh...');
+
+      const data = await callEdgeFunction<{
+        refreshed_count?: number;
+        total_processed?: number;
+        errors?: string[];
+        error?: string;
+      }>('seo-image-refresh', { refresh_all: true });
+
+      console.log('[admin] Response:', data);
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      const count = data?.refreshed_count ?? 0;
+      const total = data?.total_processed ?? 0;
+
+      toast({
+        title:
+          count > 0
+            ? `✅ ${count} article(s) mis à jour sur ${total} traités`
+            : `ℹ️ ${total} articles traités — aucune image expirée trouvée`,
       });
-      if (error) throw error;
-      toast({ title: `🖼️ Images régénérées : ${data.refreshed_count} article(s) mis à jour` });
+
+      if (data?.errors?.length) {
+        console.error('[admin] Partial errors:', data.errors);
+        toast({
+          title: `⚠️ ${data.errors.length} erreur(s)`,
+          description: data.errors[0],
+          variant: 'destructive',
+        });
+      }
+
       await refetch();
     } catch (err: any) {
-      toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
+      console.error('[admin] handleRefreshAllImages error:', err);
+      toast({
+        title: 'Erreur de régénération',
+        description: err?.message || 'Erreur inconnue',
+        variant: 'destructive',
+      });
     } finally {
       setIsRefreshing(false);
     }

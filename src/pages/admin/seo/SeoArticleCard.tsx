@@ -286,14 +286,39 @@ export function SeoArticleCard({ article, onRefresh, onDelete, onOpenDetail }: P
               onClick={async () => {
                 setBusy('seo-image-refresh');
                 try {
-                  const { data, error } = await supabase.functions.invoke('seo-image-refresh', {
-                    body: { article_id: article.id },
+                  console.log('[admin] Calling seo-image-refresh for article:', article.id);
+
+                  const data = await callEdgeFunction<{
+                    refreshed_count?: number;
+                    total_processed?: number;
+                    errors?: string[];
+                    error?: string;
+                  }>('seo-image-refresh', { article_id: article.id });
+
+                  if (data?.error) throw new Error(data.error);
+
+                  toast({
+                    title:
+                      (data?.refreshed_count ?? 0) > 0
+                        ? '🖼️ Images régénérées ✓'
+                        : 'ℹ️ Aucune image expirée détectée',
                   });
-                  if (error) throw error;
-                  toast({ title: data.refreshed_count > 0 ? '🖼️ Images régénérées ✓' : 'Aucune image expirée' });
+
+                  if (data?.errors?.length) {
+                    toast({
+                      title: `⚠️ ${data.errors.length} erreur(s)`,
+                      description: data.errors[0],
+                      variant: 'destructive',
+                    });
+                  }
+
                   onRefresh();
                 } catch (e: any) {
-                  toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
+                  toast({
+                    title: 'Erreur de régénération',
+                    description: e?.message || 'Erreur inconnue',
+                    variant: 'destructive',
+                  });
                 } finally {
                   setBusy(null);
                 }

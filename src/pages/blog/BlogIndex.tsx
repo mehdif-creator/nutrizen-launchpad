@@ -314,6 +314,10 @@ function ArticleCard({ article, searchQuery }: { article: BlogArticle; searchQue
   const heroImage = imageUrls.find(img => img.type === 'hero') || imageUrls[0] || null;
   const heroUrl = heroImage?.url || article.cover_url || null;
   const heroAlt = heroImage?.alt || title;
+  const hasValidImage = typeof heroUrl === 'string'
+    && heroUrl.trim().length > 0
+    && !heroUrl.includes('undefined')
+    && !heroUrl.includes('null');
 
   const fallbackGradient = categoryGradients[category] || 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)';
   const fallbackEmoji = categoryEmojis[category] || '🥦';
@@ -326,7 +330,7 @@ function ArticleCard({ article, searchQuery }: { article: BlogArticle; searchQue
           className="h-[200px] overflow-hidden flex-shrink-0"
           style={{ background: fallbackGradient }}
         >
-          {heroUrl && !imgError ? (
+          {hasValidImage && !imgError ? (
             <img
               src={heroUrl}
               alt={heroAlt}

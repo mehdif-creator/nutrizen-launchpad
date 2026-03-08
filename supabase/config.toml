@@ -225,6 +225,13 @@ verify_jwt = false
 limit = 10
 period = "1h"
 
+[functions.seo-image-refresh]
+verify_jwt = false
+
+[functions.seo-image-refresh.rate_limit]
+limit = 10
+period = "1h"
+
 [functions.seo-draft]
 verify_jwt = false
 
