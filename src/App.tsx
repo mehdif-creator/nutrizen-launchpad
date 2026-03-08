@@ -88,6 +88,12 @@ const About = lazy(() => import('./pages/About'));
 const PinterestOAuthCallback = lazy(() => import('./pages/oauth/PinterestOAuthCallback'));
 const SharedWeekPlan = lazy(() => import('./pages/share/SharedWeekPlan'));
 
+// Guides (lead magnets)
+const Defi7Jours = lazy(() => import('./pages/guides/Defi7Jours'));
+const Programme21Jours = lazy(() => import('./pages/guides/Programme21Jours'));
+const FrigoZen = lazy(() => import('./pages/guides/FrigoZen'));
+const TroisSecretsCoach = lazy(() => import('./pages/guides/TroisSecretsCoach'));
+
 const App = () => {
   // Track referral codes from URL
   useReferralTracking();
