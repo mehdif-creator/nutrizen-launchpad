@@ -234,6 +234,7 @@ Le champ confiance_estimation est un entier de 0 à 100.`;
     });
   } catch (error) {
     console.error("[analyse-repas] Unhandled error:", error);
+    await logEdgeFunctionError('analyse-repas', error);
     const origin = req.headers.get("origin");
     const corsHeaders = getCorsHeaders(origin);
     return new Response(

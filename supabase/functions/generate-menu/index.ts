@@ -1011,6 +1011,7 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error("[generate-menu] Error:", error);
+    await logEdgeFunctionError('generate-menu', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
       JSON.stringify({ error: errorMessage }),

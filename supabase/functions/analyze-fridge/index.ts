@@ -305,6 +305,7 @@ Tous les champs en français. Propose un seul plat réalisable avec les ingrédi
 
   } catch (error) {
     logger.error('Unhandled error', error);
+    await logEdgeFunctionError('analyze-fridge', error);
     return new Response(
       JSON.stringify({ error: 'Erreur inattendue. Veuillez réessayer.' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
