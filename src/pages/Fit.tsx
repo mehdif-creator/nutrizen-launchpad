@@ -49,6 +49,21 @@ const fitValueItems = [
     description: 'Musculation, crossfit, running, cyclisme, sports collectifs',
     value: 'inclus',
   },
+  {
+    feature: 'Scan code-barres nutritionnel',
+    description: 'Vérifiez en 2 secondes si un produit colle à vos macros avant de l\'acheter',
+    value: 'valeur : ~10€/mois (app nutrition)',
+  },
+  {
+    feature: 'Analyse photo de repas par IA',
+    description: 'Photographiez votre assiette — estimation précise des calories, protéines, glucides et lipides',
+    value: 'valeur : ~15€/mois (coach nutrition)',
+  },
+  {
+    feature: 'Inspi Frigo — recettes protéinées express',
+    description: 'Photographiez vos ingrédients, l\'IA vous propose des recettes adaptées à votre objectif',
+    value: 'valeur : ~20€/mois (anti-gaspillage)',
+  },
 ];
 
 const fitTestimonials = [
@@ -128,7 +143,7 @@ const Fit = () => {
       <FitMadeForYou />
       <Benefits copy={fitCopy.benefits} />
       <HowItWorks copy={fitCopy.howItWorks} />
-      <ValueStackSection items={fitValueItems} totalValue="~250€/mois" price="12,99€/mois" />
+      <ValueStackSection items={fitValueItems} totalValue="~295€/mois" price="12,99€/mois" />
       <Guarantee />
       <RecipeGallery />
       <CommunityTestimonials testimonials={fitTestimonials} />

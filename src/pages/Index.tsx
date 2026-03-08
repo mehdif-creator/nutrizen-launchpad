@@ -55,6 +55,21 @@ const homeValueItems = [
     description: 'Vous ne mangez jamais deux fois la même semaine',
     value: 'inclus',
   },
+  {
+    feature: 'Scan code-barres intelligent',
+    description: 'Scannez un produit en supermarché et obtenez instantanément son analyse nutritionnelle',
+    value: 'valeur : ~10€/mois (app nutrition)',
+  },
+  {
+    feature: 'Analyse photo de repas par IA',
+    description: 'Prenez votre assiette en photo — calories, macros et conseils en quelques secondes',
+    value: 'valeur : ~15€/mois (coach nutrition)',
+  },
+  {
+    feature: 'Inspi Frigo — recettes depuis vos ingrédients',
+    description: 'Photographiez votre frigo, notre IA vous propose des recettes avec ce que vous avez',
+    value: 'valeur : ~20€/mois (anti-gaspillage)',
+  },
 ];
 
 const Index = () => {
@@ -85,7 +100,7 @@ const Index = () => {
       <Suspense fallback={<div className="py-16" />}>
         <ProfileQuiz />
         <HowItWorks copy={mainCopy.howItWorks} />
-        <ValueStackSection items={homeValueItems} totalValue="~250€/mois" price="12,99€/mois" />
+        <ValueStackSection items={homeValueItems} totalValue="~295€/mois" price="12,99€/mois" />
         <Guarantee />
         <RecipeGallery />
         <CommunityTestimonials />
