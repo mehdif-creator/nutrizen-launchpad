@@ -266,6 +266,3 @@ verify_jwt = false
 [functions.brevo-onboarding.rate_limit]
 limit = 30
 period = "1h"
-
-[functions.seo-image-refresh]
-verify_jwt = false
