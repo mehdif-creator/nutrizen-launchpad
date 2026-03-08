@@ -41,9 +41,18 @@ function AnimatedCounter({ value, suffix = "" }: { value: number; suffix?: strin
 
 export function StreakBar() {
   const { user } = useAuth();
-  const { gamification, levelName, levelColor } = useGamification(user?.id);
+  const { data: gamState } = useGamificationState();
+  const { data: levels = [] } = useLevels();
   const { stats } = useDashboardStats(user?.id);
   const [showCelebration, setShowCelebration] = useState(false);
+
+  // Map V2 state to the shape used by this component
+  const gamification = {
+    streak_days: gamState?.streak_days ?? 0,
+    points: gamState?.total_points ?? 0,
+    level: gamState?.level ?? 1,
+  };
+  const levelName = getLevelNameV2(gamification.level, levels);
 
   // Calculate streak progress (assuming goal of 7 days for weekly streak)
   const streakGoal = 7;
