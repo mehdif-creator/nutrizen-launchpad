@@ -27,7 +27,7 @@ const FinalCTA = lazy(() => import('@/components/landing/FinalCTA').then(m => ({
 const Footer = lazy(() => import('@/components/landing/Footer').then(m => ({ default: m.Footer })));
 const MobileStickyCTA = lazy(() => import('@/components/landing/MobileStickyCTA').then(m => ({ default: m.MobileStickyCTA })));
 const ScrollToTop = lazy(() => import('@/components/common/ScrollToTop').then(m => ({ default: m.ScrollToTop })));
-const LeadMagnet = lazy(() => import('@/components/landing/LeadMagnet').then(m => ({ default: m.LeadMagnet })));
+const LeadMagnetForm = lazy(() => import('@/components/landing/LeadMagnetForm').then(m => ({ default: m.LeadMagnetForm })));
 
 const homeValueItems = [
   {
