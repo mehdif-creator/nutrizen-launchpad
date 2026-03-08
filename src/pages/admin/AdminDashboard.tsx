@@ -1,6 +1,6 @@
 import { AppFooter } from '@/components/app/AppFooter';
 import { Card } from '@/components/ui/card';
-import { Users, Ticket, TrendingUp, Crown, Star, Calendar, Activity, Percent, Euro, UserMinus, UserPlus, BarChart3, Stethoscope, Zap, FileText } from 'lucide-react';
+import { Users, Ticket, TrendingUp, Crown, Star, Calendar, Activity, Percent, Euro, UserMinus, UserPlus, BarChart3, Stethoscope, Zap, FileText, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { KpiCardLink } from '@/components/admin/kpis/KpiCardLink';
 import { EmailCampaignSection } from '@/components/admin/EmailCampaignSection';
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 interface Stats {
   totalUsers: number;
   activeSubscribers: number;
@@ -48,6 +48,7 @@ export default function AdminDashboard() {
     avgRatingScore: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [mailingOpen, setMailingOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -159,10 +160,18 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Email Campaign */}
-        <div className="mb-6">
-          <EmailCampaignSection />
-        </div>
+        {/* Mailing Dialog */}
+        <Dialog open={mailingOpen} onOpenChange={setMailingOpen}>
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Mail className="h-5 w-5 text-primary" />
+                Gestion Mailing
+              </DialogTitle>
+            </DialogHeader>
+            <EmailCampaignSection embedded />
+          </DialogContent>
+        </Dialog>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -177,6 +186,7 @@ export default function AdminDashboard() {
               <Link to="/admin/conversion"><Button variant="outline" className="w-full justify-start"><TrendingUp className="mr-2 h-4 w-4" />Funnel de conversion</Button></Link>
               <Link to="/admin/automation"><Button variant="outline" className="w-full justify-start"><Zap className="mr-2 h-4 w-4" />NutriZen Automation</Button></Link>
               <Link to="/admin/seo-factory"><Button variant="outline" className="w-full justify-start"><FileText className="mr-2 h-4 w-4" />SEO Factory</Button></Link>
+              <Button variant="outline" className="w-full justify-start" onClick={() => setMailingOpen(true)}><Mail className="mr-2 h-4 w-4" />Mailing</Button>
             </div>
           </Card>
           <Card className="p-6">
