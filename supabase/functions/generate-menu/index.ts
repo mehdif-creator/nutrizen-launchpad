@@ -52,6 +52,20 @@ Deno.serve(async (req) => {
     if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
     // ── End rate limiting ──────────────────────────────────────────────────────
 
+    // Parse and validate input (read body once)
+    const body = await req.json().catch(() => ({}));
+    const validatedInput = GenerateMenuSchema.parse(body);
+
+    // Calculate current week start (Monday) — allow override from request
+    const currentDate = new Date();
+    const dayOfWeek = currentDate.getDay();
+    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const weekStart = new Date(currentDate);
+    weekStart.setDate(currentDate.getDate() + diff);
+    weekStart.setHours(0, 0, 0, 0);
+    const defaultWeekStartStr = weekStart.toISOString().split('T')[0];
+    const weekStartStr = validatedInput.week_start ?? defaultWeekStartStr;
+
     // ── Server-side subscription gate ──────────────────────────────────────────
     const { data: subRow } = await supabaseClient
       .from('subscriptions')
@@ -60,130 +74,36 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     const now = new Date();
-    const isActiveSub   = subRow?.status === 'active';
-    const isTrialing    = subRow?.status === 'trialing' &&
-                          subRow.trial_end != null &&
-                          new Date(subRow.trial_end) > now;
+    const isActiveSub = subRow?.status === 'active';
+    const isTrialing =
+      subRow?.status === 'trialing' &&
+      subRow.trial_end != null &&
+      new Date(subRow.trial_end) > now;
     const hasValidAccess = isActiveSub || isTrialing;
 
-    if (!hasValidAccess) {
-      // Free plan users can still generate menus using credits
-      // Check if they have enough credits before blocking
-      const { data: walletCheck } = await supabaseClient
-        .from('user_wallets')
-        .select('balance')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      const userBalance = walletCheck?.balance ?? 0;
-      const MENU_COST = 7;
-
-      if (userBalance < MENU_COST) {
-        console.log(`[generate-menu] Access denied — no subscription and insufficient credits (${userBalance}/${MENU_COST}) for user ${redactId(user.id)}`);
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error_code: 'NO_ACCESS',
-            message: userBalance === 0
-              ? 'Un abonnement actif ou des crédits sont requis pour générer un menu.'
-              : `Crédits insuffisants. Tu as ${userBalance} crédits, il en faut ${MENU_COST}.`,
-            current_balance: userBalance,
-            required: MENU_COST,
-          }),
-          { status: 403, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
-        );
-      }
-      console.log(`[generate-menu] Free user with ${userBalance} credits — allowing access`);
-    }
-    // ── End subscription gate ───────────────────────────────────────────────────
-
-    // Calculate current week start (Monday)
-    const currentDate = new Date();
-    const dayOfWeek = currentDate.getDay();
-    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    const weekStart = new Date(currentDate);
-    weekStart.setDate(currentDate.getDate() + diff);
-    weekStart.setHours(0, 0, 0, 0);
-    const weekStartStr = weekStart.toISOString().split('T')[0];
-
-    // Atomic credit deduction via check_and_consume_credits RPC
-    // Uses user_wallets with FOR UPDATE lock + ledger entry
-    const MENU_GENERATION_COST = 7;
-    const creditReferenceId = `generate_week:${weekStartStr}:${user.id}`;
-    
-    console.log(`[generate-menu] Consuming ${MENU_GENERATION_COST} credits via atomic RPC (ref: ${creditReferenceId})`);
-    
-    const { data: creditsCheck, error: creditsError } = await supabaseClient.rpc('check_and_consume_credits', {
-      p_user_id: user.id,
-      p_feature: 'generate_week',
-      p_cost: MENU_GENERATION_COST,
-    });
-
-    if (creditsError) {
-      console.error('[generate-menu] Credits RPC error:', creditsError);
-      return new Response(
-        JSON.stringify({ 
-          success: false,
-          message: 'Erreur lors de la vérification des crédits.'
-        }),
-        { status: 500, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!creditsCheck?.success) {
-      const currentBalance = (creditsCheck?.current_balance ?? 0);
-      console.log(`[generate-menu] Insufficient credits: ${currentBalance} < ${MENU_GENERATION_COST}`);
-      return new Response(
-        JSON.stringify({ 
-          success: false,
-          error_code: creditsCheck?.error_code || 'INSUFFICIENT_CREDITS',
-          message: `Crédits insuffisants. Tu as ${currentBalance} crédits, il en faut ${MENU_GENERATION_COST} pour générer un menu.`,
-          current_balance: currentBalance,
-          required: MENU_GENERATION_COST,
-        }),
-        { status: 402, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log(`[generate-menu] ✅ ${MENU_GENERATION_COST} credits consumed. New balance: ${creditsCheck.new_balance}`);
-
-    // Get user's household info for portion calculations
+    // Get user's household info for portion calculations (and fallback meals_per_day)
     const { data: profileData, error: profileError } = await supabaseClient
-      .from("profiles")
-      .select("household_adults, household_children, kid_portion_ratio, meals_per_day")
-      .eq("id", user.id)
+      .from('profiles')
+      .select('household_adults, household_children, kid_portion_ratio, meals_per_day')
+      .eq('id', user.id)
       .single();
 
     if (profileError) {
-      console.warn("[generate-menu] Could not fetch household info, using defaults:", profileError);
+      console.warn('[generate-menu] Could not fetch household info, using defaults:', profileError);
     }
 
-    const householdAdults = profileData?.household_adults ?? 1;
-    const householdChildren = profileData?.household_children ?? 0;
-    const kidRatio = profileData?.kid_portion_ratio ?? 0.6;
-    // mealsPerDay will be set after preferences are loaded (see below)
-    const effectiveHouseholdSize = householdAdults + householdChildren * kidRatio;
-    const roundedHouseholdServings = Math.max(1, Math.round(effectiveHouseholdSize));
-
-    console.log(`[generate-menu] Household size: ${householdAdults} adults + ${householdChildren} children = ${effectiveHouseholdSize.toFixed(1)} effective portions`);
-    console.log(`[generate-menu] Target servings per meal: ${roundedHouseholdServings}`);
-
-    // Parse and validate input
-    const body = await req.json().catch(() => ({}));
-    const validatedInput = GenerateMenuSchema.parse(body);
-
-    // Get user preferences
+    // Get user preferences (needed to decide feature key/cost)
     const { data: preferences, error: prefError } = await supabaseClient
-      .from("preferences")
-      .select("*")
-      .eq("user_id", user.id)
+      .from('preferences')
+      .select('*')
+      .eq('user_id', user.id)
       .single();
 
-    if (prefError && prefError.code !== "PGRST116") {
-      console.error("Error fetching preferences:", prefError);
+    if (prefError && prefError.code !== 'PGRST116') {
+      console.error('[generate-menu] Error fetching preferences:', prefError);
     }
 
-    console.log("[generate-menu] User preferences:", preferences ? "Found" : "Not found");
+    console.log('[generate-menu] User preferences:', preferences ? 'Found' : 'Not found');
 
     // preferences.repas_par_jour is set by Profile page
     // profiles.meals_per_day is set by Onboarding — use preferences first
@@ -191,19 +111,122 @@ Deno.serve(async (req) => {
     console.log(`[generate-menu] mealsPerDay=${mealsPerDay} (pref=${preferences?.repas_par_jour}, profile=${profileData?.meals_per_day})`);
 
     // Validate age if present
-    if (preferences?.age) {
+    if (typeof preferences?.age === 'number') {
       const age = preferences.age;
       if (age < 18 || age > 99) {
         console.error(`[generate-menu] Invalid age: ${age}`);
         return new Response(
-          JSON.stringify({ 
+          JSON.stringify({
             success: false,
-            message: 'Âge invalide. L\'âge doit être entre 18 et 99 ans.'
+            message: "Âge invalide. L'âge doit être entre 18 et 99 ans.",
           }),
           { status: 400, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
         );
       }
     }
+
+    // Decide which pricing key applies for this user
+    const menuFeatureKey = mealsPerDay >= 2 ? 'generate_week_2' : 'generate_week_1';
+    let menuCost = mealsPerDay >= 2 ? 11 : 6;
+
+    // Prefer DB source-of-truth when available
+    const { data: costRow, error: costError } = await supabaseClient
+      .from('feature_costs')
+      .select('cost')
+      .eq('feature', menuFeatureKey)
+      .maybeSingle();
+
+    if (costError) {
+      console.warn('[generate-menu] Could not read feature_costs, using fallback cost:', costError);
+    } else if (typeof costRow?.cost === 'number') {
+      menuCost = costRow.cost;
+    }
+
+    console.log(`[generate-menu] Menu cost resolved: feature=${menuFeatureKey} cost=${menuCost}`);
+
+    if (!hasValidAccess) {
+      // Free plan users can still generate menus using credits
+      // Check if they have enough credits before blocking
+      const { data: walletRow, error: walletError } = await supabaseClient
+        .from('user_wallets')
+        .select('subscription_credits, lifetime_credits')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (walletError) {
+        console.warn('[generate-menu] Wallet read error (treating as 0):', walletError);
+      }
+
+      const userBalance = (walletRow?.subscription_credits ?? 0) + (walletRow?.lifetime_credits ?? 0);
+
+      if (userBalance < menuCost) {
+        console.log(`[generate-menu] Access denied — no subscription and insufficient credits (${userBalance}/${menuCost}) for user ${redactId(user.id)}`);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error_code: 'NO_ACCESS',
+            message: userBalance === 0
+              ? 'Un abonnement actif ou des crédits sont requis pour générer un menu.'
+              : `Crédits insuffisants. Tu as ${userBalance} crédits, il en faut ${menuCost}.`,
+            current_balance: userBalance,
+            required: menuCost,
+          }),
+          { status: 403, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log(`[generate-menu] Free user with ${userBalance} credits — allowing access`);
+    }
+    // ── End subscription gate ───────────────────────────────────────────────────
+
+    // Atomic credit deduction via check_and_consume_credits RPC
+    // Uses user_wallets with FOR UPDATE lock + ledger entry
+    const creditReferenceId = `${menuFeatureKey}:${weekStartStr}:${user.id}`;
+
+    console.log(`[generate-menu] Consuming ${menuCost} credits via atomic RPC (feature=${menuFeatureKey}, ref=${creditReferenceId})`);
+
+    const { data: creditsCheck, error: creditsError } = await supabaseClient.rpc('check_and_consume_credits', {
+      p_user_id: user.id,
+      p_feature: menuFeatureKey,
+      p_cost: menuCost,
+    });
+
+    if (creditsError) {
+      console.error('[generate-menu] Credits RPC error:', creditsError);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: 'Erreur lors de la vérification des crédits.',
+        }),
+        { status: 500, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!creditsCheck?.success) {
+      const currentBalance = creditsCheck?.current_balance ?? 0;
+      console.log(`[generate-menu] Insufficient credits: ${currentBalance} < ${menuCost}`);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error_code: creditsCheck?.error_code || 'INSUFFICIENT_CREDITS',
+          message: `Crédits insuffisants. Tu as ${currentBalance} crédits, il en faut ${menuCost} pour générer un menu.`,
+          current_balance: currentBalance,
+          required: menuCost,
+        }),
+        { status: 402, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`[generate-menu] ✅ ${menuCost} credits consumed. New balance: ${creditsCheck.new_balance}`);
+
+    const householdAdults = profileData?.household_adults ?? 1;
+    const householdChildren = profileData?.household_children ?? 0;
+    const kidRatio = profileData?.kid_portion_ratio ?? 0.6;
+    const effectiveHouseholdSize = householdAdults + householdChildren * kidRatio;
+    const roundedHouseholdServings = Math.max(1, Math.round(effectiveHouseholdSize));
+
+    console.log(`[generate-menu] Household size: ${householdAdults} adults + ${householdChildren} children = ${effectiveHouseholdSize.toFixed(1)} effective portions`);
+    console.log(`[generate-menu] Target servings per meal: ${roundedHouseholdServings}`);
 
     // ============================================================
     // SAFETY GATE: Build user restriction keys from dictionary
