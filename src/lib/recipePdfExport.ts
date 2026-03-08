@@ -117,7 +117,7 @@ export function exportRecipePdf(recipe: RecipePdfData): void {
       columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 40 } },
       tableWidth: 100,
     });
-    y = (doc as any).lastAutoTable?.finalY + 8 ?? y + 40;
+    y = ((doc as any).lastAutoTable?.finalY ?? y + 32) + 8;
   }
 
   // ── Ingrédients ──
