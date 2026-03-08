@@ -41,16 +41,16 @@ export function RecipeMacrosCard({
   // Check if we have any macro data
   const hasMacros = calories !== undefined || proteins !== undefined || carbs !== undefined || fats !== undefined;
 
-  // Calculate values based on view mode
-  const factor = viewMode === 'portion' ? 1 : servings;
+  // Macros props are per-serving; multiply by servings for total
+  const multiplier = viewMode === 'portion' ? 1 : servings;
   const displayValues = {
-    calories: calories !== undefined ? Math.round(calories * factor / servings) : null,
-    proteins: proteins !== undefined ? Math.round(proteins * factor / servings) : null,
-    carbs: carbs !== undefined ? Math.round(carbs * factor / servings) : null,
-    fats: fats !== undefined ? Math.round(fats * factor / servings) : null,
-    fibers: fibers !== undefined ? Math.round(fibers * factor / servings) : null,
-    sugars: sugars !== undefined ? Math.round(sugars * factor / servings) : null,
-    salt: salt !== undefined ? (salt * factor / servings).toFixed(1) : null,
+    calories: calories !== undefined ? Math.round(calories * multiplier) : null,
+    proteins: proteins !== undefined ? Math.round(proteins * multiplier) : null,
+    carbs: carbs !== undefined ? Math.round(carbs * multiplier) : null,
+    fats: fats !== undefined ? Math.round(fats * multiplier) : null,
+    fibers: fibers !== undefined ? Math.round(fibers * multiplier) : null,
+    sugars: sugars !== undefined ? Math.round(sugars * multiplier) : null,
+    salt: salt !== undefined ? (salt * multiplier).toFixed(1) : null,
   };
 
   if (isLoading) {
