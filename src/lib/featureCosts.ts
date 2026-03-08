@@ -54,6 +54,7 @@ export const FEATURE_DESCRIPTIONS: Record<FeatureType, string> = {
   generate_week_2: 'Générez un menu hebdomadaire avec déjeuner et dîner.',
   regenerate_day: 'Remplacez toutes les recettes d\'un jour.',
   regenerate_week: 'Regénérez l\'intégralité de votre menu hebdomadaire.',
+  scan_barcode: 'Scannez un code-barres pour voir les infos nutritionnelles du produit.',
 };
 
 /**

@@ -136,6 +136,7 @@ const App = () => {
         <Route path="/app/supabase-debug" element={<ProtectedRoute requireAdmin><SupabaseDebug /></ProtectedRoute>} />
         <Route path="/app/famille-plus" element={<ProtectedRoute><FamillePlus /></ProtectedRoute>} />
         <Route path="/app/day-menu/:date" element={<ProtectedRoute><DayMenu /></ProtectedRoute>} />
+        <Route path="/app/scan-barcode" element={<ProtectedRoute><ErrorBoundary><ScanBarcode /></ErrorBoundary></ProtectedRoute>} />
         <Route path="/pricing" element={<FamillePlus />} />
 
         {/* Admin (Protected + Admin Only) */}
