@@ -38,6 +38,7 @@ export const FEATURE_NAMES: Record<FeatureType, string> = {
   generate_week_2: 'Générer semaine (2 repas/jour)',
   regenerate_day: 'Regénérer un jour',
   regenerate_week: 'Regénérer semaine complète',
+  scan_barcode: 'Scan code-barres',
 };
 
 /**
