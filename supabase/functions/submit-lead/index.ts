@@ -5,7 +5,8 @@ import { getCorsHeaders, getClientIp } from "../_shared/security.ts";
 const leadSchema = z.object({
   email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
   source: z.string().trim().min(1, "Source is required").max(100, "Source must be less than 100 characters"),
-  timestamp: z.string().optional()
+  timestamp: z.string().optional(),
+  listId: z.number().int().positive().optional(),
 });
 
 Deno.serve(async (req) => {
