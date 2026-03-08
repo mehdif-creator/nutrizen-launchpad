@@ -20,6 +20,24 @@ export default function AdminSeoFactory() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'date' | 'score' | 'status'>('date');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { toast } = useToast();
+
+  const handleRefreshAllImages = async () => {
+    setIsRefreshing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('seo-image-refresh', {
+        body: { refresh_all: true },
+      });
+      if (error) throw error;
+      toast({ title: `🖼️ Images régénérées : ${data.refreshed_count} article(s) mis à jour` });
+      await refetch();
+    } catch (err: any) {
+      toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const filteredArticles = useMemo(() => {
     let list = articles;
