@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, Sparkles, Flame, Users, ShoppingCart, Share2, Copy, Brain, Trophy, Info } from "lucide-react";
+import { Clock, Sparkles, Flame, Users, ShoppingCart, Share2, Copy, Brain, Trophy, Info, FileDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { StatCard } from "@/components/app/StatCard";
 import { Progress } from "@/components/app/Progress";
@@ -24,6 +24,10 @@ import { OnboardingCoach } from "@/components/app/OnboardingCoach";
 import { useWeeklyRecipesByDay } from "@/hooks/useWeeklyRecipesByDay";
 import { DayCardWithRecipes } from "@/components/app/DayCardWithRecipes";
 import { useShoppingList } from "@/hooks/useShoppingList";
+import { mergeShoppingItems, type RawShoppingItem } from "@/lib/shoppingListUtils";
+import { exportWeeklyPackPdf } from "@/lib/pdfExport";
+import { formatHouseholdDisplay } from "@/lib/portions";
+import { getCurrentWeekStart } from "@/hooks/useWeeklyMenu";
 import { useCreditsReset } from "@/hooks/useCreditsReset";
 import { useEffectivePortions } from "@/hooks/useEffectivePortions";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -327,6 +331,38 @@ export default function Dashboard() {
               <Button onClick={handleRegenWeek} size="sm" disabled={generating}>
                 {generating ? "Génération..." : "Régénérer la semaine (7 crédits)"}
               </Button>
+              {hasDays && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const ws = getCurrentWeekStart();
+                      // Fetch shopping list raw items for PDF
+                      const { data: rawData } = await supabase.rpc(
+                        'get_shopping_list_from_weekly_menu',
+                        { p_user_id: user!.id, p_week_start: ws }
+                      );
+                      const rawItems: RawShoppingItem[] = (rawData || []).map((r: any) => ({
+                        ingredient_name: r.ingredient_name,
+                        total_quantity: r.total_quantity,
+                        unit: r.unit,
+                        formatted_display: r.formatted_display,
+                      }));
+                      const merged = mergeShoppingItems(rawItems);
+                      const hhLabel = formatHouseholdDisplay(householdAdults, householdChildren);
+                      exportWeeklyPackPdf(ws, weeklyDays, merged, hhLabel);
+                      toast({ title: "📥 PDF téléchargé", description: "Pack complet de la semaine." });
+                    } catch (err) {
+                      console.error('PDF export error:', err);
+                      toast({ title: "Erreur", description: "Impossible de générer le PDF.", variant: "destructive" });
+                    }
+                  }}
+                >
+                  <FileDown className="h-4 w-4 mr-1" />
+                  Export PDF
+                </Button>
+              )}
             </div>
           </div>
 

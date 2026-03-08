@@ -11,7 +11,9 @@ import {
   Check,
   X,
   ChefHat,
+  FileDown,
 } from 'lucide-react';
+import { exportShoppingListPdf } from '@/lib/pdfExport';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -258,7 +260,17 @@ export default function ShoppingList() {
             </Button>
             <Button onClick={handleExportCSV}>
               <Download className="h-4 w-4 mr-2" />
-              Exporter CSV
+              CSV
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                exportShoppingListPdf(weekStart, items);
+                toast({ title: '📥 PDF téléchargé', description: 'Liste de courses en PDF.' });
+              }}
+            >
+              <FileDown className="h-4 w-4 mr-2" />
+              PDF
             </Button>
           </div>
         </div>
