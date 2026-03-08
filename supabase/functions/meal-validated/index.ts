@@ -31,65 +31,46 @@ Deno.serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    // Anti-spam: check if meal validated within last 60 seconds
-    const { data: recentEvent } = await supabaseClient
-      .from('user_events')
-      .select('occurred_at')
-      .eq('user_id', user.id)
-      .eq('event_type', 'MEAL_VALIDATED')
-      .gte('occurred_at', new Date(Date.now() - 60000).toISOString())
-      .maybeSingle();
-
-    if (recentEvent) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: 'Please wait 60 seconds between meal validations'
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     let totalPoints = 0;
-    const messages = [];
+    const messages: string[] = [];
 
-    // Award +3 points for meal validation
-    await supabaseClient.rpc('fn_award_event', {
+    // Award +3 points for meal validation via V2 unified system
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' });
+    const { data: mealResult } = await supabaseClient.rpc('fn_emit_gamification_event', {
       p_event_type: 'MEAL_VALIDATED',
-      p_points: 3,
-      p_credits: 0,
       p_meta: { recipeId, durationMinutes },
+      p_idempotency_key: `meal:${user.id}:${recipeId}:${today}`,
     });
-    totalPoints += 3;
-    messages.push('+3 points for validating meal');
 
-    // Update streak
-    await supabaseClient.rpc('fn_touch_streak_today');
-    messages.push('Streak updated!');
+    if (mealResult?.success) {
+      totalPoints += mealResult.points_awarded || 3;
+      messages.push(`+${mealResult.points_awarded || 3} points pour repas validé`);
+    }
 
     // Day completed bonus
     if (dayCompleted) {
-      await supabaseClient.rpc('fn_award_event', {
+      const { data: dayResult } = await supabaseClient.rpc('fn_emit_gamification_event', {
         p_event_type: 'DAY_COMPLETED',
-        p_points: 5,
-        p_credits: 0,
-        p_meta: { date: new Date().toISOString() },
+        p_meta: { date: today },
+        p_idempotency_key: `day_complete:${user.id}:${today}`,
       });
-      totalPoints += 5;
-      messages.push('+5 bonus for completing full day!');
+
+      if (dayResult?.success) {
+        totalPoints += dayResult.points_awarded || 5;
+        messages.push(`+${dayResult.points_awarded || 5} bonus journée complète !`);
+      }
     }
 
     // Fast Cook badge check (if under 15 minutes)
     if (durationMinutes && durationMinutes <= 15) {
       const { data: fastCookEvents } = await supabaseClient
-        .from('user_events')
+        .from('gamification_events')
         .select('id')
         .eq('user_id', user.id)
         .eq('event_type', 'MEAL_VALIDATED')
-        .contains('meta', { durationMinutes: { lte: 15 } });
+        .limit(10);
 
       if (fastCookEvents && fastCookEvents.length >= 10) {
-        // Check if badge already granted
         const { data: hasBadge } = await supabaseClient
           .from('user_badges')
           .select('id')
@@ -102,14 +83,16 @@ Deno.serve(async (req) => {
             .from('user_badges')
             .insert({ user_id: user.id, badge_code: 'FAST_COOK' });
           
-          await supabaseClient.rpc('fn_award_event', {
+          const { data: badgeResult } = await supabaseClient.rpc('fn_emit_gamification_event', {
             p_event_type: 'BADGE_GRANTED',
-            p_points: 10,
-            p_credits: 0,
             p_meta: { badge: 'FAST_COOK' },
+            p_idempotency_key: `badge:${user.id}:FAST_COOK`,
           });
-          totalPoints += 10;
-          messages.push('🎉 Fast Cook badge unlocked! +10 points');
+
+          if (badgeResult?.success) {
+            totalPoints += badgeResult.points_awarded || 10;
+            messages.push('🎉 Badge Fast Cook débloqué ! +10 points');
+          }
         }
       }
     }
@@ -125,7 +108,6 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Meal validation error:', error);
     
-    // Sanitize error - don't expose internal details
     const message = (error as Error).message;
     const isAuthError = message.includes('Unauthorized') || message.includes('JWT');
     
