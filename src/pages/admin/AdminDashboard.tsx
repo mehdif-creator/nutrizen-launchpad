@@ -189,12 +189,14 @@ export default function AdminDashboard() {
               <Button variant="outline" className="w-full justify-start" onClick={() => setMailingOpen(true)}><Mail className="mr-2 h-4 w-4" />Mailing</Button>
             </div>
           </Card>
+          {/* Configuration section hidden — kept for future use
           <Card className="p-6">
             <h2 className="text-xl font-bold mb-4">Configuration</h2>
             <div className="space-y-3">
               <Link to="/admin/macros-maintenance"><Button variant="outline" className="w-full justify-start"><BarChart3 className="mr-2 h-4 w-4" />Maintenance Macros</Button></Link>
             </div>
           </Card>
+          */}
         </div>
       </main>
       <AppFooter />
