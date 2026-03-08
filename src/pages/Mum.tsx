@@ -137,7 +137,7 @@ const Mum = () => {
       <Pricing onCtaClick={handleCtaClick} comparison={mumComparison} />
       <FAQ copy={mumCopy.faq} />
       <LeadMagnetForm
-        listId={6} // TODO: remplacer par l'ID réel de la liste Brevo "Mum"
+        listId={7}
         title="Le Frigo Zen — Les 20 Essentiels"
         text="La checklist des 20 ingrédients à toujours avoir pour des repas sains sans stress."
         buttonLabel="Obtenir ma checklist Frigo Zen →"
