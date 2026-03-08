@@ -6,8 +6,12 @@ import { createLogger } from '@/lib/logger';
 const logger = createLogger('useStreakUpdate');
 
 /**
- * Hook to update user streak and dashboard stats on app mount
- * This should be called once when the user opens the app
+ * Hook to emit a daily APP_OPEN gamification event on app mount.
+ * Uses the unified fn_emit_gamification_event which handles:
+ * - Points (via gamification_point_rules)
+ * - Streak tracking (Europe/Paris timezone)
+ * - Wallet sync
+ * - Idempotency
  */
 export function useStreakUpdate(userId: string | undefined) {
   const hasUpdated = useRef(false);
@@ -17,20 +21,29 @@ export function useStreakUpdate(userId: string | undefined) {
 
     const updateStreak = async () => {
       try {
-        const { data, error } = await supabase.rpc('update_user_streak_and_stats', {
-          p_user_id: userId
-        });
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' });
+        
+        const { data, error } = await (supabase.rpc as Function)(
+          'fn_emit_gamification_event',
+          {
+            p_event_type: 'APP_OPEN',
+            p_meta: {},
+            p_idempotency_key: `app_open:${userId}:${today}`,
+          }
+        );
 
         if (error) {
           logger.error('Error updating streak', error);
           return;
         }
 
-        logger.debug('Streak updated', { data });
+        logger.debug('Streak updated via V2', { data });
 
         // Invalidate relevant queries to refetch data
+        queryClient.invalidateQueries({ queryKey: ['gamification-state', userId] });
+        queryClient.invalidateQueries({ queryKey: ['gamification-events', userId] });
+        queryClient.invalidateQueries({ queryKey: ['gamification-dashboard', userId] });
         queryClient.invalidateQueries({ queryKey: ['dashboardStats', userId] });
-        queryClient.invalidateQueries({ queryKey: ['gamification', userId] });
         
         hasUpdated.current = true;
       } catch (error) {

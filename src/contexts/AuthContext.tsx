@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, useState, useCallback, useRef, Re
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { trackDailyLogin } from '@/utils/gamification';
 import { createLogger } from '@/lib/logger';
 import { clearOnboardingCache } from '@/lib/onboarding/status';
 
@@ -135,7 +134,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initialSetupDoneForUser.current = uid;
 
     refreshSubscription(sess);
-    trackDailyLogin(uid);
+
+    // Award daily login via V2 gamification system (idempotent per day)
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' });
+    (supabase.rpc as Function)('fn_emit_gamification_event', {
+      p_event_type: 'APP_OPEN',
+      p_meta: {},
+      p_idempotency_key: `app_open:${uid}:${today}`,
+    }).then(({ error }: any) => {
+      if (error) logger.warn('Daily login gamification event failed', error);
+    });
   }, [refreshSubscription]);
 
   useEffect(() => {

@@ -7,8 +7,12 @@ Deno.serve(async (req) => {
     rateLimit: { maxTokens: 30, refillRate: 60, cost: 1 },
   }, async (context, _body, logger) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: { Authorization: req.headers.get('Authorization')! },
+      },
+    });
 
     // Get current week's challenge (Monday-based, Europe/Paris)
     const now = new Date();
@@ -71,34 +75,34 @@ Deno.serve(async (req) => {
       throw new SecurityError('Unable to record completion', 'DB_ERROR', 500);
     }
 
-    // Award points
-    const { error: awardError } = await supabaseClient.rpc('fn_award_event', {
+    // Award points via unified V2 gamification system
+    const { data: awardResult, error: awardError } = await supabaseClient.rpc('fn_emit_gamification_event', {
       p_event_type: 'WEEKLY_CHALLENGE_COMPLETED',
-      p_points: challenge.points_reward,
-      p_credits: 0,
       p_meta: { 
         challengeCode: challenge.code,
         challengeTitle: challenge.title,
-        weekStart
+        weekStart,
       },
+      p_idempotency_key: `challenge:${context.userId}:${challenge.id}`,
     });
 
     if (awardError) {
       logger.error('Award points error', awardError);
-      // Don't fail - completion was recorded, points can be awarded manually
       logger.warn('Points not awarded, but challenge marked complete');
     }
 
+    const pointsAwarded = awardResult?.points_awarded || challenge.points_reward;
+
     logger.info('Challenge completed successfully', { 
       challengeId: challenge.id,
-      points: challenge.points_reward 
+      points: pointsAwarded,
     });
 
     return { 
       success: true, 
-      points: challenge.points_reward,
+      points: pointsAwarded,
       challenge: challenge.title,
-      message: `🎉 Défi complété ! +${challenge.points_reward} points`
+      message: `🎉 Défi complété ! +${pointsAwarded} points`
     };
   });
 });

@@ -3518,6 +3518,18 @@ export type Database = {
         }
         Relationships: []
       }
+      gamification_leaderboard: {
+        Row: {
+          avatar_url: string | null
+          display_name: string | null
+          level: number | null
+          rank: number | null
+          streak_days: number | null
+          total_points: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
       kpi_events_daily_mv: {
         Row: {
           country: string | null
@@ -4734,6 +4746,11 @@ export type Database = {
         | "BADGE_GRANTED"
         | "ADMIN_ADJUST"
         | "PROFILE_COMPLETED"
+        | "MENU_GENERATED"
+        | "GROCERY_LIST"
+        | "SHARE_WEEK"
+        | "WEEK_COMPLETED"
+        | "REFERRAL_JOINED"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4876,6 +4893,11 @@ export const Constants = {
         "BADGE_GRANTED",
         "ADMIN_ADJUST",
         "PROFILE_COMPLETED",
+        "MENU_GENERATED",
+        "GROCERY_LIST",
+        "SHARE_WEEK",
+        "WEEK_COMPLETED",
+        "REFERRAL_JOINED",
       ],
     },
   },

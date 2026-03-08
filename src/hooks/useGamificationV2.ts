@@ -207,7 +207,8 @@ export function useEmitAppOpen() {
 
   return useCallback(() => {
     if (!user?.id) return;
-    const today = new Date().toISOString().split('T')[0];
+    // Use Europe/Paris date for idempotency key
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' });
     emit.mutate({
       eventType: 'APP_OPEN',
       idempotencyKey: `app_open:${user.id}:${today}`,

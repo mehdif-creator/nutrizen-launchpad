@@ -7,26 +7,37 @@ import { BadgesCarousel } from '@/components/gamification/BadgesCarousel';
 import { ReferralWidget } from '@/components/gamification/ReferralWidget';
 import { WalletCard } from '@/components/gamification/WalletCard';
 import { StreakWidget } from '@/components/gamification/StreakWidget';
+import { LeaderboardCard } from '@/components/gamification/LeaderboardCard';
 import { useDashboard } from '@/hooks/useGamificationDashboard';
-import { useEmitAppOpen } from '@/hooks/useGamificationV2';
+import { useGamificationState, useEmitGamificationEvent } from '@/hooks/useGamificationV2';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Gamification() {
-  const { data: dashboard, isLoading } = useDashboard();
-  const emitAppOpen = useEmitAppOpen();
+  const { user } = useAuth();
+  const { data: dashboard, isLoading: dashboardLoading } = useDashboard();
+  const { data: gamState, isLoading: gamLoading } = useGamificationState();
+  const emit = useEmitGamificationEvent();
   const navigate = useNavigate();
 
-  // Award app open on mount (once per day, idempotent)
+  // Award app open on mount (once per day, idempotent via key)
   useEffect(() => {
-    emitAppOpen();
-  }, []);
+    if (!user?.id) return;
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' });
+    emit.mutate({
+      eventType: 'APP_OPEN',
+      idempotencyKey: `app_open:${user.id}:${today}`,
+    });
+  }, [user?.id]);
 
   const handleBuyCredits = () => {
     navigate('/pricing');
   };
+
+  const isLoading = dashboardLoading || gamLoading;
 
   if (isLoading) {
     return (
@@ -59,20 +70,20 @@ export default function Gamification() {
             <h1 className="text-3xl font-bold mb-2">
               {dashboard?.profile.display_name
                 ? `Salut, ${dashboard.profile.display_name} !`
-                : 'Ton Tableau de Bord'}
+                : 'Votre Tableau de Bord'}
             </h1>
             <p className="text-muted-foreground">
-              Gagne des points, monte de niveau et profite de tes récompenses
+              Gagnez des points, montez de niveau et profitez de vos récompenses
             </p>
           </div>
 
-          {/* V2 Progression Card (reads from user_gamification_state) */}
+          {/* V2 Progression Card */}
           <ProgressionCardV2 />
 
           {/* Point Rules */}
           <PointRulesCard />
 
-          {/* Wallet (still from legacy dashboard) */}
+          {/* Wallet */}
           {dashboard && (
             <WalletCard
               points={dashboard.wallet.points_total}
@@ -82,11 +93,11 @@ export default function Gamification() {
             />
           )}
 
-          {/* Streak */}
-          {dashboard && (
+          {/* Streak — use V2 state as source of truth */}
+          {gamState && (
             <StreakWidget
-              currentStreak={dashboard.streak.current_streak_days}
-              longestStreak={dashboard.streak.longest_streak_days}
+              currentStreak={gamState.streak_days}
+              longestStreak={dashboard?.streak.longest_streak_days ?? gamState.streak_days}
             />
           )}
 
@@ -98,16 +109,19 @@ export default function Gamification() {
             {/* V2 Activity Feed */}
             <ActivityFeedV2 />
 
-            {/* Referral */}
-            {dashboard && (
-              <ReferralWidget
-                referralCode={dashboard.profile.referral_code}
-                activeReferrals={dashboard.activeReferrals}
-                freeMonthsEarned={dashboard.wallet.free_months_earned}
-                freeMonthsUsed={dashboard.wallet.free_months_used}
-              />
-            )}
+            {/* Leaderboard */}
+            <LeaderboardCard />
           </div>
+
+          {/* Referral */}
+          {dashboard && (
+            <ReferralWidget
+              referralCode={dashboard.profile.referral_code}
+              activeReferrals={dashboard.activeReferrals}
+              freeMonthsEarned={dashboard.wallet.free_months_earned}
+              freeMonthsUsed={dashboard.wallet.free_months_used}
+            />
+          )}
         </motion.div>
       </main>
       <AppFooter />

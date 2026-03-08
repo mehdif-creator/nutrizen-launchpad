@@ -30,51 +30,42 @@ Deno.serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    // Check if already awarded today (Europe/Paris timezone)
+    // Use the unified V2 gamification function (handles idempotency, streak, sync)
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' });
     
-    const { data: existingEvent } = await supabaseClient
-      .from('user_events')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('event_type', 'APP_OPEN')
-      .gte('occurred_at', `${today}T00:00:00+01:00`)
-      .lte('occurred_at', `${today}T23:59:59+01:00`)
-      .maybeSingle();
+    const { data, error } = await supabaseClient.rpc('fn_emit_gamification_event', {
+      p_event_type: 'APP_OPEN',
+      p_meta: { source: 'edge_function' },
+      p_idempotency_key: `app_open:${user.id}:${today}`,
+    });
 
-    if (existingEvent) {
+    if (error) throw error;
+
+    const result = data as { success: boolean; error?: string; duplicate?: boolean; points_awarded?: number };
+
+    if (!result.success) {
+      const alreadyAwarded = result.duplicate || result.error === 'already_processed' || result.error === 'daily_limit_reached';
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: 'Already awarded today',
-          alreadyAwarded: true
+          message: alreadyAwarded ? 'Already awarded today' : (result.error || 'Unknown error'),
+          alreadyAwarded,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Award +2 points for app open
-    const { error: awardError } = await supabaseClient.rpc('fn_award_event', {
-      p_event_type: 'APP_OPEN',
-      p_points: 2,
-      p_credits: 0,
-      p_meta: { timestamp: new Date().toISOString() },
-    });
-
-    if (awardError) throw awardError;
-
     return new Response(
       JSON.stringify({ 
         success: true, 
-        points: 2,
-        message: '+2 points for opening the app today!'
+        points: result.points_awarded || 2,
+        message: `+${result.points_awarded || 2} points pour l'ouverture de l'app !`
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Award app open error:', error);
     
-    // Sanitize error - don't expose internal details
     const message = (error as Error).message;
     const isAuthError = message.includes('Unauthorized') || message.includes('JWT');
     
