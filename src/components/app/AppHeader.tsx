@@ -194,7 +194,7 @@ export const AppHeader = () => {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t bg-background">
+        <div className="lg:hidden border-t bg-background">
           <nav className="container py-4 flex flex-col gap-4">
             {/* Gamification in mobile */}
             <div className="pb-3 border-b">
