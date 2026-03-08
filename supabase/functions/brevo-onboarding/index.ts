@@ -166,6 +166,138 @@ function getTemplate3Html(): string {
   </div>`);
 }
 
+// ── Lead Magnet Templates ──
+
+function getLeadDefi7JoursHtml(): string {
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<style>
+body{margin:0;padding:0;background:#f4f7f6;font-family:'Helvetica Neue',Arial,sans-serif}
+.container{max-width:600px;margin:20px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08)}
+.header{background:#2A7D6F;padding:40px;text-align:center}.header h1{color:#fff;margin:0;font-size:26px;font-weight:800;line-height:1.3}.header p{color:#a8d5ce;margin:10px 0 0;font-size:15px}
+.body{padding:36px 40px}.body p{color:#444;font-size:16px;line-height:1.7;margin:0 0 16px}
+.list-box{background:#f0faf8;border-radius:10px;padding:20px 24px;margin:20px 0}.list-box ul{margin:0;padding-left:0;list-style:none}.list-box li{padding:5px 0;color:#555;font-size:15px}
+.cta-box{text-align:center;margin:28px 0}.btn{display:inline-block;background:#2A7D6F;color:#fff!important;text-decoration:none;padding:18px 36px;border-radius:10px;font-size:17px;font-weight:800}
+.divider{height:1px;background:#eee;margin:28px 0}
+.footer{background:#f4f7f6;padding:24px 40px;text-align:center}.footer p{color:#aaa;font-size:12px;margin:0;line-height:1.6}.footer a{color:#2A7D6F;text-decoration:none}
+</style></head>
+<body><div class="container">
+<div class="header"><h1>Ton Défi Healthy 7 Jours est là ! 🎯</h1><p>NutriZen · mynutrizen.fr</p></div>
+<div class="body">
+<p>Salut {{ contact.FIRSTNAME | default:"toi" }} 👋</p>
+<p>Ton guide est prêt. Pendant 7 jours, on t'accompagne pas à pas pour adopter de nouvelles habitudes saines — sans régime, sans frustration, à ton rythme.</p>
+<div class="list-box"><ul>
+<li>💧 J1 — Hydratation &amp; vitamines</li><li>🍫 J2 — Réduire le sucre ajouté</li><li>🧘 J3 — Manger en pleine conscience</li>
+<li>🏃 J4 — Bouger +20 minutes</li><li>🍳 J5 — Cuisiner maison</li><li>🥗 J6 — Découverte nutrition</li><li>🏆 J7 — Bilan bien-être</li>
+</ul></div>
+<div class="cta-box"><a href="https://mynutrizen.fr/lead-magnets/defi-healthy-7-jours.pdf" class="btn">📥 Télécharger mon Défi Healthy →</a></div>
+<p><strong>Pour démarrer ce soir :</strong> lis le Jour 1, prépare ta gourde, et c'est parti. 💪</p>
+<div class="divider"></div>
+<p style="font-size:14px;color:#888;">Demain, je t'envoie un bonus surprise pour aller encore plus loin.</p>
+</div>
+<div class="footer"><p>NutriZen · mynutrizen.fr<br>Tu reçois cet email car tu t'es inscrit(e) sur notre site.<br><a href="{{ unsubscribe }}">Se désinscrire</a></p></div>
+</div></body></html>`;
+}
+
+function getLeadProgramme21JoursHtml(): string {
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<style>
+body{margin:0;padding:0;background:#f4f7f6;font-family:'Helvetica Neue',Arial,sans-serif}
+.container{max-width:600px;margin:20px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08)}
+.header{background:linear-gradient(135deg,#1a5c52,#2A7D6F);padding:40px;text-align:center}.header h1{color:#fff;margin:0;font-size:26px;font-weight:900;line-height:1.3}
+.badge{display:inline-block;background:#E07B39;color:#fff;font-weight:800;font-size:12px;padding:5px 14px;border-radius:20px;margin:12px 0 0;letter-spacing:.5px}.header p{color:#a8d5ce;margin:10px 0 0;font-size:15px}
+.body{padding:36px 40px}.body p{color:#444;font-size:16px;line-height:1.7;margin:0 0 16px}
+.week{border-radius:10px;padding:16px 20px;margin:10px 0}.w1{background:#e8f5f3;border-left:4px solid #2A7D6F}.w2{background:#fdf0e8;border-left:4px solid #E07B39}.w3{background:#eaf3e8;border-left:4px solid #4a8a3c}
+.week strong{display:block;margin-bottom:4px;font-size:15px;color:#222}.week p{font-size:14px;color:#666;margin:0;line-height:1.5}
+.cta-box{text-align:center;margin:28px 0}.btn{display:inline-block;background:#E07B39;color:#fff!important;text-decoration:none;padding:18px 36px;border-radius:10px;font-size:17px;font-weight:800}
+.divider{height:1px;background:#eee;margin:28px 0}
+.footer{background:#f4f7f6;padding:24px 40px;text-align:center}.footer p{color:#aaa;font-size:12px;margin:0;line-height:1.6}.footer a{color:#2A7D6F;text-decoration:none}
+</style></head>
+<body><div class="container">
+<div class="header"><h1>Ton Programme 21 Jours en Forme 💪</h1><span class="badge">3 SEMAINES · 1 TRANSFORMATION</span><p>NutriZen · mynutrizen.fr</p></div>
+<div class="body">
+<p>Salut {{ contact.FIRSTNAME | default:"champion(ne)" }} 🔥</p>
+<p>Tu as franchi le premier pas — le plus important. Ton programme complet est prêt :</p>
+<div class="week w1"><strong>🌱 Semaine 1 — Les Fondations</strong><p>Hydratation, légumes, protéines, mouvement doux.</p></div>
+<div class="week w2"><strong>🔥 Semaine 2 — Montée en Puissance</strong><p>Renforcement, batch cooking, bonnes graisses, cardio fun.</p></div>
+<div class="week w3"><strong>🏆 Semaine 3 — Consolidation</strong><p>Autonomie, zéro ultra-transformé, repas plaisir.</p></div>
+<div class="cta-box"><a href="https://mynutrizen.fr/lead-magnets/programme-21-jours-en-forme.pdf" class="btn">📥 Télécharger mon Programme →</a></div>
+<p><strong>Avant de commencer :</strong> prends 5 min pour écrire ton "Pourquoi".</p>
+<div class="divider"></div>
+<p style="font-size:14px;color:#888;">Demain, un bonus surprise t'attend dans ta boîte mail. 👀</p>
+</div>
+<div class="footer"><p>NutriZen · mynutrizen.fr<br>Tu reçois cet email car tu t'es inscrit(e) sur notre site.<br><a href="{{ unsubscribe }}">Se désinscrire</a></p></div>
+</div></body></html>`;
+}
+
+function getLeadFrigoZenHtml(): string {
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<style>
+body{margin:0;padding:0;background:#f4f7f6;font-family:'Helvetica Neue',Arial,sans-serif}
+.container{max-width:600px;margin:20px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08)}
+.header{background:#2A7D6F;padding:40px;text-align:center}.header h1{color:#fff;margin:0;font-size:26px;font-weight:800;line-height:1.3}.header p{color:#a8d5ce;margin:10px 0 0;font-size:15px}
+.body{padding:36px 40px}.body p{color:#444;font-size:16px;line-height:1.7;margin:0 0 16px}
+.checklist{background:#f0faf8;border-radius:10px;padding:20px 24px;margin:20px 0}.checklist p{font-weight:700;color:#2A7D6F;margin:0 0 10px;font-size:15px}.checklist ul{margin:0;padding-left:0;list-style:none}.checklist li{padding:5px 0;color:#555;font-size:15px}.checklist li::before{content:"✓ ";color:#2A7D6F;font-weight:700}
+.cta-box{text-align:center;margin:28px 0}.btn{display:inline-block;background:#2A7D6F;color:#fff!important;text-decoration:none;padding:18px 36px;border-radius:10px;font-size:17px;font-weight:800}
+.tip{background:#fff8f0;border:2px solid #E07B39;border-radius:10px;padding:16px 20px;margin:20px 0;font-size:15px;color:#555}.tip strong{color:#E07B39;display:block;margin-bottom:6px}
+.divider{height:1px;background:#eee;margin:28px 0}
+.footer{background:#f4f7f6;padding:24px 40px;text-align:center}.footer p{color:#aaa;font-size:12px;margin:0;line-height:1.6}.footer a{color:#2A7D6F;text-decoration:none}
+</style></head>
+<body><div class="container">
+<div class="header"><h1>Ton Frigo Zen est prêt 🥗</h1><p>NutriZen · mynutrizen.fr</p></div>
+<div class="body">
+<p>Salut {{ contact.FIRSTNAME | default:"toi" }} 👋</p>
+<p>Finies les soirées à ouvrir le frigo en mode panique. Avec ta checklist <strong>Le Frigo Zen</strong>, tu as toujours les 20 essentiels pour improviser un repas sain en 5 min chrono.</p>
+<div class="checklist"><p>📋 Ce que tu trouveras dans le guide :</p><ul>
+<li>Les 10 indispensables du frigo</li><li>Les 10 essentiels du placard</li><li>7 idées repas prêtes en 5–10 min</li><li>Le plan Batch 60 min = 3 dîners</li><li>La checklist imprimable à coller sur le frigo</li>
+</ul></div>
+<div class="cta-box"><a href="https://mynutrizen.fr/lead-magnets/les-20-essentiels-frigo-zen.pdf" class="btn">📥 Télécharger mon Frigo Zen →</a></div>
+<div class="tip"><strong>💡 Astuce rapide :</strong>Imprime la dernière page, coche ce qui manque avant ta prochaine course, et colle-la sur ton frigo.</div>
+<div class="divider"></div>
+<p style="font-size:14px;color:#888;">Demain, un bonus surprise t'attend dans ta boîte mail. 😊</p>
+</div>
+<div class="footer"><p>NutriZen · mynutrizen.fr<br>Tu reçois cet email car tu t'es inscrit(e) sur notre site.<br><a href="{{ unsubscribe }}">Se désinscrire</a></p></div>
+</div></body></html>`;
+}
+
+function getLeadBonusSecretsHtml(): string {
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<style>
+body{margin:0;padding:0;background:#f4f7f6;font-family:'Helvetica Neue',Arial,sans-serif}
+.container{max-width:600px;margin:20px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08)}
+.header{background:linear-gradient(135deg,#2A7D6F,#1a5c52);padding:40px;text-align:center}
+.tag{display:inline-block;background:#E07B39;color:#fff;font-size:12px;font-weight:800;padding:4px 12px;border-radius:20px;letter-spacing:1px;margin-bottom:12px}
+.header h1{color:#fff;margin:0;font-size:24px;font-weight:800;line-height:1.3}.header p{color:#a8d5ce;margin:10px 0 0;font-size:15px}
+.body{padding:36px 40px}.body p{color:#444;font-size:16px;line-height:1.7;margin:0 0 16px}
+.secret{display:flex;gap:16px;background:#f9f9f9;border-radius:10px;padding:16px 20px;margin:12px 0;align-items:flex-start}
+.num{background:#2A7D6F;color:#fff;font-weight:900;font-size:16px;width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.secret strong{display:block;color:#222;font-size:15px;margin-bottom:3px}.secret p{color:#666;font-size:14px;margin:0;line-height:1.5}
+.cta-box{text-align:center;margin:28px 0}.btn{display:inline-block;background:#2A7D6F;color:#fff!important;text-decoration:none;padding:18px 36px;border-radius:10px;font-size:17px;font-weight:800}
+.upsell{background:#f0faf8;border:2px solid #2A7D6F;border-radius:10px;padding:20px 24px;margin:24px 0;text-align:center}.upsell p{color:#2A7D6F;font-weight:700;font-size:16px;margin:0 0 12px}.upsell a{color:#2A7D6F;font-weight:800;font-size:15px}
+.footer{background:#f4f7f6;padding:24px 40px;text-align:center}.footer p{color:#aaa;font-size:12px;margin:0;line-height:1.6}.footer a{color:#2A7D6F;text-decoration:none}
+</style></head>
+<body><div class="container">
+<div class="header"><div class="tag">🎁 BONUS SURPRISE</div><h1>Les 3 Secrets de Coach<br>pour manger sain au quotidien</h1><p>NutriZen · mynutrizen.fr</p></div>
+<div class="body">
+<p>Salut {{ contact.FIRSTNAME | default:"toi" }} 😊</p>
+<p>Comme promis, voici ton bonus. Ce guide résume les 3 stratégies que les coachs nutrition utilisent pour obtenir des résultats durables.</p>
+<div class="secret"><div class="num">#1</div><div><strong>Prévoir, c'est la clé</strong><p>Le meal planning en 30 min le dimanche.</p></div></div>
+<div class="secret"><div class="num">#2</div><div><strong>L'assiette idéalement équilibrée</strong><p>½ légumes · ¼ protéines · ¼ féculents.</p></div></div>
+<div class="secret"><div class="num">#3</div><div><strong>Écouter son corps, pas les calories</strong><p>L'échelle de la faim et le mindful eating.</p></div></div>
+<div class="cta-box"><a href="https://mynutrizen.fr" class="btn">📥 Télécharger mes 3 Secrets →</a></div>
+<div class="upsell"><p>Envie que NutriZen crée vos menus sur-mesure automatiquement ?</p><a href="https://mynutrizen.fr">✨ Essai gratuit 7 jours →</a></div>
+</div>
+<div class="footer"><p>NutriZen · mynutrizen.fr<br>Tu reçois cet email car tu t'es inscrit(e) sur notre site.<br><a href="{{ unsubscribe }}">Se désinscrire</a></p></div>
+</div></body></html>`;
+}
+
 const TEMPLATES = [
   {
     key: 'onboarding_welcome',
@@ -190,6 +322,38 @@ const TEMPLATES = [
     preheader: 'La règle des 80/20 qui change tout en nutrition.',
     getHtml: getTemplate3Html,
     delay_days: 5,
+  },
+  {
+    key: 'lead_defi_7_jours',
+    name: 'NutriZen Lead — Défi Healthy 7 Jours',
+    subject: '🎯 {{ contact.FIRSTNAME | default:"Hey" }}, ton Défi Healthy 7 Jours t\'attend !',
+    preheader: 'Ton guide gratuit est prêt à télécharger — démarre dès ce soir en 5 minutes.',
+    getHtml: getLeadDefi7JoursHtml,
+    delay_days: 0,
+  },
+  {
+    key: 'lead_programme_21_jours',
+    name: 'NutriZen Lead — Programme 21 Jours en Forme',
+    subject: '💪 {{ contact.FIRSTNAME | default:"Hey" }}, ton Programme 21 Jours commence maintenant',
+    preheader: '3 semaines, 1 action par jour — ton plan complet est prêt à télécharger.',
+    getHtml: getLeadProgramme21JoursHtml,
+    delay_days: 0,
+  },
+  {
+    key: 'lead_frigo_zen',
+    name: 'NutriZen Lead — Frigo Zen',
+    subject: '🥗 {{ contact.FIRSTNAME | default:"Hey" }}, ta checklist Frigo Zen est prête !',
+    preheader: '20 essentiels, 7 repas express, 1 plan batch — imprime et colle sur ton frigo.',
+    getHtml: getLeadFrigoZenHtml,
+    delay_days: 0,
+  },
+  {
+    key: 'lead_bonus_3_secrets',
+    name: 'NutriZen Lead — Bonus 3 Secrets de Coach',
+    subject: '🎁 {{ contact.FIRSTNAME | default:"Hey" }}, ton bonus surprise est là',
+    preheader: 'Les 3 stratégies que les coachs nutrition utilisent vraiment — offertes pour toi.',
+    getHtml: getLeadBonusSecretsHtml,
+    delay_days: 1,
   },
 ];
 
