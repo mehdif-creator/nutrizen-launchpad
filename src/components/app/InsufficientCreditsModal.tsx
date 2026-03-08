@@ -25,6 +25,7 @@ const featureNames: Record<string, string> = {
   scanrepas: 'utiliser ScanRepas',
   menu_generation: 'générer un menu',
   substitution: 'trouver une alternative',
+  scan_barcode: 'scanner un code-barres',
 };
 
 export function InsufficientCreditsModal({
