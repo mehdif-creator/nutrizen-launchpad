@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, Sparkles, Flame, Users, ShoppingCart, Share2, Copy, Brain, Trophy, Info } from "lucide-react";
+import { Clock, Sparkles, Flame, Users, ShoppingCart, Share2, Copy, Brain, Trophy, Info, FileDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { StatCard } from "@/components/app/StatCard";
 import { Progress } from "@/components/app/Progress";
