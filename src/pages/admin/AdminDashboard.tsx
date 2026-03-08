@@ -48,6 +48,7 @@ export default function AdminDashboard() {
     avgRatingScore: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [mailingOpen, setMailingOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
