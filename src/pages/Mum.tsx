@@ -13,7 +13,7 @@ import { CommunityTestimonials } from '@/components/landing/CommunityTestimonial
 import { ExampleWeek } from '@/components/landing/ExampleWeek';
 import { Pricing } from '@/components/landing/Pricing';
 import { FAQ } from '@/components/landing/FAQ';
-import { LeadMagnet } from '@/components/landing/LeadMagnet';
+import { LeadMagnetForm } from '@/components/landing/LeadMagnetForm';
 import { FinalCTA } from '@/components/landing/FinalCTA';
 import { Footer } from '@/components/landing/Footer';
 import { MobileStickyCTA } from '@/components/landing/MobileStickyCTA';
