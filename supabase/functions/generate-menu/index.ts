@@ -110,6 +110,21 @@ Deno.serve(async (req) => {
     const mealsPerDay = preferences?.repas_par_jour ?? profileData?.meals_per_day ?? 2;
     console.log(`[generate-menu] mealsPerDay=${mealsPerDay} (pref=${preferences?.repas_par_jour}, profile=${profileData?.meals_per_day})`);
 
+    // Validate age if present
+    if (typeof preferences?.age === 'number') {
+      const age = preferences.age;
+      if (age < 18 || age > 99) {
+        console.error(`[generate-menu] Invalid age: ${age}`);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            message: "Âge invalide. L'âge doit être entre 18 et 99 ans.",
+          }),
+          { status: 400, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     // Decide which pricing key applies for this user
     const menuFeatureKey = mealsPerDay >= 2 ? 'generate_week_2' : 'generate_week_1';
     let menuCost = mealsPerDay >= 2 ? 11 : 6;
