@@ -160,10 +160,18 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Email Campaign */}
-        <div className="mb-6">
-          <EmailCampaignSection />
-        </div>
+        {/* Mailing Dialog */}
+        <Dialog open={mailingOpen} onOpenChange={setMailingOpen}>
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Mail className="h-5 w-5 text-primary" />
+                Gestion Mailing
+              </DialogTitle>
+            </DialogHeader>
+            <EmailCampaignSection />
+          </DialogContent>
+        </Dialog>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
