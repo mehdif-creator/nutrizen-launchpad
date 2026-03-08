@@ -14,6 +14,8 @@
     <link rel="dns-prefetch" href="https://js.stripe.com">
     <link rel="preconnect" href="https://pghdaozgxkbtsxwydemd.supabase.co" crossorigin>
 
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0D7377">
     <title>Menus Nutritionnels Personnalisés — NutriZen, ton coach nutrition</title>
     <meta name="description" content="Menus nutritionnels personnalisés adaptés à tes objectifs (prise de masse, perte de poids, performance). Plan alimentaire sur-mesure en 30 secondes, liste de courses automatique, recettes rapides. Essai gratuit sans CB.">
     <meta name="author" content="NutriZen" />
@@ -55,5 +57,12 @@
     </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
+    </script>
   </body>
 </html>

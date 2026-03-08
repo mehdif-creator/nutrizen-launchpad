@@ -9,6 +9,7 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { CookieConsent } from '@/components/common/CookieConsent';
+import { InstallBanner } from '@/components/app/InstallBanner';
 
 interface AppProvidersProps {
   children: React.ReactNode;
@@ -35,6 +36,7 @@ export function AppProviders({ children }: AppProvidersProps) {
                   {children}
                   <Toaster />
                   <CookieConsent />
+                  <InstallBanner />
                   {/* Only show React Query devtools in development */}
                   {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
                 </TooltipProvider>

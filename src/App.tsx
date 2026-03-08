@@ -34,6 +34,7 @@ const ShoppingList = lazy(() => import('./pages/app/ShoppingList'));
 const SupabaseDebug = lazy(() => import('./pages/app/SupabaseDebug'));
 const FamillePlus = lazy(() => import('./pages/app/FamillePlus'));
 const DayMenu = lazy(() => import('./pages/app/DayMenu'));
+const ScanBarcode = lazy(() => import('./pages/app/ScanBarcode'));
 
 // Admin
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
@@ -135,6 +136,7 @@ const App = () => {
         <Route path="/app/supabase-debug" element={<ProtectedRoute requireAdmin><SupabaseDebug /></ProtectedRoute>} />
         <Route path="/app/famille-plus" element={<ProtectedRoute><FamillePlus /></ProtectedRoute>} />
         <Route path="/app/day-menu/:date" element={<ProtectedRoute><DayMenu /></ProtectedRoute>} />
+        <Route path="/app/scan-barcode" element={<ProtectedRoute><ErrorBoundary><ScanBarcode /></ErrorBoundary></ProtectedRoute>} />
         <Route path="/pricing" element={<FamillePlus />} />
 
         {/* Admin (Protected + Admin Only) */}

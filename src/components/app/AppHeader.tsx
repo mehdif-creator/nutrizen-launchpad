@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Home, BookOpen, User, Settings, HelpCircle, LogOut, Shield, Camera, Menu, X, Moon, Sun, Globe } from "lucide-react";
+import { Home, BookOpen, User, Settings, HelpCircle, LogOut, Shield, Camera, Menu, X, Moon, Sun, Globe, ScanBarcode } from "lucide-react";
 import { GamificationHeader } from "./GamificationHeader";
 
 export const AppHeader = () => {
@@ -89,6 +89,17 @@ export const AppHeader = () => {
             >
               <Camera className="inline h-4 w-4 mr-1" />
               ScanRepas
+            </Link>
+            <Link
+              to="/app/scan-barcode"
+              className={`text-sm font-medium transition-colors ${
+                isActivePath("/app/scan-barcode")
+                  ? "text-[#00B37E] font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <ScanBarcode className="inline h-4 w-4 mr-1" />
+              CodeBarres
             </Link>
             <Link
               to="/app/inspi-frigo"
@@ -324,6 +335,16 @@ export const AppHeader = () => {
             >
               <Camera className="h-4 w-4" />
               ScanRepas
+            </Link>
+            <Link
+              to="/app/scan-barcode"
+              className={`text-left text-sm font-medium transition-colors flex items-center gap-2 ${
+                isActivePath("/app/scan-barcode") ? "text-primary font-semibold" : "text-muted-foreground"
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <ScanBarcode className="h-4 w-4" />
+              CodeBarres
             </Link>
             <Link
               to="/app/inspi-frigo"

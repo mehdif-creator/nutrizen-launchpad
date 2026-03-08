@@ -1029,6 +1029,7 @@ export type Database = {
           id: string
           items: Json
           user_id: string
+          week_number: number | null
           week_of: string
         }
         Insert: {
@@ -1036,6 +1037,7 @@ export type Database = {
           id?: string
           items: Json
           user_id: string
+          week_number?: number | null
           week_of: string
         }
         Update: {
@@ -1043,6 +1045,7 @@ export type Database = {
           id?: string
           items?: Json
           user_id?: string
+          week_number?: number | null
           week_of?: string
         }
         Relationships: [
@@ -1645,6 +1648,56 @@ export type Database = {
           welcome_credits_granted?: boolean
         }
         Relationships: []
+      }
+      recipe_favorites: {
+        Row: {
+          created_at: string | null
+          id: string
+          recipe_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          recipe_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          recipe_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_favorites_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_macros_mv"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "recipe_favorites_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_macros_mv2"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "recipe_favorites_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_macros_v"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "recipe_favorites_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       recipe_ingredients: {
         Row: {
@@ -2985,6 +3038,51 @@ export type Database = {
           meta?: Json
           occurred_at?: string
           points_delta?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_foods: {
+        Row: {
+          barcode: string | null
+          brand: string | null
+          calories_per_100g: number | null
+          carbs_per_100g: number | null
+          created_at: string | null
+          fats_per_100g: number | null
+          id: string
+          image_url: string | null
+          name: string
+          nutriscore: string | null
+          proteins_per_100g: number | null
+          user_id: string
+        }
+        Insert: {
+          barcode?: string | null
+          brand?: string | null
+          calories_per_100g?: number | null
+          carbs_per_100g?: number | null
+          created_at?: string | null
+          fats_per_100g?: number | null
+          id?: string
+          image_url?: string | null
+          name: string
+          nutriscore?: string | null
+          proteins_per_100g?: number | null
+          user_id: string
+        }
+        Update: {
+          barcode?: string | null
+          brand?: string | null
+          calories_per_100g?: number | null
+          carbs_per_100g?: number | null
+          created_at?: string | null
+          fats_per_100g?: number | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          nutriscore?: string | null
+          proteins_per_100g?: number | null
           user_id?: string
         }
         Relationships: []

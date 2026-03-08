@@ -13,6 +13,7 @@ export const FEATURE_COSTS = {
   generate_week_2: 11,
   regenerate_day: 2,
   regenerate_week: 8,
+  scan_barcode: 1,
 } as const;
 
 export type FeatureType = keyof typeof FEATURE_COSTS;
@@ -37,6 +38,7 @@ export const FEATURE_NAMES: Record<FeatureType, string> = {
   generate_week_2: 'Générer semaine (2 repas/jour)',
   regenerate_day: 'Regénérer un jour',
   regenerate_week: 'Regénérer semaine complète',
+  scan_barcode: 'Scan code-barres',
 };
 
 /**
@@ -52,6 +54,7 @@ export const FEATURE_DESCRIPTIONS: Record<FeatureType, string> = {
   generate_week_2: 'Générez un menu hebdomadaire avec déjeuner et dîner.',
   regenerate_day: 'Remplacez toutes les recettes d\'un jour.',
   regenerate_week: 'Regénérez l\'intégralité de votre menu hebdomadaire.',
+  scan_barcode: 'Scannez un code-barres pour voir les infos nutritionnelles du produit.',
 };
 
 /**
