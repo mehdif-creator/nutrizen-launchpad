@@ -100,7 +100,7 @@ const Index = () => {
       <Suspense fallback={<div className="py-16" />}>
         <ProfileQuiz />
         <HowItWorks copy={mainCopy.howItWorks} />
-        <ValueStackSection items={homeValueItems} totalValue="~250€/mois" price="12,99€/mois" />
+        <ValueStackSection items={homeValueItems} totalValue="~295€/mois" price="12,99€/mois" />
         <Guarantee />
         <RecipeGallery />
         <CommunityTestimonials />

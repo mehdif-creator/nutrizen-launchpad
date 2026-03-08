@@ -143,7 +143,7 @@ const Fit = () => {
       <FitMadeForYou />
       <Benefits copy={fitCopy.benefits} />
       <HowItWorks copy={fitCopy.howItWorks} />
-      <ValueStackSection items={fitValueItems} totalValue="~250€/mois" price="12,99€/mois" />
+      <ValueStackSection items={fitValueItems} totalValue="~295€/mois" price="12,99€/mois" />
       <Guarantee />
       <RecipeGallery />
       <CommunityTestimonials testimonials={fitTestimonials} />

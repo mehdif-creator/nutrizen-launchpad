@@ -143,7 +143,7 @@ const Mum = () => {
       <MumMadeForYou />
       <Benefits copy={mumCopy.benefits} />
       <HowItWorks copy={mumCopy.howItWorks} />
-      <ValueStackSection items={mumValueItems} totalValue="~250€/mois" price="12,99€/mois" />
+      <ValueStackSection items={mumValueItems} totalValue="~295€/mois" price="12,99€/mois" />
       <Guarantee />
       <RecipeGallery />
       <CommunityTestimonials testimonials={mumTestimonials} />
