@@ -49,6 +49,21 @@ const mumValueItems = [
     description: 'Une décision par semaine au lieu de 21 — dimanche matin, 10 minutes',
     value: "n'a pas de prix",
   },
+  {
+    feature: 'Scan code-barres au supermarché',
+    description: 'Vérifiez en un clic si un produit convient à toute la famille (allergies, préférences)',
+    value: 'valeur : ~10€/mois (app nutrition)',
+  },
+  {
+    feature: 'Analyse photo de repas par IA',
+    description: 'Prenez le repas en photo — vérifiez que vos enfants mangent équilibré sans calculer',
+    value: 'valeur : ~15€/mois (coach nutrition)',
+  },
+  {
+    feature: 'Inspi Frigo — cuisinez avec ce qu\'il reste',
+    description: 'Photographiez votre frigo, recevez des idées de repas famille avec les ingrédients disponibles',
+    value: 'valeur : ~20€/mois (anti-gaspillage)',
+  },
 ];
 
 const mumTestimonials = [
