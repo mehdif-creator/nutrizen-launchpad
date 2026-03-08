@@ -48,17 +48,17 @@ export const AppHeader = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="container flex h-14 items-center justify-between">
+        <div className="flex items-center gap-3">
           <Link to="/app" className="flex items-center hover:opacity-80 transition-opacity shrink-0">
             <img
               src={new URL("@/assets/nutrizen-main-logo.png", import.meta.url).href}
               alt="NutriZen"
-              className="h-12 w-auto"
+              className="h-9 w-auto"
             />
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden xl:flex items-center gap-0.5">
             {[
               { to: "/app", label: "Tableau de bord", icon: Home },
               { to: "/app/meal-plan", label: "Recettes", icon: BookOpen },
@@ -73,13 +73,13 @@ export const AppHeader = () => {
               <Link
                 key={to}
                 to={to}
-                className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
                   isActivePath(to)
                     ? "text-primary bg-primary/10"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
               >
-                {Icon && <Icon className="h-4 w-4" />}
+                {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
                 {label}
               </Link>
             ))}
