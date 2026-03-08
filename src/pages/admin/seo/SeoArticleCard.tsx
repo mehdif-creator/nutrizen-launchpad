@@ -277,6 +277,33 @@ export function SeoArticleCard({ article, onRefresh, onDelete, onOpenDetail }: P
             </Button>
           )}
 
+          {/* Refresh images per article */}
+          {article.image_urls && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={async () => {
+                setBusy('seo-image-refresh');
+                try {
+                  const { data, error } = await supabase.functions.invoke('seo-image-refresh', {
+                    body: { article_id: article.id },
+                  });
+                  if (error) throw error;
+                  toast({ title: data.refreshed_count > 0 ? '🖼️ Images régénérées ✓' : 'Aucune image expirée' });
+                  onRefresh();
+                } catch (e: any) {
+                  toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
+                } finally {
+                  setBusy(null);
+                }
+              }}
+              disabled={isBusy}
+            >
+              {busy === 'seo-image-refresh' ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <ImageIcon className="mr-1 h-3.5 w-3.5" />}
+              Images
+            </Button>
+          )}
+
           {/* Delete */}
           <Button
             size="sm"
