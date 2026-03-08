@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Home, BookOpen, User, Settings, HelpCircle, LogOut, Shield, Camera, Menu, X, Moon, Sun, Globe } from "lucide-react";
+import { Home, BookOpen, User, Settings, HelpCircle, LogOut, Shield, Camera, Menu, X, Moon, Sun, Globe, ScanBarcode } from "lucide-react";
 import { GamificationHeader } from "./GamificationHeader";
 
 export const AppHeader = () => {
