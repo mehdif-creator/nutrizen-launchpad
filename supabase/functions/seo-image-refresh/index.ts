@@ -2,172 +2,305 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders } from "../_shared/security.ts";
 import { requireAdmin } from "../_shared/auth.ts";
 
-const FALLBACK_PROMPT = "Healthy balanced meal, fresh colorful vegetables and ingredients on a clean white kitchen counter, soft natural lighting, French lifestyle photography, no text, no watermark, high resolution";
+const FALLBACK_PROMPT =
+  "Healthy balanced meal on a white ceramic plate with fresh colorful vegetables, soft natural lighting, clean modern kitchen background, French lifestyle photography, no text, no watermark, high quality, appetizing food photography";
+
+type ArticleImage = { url?: string; alt?: string; type?: string };
+
+type SeoArticleRow = {
+  id: string;
+  keyword: string | null;
+  status: string | null;
+  outline: Record<string, unknown> | null;
+  image_urls: unknown;
+};
 
 function getAdminClient() {
-  return createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const url = Deno.env.get("SUPABASE_URL");
+  const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+  if (!url || !serviceRole) {
+    throw new Error("Missing Supabase service credentials");
+  }
+
+  return createClient(url, serviceRole);
 }
 
-function isTemporaryUrl(url: string): boolean {
-  return url.includes("oaidalleapiprodscus.blob.core.windows.net") || url.includes("oaidalla");
+function parseImageUrls(raw: unknown): ArticleImage[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw as ArticleImage[];
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? (parsed as ArticleImage[]) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
 }
 
-async function regenerateAndStore(
+function isExpiredUrl(url: string): boolean {
+  if (!url) return true;
+
+  if (url.includes("oaidalleapiprodscus.blob.core.windows.net")) return true;
+  if (url.includes("oaidalla")) return true;
+  if (url.includes("dalle-prod")) return true;
+  if (url.includes("openai.com")) return true;
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  if (supabaseUrl && url.includes(`${supabaseUrl}/storage/v1/object/public/seo-images/`)) {
+    return false;
+  }
+
+  if (url.includes("/storage/v1/object/public/seo-images/")) return false;
+
+  return false;
+}
+
+function getPromptForImage(img: ArticleImage, outline: Record<string, any> | null): string {
+  let prompt = FALLBACK_PROMPT;
+
+  if (img.type === "hero" && outline?.hero_image_prompt) {
+    prompt = String(outline.hero_image_prompt);
+  } else if (img.type === "section" && Array.isArray(outline?.sections)) {
+    const section = outline.sections.find(
+      (s: any) => s?.image_alt === img.alt || s?.h2 === img.alt || Boolean(s?.image_prompt)
+    );
+    if (section?.image_prompt) prompt = String(section.image_prompt);
+  }
+
+  if (!prompt.toLowerCase().includes("no text")) {
+    prompt += " Professional food lifestyle photography, no text, no watermark.";
+  }
+
+  return prompt;
+}
+
+async function generateAndStore(
   adminClient: ReturnType<typeof getAdminClient>,
   prompt: string,
   articleId: string,
-  index: number,
-  size: string
-): Promise<string> {
-  const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
+  imageIndex: number,
+  size: "1792x1024" | "1024x1024"
+): Promise<string | null> {
+  const openAiKey = Deno.env.get("OPENAI_API_KEY");
+  if (!openAiKey) {
+    console.error("[seo-image-refresh] OPENAI_API_KEY missing");
+    return null;
+  }
 
-  // Generate new image
-  const res = await fetch("https://api.openai.com/v1/images/generations", {
+  const generationResponse = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
-    headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
+    headers: {
+      Authorization: `Bearer ${openAiKey}`,
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({
       model: "dall-e-3",
-      prompt,
+      prompt: prompt.slice(0, 4000),
       n: 1,
       size,
-      quality: "hd",
-      style: "natural",
+      quality: "standard",
       response_format: "url",
     }),
   });
-  if (!res.ok) throw new Error(`DALL-E error ${res.status}: ${await res.text()}`);
-  const data = await res.json();
-  const dalleUrl = data.data?.[0]?.url;
-  if (!dalleUrl) throw new Error("No URL returned from DALL-E");
 
-  // Download immediately
-  const imgResponse = await fetch(dalleUrl);
-  if (!imgResponse.ok) throw new Error(`Failed to download image: ${imgResponse.status}`);
-  const imgBuffer = await imgResponse.arrayBuffer();
+  if (!generationResponse.ok) {
+    const details = await generationResponse.text();
+    console.error(`[seo-image-refresh] DALL-E error ${generationResponse.status}:`, details);
+    return null;
+  }
 
-  // Upload to Supabase Storage
-  const fileName = `article-${articleId}-image-${index}-${Date.now()}.jpg`;
+  const generationData = await generationResponse.json();
+  const temporaryUrl = generationData?.data?.[0]?.url as string | undefined;
+
+  if (!temporaryUrl) {
+    console.error("[seo-image-refresh] No URL returned by DALL-E");
+    return null;
+  }
+
+  const imageResponse = await fetch(temporaryUrl);
+  if (!imageResponse.ok) {
+    console.error(`[seo-image-refresh] Download failed ${imageResponse.status} for article ${articleId}`);
+    return null;
+  }
+
+  const buffer = await imageResponse.arrayBuffer();
+  const fileName = `seo-${articleId}-${imageIndex}-${Date.now()}.jpg`;
+
   const { error: uploadError } = await adminClient.storage
     .from("seo-images")
-    .upload(fileName, imgBuffer, {
+    .upload(fileName, buffer, {
       contentType: "image/jpeg",
       upsert: true,
       cacheControl: "31536000",
     });
 
   if (uploadError) {
-    console.error("[seo-image-refresh] Storage upload failed:", uploadError);
-    throw new Error(`Storage upload failed: ${uploadError.message}`);
+    console.error("[seo-image-refresh] Upload error:", uploadError);
+    return null;
   }
 
-  const { data: { publicUrl } } = adminClient.storage
-    .from("seo-images")
-    .getPublicUrl(fileName);
+  const {
+    data: { publicUrl },
+  } = adminClient.storage.from("seo-images").getPublicUrl(fileName);
 
   return publicUrl;
 }
 
 async function refreshArticle(
   adminClient: ReturnType<typeof getAdminClient>,
-  article: any
+  article: SeoArticleRow,
+  errors: string[]
 ): Promise<boolean> {
-  const imageUrls = Array.isArray(article.image_urls) ? article.image_urls : [];
+  const imageUrls = parseImageUrls(article.image_urls);
   if (imageUrls.length === 0) return false;
 
-  let changed = false;
+  const needsRefresh = imageUrls.some((img) => isExpiredUrl(img?.url ?? ""));
+  if (!needsRefresh) return false;
+
+  const outline = (article.outline ?? null) as Record<string, any> | null;
   const updated = [...imageUrls];
-  const outline = article.outline as any;
+  let changed = false;
 
   for (let i = 0; i < updated.length; i++) {
     const img = updated[i];
-    if (!img?.url || !isTemporaryUrl(img.url)) continue;
+    const url = img?.url ?? "";
 
-    // Determine prompt
-    let prompt = FALLBACK_PROMPT;
-    if (img.type === "hero" && outline?.hero_image_prompt) {
-      prompt = outline.hero_image_prompt;
-    } else if (img.type === "section" && outline?.sections) {
-      const section = outline.sections.find((s: any) => s.image_alt === img.alt || s.h2 === img.alt);
-      if (section?.image_prompt) prompt = section.image_prompt;
-    }
+    if (!isExpiredUrl(url)) continue;
 
+    const prompt = getPromptForImage(img, outline);
     const size = img.type === "hero" ? "1792x1024" : "1024x1024";
 
     try {
-      console.log(`[seo-image-refresh] Regenerating image ${i} for article ${article.id}`);
-      const permanentUrl = await regenerateAndStore(adminClient, prompt, article.id, i, size);
+      console.log(`[seo-image-refresh] Regenerating article=${article.id}, image=${i}`);
+      const permanentUrl = await generateAndStore(adminClient, prompt, article.id, i, size);
+      if (!permanentUrl) {
+        errors.push(`Image generation/upload failed for article ${article.id}, image ${i}`);
+        continue;
+      }
+
       updated[i] = { ...img, url: permanentUrl };
       changed = true;
-    } catch (err) {
-      console.error(`[seo-image-refresh] Failed for article ${article.id} image ${i}:`, err);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`[seo-image-refresh] Error on article=${article.id}, image=${i}:`, message);
+      errors.push(`Article ${article.id}, image ${i}: ${message}`);
     }
   }
 
-  if (changed) {
-    await adminClient.from("seo_articles").update({ image_urls: updated }).eq("id", article.id);
+  if (!changed) return false;
+
+  const { error: updateError } = await adminClient
+    .from("seo_articles")
+    .update({ image_urls: updated })
+    .eq("id", article.id);
+
+  if (updateError) {
+    errors.push(`Failed updating article ${article.id}: ${updateError.message}`);
+    return false;
   }
 
-  return changed;
+  return true;
 }
 
 Deno.serve(async (req) => {
   const origin = req.headers.get("origin");
   const corsHeaders = getCorsHeaders(origin);
 
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
 
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
+
     const token = authHeader.replace("Bearer ", "");
     const adminClient = getAdminClient();
-    const { data: { user }, error: authError } = await adminClient.auth.getUser(token);
+
+    const {
+      data: { user },
+      error: authError,
+    } = await adminClient.auth.getUser(token);
+
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Invalid token" }), { status: 401, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: "Invalid token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
+
     await requireAdmin(adminClient, user.id);
 
-    if (!Deno.env.get("OPENAI_API_KEY")) {
-      return new Response(JSON.stringify({ error: "OPENAI_API_KEY not configured" }), { status: 500, headers: corsHeaders });
-    }
+    const body = await req.json().catch(() => ({} as Record<string, unknown>));
+    console.log("[seo-image-refresh] Request:", JSON.stringify(body));
 
-    const body = await req.json();
-    let refreshedCount = 0;
+    let articles: SeoArticleRow[] = [];
 
-    if (body.article_id) {
-      // Single article
-      const { data: article, error } = await adminClient.from("seo_articles").select("*").eq("id", body.article_id).single();
-      if (error) throw new Error(`Article not found: ${error.message}`);
-      const didRefresh = await refreshArticle(adminClient, article);
-      if (didRefresh) refreshedCount = 1;
-    } else if (body.refresh_all) {
-      // All published articles with image_urls
-      const { data: articles, error } = await adminClient
+    if (typeof body.article_id === "string" && body.article_id.length > 0) {
+      const { data, error } = await adminClient
         .from("seo_articles")
-        .select("*")
-        .not("image_urls", "is", null)
-        .eq("status", "published");
-      if (error) throw new Error(`Query error: ${error.message}`);
+        .select("id, keyword, status, outline, image_urls")
+        .eq("id", body.article_id)
+        .single();
 
-      for (const article of articles || []) {
-        const didRefresh = await refreshArticle(adminClient, article);
-        if (didRefresh) refreshedCount++;
+      if (error || !data) {
+        throw new Error(`Article not found: ${error?.message ?? "unknown"}`);
       }
+
+      articles = [data as SeoArticleRow];
+    } else if (body.refresh_all === true) {
+      const { data, error } = await adminClient
+        .from("seo_articles")
+        .select("id, keyword, status, outline, image_urls")
+        .not("image_urls", "is", null);
+
+      if (error) {
+        throw new Error(`Query error: ${error.message}`);
+      }
+
+      articles = (data ?? []) as SeoArticleRow[];
     } else {
-      return new Response(JSON.stringify({ error: "Provide article_id or refresh_all: true" }), { status: 400, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: "Provide article_id or refresh_all: true" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    return new Response(JSON.stringify({ success: true, refreshed_count: refreshedCount }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  } catch (err) {
-    console.error("[seo-image-refresh] Error:", err);
-    const msg = err instanceof Error ? err.message : "Unknown error";
-    const status = (err as any)?.status || (msg === "Admin access required" ? 403 : 500);
-    return new Response(JSON.stringify({ error: msg }), {
+    let refreshedCount = 0;
+    const errors: string[] = [];
+
+    for (const article of articles) {
+      const refreshed = await refreshArticle(adminClient, article, errors);
+      if (refreshed) refreshedCount += 1;
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        refreshed_count: refreshedCount,
+        total_processed: articles.length,
+        errors: errors.length > 0 ? errors : undefined,
+      }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    const status = message === "Admin access required" ? 403 : 500;
+
+    console.error("[seo-image-refresh] Fatal:", message);
+
+    return new Response(JSON.stringify({ error: message }), {
       status,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

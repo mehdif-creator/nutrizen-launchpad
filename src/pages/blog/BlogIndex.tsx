@@ -330,7 +330,7 @@ function ArticleCard({ article, searchQuery }: { article: BlogArticle; searchQue
           className="h-[200px] overflow-hidden flex-shrink-0"
           style={{ background: fallbackGradient }}
         >
-          {heroUrl && !imgError ? (
+          {hasValidImage && !imgError ? (
             <img
               src={heroUrl}
               alt={heroAlt}
