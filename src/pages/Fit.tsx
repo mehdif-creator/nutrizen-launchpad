@@ -137,7 +137,7 @@ const Fit = () => {
       <Pricing onCtaClick={handleCtaClick} comparison={fitComparison} />
       <FAQ copy={fitCopy.faq} />
       <LeadMagnetForm
-        listId={5} // TODO: remplacer par l'ID réel de la liste Brevo "Fit"
+        listId={6}
         title="Programme 21 Jours en Forme"
         text="Un plan d'action concret pour transformer votre alimentation sportive en 3 semaines."
         buttonLabel="Télécharger mon Programme 21 Jours →"

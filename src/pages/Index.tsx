@@ -94,7 +94,7 @@ const Index = () => {
         <Pricing onCtaClick={handleCtaClick} />
         <FAQ copy={mainCopy.faq} />
         <LeadMagnetForm
-          listId={4} // TODO: remplacer par l'ID réel de la liste Brevo "Home"
+          listId={5}
           title="Défi Healthy 7 Jours"
           text="Recevez votre programme gratuit pour transformer vos repas en 7 jours."
           buttonLabel="Recevoir mon Défi Gratuit →"
