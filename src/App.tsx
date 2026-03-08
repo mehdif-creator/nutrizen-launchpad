@@ -88,6 +88,12 @@ const About = lazy(() => import('./pages/About'));
 const PinterestOAuthCallback = lazy(() => import('./pages/oauth/PinterestOAuthCallback'));
 const SharedWeekPlan = lazy(() => import('./pages/share/SharedWeekPlan'));
 
+// Guides (lead magnets)
+const Defi7Jours = lazy(() => import('./pages/guides/Defi7Jours'));
+const Programme21Jours = lazy(() => import('./pages/guides/Programme21Jours'));
+const FrigoZen = lazy(() => import('./pages/guides/FrigoZen'));
+const TroisSecretsCoach = lazy(() => import('./pages/guides/TroisSecretsCoach'));
+
 const App = () => {
   // Track referral codes from URL
   useReferralTracking();
@@ -176,6 +182,12 @@ const App = () => {
 
         {/* OAuth Callbacks (public, no auth wall) */}
         <Route path="/oauth/pinterest/callback" element={<PinterestOAuthCallback />} />
+
+        {/* Guides (lead magnets — noindex, direct link only) */}
+        <Route path="/guides/defi-7-jours" element={<Defi7Jours />} />
+        <Route path="/guides/programme-21-jours" element={<Programme21Jours />} />
+        <Route path="/guides/frigo-zen" element={<FrigoZen />} />
+        <Route path="/guides/3-secrets-coach" element={<TroisSecretsCoach />} />
 
         {/* Other */}
         <Route path="/contact" element={<Contact />} />
