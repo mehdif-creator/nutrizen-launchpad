@@ -93,7 +93,14 @@ const Index = () => {
         <GuaranteeCard />
         <Pricing onCtaClick={handleCtaClick} />
         <FAQ copy={mainCopy.faq} />
-        <LeadMagnet copy={mainCopy.leadMagnet} />
+        <LeadMagnetForm
+          listId={4} // TODO: remplacer par l'ID réel de la liste Brevo "Home"
+          title="Défi Healthy 7 Jours"
+          text="Recevez votre programme gratuit pour transformer vos repas en 7 jours."
+          buttonLabel="Recevoir mon Défi Gratuit →"
+          successMessage="C'est parti ! Votre défi arrive dans votre boîte mail 🎉"
+          source="landing_home_lead_magnet"
+        />
         <FinalCTA onCtaClick={handleCtaClick} copy={mainCopy.finalCta} />
         <Footer />
         <MobileStickyCTA onCtaClick={handleCtaClick} />

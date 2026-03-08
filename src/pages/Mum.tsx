@@ -136,7 +136,14 @@ const Mum = () => {
       <GuaranteeCard />
       <Pricing onCtaClick={handleCtaClick} comparison={mumComparison} />
       <FAQ copy={mumCopy.faq} />
-      <LeadMagnet copy={mumCopy.leadMagnet} />
+      <LeadMagnetForm
+        listId={6} // TODO: remplacer par l'ID réel de la liste Brevo "Mum"
+        title="Le Frigo Zen — Les 20 Essentiels"
+        text="La checklist des 20 ingrédients à toujours avoir pour des repas sains sans stress."
+        buttonLabel="Obtenir ma checklist Frigo Zen →"
+        successMessage="Super ! Votre checklist Frigo Zen arrive dans votre boîte mail 🥗"
+        source="landing_mum_lead_magnet"
+      />
       <FinalCTA onCtaClick={handleCtaClick} copy={mumCopy.finalCta} />
       <Footer />
       <MobileStickyCTA onCtaClick={handleCtaClick} />
