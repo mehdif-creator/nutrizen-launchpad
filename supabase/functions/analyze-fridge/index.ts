@@ -6,7 +6,7 @@
  * Credits: atomic + idempotent via request_id
  */
 import { createClient } from '../_shared/deps.ts';
-import { getCorsHeaders, generateRequestId, Logger } from '../_shared/security.ts';
+import { getCorsHeaders, generateRequestId, Logger, logEdgeFunctionError } from '../_shared/security.ts';
 
 const FEATURE_KEY = 'inspi_frigo';
 const DEFAULT_COST = 6;
