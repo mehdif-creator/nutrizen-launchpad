@@ -336,7 +336,7 @@ export default function RecipeDetail() {
                 proteins={recipe.proteins_g}
                 carbs={recipe.carbs_g}
                 fats={recipe.fats_g}
-                servings={recipe.servings || 1}
+                servings={effectivePortions?.effective_servings_per_meal ?? (recipe.servings || 1)}
                 isPartial={false}
               />
             </TabsContent>
