@@ -183,6 +183,12 @@ const App = () => {
         {/* OAuth Callbacks (public, no auth wall) */}
         <Route path="/oauth/pinterest/callback" element={<PinterestOAuthCallback />} />
 
+        {/* Guides (lead magnets — noindex, direct link only) */}
+        <Route path="/guides/defi-7-jours" element={<Defi7Jours />} />
+        <Route path="/guides/programme-21-jours" element={<Programme21Jours />} />
+        <Route path="/guides/frigo-zen" element={<FrigoZen />} />
+        <Route path="/guides/3-secrets-coach" element={<TroisSecretsCoach />} />
+
         {/* Other */}
         <Route path="/contact" element={<Contact />} />
         <Route path="/fit" element={<Fit />} />
