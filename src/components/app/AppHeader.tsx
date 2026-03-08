@@ -337,6 +337,16 @@ export const AppHeader = () => {
               ScanRepas
             </Link>
             <Link
+              to="/app/scan-barcode"
+              className={`text-left text-sm font-medium transition-colors flex items-center gap-2 ${
+                isActivePath("/app/scan-barcode") ? "text-primary font-semibold" : "text-muted-foreground"
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <ScanBarcode className="h-4 w-4" />
+              CodeBarres
+            </Link>
+            <Link
               to="/app/inspi-frigo"
               className={`text-left text-sm font-medium transition-colors flex items-center gap-2 ${
                 isActivePath("/app/inspi-frigo") ? "text-primary font-semibold" : "text-muted-foreground"
