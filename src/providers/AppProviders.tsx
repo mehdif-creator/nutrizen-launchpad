@@ -36,6 +36,7 @@ export function AppProviders({ children }: AppProvidersProps) {
                   {children}
                   <Toaster />
                   <CookieConsent />
+                  <InstallBanner />
                   {/* Only show React Query devtools in development */}
                   {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
                 </TooltipProvider>
