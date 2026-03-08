@@ -104,20 +104,33 @@ export function EmailCampaignSection({ embedded = false }: { embedded?: boolean 
     return `J+${days}`;
   };
 
+  const Wrapper = embedded ? 'div' : Card;
+  const wrapperProps = embedded ? {} : { className: 'p-6' };
+
   return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold flex items-center gap-2">
-          <Mail className="h-5 w-5 text-primary" />
-          Campagne Onboarding Brevo
-        </h2>
-        <div className="flex gap-2">
+    <Wrapper {...wrapperProps as any}>
+      {!embedded && (
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <Mail className="h-5 w-5 text-primary" />
+            Campagne Onboarding Brevo
+          </h2>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={fetchStatus} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
+              Actualiser
+            </Button>
+          </div>
+        </div>
+      )}
+      {embedded && (
+        <div className="flex justify-end mb-4">
           <Button variant="outline" size="sm" onClick={fetchStatus} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
             Actualiser
           </Button>
         </div>
-      </div>
+      )}
 
       {/* Templates */}
       <div className="mb-6">
