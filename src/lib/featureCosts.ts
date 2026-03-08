@@ -13,6 +13,7 @@ export const FEATURE_COSTS = {
   generate_week_2: 11,
   regenerate_day: 2,
   regenerate_week: 8,
+  scan_barcode: 1,
 } as const;
 
 export type FeatureType = keyof typeof FEATURE_COSTS;
