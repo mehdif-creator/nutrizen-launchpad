@@ -91,6 +91,17 @@ export const AppHeader = () => {
               ScanRepas
             </Link>
             <Link
+              to="/app/scan-barcode"
+              className={`text-sm font-medium transition-colors ${
+                isActivePath("/app/scan-barcode")
+                  ? "text-[#00B37E] font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <ScanBarcode className="inline h-4 w-4 mr-1" />
+              CodeBarres
+            </Link>
+            <Link
               to="/app/inspi-frigo"
               className={`text-sm font-medium transition-colors ${
                 isActivePath("/app/inspi-frigo")
