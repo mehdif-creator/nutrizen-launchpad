@@ -49,110 +49,40 @@ export const AppHeader = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-6">
-          <Link to="/app" className="flex items-center hover:opacity-80 transition-opacity">
+        <div className="flex items-center gap-4">
+          <Link to="/app" className="flex items-center hover:opacity-80 transition-opacity shrink-0">
             <img
               src={new URL("@/assets/nutrizen-main-logo.png", import.meta.url).href}
               alt="NutriZen"
-              className="h-14 w-auto"
+              className="h-12 w-auto"
             />
           </Link>
 
-          <nav className="hidden md:flex items-center gap-6">
-            <Link
-              to="/app"
-              className={`text-sm font-medium transition-colors ${
-                isActivePath("/app") ? "text-[#00B37E] font-semibold" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Home className="inline h-4 w-4 mr-1" />
-              Tableau de bord
-            </Link>
-            <Link
-              to="/app/meal-plan"
-              className={`text-sm font-medium transition-colors ${
-                isActivePath("/app/meal-plan")
-                  ? "text-[#00B37E] font-semibold"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <BookOpen className="inline h-4 w-4 mr-1" />
-              Recettes
-            </Link>
-            <Link
-              to="/app/scan-repas"
-              className={`text-sm font-medium transition-colors ${
-                isActivePath("/app/scan-repas")
-                  ? "text-[#00B37E] font-semibold"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Camera className="inline h-4 w-4 mr-1" />
-              ScanRepas
-            </Link>
-            <Link
-              to="/app/scan-barcode"
-              className={`text-sm font-medium transition-colors ${
-                isActivePath("/app/scan-barcode")
-                  ? "text-[#00B37E] font-semibold"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <ScanBarcode className="inline h-4 w-4 mr-1" />
-              CodeBarres
-            </Link>
-            <Link
-              to="/app/inspi-frigo"
-              className={`text-sm font-medium transition-colors ${
-                isActivePath("/app/inspi-frigo")
-                  ? "text-[#00B37E] font-semibold"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Camera className="inline h-4 w-4 mr-1" />
-              InspiFrigo
-            </Link>
-            <Link
-              to="/app/profile"
-              className={`text-sm font-medium transition-colors ${
-                isActivePath("/app/profile")
-                  ? "text-[#00B37E] font-semibold"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <User className="inline h-4 w-4 mr-1" />
-              Profil
-            </Link>
-            <Link
-              to="/app/settings"
-              className={`text-sm font-medium transition-colors ${
-                isActivePath("/app/settings")
-                  ? "text-[#00B37E] font-semibold"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Settings className="inline h-4 w-4 mr-1" />
-              Paramètres
-            </Link>
-            <Link
-              to="/app/support"
-              className={`text-sm font-medium transition-colors ${
-                isActivePath("/app/support")
-                  ? "text-[#00B37E] font-semibold"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <HelpCircle className="inline h-4 w-4 mr-1" />
-              Support
-            </Link>
-            <Link
-              to="/blog"
-              className={`text-sm font-medium transition-colors ${
-                isActivePath("/blog") ? "text-[#00B37E] font-semibold" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Blog
-            </Link>
+          <nav className="hidden lg:flex items-center gap-1">
+            {[
+              { to: "/app", label: "Tableau de bord", icon: Home },
+              { to: "/app/meal-plan", label: "Recettes", icon: BookOpen },
+              { to: "/app/scan-repas", label: "ScanRepas", icon: Camera },
+              { to: "/app/scan-barcode", label: "CodeBarres", icon: ScanBarcode },
+              { to: "/app/inspi-frigo", label: "InspiFrigo", icon: Camera },
+              { to: "/app/profile", label: "Profil", icon: User },
+              { to: "/app/settings", label: "Paramètres", icon: Settings },
+              { to: "/app/support", label: "Support", icon: HelpCircle },
+              { to: "/blog", label: "Blog" },
+            ].map(({ to, label, icon: Icon }) => (
+              <Link
+                key={to}
+                to={to}
+                className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                  isActivePath(to)
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                }`}
+              >
+                {Icon && <Icon className="h-4 w-4" />}
+                {label}
+              </Link>
+            ))}
           </nav>
         </div>
 
