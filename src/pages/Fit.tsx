@@ -13,7 +13,7 @@ import { CommunityTestimonials } from '@/components/landing/CommunityTestimonial
 import { ExampleWeek } from '@/components/landing/ExampleWeek';
 import { Pricing } from '@/components/landing/Pricing';
 import { FAQ } from '@/components/landing/FAQ';
-import { LeadMagnet } from '@/components/landing/LeadMagnet';
+import { LeadMagnetForm } from '@/components/landing/LeadMagnetForm';
 import { FinalCTA } from '@/components/landing/FinalCTA';
 import { Footer } from '@/components/landing/Footer';
 import { MobileStickyCTA } from '@/components/landing/MobileStickyCTA';
@@ -136,7 +136,14 @@ const Fit = () => {
       <GuaranteeCard />
       <Pricing onCtaClick={handleCtaClick} comparison={fitComparison} />
       <FAQ copy={fitCopy.faq} />
-      <LeadMagnet copy={fitCopy.leadMagnet} />
+      <LeadMagnetForm
+        listId={5} // TODO: remplacer par l'ID réel de la liste Brevo "Fit"
+        title="Programme 21 Jours en Forme"
+        text="Un plan d'action concret pour transformer votre alimentation sportive en 3 semaines."
+        buttonLabel="Télécharger mon Programme 21 Jours →"
+        successMessage="Parfait ! Votre programme arrive dans votre boîte mail 💪"
+        source="landing_fit_lead_magnet"
+      />
       <FinalCTA onCtaClick={handleCtaClick} copy={fitCopy.finalCta} />
       <Footer />
       <MobileStickyCTA onCtaClick={handleCtaClick} />

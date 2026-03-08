@@ -5,7 +5,8 @@ import { getCorsHeaders, getClientIp } from "../_shared/security.ts";
 const leadSchema = z.object({
   email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
   source: z.string().trim().min(1, "Source is required").max(100, "Source must be less than 100 characters"),
-  timestamp: z.string().optional()
+  timestamp: z.string().optional(),
+  listId: z.number().int().positive().optional(),
 });
 
 Deno.serve(async (req) => {
@@ -45,7 +46,32 @@ Deno.serve(async (req) => {
 
     // Validate and sanitize input
     const validatedData = leadSchema.parse(body);
-    const { email, source, timestamp } = validatedData;
+    const { email, source, timestamp, listId } = validatedData;
+
+    // Add contact to Brevo list if listId provided
+    if (listId) {
+      const brevoApiKey = Deno.env.get('BREVO_API_KEY');
+      if (brevoApiKey) {
+        try {
+          const brevoRes = await fetch('https://api.brevo.com/v3/contacts', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'api-key': brevoApiKey,
+            },
+            body: JSON.stringify({
+              email: email.toLowerCase().trim(),
+              listIds: [listId],
+              updateEnabled: true,
+            }),
+          });
+          console.log('Brevo contact upsert:', brevoRes.status);
+        } catch (brevoErr) {
+          console.error('Brevo contact upsert failed:', brevoErr);
+          // Non-blocking: continue even if Brevo fails
+        }
+      }
+    }
 
     // Forward to n8n webhook
     const n8nWebhookBase = Deno.env.get('N8N_WEBHOOK_BASE');

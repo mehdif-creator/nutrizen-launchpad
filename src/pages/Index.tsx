@@ -27,7 +27,7 @@ const FinalCTA = lazy(() => import('@/components/landing/FinalCTA').then(m => ({
 const Footer = lazy(() => import('@/components/landing/Footer').then(m => ({ default: m.Footer })));
 const MobileStickyCTA = lazy(() => import('@/components/landing/MobileStickyCTA').then(m => ({ default: m.MobileStickyCTA })));
 const ScrollToTop = lazy(() => import('@/components/common/ScrollToTop').then(m => ({ default: m.ScrollToTop })));
-const LeadMagnet = lazy(() => import('@/components/landing/LeadMagnet').then(m => ({ default: m.LeadMagnet })));
+const LeadMagnetForm = lazy(() => import('@/components/landing/LeadMagnetForm').then(m => ({ default: m.LeadMagnetForm })));
 
 const homeValueItems = [
   {
@@ -93,7 +93,14 @@ const Index = () => {
         <GuaranteeCard />
         <Pricing onCtaClick={handleCtaClick} />
         <FAQ copy={mainCopy.faq} />
-        <LeadMagnet copy={mainCopy.leadMagnet} />
+        <LeadMagnetForm
+          listId={4} // TODO: remplacer par l'ID réel de la liste Brevo "Home"
+          title="Défi Healthy 7 Jours"
+          text="Recevez votre programme gratuit pour transformer vos repas en 7 jours."
+          buttonLabel="Recevoir mon Défi Gratuit →"
+          successMessage="C'est parti ! Votre défi arrive dans votre boîte mail 🎉"
+          source="landing_home_lead_magnet"
+        />
         <FinalCTA onCtaClick={handleCtaClick} copy={mainCopy.finalCta} />
         <Footer />
         <MobileStickyCTA onCtaClick={handleCtaClick} />
