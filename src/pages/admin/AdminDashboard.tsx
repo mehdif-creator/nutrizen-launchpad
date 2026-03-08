@@ -169,7 +169,7 @@ export default function AdminDashboard() {
                 Gestion Mailing
               </DialogTitle>
             </DialogHeader>
-            <EmailCampaignSection />
+            <EmailCampaignSection embedded />
           </DialogContent>
         </Dialog>
 
