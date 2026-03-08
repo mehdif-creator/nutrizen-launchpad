@@ -460,6 +460,7 @@ export async function withSecurity<T = unknown>(
     }
 
     logger.error('Unhandled error', error);
+    await logEdgeFunctionError(endpoint, error).catch(() => {});
     
     return new Response(
       JSON.stringify({
