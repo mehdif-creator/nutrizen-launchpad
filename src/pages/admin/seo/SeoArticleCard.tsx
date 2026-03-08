@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, Trash2, Play, Zap, ExternalLink, AlertCircle, RotateCcw } from 'lucide-react';
+import { Loader2, Trash2, Play, Zap, ExternalLink, AlertCircle, RotateCcw, ImageIcon } from 'lucide-react';
 import { callEdgeFunction } from '@/lib/edgeFn';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
