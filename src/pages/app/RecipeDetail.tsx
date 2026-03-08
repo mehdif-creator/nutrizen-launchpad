@@ -154,8 +154,8 @@ export default function RecipeDetail() {
 
           {/* Hero Image */}
           {imageUrl && (
-            <div className="w-full h-80 rounded-2xl overflow-hidden mb-6 bg-muted">
-              <img src={imageUrl} alt={recipe.title} className="w-full h-full object-cover"
+            <div className="w-full rounded-2xl overflow-hidden mb-6 bg-muted">
+              <img src={imageUrl} alt={recipe.title} className="w-full h-auto max-h-[500px] object-contain"
                 onError={(e) => { (e.target as HTMLImageElement).src = '/img/hero-default.jpg'; }} />
             </div>
           )}
