@@ -73,24 +73,8 @@ export default function Dashboard() {
   // Effective portions from profile (single source of truth)
   const { data: portions } = useEffectivePortions(user?.id);
 
-  // Update streak once per browser session per user
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const key = `streak_updated_${user.id}`;
-    if (sessionStorage.getItem(key)) return;
-
-    const run = async () => {
-      try {
-        await supabase.rpc('update_user_streak_and_stats', { p_user_id: user.id });
-        sessionStorage.setItem(key, '1');
-      } catch (err) {
-        console.error('[Dashboard] Error updating streak:', err);
-      }
-    };
-
-    run();
-  }, [user?.id]);
+  // V2: Streak + points update via unified gamification event (once per session)
+  useStreakUpdate(user?.id);
 
   const [generating, setGenerating] = useState(false);
   const [swapping, setSwapping] = useState(false);
