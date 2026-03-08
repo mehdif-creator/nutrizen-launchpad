@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { platform } = await req.json(); // twitter, facebook, instagram
+    const { platform } = await req.json();
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -32,45 +32,37 @@ Deno.serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    // Check if already shared today (1/day cap)
+    // Award points via unified V2 gamification system
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' });
-    
-    const { data: existingShare } = await supabaseClient
-      .from('user_events')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('event_type', 'SOCIAL_SHARE')
-      .gte('occurred_at', `${today}T00:00:00+01:00`)
-      .lte('occurred_at', `${today}T23:59:59+01:00`)
-      .maybeSingle();
+    const { data: result, error: awardError } = await supabaseClient.rpc('fn_emit_gamification_event', {
+      p_event_type: 'SOCIAL_SHARE',
+      p_meta: { platform, timestamp: new Date().toISOString() },
+      p_idempotency_key: `share:${user.id}:${platform}:${today}`,
+    });
 
-    if (existingShare) {
+    if (awardError) throw awardError;
+
+    if (!result?.success) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: 'Already earned points for sharing today. Come back tomorrow!'
+          message: result?.error === 'daily_limit_reached' 
+            ? 'Limite quotidienne atteinte. Revenez demain !'
+            : (result?.error || 'Erreur inconnue'),
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Award +5 points
-    await supabaseClient.rpc('fn_award_event', {
-      p_event_type: 'SOCIAL_SHARE',
-      p_points: 5,
-      p_credits: 0,
-      p_meta: { platform, timestamp: new Date().toISOString() },
-    });
-
-    // Check for Viral Sharer badge (10 shares on different days)
+    // Check for Viral Sharer badge (10 shares)
     const { data: shareEvents } = await supabaseClient
-      .from('user_events')
-      .select('occurred_at')
+      .from('gamification_events')
+      .select('id')
       .eq('user_id', user.id)
       .eq('event_type', 'SOCIAL_SHARE');
 
+    let badgeUnlocked = false;
     if (shareEvents && shareEvents.length >= 10) {
-      // Check if badge already granted
       const { data: hasBadge } = await supabaseClient
         .from('user_badges')
         .select('id')
@@ -83,37 +75,30 @@ Deno.serve(async (req) => {
           .from('user_badges')
           .insert({ user_id: user.id, badge_code: 'VIRAL_SHARER' });
         
-        await supabaseClient.rpc('fn_award_event', {
+        await supabaseClient.rpc('fn_emit_gamification_event', {
           p_event_type: 'BADGE_GRANTED',
-          p_points: 10,
-          p_credits: 0,
           p_meta: { badge: 'VIRAL_SHARER' },
+          p_idempotency_key: `badge:${user.id}:VIRAL_SHARER`,
         });
 
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            points: 15,
-            badgeUnlocked: true,
-            message: '🎉 Viral Sharer badge unlocked! +15 total points'
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        badgeUnlocked = true;
       }
     }
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        points: 5,
-        message: '+5 points for sharing!'
+        points: result.points_awarded || 5,
+        badgeUnlocked,
+        message: badgeUnlocked 
+          ? '🎉 Badge Viral Sharer débloqué !'
+          : `+${result.points_awarded || 5} points pour le partage !`,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Social share error:', error);
     
-    // Sanitize error - don't expose internal details
     const message = (error as Error).message;
     const isAuthError = message.includes('Unauthorized') || message.includes('JWT');
     
