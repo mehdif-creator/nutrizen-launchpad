@@ -210,8 +210,8 @@ export function RecipeMacrosCard({
       {/* Portion indicator */}
       <div className="mt-4 text-xs text-muted-foreground text-center">
         {viewMode === 'portion' 
-          ? `Valeurs pour 1 portion (recette pour ${servings} portions)`
-          : `Valeurs totales pour ${servings} portions`
+          ? `Valeurs pour 1 portion (recette pour ${parseFloat(servings.toFixed(1))} portions)`
+          : `Valeurs totales pour ${parseFloat(servings.toFixed(1))} portions`
         }
       </div>
 
