@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
+// Fix 3: useState needed for image error fallback in ArticleCard
 import { Link, useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/landing/Header';
 import { Footer } from '@/components/landing/Footer';

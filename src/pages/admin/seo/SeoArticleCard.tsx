@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Trash2, Play, Zap, ExternalLink, AlertCircle, RotateCcw, ImageIcon } from 'lucide-react';
 import { callEdgeFunction } from '@/lib/edgeFn';
 import { supabase } from '@/integrations/supabase/client';
+// supabase import already present for functions.invoke
 import { useToast } from '@/hooks/use-toast';
 import { SeoProgressBar } from './SeoProgressBar';
 import { STATUS_LABELS, NEXT_STEP, AUTO_PIPELINE_SEQUENCE, AUTO_PIPELINE_LABELS } from './types';

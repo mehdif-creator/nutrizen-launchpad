@@ -69,6 +69,10 @@ export default function AdminSeoFactory() {
             <Button variant="ghost" size="icon"><ArrowLeft className="h-5 w-5" /></Button>
           </Link>
           <h1 className="text-3xl font-bold flex-1">SEO Factory</h1>
+          <Button variant="outline" size="sm" onClick={handleRefreshAllImages} disabled={isRefreshing}>
+            <ImageIcon className="mr-2 h-4 w-4" />
+            {isRefreshing ? 'Régénération…' : '🖼️ Régénérer les images'}
+          </Button>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
             <RefreshCw className="mr-2 h-4 w-4" />Actualiser
           </Button>

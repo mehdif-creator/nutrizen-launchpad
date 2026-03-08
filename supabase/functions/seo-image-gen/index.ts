@@ -105,11 +105,40 @@ Deno.serve(async (req) => {
     const articleContext = `${outline.title || ""} - ${outline.meta_description || ""}`;
     const imageUrls: { url: string; alt: string; type: string }[] = [];
 
+    // Helper: download DALL-E image and store permanently in Supabase Storage
+    async function storeImage(tempUrl: string, imgIndex: number): Promise<string> {
+      try {
+        const imgResponse = await fetch(tempUrl);
+        if (!imgResponse.ok) throw new Error(`Download failed: ${imgResponse.status}`);
+        const imgBuffer = await imgResponse.arrayBuffer();
+        const fileName = `seo-${article_id}-${imgIndex}-${Date.now()}.jpg`;
+        const { error: uploadError } = await adminClient.storage
+          .from("seo-images")
+          .upload(fileName, imgBuffer, {
+            contentType: "image/jpeg",
+            upsert: false,
+            cacheControl: "31536000",
+          });
+        if (uploadError) {
+          console.error("[seo-image-gen] Storage upload failed:", uploadError);
+          return tempUrl; // fallback to temporary URL
+        }
+        const { data: { publicUrl } } = adminClient.storage.from("seo-images").getPublicUrl(fileName);
+        return publicUrl;
+      } catch (err) {
+        console.error("[seo-image-gen] Store image failed:", err);
+        return tempUrl;
+      }
+    }
+
+    let imgIdx = 0;
+
     if (outline.hero_image_prompt) {
       console.log("[seo-image-gen] Generating hero image...");
       const refinedPrompt = await refinePrompt(outline.hero_image_prompt, articleContext);
-      const url = await generateImage(refinedPrompt, "1792x1024");
-      imageUrls.push({ url, alt: outline.hero_image_alt || "", type: "hero" });
+      const tempUrl = await generateImage(refinedPrompt, "1792x1024");
+      const permanentUrl = await storeImage(tempUrl, imgIdx++);
+      imageUrls.push({ url: permanentUrl, alt: outline.hero_image_alt || "", type: "hero" });
     }
 
     const sectionsWithImages = (outline.sections || [])
@@ -119,8 +148,9 @@ Deno.serve(async (req) => {
     for (const section of sectionsWithImages) {
       console.log(`[seo-image-gen] Generating section image for: ${section.h2}`);
       const refinedPrompt = await refinePrompt(section.image_prompt, `${articleContext} - Section: ${section.h2}`);
-      const url = await generateImage(refinedPrompt, "1024x1024");
-      imageUrls.push({ url, alt: section.image_alt || section.h2, type: "section" });
+      const tempUrl = await generateImage(refinedPrompt, "1024x1024");
+      const permanentUrl = await storeImage(tempUrl, imgIdx++);
+      imageUrls.push({ url: permanentUrl, alt: section.image_alt || section.h2, type: "section" });
     }
 
     await adminClient.from("seo_articles").update({
