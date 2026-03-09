@@ -8,9 +8,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Mail, MessageCircle, Book, CreditCard, Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
-const MAILTO_LINK = 'mailto:support@mynutrizen.fr?subject=Demande de support NutriZen';
 
 export default function Support() {
   return (
