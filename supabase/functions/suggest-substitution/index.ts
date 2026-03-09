@@ -145,50 +145,27 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Check and consume credits
-    const { data: creditsResult, error: creditsError } = await supabaseAdmin.rpc('check_and_consume_credits', {
-      p_user_id: user.id,
-      p_feature: 'substitution',
-      p_cost: SUBSTITUTION_COST,
-    });
+    // ── Pre-check balance (read-only) — actual deduction AFTER successful API call ──
+    const { data: walletPreCheck } = await supabaseAdmin
+      .from('user_wallets')
+      .select('subscription_credits, lifetime_credits')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    const preCheckBalance = (walletPreCheck?.subscription_credits ?? 0) + (walletPreCheck?.lifetime_credits ?? 0);
 
-    if (creditsError) {
-      console.error('Credits check error:', creditsError);
-      return new Response(
-        JSON.stringify({ error: 'Error checking credits' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const creditsData = creditsResult as { success: boolean; error_code?: string; current_balance?: number };
-
-    if (!creditsData.success) {
+    if (preCheckBalance < SUBSTITUTION_COST) {
       console.log('Insufficient credits for user:', user.id);
       return new Response(
         JSON.stringify({ 
           error: 'Crédits insuffisants',
           error_code: 'INSUFFICIENT_CREDITS',
-          current_balance: creditsData.current_balance,
+          current_balance: preCheckBalance,
           required: SUBSTITUTION_COST,
         }),
         { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Tag the transaction with idempotency key
-    if (request_id) {
-      await supabaseAdmin
-        .from('credit_transactions')
-        .update({ idempotency_key: `substitution:${request_id}` })
-        .eq('user_id', user.id)
-        .eq('feature', 'substitution')
-        .is('idempotency_key', null)
-        .order('created_at', { ascending: false })
-        .limit(1);
-    }
-
-    console.log(`Credits consumed for substitution (cost: ${SUBSTITUTION_COST}), user:`, user.id);
-    
     // Check OpenAI API key
     const openaiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openaiKey) {
@@ -246,7 +223,14 @@ Réponds UNIQUEMENT en JSON valide, sans markdown, avec ce format:
     if (!response.ok) {
       const errBody = await response.text();
       console.error('[suggest-substitution] OpenAI error:', response.status, errBody.substring(0, 500));
-      throw new Error('OpenAI API error');
+      // NO credit deduction on API failure
+      return new Response(JSON.stringify({ 
+        error: `Erreur du service IA (${response.status}). Aucun crédit débité.`,
+        substitutions: []
+      }), {
+        status: 502,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const data = await response.json();
@@ -258,8 +242,52 @@ Réponds UNIQUEMENT en JSON valide, sans markdown, avec ce format:
       substitutionData = JSON.parse(cleanContent);
     } catch (e) {
       console.error('Failed to parse AI response:', content);
-      substitutionData = { substitutions: [] };
+      // NO credit deduction on invalid response
+      return new Response(JSON.stringify({ 
+        error: 'Réponse IA invalide. Aucun crédit débité.',
+        substitutions: []
+      }), {
+        status: 502,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
+
+    if (!substitutionData.substitutions || substitutionData.substitutions.length === 0) {
+      // NO credit deduction on empty result
+      return new Response(JSON.stringify({ 
+        error: 'Aucune substitution trouvée. Aucun crédit débité.',
+        substitutions: []
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // ── SUCCESS: Now deduct credits atomically ──
+    const { data: creditsResult, error: creditsError } = await supabaseAdmin.rpc('check_and_consume_credits', {
+      p_user_id: user.id,
+      p_feature: 'substitution',
+      p_cost: SUBSTITUTION_COST,
+    });
+
+    if (creditsError) {
+      console.error('Credits deduction error after success:', creditsError);
+      // Still return the result — better to give free result than lose it
+    }
+
+    // Tag the transaction with idempotency key
+    if (request_id && !creditsError) {
+      await supabaseAdmin
+        .from('credit_transactions')
+        .update({ idempotency_key: `substitution:${request_id}` })
+        .eq('user_id', user.id)
+        .eq('feature', 'substitution')
+        .is('idempotency_key', null)
+        .order('created_at', { ascending: false })
+        .limit(1);
+    }
+
+    console.log(`Credits consumed for substitution (cost: ${SUBSTITUTION_COST}), user:`, user.id);
 
     // Cache the result
     const expiresAt = new Date();
@@ -312,6 +340,7 @@ Réponds UNIQUEMENT en JSON valide, sans markdown, avec ce format:
       );
     }
     
+    // NO credits deducted on unhandled errors
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(JSON.stringify({ 
       error: errorMessage,

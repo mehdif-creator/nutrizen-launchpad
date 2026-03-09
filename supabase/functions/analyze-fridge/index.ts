@@ -3,7 +3,7 @@
  * 
  * Accepts JSON { image_base64: string, request_id: string }
  * Returns { status, plat } or error
- * Credits: atomic + idempotent via request_id
+ * Credits: deducted ONLY after successful API response
  */
 import { createClient } from '../_shared/deps.ts';
 import { getCorsHeaders, generateRequestId, Logger, logEdgeFunctionError } from '../_shared/security.ts';
@@ -100,103 +100,33 @@ Deno.serve(async (req) => {
     }
     logger.info('Feature cost resolved', { cost });
 
-    // ── Atomic credit debit ──────────────────────────────────────────────────
-    // Check balance first
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('id')
-      .eq('id', user.id)
-      .single();
+    // ── Pre-check balance (read-only) — actual deduction AFTER successful API call ──
+    const { data: walletPreCheck } = await supabaseAdmin
+      .from('user_wallets')
+      .select('subscription_credits, lifetime_credits')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    const preCheckBalance = (walletPreCheck?.subscription_credits ?? 0) + (walletPreCheck?.lifetime_credits ?? 0);
 
-    if (!profile) {
+    if (preCheckBalance < cost) {
       return new Response(
-        JSON.stringify({ error: 'Profil introuvable.' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({
+          error: 'Crédits insuffisants pour cette fonctionnalité.',
+          error_code: 'INSUFFICIENT_CREDITS',
+          current_balance: preCheckBalance,
+          required: cost,
+        }),
+        { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    // Use the RPC if available, otherwise manual debit
-    const { data: debitResult, error: debitError } = await supabaseAdmin.rpc('consume_credits', {
-      p_user_id: user.id,
-      p_amount: cost,
-      p_reason: 'InspiFrigo - Analyse photo frigo',
-      p_feature: FEATURE_KEY,
-      p_idempotency_key: idempotencyKey,
-    });
-
-    if (debitError) {
-      logger.error('Credit debit RPC error', debitError);
-      // Try alternative RPC name
-      const { data: altResult, error: altError } = await supabaseAdmin.rpc('check_and_consume_credits', {
-        p_user_id: user.id,
-        p_feature: FEATURE_KEY,
-        p_cost: cost,
-      });
-
-      if (altError) {
-        logger.error('Alt credit debit also failed', altError);
-        return new Response(
-          JSON.stringify({ error: 'Erreur système lors de la vérification des crédits.' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      if (altResult && !altResult.success) {
-        return new Response(
-          JSON.stringify({
-            error: altResult.message || 'Crédits insuffisants',
-            error_code: 'INSUFFICIENT_CREDITS',
-            current_balance: altResult.current_balance,
-            required: cost,
-          }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Record idempotency manually since alt RPC may not do it
-      await supabaseAdmin.from('credit_transactions').insert({
-        user_id: user.id,
-        delta: -cost,
-        reason: 'InspiFrigo - Analyse photo frigo',
-        feature: FEATURE_KEY,
-        credit_type: 'usage',
-        idempotency_key: idempotencyKey,
-      }).onConflict('idempotency_key').ignore();
-
-    } else {
-      // Check consume_credits result
-      const result = debitResult as { success?: boolean; error_code?: string; message?: string; current_balance?: number } | boolean;
-      
-      if (typeof result === 'object' && result !== null && !result.success) {
-        return new Response(
-          JSON.stringify({
-            error: result.message || 'Crédits insuffisants pour cette fonctionnalité.',
-            error_code: result.error_code || 'INSUFFICIENT_CREDITS',
-            current_balance: result.current_balance,
-            required: cost,
-          }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    }
-
-    logger.info('Credits debited successfully');
 
     // ── Call OpenAI GPT-4o ───────────────────────────────────────────────────
     const openaiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openaiKey) {
       logger.error('OPENAI_API_KEY not configured');
-      // Refund credits
-      await supabaseAdmin.from('credit_transactions').insert({
-        user_id: user.id,
-        delta: cost,
-        reason: 'Remboursement InspiFrigo - Erreur config serveur',
-        feature: FEATURE_KEY,
-        credit_type: 'refund',
-        idempotency_key: `refund:${idempotencyKey}`,
-      });
+      // NO credit deduction on config error
       return new Response(
-        JSON.stringify({ error: 'Configuration serveur manquante. Vos crédits ont été remboursés.' }),
+        JSON.stringify({ error: 'Configuration serveur manquante. Aucun crédit débité.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -253,17 +183,9 @@ Tous les champs en français. Propose un seul plat réalisable avec les ingrédi
     if (!openaiResponse.ok) {
       const errBody = await openaiResponse.text();
       logger.error('OpenAI error', new Error(errBody.substring(0, 500)), { status: openaiResponse.status });
-      // Refund
-      await supabaseAdmin.from('credit_transactions').insert({
-        user_id: user.id,
-        delta: cost,
-        reason: 'Remboursement InspiFrigo - Erreur IA',
-        feature: FEATURE_KEY,
-        credit_type: 'refund',
-        idempotency_key: `refund:${idempotencyKey}`,
-      });
+      // NO credit deduction on API failure
       return new Response(
-        JSON.stringify({ error: 'L\'analyse a échoué. Vos crédits ont été remboursés. Réessayez.' }),
+        JSON.stringify({ error: "L'analyse a échoué. Aucun crédit débité. Réessayez." }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -277,22 +199,37 @@ Tous les champs en français. Propose un seul plat réalisable avec les ingrédi
       analysisResult = JSON.parse(cleaned);
     } catch {
       logger.error('Failed to parse GPT response', new Error(cleaned.substring(0, 300)));
-      // Refund
-      await supabaseAdmin.from('credit_transactions').insert({
-        user_id: user.id,
-        delta: cost,
-        reason: 'Remboursement InspiFrigo - Réponse IA invalide',
-        feature: FEATURE_KEY,
-        credit_type: 'refund',
-        idempotency_key: `refund:${idempotencyKey}`,
-      });
+      // NO credit deduction on invalid response
       return new Response(
-        JSON.stringify({ error: 'L\'IA a renvoyé une réponse invalide. Vos crédits ont été remboursés.' }),
+        JSON.stringify({ error: "L'IA a renvoyé une réponse invalide. Aucun crédit débité." }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    logger.info('Analysis successful');
+    // ── SUCCESS: Now deduct credits atomically ──
+    logger.info('Deducting credits after successful analysis');
+    
+    const { error: debitError } = await supabaseAdmin.rpc('check_and_consume_credits', {
+      p_user_id: user.id,
+      p_feature: FEATURE_KEY,
+      p_cost: cost,
+    });
+
+    if (debitError) {
+      logger.error('Credit deduction error after success', debitError);
+      // Still return the result
+    } else {
+      // Record idempotency
+      await supabaseAdmin.from('credit_transactions')
+        .update({ idempotency_key: idempotencyKey })
+        .eq('user_id', user.id)
+        .eq('feature', FEATURE_KEY)
+        .is('idempotency_key', null)
+        .order('created_at', { ascending: false })
+        .limit(1);
+    }
+
+    logger.info('Analysis successful, credits debited');
 
     return new Response(
       JSON.stringify({
@@ -306,8 +243,9 @@ Tous les champs en français. Propose un seul plat réalisable avec les ingrédi
   } catch (error) {
     logger.error('Unhandled error', error);
     await logEdgeFunctionError('analyze-fridge', error);
+    // NO credits deducted on unhandled errors
     return new Response(
-      JSON.stringify({ error: 'Erreur inattendue. Veuillez réessayer.' }),
+      JSON.stringify({ error: 'Erreur inattendue. Aucun crédit débité. Veuillez réessayer.' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
