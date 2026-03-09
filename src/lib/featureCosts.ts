@@ -57,6 +57,7 @@ export const FEATURE_DESCRIPTIONS: Record<FeatureType, string> = {
   regenerate_day: 'Remplacez toutes les recettes d\'un jour.',
   regenerate_week: 'Regénérez l\'intégralité de votre menu hebdomadaire.',
   scan_barcode: 'Scannez un code-barres pour voir les infos nutritionnelles du produit.',
+  chat_nutrition: 'Posez vos questions nutritionnelles à l\'assistant IA.',
 };
 
 /**
