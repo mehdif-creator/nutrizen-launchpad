@@ -104,6 +104,25 @@ export default function RecipeDetail() {
     toast({ title: '📥 PDF exporté', description: 'Votre recette a été téléchargée.' });
   };
 
+  const handleShareRecipe = async () => {
+    if (!recipe || !user) return;
+    setSharing(true);
+    try {
+      const data = await callEdgeFunction<{ success: boolean; token: string; error?: string }>(
+        'create-share-link',
+        { recipe_id: recipe.id }
+      );
+      if (!data.success || !data.token) throw new Error(data.error || 'Erreur');
+      const shareUrl = `${window.location.origin}/share/recipe/${data.token}`;
+      await navigator.clipboard.writeText(shareUrl);
+      toast({ title: 'Lien copié ! 🎉', description: 'Partage cette recette avec tes amis.' });
+    } catch (err: any) {
+      toast({ title: 'Erreur', description: err.message || 'Impossible de créer le lien.', variant: 'destructive' });
+    } finally {
+      setSharing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
