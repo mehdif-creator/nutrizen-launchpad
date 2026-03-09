@@ -110,6 +110,7 @@ const App = () => {
     }>
       <Routes>
         <Route path="/" element={<Index />} />
+        <Route path="/i/:code" element={<ReferralRedirect />} />
 
         {/* Auth */}
         <Route path="/auth/login" element={<Login />} />
