@@ -101,13 +101,13 @@ export default function Signup() {
         return;
       }
 
-      // Sync to Brevo silently
+      // Sync to Brevo silently — free account → list 2
       try {
         await supabase.functions.invoke('brevo-add-contact', {
           body: {
             email: trimmedEmail,
-            listIds: [8],
-            attributes: { SOURCE: 'app_signup' },
+            listIds: [2],
+            attributes: { PRENOM: '', PLAN: 'free', SOURCE: 'app_signup' },
           },
         });
       } catch (brevoErr) {
