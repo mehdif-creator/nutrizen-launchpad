@@ -273,3 +273,10 @@ verify_jwt = false
 [functions.sitemap.rate_limit]
 limit = 60
 period = "1h"
+
+[functions.send-support-email]
+verify_jwt = true
+
+[functions.send-support-email.rate_limit]
+limit = 10
+period = "1h"
