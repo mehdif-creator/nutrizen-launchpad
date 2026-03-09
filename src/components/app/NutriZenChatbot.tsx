@@ -296,8 +296,8 @@ export function NutriZenChatbot() {
               {messages.map((msg) => {
                 if (msg.role === 'system-notice') {
                   return (
-                    <div key={msg.id} className="text-center text-xs text-muted-foreground py-2">
-                      <ReactMarkdown className="inline">{msg.content}</ReactMarkdown>
+                    <div className="text-center text-xs text-muted-foreground py-2">
+                      <span className="inline"><ReactMarkdown>{msg.content}</ReactMarkdown></span>
                     </div>
                   );
                 }
