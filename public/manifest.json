@@ -1,13 +1,14 @@
 {
-  "name": "NutriZen",
+  "name": "NutriZen — Coach Nutrition",
   "short_name": "NutriZen",
+  "description": "Menus nutritionnels personnalisés, liste de courses automatique et recettes santé.",
   "start_url": "/app/dashboard",
   "display": "standalone",
   "background_color": "#1A2E35",
   "theme_color": "#0D7377",
+  "orientation": "portrait-primary",
   "icons": [
-    { "src": "/favicon.png", "sizes": "any", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }
