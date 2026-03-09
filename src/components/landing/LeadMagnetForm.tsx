@@ -27,12 +27,19 @@ export const LeadMagnetForm = ({
   successMessage = "C'est parti ! Vérifiez votre boîte mail 📩",
   source = 'landing_lead_magnet',
 }: LeadMagnetFormProps) => {
+  const [firstName, setFirstName] = useState('');
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
+
+    if (!firstName.trim()) {
+      setErrorMsg("Merci d'entrer votre prénom.");
+      setStatus('error');
+      return;
+    }
 
     if (!emailSchema.safeParse(email).success) {
       setErrorMsg("Merci d'entrer une adresse email valide.");
@@ -50,7 +57,7 @@ export const LeadMagnetForm = ({
         body: {
           email: trimmedEmail,
           listIds: [listId],
-          attributes: { SOURCE: 'lead_magnet' },
+          attributes: { PRENOM: firstName.trim(), SOURCE: 'lead_magnet' },
         },
       });
 
@@ -59,6 +66,7 @@ export const LeadMagnetForm = ({
       }
 
       setStatus('success');
+      setFirstName('');
       setEmail('');
     } catch (err: any) {
       setStatus('error');
@@ -98,25 +106,40 @@ export const LeadMagnetForm = ({
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col gap-3">
               <Input
-                type="email"
-                placeholder={placeholder}
-                value={email}
+                type="text"
+                placeholder="Votre prénom"
+                value={firstName}
                 onChange={(e) => {
-                  setEmail(e.target.value);
+                  setFirstName(e.target.value);
                   if (status === 'error') setStatus('idle');
                 }}
                 disabled={status === 'loading'}
-                className="flex-1 h-12 text-base"
+                required
+                className="h-12 text-base"
               />
-              <Button
-                type="submit"
-                disabled={status === 'loading'}
-                className="h-12 bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] shadow-glow transition-tech text-base font-medium whitespace-nowrap"
-              >
-                {status === 'loading' ? 'Envoi…' : buttonLabel}
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Input
+                  type="email"
+                  placeholder={placeholder}
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (status === 'error') setStatus('idle');
+                  }}
+                  disabled={status === 'loading'}
+                  required
+                  className="flex-1 h-12 text-base"
+                />
+                <Button
+                  type="submit"
+                  disabled={status === 'loading'}
+                  className="h-12 bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] shadow-glow transition-tech text-base font-medium whitespace-nowrap"
+                >
+                  {status === 'loading' ? 'Envoi…' : buttonLabel}
+                </Button>
+              </div>
             </div>
 
             {status === 'error' && (
