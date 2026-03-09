@@ -107,7 +107,7 @@ export function TutorialOnboarding() {
 
     await supabase
       .from('profiles')
-      .update({ tutorial_completed: true })
+      .update({ tutorial_completed: true } as any)
       .eq('id', user.id);
   };
 
