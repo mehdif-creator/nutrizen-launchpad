@@ -522,7 +522,7 @@ export default function Profile() {
                             <SelectValue placeholder="Sélectionne..." />
                           </SelectTrigger>
                           <SelectContent>
-                            {[2, 3, 4, 5].map(n => (
+                            {[1, 2].map(n => (
                               <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
                             ))}
                           </SelectContent>
