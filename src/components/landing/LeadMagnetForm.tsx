@@ -27,6 +27,7 @@ export const LeadMagnetForm = ({
   successMessage = "C'est parti ! Vérifiez votre boîte mail 📩",
   source = 'landing_lead_magnet',
 }: LeadMagnetFormProps) => {
+  const [firstName, setFirstName] = useState('');
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
