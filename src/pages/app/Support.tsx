@@ -37,16 +37,13 @@ export default function Support() {
                 <p className="text-xs md:text-sm text-muted-foreground mb-3 md:mb-4">
                   Notre équipe est là pour vous accompagner. N'hésitez pas à nous contacter !
                 </p>
-                <Button 
-                  variant="outline" 
-                  className="w-full sm:w-auto text-sm"
-                  asChild
+                <a 
+                  href="mailto:support@mynutrizen.fr?subject=Demande%20de%20support%20NutriZen"
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground w-full sm:w-auto"
                 >
-                  <a href={MAILTO_LINK}>
-                    <Mail className="mr-2 h-4 w-4" />
-                    support@mynutrizen.fr
-                  </a>
-                </Button>
+                  <Mail className="h-4 w-4" />
+                  support@mynutrizen.fr
+                </a>
                 <p className="text-xs text-muted-foreground mt-2">
                   Délai de réponse : sous 24h en semaine
                 </p>
