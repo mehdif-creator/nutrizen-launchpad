@@ -76,9 +76,9 @@ Deno.serve(async (req) => {
     const rl = await checkRateLimit(supabaseClient, {
       identifier: `user:${user.id}`,
       endpoint:   'use-swap',
-      maxTokens:  30,
+      maxTokens:  60,
       refillRate: 30,
-      cost:       60,
+      cost:       1,
     });
     if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
     // ── End rate limiting ──────────────────────────────────────────────────────

@@ -190,37 +190,63 @@ export default function Dashboard() {
         },
       });
 
-      if (error) throw error;
+      // supabase.functions.invoke returns error for non-2xx responses
+      // Extract the response body to get specific error codes
+      let responseData = data;
+      if (error) {
+        try {
+          // FunctionsHttpError contains the response body in context
+          const errorBody = await (error as any)?.context?.json?.();
+          if (errorBody) {
+            responseData = errorBody;
+          } else {
+            throw error;
+          }
+        } catch (parseErr) {
+          // If we can't parse the error body, throw the original error
+          if (parseErr === error) throw error;
+          console.error("Error parsing swap response:", parseErr);
+          throw error;
+        }
+      }
 
-      if (data.success) {
+      if (responseData?.success) {
         toast({
           title: "Recette changée !",
-          description: `Nouvelle recette : ${data.newRecipe?.title || 'OK'}. Il te reste ${data.creditsRemaining} Crédits Zen.`,
+          description: `Nouvelle recette : ${responseData.newRecipe?.title || 'OK'}. Il te reste ${responseData.creditsRemaining} Crédits Zen.`,
         });
-        // Invalidate all queries for immediate UI update
         invalidateAll();
-      } else if (data.error_code === 'INSUFFICIENT_CREDITS') {
+      } else if (responseData?.error_code === 'INSUFFICIENT_CREDITS') {
         setCreditsError({
-          currentBalance: data.current_balance || 0,
-          required: data.required || 1,
+          currentBalance: responseData.current_balance || 0,
+          required: responseData.required || 1,
           feature: 'swap',
         });
         setCreditsModalOpen(true);
-      } else if (data.error_code === 'DUPLICATE_REQUEST') {
-        // Idempotent: already processed, just refresh UI
+      } else if (responseData?.error_code === 'DUPLICATE_REQUEST') {
         invalidateAll();
       } else {
+        const errorMsg = responseData?.error || "Impossible de changer la recette.";
         toast({
           title: "Erreur",
-          description: data.error || "Impossible de changer la recette.",
+          description: errorMsg,
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error swapping:", error);
+      // Try to extract meaningful message
+      let msg = "Une erreur est survenue lors du swap.";
+      if (error?.message?.includes('rate limit') || error?.message?.includes('429')) {
+        msg = "Trop de requêtes. Réessaie dans quelques secondes.";
+      } else if (error?.message?.includes('Unauthorized') || error?.message?.includes('401')) {
+        msg = "Session expirée. Reconnecte-toi pour continuer.";
+      } else if (error?.message) {
+        msg = error.message;
+      }
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue lors du swap.",
+        description: msg,
         variant: "destructive",
       });
     } finally {
