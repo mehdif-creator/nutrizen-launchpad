@@ -14,6 +14,7 @@ export const FEATURE_COSTS = {
   regenerate_day: 2,
   regenerate_week: 8,
   scan_barcode: 1,
+  chat_nutrition: 2,
 } as const;
 
 export type FeatureType = keyof typeof FEATURE_COSTS;
