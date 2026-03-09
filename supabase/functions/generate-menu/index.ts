@@ -42,14 +42,18 @@ Deno.serve(async (req) => {
     console.log(`[generate-menu] Processing request for user: ${redactId(user.id)}`);
 
     // ── Rate limiting ─────────────────────────────────────────────────────────
+    // NOTE: `check_rate_limit` refills in **tokens/minute** (see DB function), so keep costs small.
     const rl = await checkRateLimit(supabaseClient, {
       identifier: `user:${user.id}`,
-      endpoint:   'generate-menu',
-      maxTokens:  10,
-      refillRate: 10,
-      cost:       600,
+      endpoint: 'generate-menu',
+      maxTokens: 2,     // burst
+      refillRate: 1,    // 1 request/min
+      cost: 1,
     });
-    if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
+    if (!rl.allowed) {
+      console.log(`[generate-menu] Rate limit exceeded for user ${redactId(user.id)} — retry after ${rl.retryAfter}s`);
+      return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
+    }
     // ── End rate limiting ──────────────────────────────────────────────────────
 
     // Parse and validate input (read body once)
