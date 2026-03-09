@@ -113,5 +113,10 @@ export const ProtectedRoute = ({
     return <Navigate to="/admin" replace />;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      {!requireAdmin && <NutriZenChatbot />}
+    </>
+  );
 };

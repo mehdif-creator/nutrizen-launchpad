@@ -357,7 +357,10 @@ export function NutriZenChatbot() {
               className={cn(
                 'h-10 w-10 rounded-xl shrink-0',
                 mode === 'nutrition'
-                  ? 'bg-orange-500 hover:bg-orange-600'
+                  ? 'bg-accent hover:bg-accent/90 text-accent-foreground'
+                  : 'bg-primary hover:bg-primary/90',
+              )}
+            >
                   : 'bg-primary hover:bg-primary/90',
               )}
             >
