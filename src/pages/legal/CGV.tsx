@@ -17,19 +17,17 @@ export default function CGV() {
           </p>
           <address>
             <p>
-              <strong>Aimy Digital</strong> – Auto-entrepreneur
+              <strong>Aimy Digital</strong> – Auto-entrepreprise
               <br />
-              <strong>Nom :</strong> Mehdi Farhane
+              <strong>Nom :</strong> Aimy Digital
               <br />
-              <strong>Adresse :</strong> 23 rue Pierre Jeissou, 79700 Saint-Amand-sur-Sèvre – France
+              <strong>Adresse :</strong> France
               <br />
               <strong>SIRET :</strong> 515 191 401 00022
               <br />
               <strong>Email :</strong> <a href="mailto:contact@aimy-digital.fr">contact@aimy-digital.fr</a>
               <br />
-              <strong>Téléphone :</strong> <a href="tel:+33652597780">06 52 59 77 80</a>
-              <br />
-              <strong>Responsable de la publication :</strong> Mehdi Farhane
+              <strong>Responsable de la publication :</strong> Aimy Digital
             </p>
           </address>
 
