@@ -178,6 +178,24 @@ export default function Settings() {
             </div>
           </Card>
 
+          {/* Tutorial */}
+          <Card className="p-4 md:p-6 mb-4 md:mb-6">
+            <h2 className="text-lg md:text-xl font-semibold mb-4">Tutoriel</h2>
+            <div className="space-y-3">
+              <Button
+                onClick={handleResetTutorial}
+                variant="outline"
+                className="w-full text-sm md:text-base"
+              >
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Revoir le tutoriel
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Relance le tutoriel de bienvenue pour revoir les fonctionnalités principales.
+              </p>
+            </div>
+          </Card>
+
           {/* Danger Zone */}
           <Card className="p-4 md:p-6 border-destructive">
             <h2 className="text-lg md:text-xl font-semibold mb-3 md:mb-4 text-destructive">
