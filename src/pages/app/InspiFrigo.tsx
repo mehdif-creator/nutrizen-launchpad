@@ -344,9 +344,9 @@ export default function InspiFrigo() {
                       ))}
                     </ol>
                   </div>
-                  <div className="p-3 bg-green-50 rounded-lg text-sm text-green-700">
-                    💚 {recette.note_nutritionnelle}
-                  </div>
+                   <div className="p-3 bg-primary/10 rounded-lg text-sm text-primary">
+                     💚 {recette.note_nutritionnelle}
+                   </div>
                 </CardContent>
               </Card>
             ))}
