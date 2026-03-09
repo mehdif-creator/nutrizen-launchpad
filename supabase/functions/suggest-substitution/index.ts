@@ -266,7 +266,7 @@ Réponds UNIQUEMENT en JSON valide, sans markdown, avec ce format:
     // ── SUCCESS: Now deduct credits atomically ──
     const { data: creditsResult, error: creditsError } = await supabaseAdmin.rpc('check_and_consume_credits', {
       p_user_id: user.id,
-      p_feature: 'substitution',
+      p_feature: 'substitutions',
       p_cost: SUBSTITUTION_COST,
     });
 
