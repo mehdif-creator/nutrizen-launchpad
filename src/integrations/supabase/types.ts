@@ -1610,6 +1610,7 @@ export type Database = {
           required_fields_ok: boolean
           show_on_leaderboard: boolean
           stripe_customer_id: string | null
+          tutorial_completed: boolean | null
           updated_at: string | null
           welcome_credits_granted: boolean
         }
@@ -1642,6 +1643,7 @@ export type Database = {
           required_fields_ok?: boolean
           show_on_leaderboard?: boolean
           stripe_customer_id?: string | null
+          tutorial_completed?: boolean | null
           updated_at?: string | null
           welcome_credits_granted?: boolean
         }
@@ -1674,6 +1676,7 @@ export type Database = {
           required_fields_ok?: boolean
           show_on_leaderboard?: boolean
           stripe_customer_id?: string | null
+          tutorial_completed?: boolean | null
           updated_at?: string | null
           welcome_credits_granted?: boolean
         }
