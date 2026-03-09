@@ -361,9 +361,6 @@ export function NutriZenChatbot() {
                   : 'bg-primary hover:bg-primary/90',
               )}
             >
-                  : 'bg-primary hover:bg-primary/90',
-              )}
-            >
               {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </div>
