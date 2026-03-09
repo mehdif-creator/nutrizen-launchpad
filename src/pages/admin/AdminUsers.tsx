@@ -41,36 +41,32 @@ export default function AdminUsers() {
 
   const fetchUsers = useCallback(async () => {
     try {
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, email, full_name, created_at');
+      const [{ data: profiles, error: profilesError }, { data: subscriptions, error: subsError }, { data: wallets, error: walletsError }] =
+        await Promise.all([
+          supabase.from('profiles').select('id, email, full_name, created_at'),
+          supabase.from('subscriptions').select('user_id, status, plan, trial_end'),
+          supabase.from('user_wallets').select('user_id, credits_total, subscription_credits, lifetime_credits'),
+        ]);
 
       if (profilesError) throw profilesError;
-
-      const { data: subscriptions, error: subsError } = await supabase
-        .from('subscriptions')
-        .select('user_id, status, plan, trial_end');
-
       if (subsError) throw subsError;
-
-      // NOTE: credits_zen may lag behind wallet updates; we still display it,
-      // but we’ll override locally after admin credit changes.
-      const { data: stats, error: statsError } = await supabase
-        .from('user_dashboard_stats')
-        .select('user_id, credits_zen');
-
-      if (statsError) throw statsError;
+      if (walletsError) throw walletsError;
 
       const usersWithSubs =
         profiles?.map((profile) => {
           const sub = subscriptions?.find((s) => s.user_id === profile.id);
-          const userStats = stats?.find((s) => s.user_id === profile.id);
+          const wallet = wallets?.find((w) => w.user_id === profile.id);
+
+          const creditsTotal =
+            (wallet as any)?.credits_total ??
+            (((wallet as any)?.subscription_credits ?? 0) + ((wallet as any)?.lifetime_credits ?? 0));
+
           return {
             ...profile,
             subscription_status: sub?.status || 'none',
             subscription_plan: sub?.plan || null,
             trial_end: sub?.trial_end || null,
-            credits: userStats?.credits_zen || 0,
+            credits: Number(creditsTotal) || 0,
           };
         }) || [];
 
