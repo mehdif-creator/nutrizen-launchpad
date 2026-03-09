@@ -2422,29 +2422,61 @@ export type Database = {
           expires_at: string | null
           id: string
           plan_id: string | null
+          recipe_id: string | null
           token: string
           user_id: string
-          week_start_date: string
+          week_start_date: string | null
         }
         Insert: {
           created_at?: string
           expires_at?: string | null
           id?: string
           plan_id?: string | null
+          recipe_id?: string | null
           token?: string
           user_id: string
-          week_start_date: string
+          week_start_date?: string | null
         }
         Update: {
           created_at?: string
           expires_at?: string | null
           id?: string
           plan_id?: string | null
+          recipe_id?: string | null
           token?: string
           user_id?: string
-          week_start_date?: string
+          week_start_date?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "share_links_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_macros_mv"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "share_links_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_macros_mv2"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "share_links_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_macros_v"
+            referencedColumns: ["recipe_id"]
+          },
+          {
+            foreignKeyName: "share_links_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shopping_aisles: {
         Row: {
@@ -4647,6 +4679,7 @@ export type Database = {
           week_start: string
         }[]
       }
+      get_shared_recipe: { Args: { p_token: string }; Returns: Json }
       get_shared_week_plan: { Args: { p_token: string }; Returns: Json }
       get_shopping_list_from_menu: {
         Args: {
