@@ -12,7 +12,7 @@ interface ManageCreditsDialogProps {
   userId: string;
   userEmail: string;
   currentCredits: number;
-  onCreditsUpdated: () => void;
+  onCreditsUpdated: (payload: { userId: string; previousCredits: number; newCredits: number }) => void;
 }
 
 export const ManageCreditsDialog = ({ userId, userEmail, currentCredits, onCreditsUpdated }: ManageCreditsDialogProps) => {
@@ -29,14 +29,20 @@ export const ManageCreditsDialog = ({ userId, userEmail, currentCredits, onCredi
     try {
       const result = await manageUserCredits(userId, credits, operation);
 
+      const previousCredits = Number((result.data as any)?.previous_credits ?? currentCredits);
+      const newCredits = Number((result.data as any)?.new_credits ?? getPreviewCredits());
+
       if (result.success) {
         toast({
           title: 'Crédits mis à jour',
-          description: `Crédits de ${userEmail}: ${result.data.previous_credits} → ${result.data.new_credits}`,
+          description: `Crédits de ${userEmail}: ${previousCredits} → ${newCredits}`,
         });
+
+        // Update parent UI immediately (don’t wait for Realtime/materialized recompute)
+        onCreditsUpdated({ userId, previousCredits, newCredits });
+
         setOpen(false);
         setCredits(0);
-        onCreditsUpdated();
       } else {
         throw new Error(result.message || 'Erreur inconnue');
       }

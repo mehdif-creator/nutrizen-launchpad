@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search, RefreshCw, Trash2, AlertTriangle } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { resetUserAccount, deleteUser } from '@/actions/adminActions';
@@ -39,60 +39,7 @@ export default function AdminUsers() {
   const [resettingUserId, setResettingUserId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchUsers();
-
-    // Souscriptions Realtime pour mise à jour automatique
-    const channel = supabase
-      .channel('admin_users_changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'profiles' },
-        () => {
-          console.log('[AdminUsers] Profile changed, refreshing...');
-          fetchUsers();
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'subscriptions' },
-        () => {
-          console.log('[AdminUsers] Subscription changed, refreshing...');
-          fetchUsers();
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'user_wallets' },
-        () => {
-          console.log('[AdminUsers] Wallet changed, refreshing...');
-          fetchUsers();
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'credit_transactions' },
-        () => {
-          console.log('[AdminUsers] Credit transaction, refreshing...');
-          fetchUsers();
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'user_dashboard_stats' },
-        () => {
-          console.log('[AdminUsers] Dashboard stats changed, refreshing...');
-          fetchUsers();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
@@ -106,23 +53,26 @@ export default function AdminUsers() {
 
       if (subsError) throw subsError;
 
+      // NOTE: credits_zen may lag behind wallet updates; we still display it,
+      // but we’ll override locally after admin credit changes.
       const { data: stats, error: statsError } = await supabase
         .from('user_dashboard_stats')
         .select('user_id, credits_zen');
 
       if (statsError) throw statsError;
 
-      const usersWithSubs = profiles?.map(profile => {
-        const sub = subscriptions?.find(s => s.user_id === profile.id);
-        const userStats = stats?.find(s => s.user_id === profile.id);
-        return {
-          ...profile,
-          subscription_status: sub?.status || 'none',
-          subscription_plan: sub?.plan || null,
-          trial_end: sub?.trial_end || null,
-          credits: userStats?.credits_zen || 0,
-        };
-      }) || [];
+      const usersWithSubs =
+        profiles?.map((profile) => {
+          const sub = subscriptions?.find((s) => s.user_id === profile.id);
+          const userStats = stats?.find((s) => s.user_id === profile.id);
+          return {
+            ...profile,
+            subscription_status: sub?.status || 'none',
+            subscription_plan: sub?.plan || null,
+            trial_end: sub?.trial_end || null,
+            credits: userStats?.credits_zen || 0,
+          };
+        }) || [];
 
       setUsers(usersWithSubs);
     } catch (error) {
@@ -135,7 +85,47 @@ export default function AdminUsers() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  const handleCreditsUpdated = useCallback(
+    ({ userId, newCredits }: { userId: string; previousCredits: number; newCredits: number }) => {
+      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, credits: newCredits } : u)));
+    },
+    []
+  );
+
+  useEffect(() => {
+    fetchUsers();
+
+    // Souscriptions Realtime pour mise à jour automatique
+    const channel = supabase
+      .channel('admin_users_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+        console.log('[AdminUsers] Profile changed, refreshing...');
+        fetchUsers();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'subscriptions' }, () => {
+        console.log('[AdminUsers] Subscription changed, refreshing...');
+        fetchUsers();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_wallets' }, () => {
+        console.log('[AdminUsers] Wallet changed, refreshing...');
+        fetchUsers();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'credit_transactions' }, () => {
+        console.log('[AdminUsers] Credit transaction, refreshing...');
+        fetchUsers();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_dashboard_stats' }, () => {
+        console.log('[AdminUsers] Dashboard stats changed, refreshing...');
+        fetchUsers();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchUsers]);
 
   const filteredUsers = users.filter(user =>
     user.email?.toLowerCase().includes(search.toLowerCase()) ||
@@ -293,7 +283,7 @@ export default function AdminUsers() {
                           userId={user.id}
                           userEmail={user.email}
                           currentCredits={user.credits || 0}
-                          onCreditsUpdated={fetchUsers}
+                          onCreditsUpdated={handleCreditsUpdated}
                         />
                         <Button 
                           size="sm" 
