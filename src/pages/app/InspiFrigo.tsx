@@ -152,7 +152,7 @@ export default function InspiFrigo() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/30">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/30d/30">
       <AppHeader />
 
       <main className="flex-1 container py-8 max-w-5xl">
@@ -176,7 +176,7 @@ export default function InspiFrigo() {
             <CardContent className="p-12">
               <div className="flex flex-col items-center gap-6 text-center">
                 <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary to-white rounded-full blur-xl opacity-50 animate-pulse" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-primarybackgroundhite rounded-full blur-xl opacity-50 animate-pulse" />
                   <Loader2 className="h-16 w-16 text-primary animate-spin relative z-10" />
                 </div>
                 <div>
