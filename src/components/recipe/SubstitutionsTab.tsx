@@ -12,16 +12,27 @@ import {
 } from '@/components/ui/select';
 import { RefreshCw, Sparkles, Copy, Check, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { InsufficientCreditsModal } from '@/components/app/InsufficientCreditsModal';
 import { getCreditsBalance } from '@/lib/credits';
 import { getFeatureCost } from '@/lib/featureCosts';
+import { callEdgeFunction } from '@/lib/edgeFn';
 
 interface Substitution {
   name: string;
   reason?: string;
   notes?: string;
+}
+
+interface SubstitutionResponse {
+  substitutions?: (string | Substitution)[];
+  cached?: boolean;
+  credits_charged?: number;
+  duplicate?: boolean;
+  error?: string;
+  error_code?: string;
+  current_balance?: number;
+  required?: number;
 }
 
 interface SubstitutionsTabProps {
@@ -58,7 +69,7 @@ export function SubstitutionsTab({ recipeId, ingredients }: SubstitutionsTabProp
     setSubstitutions([]);
 
     try {
-      // Check credits first
+      // Check credits first (client-side pre-check)
       const balance = await getCreditsBalance(user.id);
       if (!balance || balance.total < SUBSTITUTION_COST) {
         setCreditsInfo({
@@ -70,41 +81,39 @@ export function SubstitutionsTab({ recipeId, ingredients }: SubstitutionsTabProp
         return;
       }
 
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) throw new Error('Not authenticated');
-
-      const { data, error } = await supabase.functions.invoke('suggest-substitution', {
-        body: {
-          ingredient: selectedIngredient,
-          recipe_id: recipeId,
-          request_id: requestId,
-        },
-        headers: {
-          Authorization: `Bearer ${session.session.access_token}`,
-        },
+      // Use callEdgeFunction for reliable auth header transmission
+      const data = await callEdgeFunction<SubstitutionResponse>('suggest-substitution', {
+        ingredient: selectedIngredient,
+        recipe_id: recipeId,
+        request_id: requestId,
       });
 
-      if (error) {
-        // Check if it's a credits error
-        if (error.message?.includes('402') || error.message?.includes('credits')) {
-          const balance = await getCreditsBalance(user.id);
-          setCreditsInfo({
-            current: balance?.total || 0,
-            required: SUBSTITUTION_COST,
-          });
-          setShowCreditsModal(true);
-          return;
-        }
-        throw error;
+      // Check for error in the response body (e.g., insufficient credits, API error)
+      if (data.error_code === 'INSUFFICIENT_CREDITS') {
+        setCreditsInfo({
+          current: data.current_balance ?? 0,
+          required: data.required ?? SUBSTITUTION_COST,
+        });
+        setShowCreditsModal(true);
+        return;
+      }
+
+      if (data.error && (!data.substitutions || data.substitutions.length === 0)) {
+        toast({
+          title: 'Erreur',
+          description: data.error,
+          variant: 'destructive',
+        });
+        return;
       }
 
       // Parse substitutions from response
-      const subs: Substitution[] = data?.substitutions?.map((s: string | Substitution) => {
+      const subs: Substitution[] = (data.substitutions || []).map((s: string | Substitution) => {
         if (typeof s === 'string') {
           return { name: s };
         }
         return s;
-      }) || [];
+      });
 
       setSubstitutions(subs);
 
@@ -114,11 +123,24 @@ export function SubstitutionsTab({ recipeId, ingredients }: SubstitutionsTabProp
           description: 'Essayez avec un autre ingrédient.',
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error finding substitutions:', error);
+      
+      // Check if the error message indicates insufficient credits
+      const errorMsg = error?.message || '';
+      if (errorMsg.includes('insuffisant') || errorMsg.includes('INSUFFICIENT')) {
+        const balance = await getCreditsBalance(user.id);
+        setCreditsInfo({
+          current: balance?.total || 0,
+          required: SUBSTITUTION_COST,
+        });
+        setShowCreditsModal(true);
+        return;
+      }
+
       toast({
         title: 'Erreur',
-        description: 'Impossible de trouver des alternatives.',
+        description: errorMsg || 'Impossible de trouver des alternatives.',
         variant: 'destructive',
       });
     } finally {
