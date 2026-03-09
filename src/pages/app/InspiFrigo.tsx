@@ -352,7 +352,7 @@ export default function InspiFrigo() {
             ))}
 
             <div className="flex justify-center">
-              <Button onClick={handleReset} size="lg" className="bg-gradient-to-r from-accent to-primary text-white" style={{ borderRadius: "1rem" }}>
+              <Button onClick={handleReset} size="lg" className="bg-gradient-to-r from-accent to-primary text-primary-foreground" style={{ borderRadius: "1rem" }}>
                 🔁 Analyser une autre photo
               </Button>
             </div>
