@@ -31,7 +31,7 @@ export default function ReferralRedirect() {
 
     // Redirect to home with ?ref= so the existing tracking hook also fires
     // Redirect to pricing section to encourage signup
-    navigate(`/?ref=${encodeURIComponent(code)}#pricing`, { replace: true });
+    navigate(`/?ref=${encodeURIComponent(code)}#tarifs`, { replace: true });
   }, [code, navigate]);
 
   return null;
