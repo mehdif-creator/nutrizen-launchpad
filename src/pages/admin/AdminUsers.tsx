@@ -112,10 +112,6 @@ export default function AdminUsers() {
         console.log('[AdminUsers] Credit transaction, refreshing...');
         fetchUsers();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_dashboard_stats' }, () => {
-        console.log('[AdminUsers] Dashboard stats changed, refreshing...');
-        fetchUsers();
-      })
       .subscribe();
 
     return () => {
