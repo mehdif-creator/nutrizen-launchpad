@@ -383,10 +383,36 @@ Deno.serve(async (req) => {
 
     console.log('[use-swap] ✅ Recipe swapped successfully!')
 
+    // ── SUCCESS: Now deduct credits atomically ──
+    console.log('[use-swap] Deducting 1 credit after successful swap')
+    const { data: creditsCheck, error: creditsError } = await supabaseClient.rpc('check_and_consume_credits', {
+      p_user_id: user.id,
+      p_feature: 'swap',
+      p_cost: 1
+    })
+
+    if (creditsError) {
+      console.error('[use-swap] Credits deduction error after success:', creditsError)
+      // Still return the result
+    }
+
+    // Tag the transaction with idempotency key if provided
+    const requestId = validatedInput.request_id;
+    if (requestId && !creditsError) {
+      await supabaseClient
+        .from('credit_transactions')
+        .update({ idempotency_key: `swap:${requestId}` })
+        .eq('user_id', user.id)
+        .eq('feature', 'swap')
+        .is('idempotency_key', null)
+        .order('created_at', { ascending: false })
+        .limit(1);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
-        creditsRemaining: creditsCheck.new_balance,
+        creditsRemaining: creditsCheck?.new_balance ?? null,
         newRecipe: {
           id: randomRecipe.id,
           title: randomRecipe.title,
