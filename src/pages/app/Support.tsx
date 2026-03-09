@@ -209,12 +209,13 @@ export default function Support() {
               Notre équipe est là pour vous aider. Envoyez-nous un email avec le maximum de détails 
               sur votre question, et nous vous répondrons dans les plus brefs délais.
             </p>
-            <Button className="w-full sm:w-auto text-sm" asChild>
-              <a href={MAILTO_LINK}>
-                <Mail className="mr-2 h-4 w-4" />
-                Contacter le support
-              </a>
-            </Button>
+            <a 
+              href="mailto:support@mynutrizen.fr?subject=Demande%20de%20support%20NutriZen"
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 w-full sm:w-auto"
+            >
+              <Mail className="h-4 w-4" />
+              Contacter le support
+            </a>
           </Card>
         </div>
       </main>

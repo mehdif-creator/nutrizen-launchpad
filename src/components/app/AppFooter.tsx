@@ -14,7 +14,7 @@ export const AppFooter = () => {
                 className="h-12 w-auto"
               />
             </div>
-            <p className="text-sm text-muted-foreground">L'assistant qui organise tes repas en 30 secondes.</p>
+            <p className="text-sm text-muted-foreground">L'assistant qui organise vos repas en 30 secondes.</p>
           </div>
 
           <div>
