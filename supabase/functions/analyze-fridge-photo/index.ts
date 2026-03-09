@@ -57,10 +57,13 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } }
     });
+
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
     if (authError || !user) {
@@ -83,42 +86,39 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ── Credits: check & consume atomically ──
-    console.log('[analyze-fridge-photo] Checking credits for user:', user.id);
-    const { data: creditsCheck, error: creditsError } = await supabaseClient.rpc('check_and_consume_credits', {
-      p_user_id: user.id,
-      p_feature: FEATURE_KEY,
-      p_cost: FEATURE_COST,
-    });
+    // ── Pre-check balance (read-only) — actual deduction AFTER successful API call ──
+    console.log('[analyze-fridge-photo] Pre-checking credits for user:', user.id);
+    const { data: walletPreCheck } = await supabaseAdmin
+      .from('user_wallets')
+      .select('subscription_credits, lifetime_credits')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    const preCheckBalance = (walletPreCheck?.subscription_credits ?? 0) + (walletPreCheck?.lifetime_credits ?? 0);
 
-    if (creditsError) {
-      console.error('[analyze-fridge-photo] Credits check error:', creditsError);
-      return new Response(
-        JSON.stringify({ error: 'Erreur lors de la vérification des crédits' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!creditsCheck.success) {
-      console.log('[analyze-fridge-photo] Insufficient credits:', creditsCheck);
+    if (preCheckBalance < FEATURE_COST) {
+      console.log('[analyze-fridge-photo] Insufficient credits:', preCheckBalance);
       return new Response(
         JSON.stringify({
           error_code: 'INSUFFICIENT_CREDITS',
-          error: creditsCheck.message || 'Crédits insuffisants',
-          current_balance: creditsCheck.current_balance,
-          required: creditsCheck.required,
+          error: 'Crédits insuffisants',
+          current_balance: preCheckBalance,
+          required: FEATURE_COST,
         }),
         { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('[analyze-fridge-photo] Credits consumed, calling OpenAI...');
-
     // ── Call OpenAI GPT-4o ──
     const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
     if (!OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY is not configured');
+      // NO credit deduction on config error
+      return new Response(
+        JSON.stringify({ error: 'Configuration serveur manquante. Aucun crédit débité.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+
+    console.log('[analyze-fridge-photo] Calling OpenAI...');
 
     const base64Data = image.includes(',') ? image.split(',')[1] : image;
 
@@ -153,45 +153,58 @@ Deno.serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('[analyze-fridge-photo] OpenAI error:', response.status, errorText);
-
-      // Refund credits on AI failure
-      console.log('[analyze-fridge-photo] Refunding credits after AI failure');
-      await supabaseClient.rpc('refund_credits', {
-        p_user_id: user.id,
-        p_feature: FEATURE_KEY,
-        p_amount: FEATURE_COST,
-      }).catch(e => console.error('[analyze-fridge-photo] Refund error:', e));
-
-      throw new Error(`Erreur OpenAI : ${response.status}`);
+      // NO credit deduction on API failure
+      return new Response(
+        JSON.stringify({ error: `Erreur du service IA (${response.status}). Aucun crédit débité.` }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const openaiData = await response.json();
     const content = openaiData.choices?.[0]?.message?.content;
 
     if (!content) {
-      // Refund on empty response
-      await supabaseClient.rpc('refund_credits', {
-        p_user_id: user.id,
-        p_feature: FEATURE_KEY,
-        p_amount: FEATURE_COST,
-      }).catch(e => console.error('[analyze-fridge-photo] Refund error:', e));
-
-      throw new Error("Réponse vide d'OpenAI");
+      // NO credit deduction on empty response
+      return new Response(
+        JSON.stringify({ error: "Réponse vide du service IA. Aucun crédit débité." }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Clean potential markdown fencing
     const cleaned = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-    const parsed = JSON.parse(cleaned);
+    
+    let parsed;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch {
+      console.error('[analyze-fridge-photo] Failed to parse response:', cleaned.substring(0, 300));
+      // NO credit deduction on invalid response
+      return new Response(
+        JSON.stringify({ error: "Réponse IA invalide. Aucun crédit débité." }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (parsed.error) {
-      // Refund if image was not exploitable
-      await supabaseClient.rpc('refund_credits', {
-        p_user_id: user.id,
-        p_feature: FEATURE_KEY,
-        p_amount: FEATURE_COST,
-      }).catch(e => console.error('[analyze-fridge-photo] Refund error:', e));
+      // NO credit deduction if image was not exploitable
+      return new Response(
+        JSON.stringify({ error: parsed.error + " Aucun crédit débité." }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-      throw new Error(parsed.error);
+    // ── SUCCESS: Now deduct credits atomically ──
+    console.log('[analyze-fridge-photo] Deducting credits after successful analysis');
+    const { data: creditsCheck, error: creditsError } = await supabaseClient.rpc('check_and_consume_credits', {
+      p_user_id: user.id,
+      p_feature: FEATURE_KEY,
+      p_cost: FEATURE_COST,
+    });
+
+    if (creditsError) {
+      console.error('[analyze-fridge-photo] Credits deduction error after success:', creditsError);
+      // Still return the result
     }
 
     console.log('[analyze-fridge-photo] Analysis completed', {
@@ -205,9 +218,10 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('[analyze-fridge-photo] Error:', error);
+    // NO credits deducted on unhandled errors
     const msg = error instanceof Error ? error.message : 'Erreur inconnue';
     return new Response(
-      JSON.stringify({ error: msg }),
+      JSON.stringify({ error: msg + '. Aucun crédit débité.' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

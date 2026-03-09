@@ -59,6 +59,7 @@ Deno.serve(async (req) => {
     const SCAN_COST = costRow?.cost ?? 4;
 
     // ── Idempotency check ───────────────────────────────────────────────
+    let skipCharge = false;
     if (requestId) {
       const { data: existing } = await supabaseAdmin
         .from('credit_transactions')
@@ -68,80 +69,32 @@ Deno.serve(async (req) => {
       
       if (existing) {
         console.log('[analyse-repas] Duplicate request_id, skipping charge');
-        // Don't re-charge but still process the image
-      } else {
-        // Consume credits
-        const { data: creditsResult, error: creditsError } = await supabaseAdmin.rpc('check_and_consume_credits', {
-          p_user_id: user.id,
-          p_feature: 'scanrepas',
-          p_cost: SCAN_COST,
-        });
-
-        if (creditsError) {
-          console.error('[analyse-repas] Credits error:', creditsError);
-          return new Response(
-            JSON.stringify({ status: "erreur", message: "Erreur lors de la vérification des crédits." }),
-            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-          );
-        }
-
-        const creditsData = creditsResult as { success: boolean; error_code?: string; current_balance?: number };
-        if (!creditsData.success) {
-          return new Response(
-            JSON.stringify({ 
-              status: "erreur",
-              error_code: "INSUFFICIENT_CREDITS",
-              message: "Crédits insuffisants",
-              current_balance: creditsData.current_balance,
-              required: SCAN_COST,
-            }),
-            { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-          );
-        }
-
-        // Tag transaction with idempotency key
-        if (requestId) {
-          await supabaseAdmin
-            .from('credit_transactions')
-            .update({ idempotency_key: `scanrepas:${requestId}` })
-            .eq('user_id', user.id)
-            .eq('feature', 'scanrepas')
-            .is('idempotency_key', null)
-            .order('created_at', { ascending: false })
-            .limit(1);
-        }
+        skipCharge = true;
       }
-    } else {
-      // No request_id: consume credits without idempotency (backward compat)
-      const { data: creditsResult, error: creditsError } = await supabaseAdmin.rpc('check_and_consume_credits', {
-        p_user_id: user.id,
-        p_feature: 'scanrepas',
-        p_cost: SCAN_COST,
-      });
+    }
 
-      if (creditsError) {
-        return new Response(
-          JSON.stringify({ status: "erreur", message: "Erreur lors de la vérification des crédits." }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
+    // ── Pre-check balance (read-only) — actual deduction AFTER successful API call ──
+    if (!skipCharge) {
+      const { data: walletPreCheck } = await supabaseAdmin
+        .from('user_wallets')
+        .select('subscription_credits, lifetime_credits')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      const preCheckBalance = (walletPreCheck?.subscription_credits ?? 0) + (walletPreCheck?.lifetime_credits ?? 0);
 
-      const creditsData = creditsResult as { success: boolean; error_code?: string; current_balance?: number };
-      if (!creditsData.success) {
+      if (preCheckBalance < SCAN_COST) {
         return new Response(
           JSON.stringify({ 
             status: "erreur",
             error_code: "INSUFFICIENT_CREDITS",
             message: "Crédits insuffisants",
-            current_balance: creditsData.current_balance,
+            current_balance: preCheckBalance,
             required: SCAN_COST,
           }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
     }
-
-    console.log(`[analyse-repas] Credits consumed (cost: ${SCAN_COST})`);
 
     // ── Encode image ────────────────────────────────────────────────────
     const arrayBuffer = await image.arrayBuffer();
@@ -157,7 +110,7 @@ Deno.serve(async (req) => {
     if (!openaiKey) {
       console.error("[analyse-repas] OPENAI_API_KEY not set");
       return new Response(
-        JSON.stringify({ status: "erreur", message: "Clé API OpenAI manquante côté serveur." }),
+        JSON.stringify({ status: "erreur", message: "Clé API OpenAI manquante côté serveur. Aucun crédit débité." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -208,8 +161,9 @@ Le champ confiance_estimation est un entier de 0 à 100.`;
     if (!openaiResponse.ok) {
       const errBody = await openaiResponse.text();
       console.error("[analyse-repas] OpenAI error:", openaiResponse.status, errBody.substring(0, 500));
+      // NO credit deduction on API failure
       return new Response(
-        JSON.stringify({ status: "erreur", message: `Erreur OpenAI (${openaiResponse.status})` }),
+        JSON.stringify({ status: "erreur", message: `Erreur OpenAI (${openaiResponse.status}). Aucun crédit débité.` }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -223,10 +177,40 @@ Le champ confiance_estimation est un entier de 0 à 100.`;
       result = JSON.parse(cleaned);
     } catch {
       console.error("[analyse-repas] Failed to parse GPT response:", cleaned.substring(0, 300));
+      // NO credit deduction on invalid response
       return new Response(
-        JSON.stringify({ status: "erreur", message: "Réponse IA invalide (JSON attendu)." }),
+        JSON.stringify({ status: "erreur", message: "Réponse IA invalide (JSON attendu). Aucun crédit débité." }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
+    }
+
+    // ── SUCCESS: Now deduct credits atomically ──
+    if (!skipCharge) {
+      console.log(`[analyse-repas] Deducting ${SCAN_COST} credits after successful analysis`);
+      const { data: creditsResult, error: creditsError } = await supabaseAdmin.rpc('check_and_consume_credits', {
+        p_user_id: user.id,
+        p_feature: 'scanrepas',
+        p_cost: SCAN_COST,
+      });
+
+      if (creditsError) {
+        console.error('[analyse-repas] Credits deduction error after success:', creditsError);
+        // Still return the result
+      }
+
+      // Tag transaction with idempotency key
+      if (requestId && !creditsError) {
+        await supabaseAdmin
+          .from('credit_transactions')
+          .update({ idempotency_key: `scanrepas:${requestId}` })
+          .eq('user_id', user.id)
+          .eq('feature', 'scanrepas')
+          .is('idempotency_key', null)
+          .order('created_at', { ascending: false })
+          .limit(1);
+      }
+
+      console.log(`[analyse-repas] Credits consumed (cost: ${SCAN_COST})`);
     }
 
     return new Response(JSON.stringify(result), {
@@ -237,8 +221,9 @@ Le champ confiance_estimation est un entier de 0 à 100.`;
     await logEdgeFunctionError('analyse-repas', error);
     const origin = req.headers.get("origin");
     const corsHeaders = getCorsHeaders(origin);
+    // NO credits deducted on unhandled errors
     return new Response(
-      JSON.stringify({ status: "erreur", message: "Une erreur inattendue est survenue." }),
+      JSON.stringify({ status: "erreur", message: "Une erreur inattendue est survenue. Aucun crédit débité." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }

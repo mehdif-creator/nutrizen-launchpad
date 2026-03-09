@@ -27,10 +27,13 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } }
     });
+
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
     
@@ -89,37 +92,27 @@ Deno.serve(async (req) => {
 
     console.log('Authentication and subscription validated for user:', user.id);
 
-    // Check and consume credits BEFORE running analysis
-    console.log('[analyze-meal] Checking credits for user:', user.id)
-    const { data: creditsCheck, error: creditsError } = await supabaseClient.rpc('check_and_consume_credits', {
-      p_user_id: user.id,
-      p_feature: 'scanrepas',
-      p_cost: 1
-    })
+    // ── Pre-check balance (read-only) — actual deduction AFTER successful API call ──
+    const { data: walletPreCheck } = await supabaseAdmin
+      .from('user_wallets')
+      .select('subscription_credits, lifetime_credits')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    const preCheckBalance = (walletPreCheck?.subscription_credits ?? 0) + (walletPreCheck?.lifetime_credits ?? 0);
 
-    if (creditsError) {
-      console.error('[analyze-meal] Credits check error:', creditsError)
-      return new Response(
-        JSON.stringify({ error: 'Erreur lors de la vérification des crédits', status: 'error' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (!creditsCheck.success) {
-      console.log('[analyze-meal] Insufficient credits:', creditsCheck)
+    if (preCheckBalance < 1) {
+      console.log('[analyze-meal] Insufficient credits:', preCheckBalance);
       return new Response(
         JSON.stringify({ 
-          error_code: creditsCheck.error_code,
-          error: creditsCheck.message || 'Crédits insuffisants',
-          current_balance: creditsCheck.current_balance,
-          required: creditsCheck.required,
+          error_code: 'INSUFFICIENT_CREDITS',
+          error: 'Crédits insuffisants',
+          current_balance: preCheckBalance,
+          required: 1,
           status: 'error'
         }),
         { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      );
     }
-
-    console.log('[analyze-meal] Credits consumed, proceeding with analysis')
     
     // Get the form data from the request
     const formData = await req.formData();
@@ -146,10 +139,11 @@ Deno.serve(async (req) => {
     const webhookUrl = Deno.env.get('N8N_ANALYZE_MEAL_WEBHOOK');
     if (!webhookUrl) {
       console.error('N8N_ANALYZE_MEAL_WEBHOOK not configured');
+      // NO credit deduction on config error
       throw new Error('Webhook configuration missing');
     }
 
-    // Forward to n8n webhook with 60 second timeout
+    // Forward to n8n webhook with 90 second timeout
     const n8nFormData = new FormData();
     n8nFormData.append('image', image);
 
@@ -169,7 +163,11 @@ Deno.serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('n8n error response:', errorText);
-      throw new Error(`n8n webhook error: ${response.status} - ${errorText}`);
+      // NO credit deduction on API failure
+      return new Response(
+        JSON.stringify({ error: `Service d'analyse indisponible. Aucun crédit débité.`, status: 'error' }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const data = await response.json();
@@ -188,7 +186,11 @@ Deno.serve(async (req) => {
     // Validate response format (handles both French and English)
     if (!output?.status || (output.status !== 'success' && output.status !== 'succès')) {
       console.error('Invalid response format:', output);
-      throw new Error('Invalid response format from n8n');
+      // NO credit deduction on invalid response
+      return new Response(
+        JSON.stringify({ error: 'Réponse invalide du service. Aucun crédit débité.', status: 'error' }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Handle French field names from n8n
@@ -223,10 +225,27 @@ Deno.serve(async (req) => {
 
     if (!normalizedOutput.food || !normalizedOutput.total) {
       console.error('Missing required fields in response:', output);
-      throw new Error('Missing food or total data in response');
+      // NO credit deduction on incomplete response
+      return new Response(
+        JSON.stringify({ error: 'Données manquantes dans la réponse. Aucun crédit débité.', status: 'error' }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    console.log('Analysis successful, returning data');
+    // ── SUCCESS: Now deduct credits atomically ──
+    console.log('[analyze-meal] Deducting 1 credit after successful analysis');
+    const { data: creditsCheck, error: creditsError } = await supabaseClient.rpc('check_and_consume_credits', {
+      p_user_id: user.id,
+      p_feature: 'scanrepas',
+      p_cost: 1
+    });
+
+    if (creditsError) {
+      console.error('[analyze-meal] Credits deduction error after success:', creditsError);
+      // Still return the result
+    }
+
+    console.log('[analyze-meal] Analysis successful, credits deducted, returning data');
 
     return new Response(
       JSON.stringify(normalizedOutput),
@@ -239,7 +258,7 @@ Deno.serve(async (req) => {
     // Log full error details server-side
     console.error('Error in analyze-meal function:', error);
     
-    // Return generic error message to client
+    // NO credits deducted on unhandled errors
     const userMessage = error instanceof Error && 
       (error.message.includes('Image') || error.message.includes('subscription') || error.message.includes('Trial') || error.message.includes('configuration'))
       ? error.message 
