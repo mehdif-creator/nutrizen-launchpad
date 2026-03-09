@@ -316,7 +316,7 @@ export function NutriZenChatbot() {
                         : 'bg-muted text-foreground rounded-bl-md',
                       msg.isError && 'bg-destructive/10 text-destructive',
                     )}>
-                      <ReactMarkdown className="prose prose-sm dark:prose-invert max-w-none [&>p]:m-0">{msg.content}</ReactMarkdown>
+                      <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:m-0"><ReactMarkdown>{msg.content}</ReactMarkdown></div>
                     </div>
                   </div>
                 );
