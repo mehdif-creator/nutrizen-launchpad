@@ -152,7 +152,7 @@ export default function InspiFrigo() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#F9FFF9] to-white">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/30">
       <AppHeader />
 
       <main className="flex-1 container py-8 max-w-5xl">
