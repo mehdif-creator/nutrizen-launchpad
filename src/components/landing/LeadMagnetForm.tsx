@@ -66,6 +66,7 @@ export const LeadMagnetForm = ({
       }
 
       setStatus('success');
+      setFirstName('');
       setEmail('');
     } catch (err: any) {
       setStatus('error');
