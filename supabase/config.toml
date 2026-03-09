@@ -280,3 +280,10 @@ verify_jwt = true
 [functions.send-support-email.rate_limit]
 limit = 10
 period = "1h"
+
+[functions.nutrizen-chat]
+verify_jwt = false
+
+[functions.nutrizen-chat.rate_limit]
+limit = 60
+period = "1h"
