@@ -57,7 +57,7 @@ export const LeadMagnetForm = ({
         body: {
           email: trimmedEmail,
           listIds: [listId],
-          attributes: { SOURCE: 'lead_magnet' },
+          attributes: { PRENOM: firstName.trim(), SOURCE: 'lead_magnet' },
         },
       });
 
