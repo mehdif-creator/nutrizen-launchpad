@@ -35,6 +35,12 @@ export const LeadMagnetForm = ({
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
 
+    if (!firstName.trim()) {
+      setErrorMsg("Merci d'entrer votre prénom.");
+      setStatus('error');
+      return;
+    }
+
     if (!emailSchema.safeParse(email).success) {
       setErrorMsg("Merci d'entrer une adresse email valide.");
       setStatus('error');
