@@ -19,6 +19,7 @@ import { useEffectivePortions } from '@/hooks/useEffectivePortions';
 import { useFavorites } from '@/hooks/useFavorites';
 import { FavoriteButton } from '@/components/app/FavoriteButton';
 import { exportRecipePdf } from '@/lib/recipePdfExport';
+import { callEdgeFunction } from '@/lib/edgeFn';
 
 interface Recipe {
   id: string;

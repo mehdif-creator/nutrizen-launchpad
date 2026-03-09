@@ -184,6 +184,7 @@ const App = () => {
 
         {/* Share (public, no auth wall) */}
         <Route path="/share/week/:token" element={<SharedWeekPlan />} />
+        <Route path="/share/recipe/:token" element={<SharedRecipe />} />
 
         {/* OAuth Callbacks (public, no auth wall) */}
         <Route path="/oauth/pinterest/callback" element={<PinterestOAuthCallback />} />
