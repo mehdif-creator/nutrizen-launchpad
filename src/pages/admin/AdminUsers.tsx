@@ -41,6 +41,55 @@ export default function AdminUsers() {
 
   useEffect(() => {
     fetchUsers();
+
+    // Souscriptions Realtime pour mise à jour automatique
+    const channel = supabase
+      .channel('admin_users_changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles' },
+        () => {
+          console.log('[AdminUsers] Profile changed, refreshing...');
+          fetchUsers();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'subscriptions' },
+        () => {
+          console.log('[AdminUsers] Subscription changed, refreshing...');
+          fetchUsers();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'user_wallets' },
+        () => {
+          console.log('[AdminUsers] Wallet changed, refreshing...');
+          fetchUsers();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'credit_transactions' },
+        () => {
+          console.log('[AdminUsers] Credit transaction, refreshing...');
+          fetchUsers();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'user_dashboard_stats' },
+        () => {
+          console.log('[AdminUsers] Dashboard stats changed, refreshing...');
+          fetchUsers();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchUsers = async () => {
