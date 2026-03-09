@@ -283,7 +283,7 @@ export default function AdminUsers() {
                           userId={user.id}
                           userEmail={user.email}
                           currentCredits={user.credits || 0}
-                          onCreditsUpdated={fetchUsers}
+                          onCreditsUpdated={handleCreditsUpdated}
                         />
                         <Button 
                           size="sm" 
