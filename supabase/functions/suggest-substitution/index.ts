@@ -281,7 +281,7 @@ Réponds UNIQUEMENT en JSON valide, sans markdown, avec ce format:
         .from('credit_transactions')
         .update({ idempotency_key: `substitution:${request_id}` })
         .eq('user_id', user.id)
-        .eq('feature', 'substitution')
+        .eq('feature', 'substitutions')
         .is('idempotency_key', null)
         .order('created_at', { ascending: false })
         .limit(1);
