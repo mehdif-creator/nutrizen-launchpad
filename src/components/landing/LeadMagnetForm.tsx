@@ -46,28 +46,16 @@ export const LeadMagnetForm = ({
     try {
       const trimmedEmail = email.toLowerCase().trim();
 
-      const { error } = await supabase.functions.invoke('submit-lead', {
+      const { error } = await supabase.functions.invoke('brevo-add-contact', {
         body: {
           email: trimmedEmail,
-          source,
-          listId,
-          timestamp: new Date().toISOString(),
+          listIds: [listId],
+          attributes: { SOURCE: 'lead_magnet' },
         },
       });
 
-      if (error) throw error;
-
-      // Sync to Brevo silently — never block UX
-      try {
-        await supabase.functions.invoke('brevo-add-contact', {
-          body: {
-            email: trimmedEmail,
-            listIds: [listId],
-            attributes: { SOURCE: 'lead_magnet' },
-          },
-        });
-      } catch (brevoErr) {
-        console.warn('[Brevo] lead magnet sync failed:', brevoErr);
+      if (error) {
+        console.warn('[Brevo] lead magnet sync failed:', error);
       }
 
       setStatus('success');
