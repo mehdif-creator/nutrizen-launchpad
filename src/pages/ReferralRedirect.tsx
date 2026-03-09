@@ -30,7 +30,8 @@ export default function ReferralRedirect() {
     }).catch(err => logger.debug('Click tracking error', { error: String(err) }));
 
     // Redirect to home with ?ref= so the existing tracking hook also fires
-    navigate(`/?ref=${encodeURIComponent(code)}`, { replace: true });
+    // Redirect to pricing section to encourage signup
+    navigate(`/?ref=${encodeURIComponent(code)}#tarifs`, { replace: true });
   }, [code, navigate]);
 
   return null;
