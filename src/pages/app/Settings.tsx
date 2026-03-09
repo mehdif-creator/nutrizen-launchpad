@@ -3,10 +3,11 @@ import { AppFooter } from '@/components/app/AppFooter';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Download, Trash2, HelpCircle } from 'lucide-react';
+import { ExternalLink, Download, Trash2, HelpCircle, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   AlertDialog,
   AlertDialogAction,
