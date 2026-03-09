@@ -106,25 +106,40 @@ export const LeadMagnetForm = ({
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col gap-3">
               <Input
-                type="email"
-                placeholder={placeholder}
-                value={email}
+                type="text"
+                placeholder="Votre prénom"
+                value={firstName}
                 onChange={(e) => {
-                  setEmail(e.target.value);
+                  setFirstName(e.target.value);
                   if (status === 'error') setStatus('idle');
                 }}
                 disabled={status === 'loading'}
-                className="flex-1 h-12 text-base"
+                required
+                className="h-12 text-base"
               />
-              <Button
-                type="submit"
-                disabled={status === 'loading'}
-                className="h-12 bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] shadow-glow transition-tech text-base font-medium whitespace-nowrap"
-              >
-                {status === 'loading' ? 'Envoi…' : buttonLabel}
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Input
+                  type="email"
+                  placeholder={placeholder}
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (status === 'error') setStatus('idle');
+                  }}
+                  disabled={status === 'loading'}
+                  required
+                  className="flex-1 h-12 text-base"
+                />
+                <Button
+                  type="submit"
+                  disabled={status === 'loading'}
+                  className="h-12 bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] shadow-glow transition-tech text-base font-medium whitespace-nowrap"
+                >
+                  {status === 'loading' ? 'Envoi…' : buttonLabel}
+                </Button>
+              </div>
             </div>
 
             {status === 'error' && (
