@@ -89,6 +89,7 @@ const Credits = lazy(() => import('./pages/Credits'));
 const About = lazy(() => import('./pages/About'));
 const PinterestOAuthCallback = lazy(() => import('./pages/oauth/PinterestOAuthCallback'));
 const SharedWeekPlan = lazy(() => import('./pages/share/SharedWeekPlan'));
+const SharedRecipe = lazy(() => import('./pages/share/SharedRecipe'));
 
 // Guides (lead magnets)
 const Defi7Jours = lazy(() => import('./pages/guides/Defi7Jours'));
