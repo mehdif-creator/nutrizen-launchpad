@@ -7,7 +7,7 @@ export default function FrigoZen() {
       title="Le Frigo Zen"
       subtitle="20 aliments à toujours avoir pour improviser des repas sains en 5 minutes"
       badgeColor="#2A7D6F"
-      pdfUrl="LIEN_PDF_FRIGO_ZEN"
+      pdfUrl="https://pghdaozgxkbtsxwydemd.supabase.co/storage/v1/object/public/guides/Frigo%20Zen.pdf"
       points={[
         { emoji: '✅', text: 'Les 10 indispensables du frigo' },
         { emoji: '✅', text: 'Les 10 essentiels du placard' },
