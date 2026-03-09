@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Users, Ticket, TrendingUp, Crown, Star, Calendar, Activity, Percent, Euro, UserMinus, UserPlus, BarChart3, Stethoscope, Zap, FileText, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { KpiCardLink } from '@/components/admin/kpis/KpiCardLink';
@@ -51,13 +51,15 @@ export default function AdminDashboard() {
   const [mailingOpen, setMailingOpen] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
+  const refreshTimerRef = useRef<number | null>(null);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     const safeQuery = async <T,>(fn: () => Promise<T> | PromiseLike<T>, fallback: T): Promise<T> => {
-      try { return await fn(); } catch { return fallback; }
+      try {
+        return await fn();
+      } catch {
+        return fallback;
+      }
     };
 
     try {
@@ -67,19 +69,77 @@ export default function AdminDashboard() {
       startOfWeek.setDate(now.getDate() - 7);
 
       const [
-        totalUsers, activeSubscribers, trialUsers, canceledSubscriptions,
-        newUsersThisMonth, newUsersThisWeek, totalPoints, totalMealPlans, ratingsObj, openTickets
+        totalUsers,
+        activeSubscribers,
+        trialUsers,
+        canceledSubscriptions,
+        newUsersThisMonth,
+        newUsersThisWeek,
+        totalPoints,
+        totalMealPlans,
+        ratingsObj,
+        openTickets,
       ] = await Promise.all([
-        safeQuery(async () => (await supabase.from('profiles').select('*', { count: 'exact', head: true })).count ?? 0, 0),
-        safeQuery(async () => (await supabase.from('subscriptions' as any).select('*', { count: 'exact', head: true }).eq('status', 'active')).count ?? 0, 0),
-        safeQuery(async () => (await supabase.from('subscriptions' as any).select('*', { count: 'exact', head: true }).eq('status', 'trialing')).count ?? 0, 0),
-        safeQuery(async () => (await supabase.from('subscriptions' as any).select('*', { count: 'exact', head: true }).eq('status', 'canceled')).count ?? 0, 0),
-        safeQuery(async () => (await supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', startOfMonth.toISOString())).count ?? 0, 0),
-        safeQuery(async () => (await supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', startOfWeek.toISOString())).count ?? 0, 0),
-        safeQuery(async () => { const r = await supabase.from('user_points' as any).select('total_points'); return (r.data as any[])?.reduce((s: number, u: any) => s + (u.total_points || 0), 0) ?? 0; }, 0),
+        safeQuery(
+          async () => (await supabase.from('profiles').select('*', { count: 'exact', head: true })).count ?? 0,
+          0
+        ),
+        safeQuery(
+          async () =>
+            (await supabase.from('subscriptions' as any).select('*', { count: 'exact', head: true }).eq('status', 'active'))
+              .count ?? 0,
+          0
+        ),
+        safeQuery(
+          async () =>
+            (await supabase.from('subscriptions' as any).select('*', { count: 'exact', head: true }).eq('status', 'trialing'))
+              .count ?? 0,
+          0
+        ),
+        safeQuery(
+          async () =>
+            (await supabase.from('subscriptions' as any).select('*', { count: 'exact', head: true }).eq('status', 'canceled'))
+              .count ?? 0,
+          0
+        ),
+        safeQuery(
+          async () =>
+            (await supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', startOfMonth.toISOString()))
+              .count ?? 0,
+          0
+        ),
+        safeQuery(
+          async () =>
+            (await supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', startOfWeek.toISOString()))
+              .count ?? 0,
+          0
+        ),
+        safeQuery(
+          async () => {
+            const r = await supabase.from('user_points' as any).select('total_points');
+            return (r.data as any[])?.reduce((s: number, u: any) => s + (u.total_points || 0), 0) ?? 0;
+          },
+          0
+        ),
         safeQuery(async () => (await supabase.from('meal_plans').select('*', { count: 'exact', head: true })).count ?? 0, 0),
-        safeQuery(async () => { const r = await supabase.from('meal_ratings').select('stars', { count: 'exact' }); return { count: r.count ?? 0, avg: r.data && r.data.length > 0 ? r.data.reduce((s, rr) => s + (rr.stars || 0), 0) / r.data.length : 0 }; }, { count: 0, avg: 0 }),
-        safeQuery(async () => (await supabase.from('support_tickets' as any).select('*', { count: 'exact', head: true }).eq('status', 'open')).count ?? 0, 0),
+        safeQuery(
+          async () => {
+            const r = await supabase.from('meal_ratings').select('stars', { count: 'exact' });
+            return {
+              count: r.count ?? 0,
+              avg:
+                r.data && r.data.length > 0
+                  ? r.data.reduce((s, rr) => s + (rr.stars || 0), 0) / r.data.length
+                  : 0,
+            };
+          },
+          { count: 0, avg: 0 }
+        ),
+        safeQuery(
+          async () =>
+            (await supabase.from('support_tickets' as any).select('*', { count: 'exact', head: true }).eq('status', 'open')).count ?? 0,
+          0
+        ),
       ]);
 
       const pricePerMonth = 19.99;
@@ -91,11 +151,22 @@ export default function AdminDashboard() {
       const avgMealPlansPerUser = totalUsers > 0 ? totalMealPlans / totalUsers : 0;
 
       setStats({
-        totalUsers, activeSubscribers, trialUsers,
-        totalPoints, totalMealPlans, totalRatings: ratingsObj.count,
-        openTickets, mrr, arpu, churnRate, conversionRate,
-        newUsersThisMonth, newUsersThisWeek,
-        canceledSubscriptions, avgMealPlansPerUser, avgRatingScore: ratingsObj.avg,
+        totalUsers,
+        activeSubscribers,
+        trialUsers,
+        totalPoints,
+        totalMealPlans,
+        totalRatings: ratingsObj.count,
+        openTickets,
+        mrr,
+        arpu,
+        churnRate,
+        conversionRate,
+        newUsersThisMonth,
+        newUsersThisWeek,
+        canceledSubscriptions,
+        avgMealPlansPerUser,
+        avgRatingScore: ratingsObj.avg,
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -103,7 +174,35 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  const scheduleRefresh = useCallback(() => {
+    if (refreshTimerRef.current) return;
+
+    refreshTimerRef.current = window.setTimeout(() => {
+      refreshTimerRef.current = null;
+      fetchStats();
+    }, 800);
+  }, [fetchStats]);
+
+  useEffect(() => {
+    fetchStats();
+
+    const channel = supabase
+      .channel('admin_dashboard_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, scheduleRefresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'subscriptions' }, scheduleRefresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'meal_plans' }, scheduleRefresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'meal_ratings' }, scheduleRefresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, scheduleRefresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_points' }, scheduleRefresh)
+      .subscribe();
+
+    return () => {
+      if (refreshTimerRef.current) window.clearTimeout(refreshTimerRef.current);
+      supabase.removeChannel(channel);
+    };
+  }, [fetchStats, scheduleRefresh]);
 
   if (loading) {
     return (
