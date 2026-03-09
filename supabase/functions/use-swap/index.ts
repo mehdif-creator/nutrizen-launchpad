@@ -104,45 +104,26 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Check and consume credits
-    console.log('[use-swap] Checking credits for user:', user.id)
-    const { data: creditsCheck, error: creditsError } = await supabaseClient.rpc('check_and_consume_credits', {
-      p_user_id: user.id,
-      p_feature: 'swap',
-      p_cost: 1
-    })
+    // ── Pre-check balance (read-only) — actual deduction AFTER successful swap ──
+    console.log('[use-swap] Pre-checking credits for user:', user.id)
+    const { data: walletPreCheck } = await supabaseClient
+      .from('user_wallets')
+      .select('subscription_credits, lifetime_credits')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    const preCheckBalance = (walletPreCheck?.subscription_credits ?? 0) + (walletPreCheck?.lifetime_credits ?? 0);
 
-    if (creditsError) {
-      console.error('[use-swap] Credits check error:', creditsError)
-      return new Response(
-        JSON.stringify({ success: false, error: 'Erreur lors de la vérification des crédits' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (!creditsCheck.success) {
+    if (preCheckBalance < 1) {
       return new Response(
         JSON.stringify({ 
           success: false,
-          error_code: creditsCheck.error_code,
-          error: creditsCheck.message || 'Crédits insuffisants',
-          current_balance: creditsCheck.current_balance,
-          required: creditsCheck.required
+          error_code: 'INSUFFICIENT_CREDITS',
+          error: 'Crédits insuffisants',
+          current_balance: preCheckBalance,
+          required: 1
         }),
         { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
-    }
-
-    // Tag the transaction with idempotency key if provided
-    if (requestId) {
-      await supabaseClient
-        .from('credit_transactions')
-        .update({ idempotency_key: `swap:${requestId}` })
-        .eq('user_id', user.id)
-        .eq('feature', 'swap')
-        .is('idempotency_key', null)
-        .order('created_at', { ascending: false })
-        .limit(1);
     }
 
     // ============================================================
