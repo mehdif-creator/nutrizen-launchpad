@@ -23,6 +23,21 @@ import {
 export default function Settings() {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleResetTutorial = async () => {
+    if (!user) return;
+    const localKey = `tutorial_completed_${user.id}`;
+    localStorage.removeItem(localKey);
+    await supabase
+      .from('profiles')
+      .update({ tutorial_completed: false } as any)
+      .eq('id', user.id);
+    toast({
+      title: 'Tutoriel réinitialisé',
+      description: 'Le tutoriel s\'affichera au prochain chargement du tableau de bord.',
+    });
+  };
 
   const handleStripePortal = async () => {
     const { data: { session } } = await supabase.auth.getSession();

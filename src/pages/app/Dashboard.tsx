@@ -672,6 +672,7 @@ export default function Dashboard() {
       </main>
 
       <AppFooter />
+      <TutorialOnboarding />
     </div>
   );
 }
