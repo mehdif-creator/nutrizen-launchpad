@@ -8,6 +8,7 @@ import { useAffiliateTracking } from '@/hooks/useAffiliateTracking';
 // Eager: always needed on first render
 import Index from './pages/Index';
 import NotFound from './pages/NotFound';
+const ReferralRedirect = lazy(() => import('./pages/ReferralRedirect'));
 
 // Auth
 const Login = lazy(() => import('./pages/auth/Login'));
@@ -109,6 +110,7 @@ const App = () => {
     }>
       <Routes>
         <Route path="/" element={<Index />} />
+        <Route path="/i/:code" element={<ReferralRedirect />} />
 
         {/* Auth */}
         <Route path="/auth/login" element={<Login />} />
