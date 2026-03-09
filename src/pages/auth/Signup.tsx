@@ -58,6 +58,19 @@ export default function Signup() {
         throw new Error(errorMessage);
       }
 
+      // Sync to Brevo silently before redirect
+      try {
+        await supabase.functions.invoke('brevo-add-contact', {
+          body: {
+            email: email.trim(),
+            listIds: [8],
+            attributes: { SOURCE: 'app_signup' },
+          },
+        });
+      } catch (brevoErr) {
+        console.warn('[Brevo] paid signup sync failed:', brevoErr);
+      }
+
       // Redirect to Stripe — do NOT reset loading (page is navigating away)
       window.location.href = data.url;
     } catch (err: any) {
@@ -78,14 +91,29 @@ export default function Signup() {
     }
     setLoading(true);
     try {
+      const trimmedEmail = email.trim();
       const { error } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
+        email: trimmedEmail,
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       });
       if (error) {
         toast({ variant: 'destructive', title: 'Erreur', description: 'Une erreur est survenue. Réessaie.' });
         return;
       }
+
+      // Sync to Brevo silently
+      try {
+        await supabase.functions.invoke('brevo-add-contact', {
+          body: {
+            email: trimmedEmail,
+            listIds: [8],
+            attributes: { SOURCE: 'app_signup' },
+          },
+        });
+      } catch (brevoErr) {
+        console.warn('[Brevo] signup sync failed:', brevoErr);
+      }
+
       setEmailSent(true);
     } catch {
       toast({ variant: 'destructive', title: 'Erreur', description: 'Une erreur est survenue. Réessaie.' });
