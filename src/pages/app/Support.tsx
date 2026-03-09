@@ -7,7 +7,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Mail, MessageCircle, Book, CreditCard, Sparkles } from 'lucide-react';
+import { MessageCircle, Book, CreditCard, Sparkles } from 'lucide-react';
+import { SupportContactForm } from '@/components/app/SupportContactForm';
 
 
 export default function Support() {
