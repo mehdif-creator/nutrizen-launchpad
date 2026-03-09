@@ -165,10 +165,13 @@ export default function RecipeDetail() {
             </Button>
             <div className="flex items-center gap-2">
               <FavoriteButton isFavorite={isFavorite(recipe.id)} onClick={() => toggleFavorite(recipe.id)} size="default" />
+              <Button variant="outline" onClick={handleShareRecipe} disabled={sharing} className="gap-2">
+                {sharing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
+                <span className="hidden sm:inline">Partager</span>
+              </Button>
               <Button variant="outline" onClick={handleExportPdf} className="gap-2">
                 <Download className="h-4 w-4" />
-                <span className="hidden sm:inline">Exporter en PDF</span>
-                <span className="sm:hidden">PDF</span>
+                <span className="hidden sm:inline">PDF</span>
               </Button>
             </div>
           </div>
