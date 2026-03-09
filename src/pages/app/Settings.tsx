@@ -3,10 +3,11 @@ import { AppFooter } from '@/components/app/AppFooter';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Download, Trash2, HelpCircle } from 'lucide-react';
+import { ExternalLink, Download, Trash2, HelpCircle, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +23,21 @@ import {
 export default function Settings() {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleResetTutorial = async () => {
+    if (!user) return;
+    const localKey = `tutorial_completed_${user.id}`;
+    localStorage.removeItem(localKey);
+    await supabase
+      .from('profiles')
+      .update({ tutorial_completed: false } as any)
+      .eq('id', user.id);
+    toast({
+      title: 'Tutoriel réinitialisé',
+      description: 'Le tutoriel s\'affichera au prochain chargement du tableau de bord.',
+    });
+  };
 
   const handleStripePortal = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -159,6 +175,24 @@ export default function Settings() {
               </div>
               <Button variant="outline" size="sm" className="whitespace-nowrap">Activé</Button>
             </div>
+            </div>
+          </Card>
+
+          {/* Tutorial */}
+          <Card className="p-4 md:p-6 mb-4 md:mb-6">
+            <h2 className="text-lg md:text-xl font-semibold mb-4">Tutoriel</h2>
+            <div className="space-y-3">
+              <Button
+                onClick={handleResetTutorial}
+                variant="outline"
+                className="w-full text-sm md:text-base"
+              >
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Revoir le tutoriel
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Relance le tutoriel de bienvenue pour revoir les fonctionnalités principales.
+              </p>
             </div>
           </Card>
 

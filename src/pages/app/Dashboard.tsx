@@ -35,6 +35,7 @@ import { ProgressionCardV2 } from "@/components/gamification/ProgressionCardV2";
 import { useGamificationState } from "@/hooks/useGamificationV2";
 import { LoadingMessages } from "@/components/common/LoadingMessages";
 import { ShareWeekCard } from "@/components/dashboard/ShareWeekCard";
+import { TutorialOnboarding } from "@/components/app/TutorialOnboarding";
 
 const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -671,6 +672,7 @@ export default function Dashboard() {
       </main>
 
       <AppFooter />
+      <TutorialOnboarding />
     </div>
   );
 }
