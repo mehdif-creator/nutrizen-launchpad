@@ -14,6 +14,7 @@ export const FEATURE_COSTS = {
   regenerate_day: 2,
   regenerate_week: 8,
   scan_barcode: 1,
+  chat_nutrition: 2,
 } as const;
 
 export type FeatureType = keyof typeof FEATURE_COSTS;
@@ -39,6 +40,7 @@ export const FEATURE_NAMES: Record<FeatureType, string> = {
   regenerate_day: 'Regénérer un jour',
   regenerate_week: 'Regénérer semaine complète',
   scan_barcode: 'Scan code-barres',
+  chat_nutrition: 'Assistant Nutrition (chat)',
 };
 
 /**
@@ -55,6 +57,7 @@ export const FEATURE_DESCRIPTIONS: Record<FeatureType, string> = {
   regenerate_day: 'Remplacez toutes les recettes d\'un jour.',
   regenerate_week: 'Regénérez l\'intégralité de votre menu hebdomadaire.',
   scan_barcode: 'Scannez un code-barres pour voir les infos nutritionnelles du produit.',
+  chat_nutrition: 'Posez vos questions nutritionnelles à l\'assistant IA.',
 };
 
 /**

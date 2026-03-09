@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react';
 import { useOnboardingGuard } from '@/hooks/useOnboardingGuard';
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
+import { NutriZenChatbot } from '@/components/app/NutriZenChatbot';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -112,5 +113,10 @@ export const ProtectedRoute = ({
     return <Navigate to="/admin" replace />;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      {!requireAdmin && <NutriZenChatbot />}
+    </>
+  );
 };
