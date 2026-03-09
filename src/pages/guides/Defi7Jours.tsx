@@ -7,7 +7,7 @@ export default function Defi7Jours() {
       title="Défi Healthy : 7 Jours pour une Nouvelle Habitude"
       subtitle="Relève le défi et prends soin de toi en une semaine !"
       badgeColor="#2A7D6F"
-      pdfUrl="LIEN_PDF_DEFI_7_JOURS"
+      pdfUrl="https://pghdaozgxkbtsxwydemd.supabase.co/storage/v1/object/public/guides/Defi%20Healthy%207%20Jours.pdf"
       points={[
         { emoji: '💧', text: 'Jour 1 — Hydratation & vitamines' },
         { emoji: '🍫', text: 'Jour 2 — Réduire le sucre ajouté' },
