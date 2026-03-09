@@ -40,6 +40,7 @@ export const FEATURE_NAMES: Record<FeatureType, string> = {
   regenerate_day: 'Regénérer un jour',
   regenerate_week: 'Regénérer semaine complète',
   scan_barcode: 'Scan code-barres',
+  chat_nutrition: 'Assistant Nutrition (chat)',
 };
 
 /**
