@@ -58,6 +58,19 @@ export default function Signup() {
         throw new Error(errorMessage);
       }
 
+      // Sync to Brevo silently before redirect
+      try {
+        await supabase.functions.invoke('brevo-add-contact', {
+          body: {
+            email: email.trim(),
+            listIds: [8],
+            attributes: { SOURCE: 'app_signup' },
+          },
+        });
+      } catch (brevoErr) {
+        console.warn('[Brevo] paid signup sync failed:', brevoErr);
+      }
+
       // Redirect to Stripe — do NOT reset loading (page is navigating away)
       window.location.href = data.url;
     } catch (err: any) {
