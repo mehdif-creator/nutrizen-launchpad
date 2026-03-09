@@ -89,6 +89,7 @@ const Credits = lazy(() => import('./pages/Credits'));
 const About = lazy(() => import('./pages/About'));
 const PinterestOAuthCallback = lazy(() => import('./pages/oauth/PinterestOAuthCallback'));
 const SharedWeekPlan = lazy(() => import('./pages/share/SharedWeekPlan'));
+const SharedRecipe = lazy(() => import('./pages/share/SharedRecipe'));
 
 // Guides (lead magnets)
 const Defi7Jours = lazy(() => import('./pages/guides/Defi7Jours'));
@@ -183,6 +184,7 @@ const App = () => {
 
         {/* Share (public, no auth wall) */}
         <Route path="/share/week/:token" element={<SharedWeekPlan />} />
+        <Route path="/share/recipe/:token" element={<SharedRecipe />} />
 
         {/* OAuth Callbacks (public, no auth wall) */}
         <Route path="/oauth/pinterest/callback" element={<PinterestOAuthCallback />} />

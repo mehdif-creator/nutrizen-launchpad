@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
-import { Clock, Users, Flame, ChefHat, ArrowLeft, Utensils, BarChart3, RefreshCw, Download } from 'lucide-react';
+import { Clock, Users, Flame, ChefHat, ArrowLeft, Utensils, BarChart3, RefreshCw, Download, Share2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { storagePublicBaseUrl } from '@/lib/supabaseUrls';
 import { RecipeMacrosCard } from '@/components/app/RecipeMacrosCard';
@@ -19,6 +19,7 @@ import { useEffectivePortions } from '@/hooks/useEffectivePortions';
 import { useFavorites } from '@/hooks/useFavorites';
 import { FavoriteButton } from '@/components/app/FavoriteButton';
 import { exportRecipePdf } from '@/lib/recipePdfExport';
+import { callEdgeFunction } from '@/lib/edgeFn';
 
 interface Recipe {
   id: string;
@@ -54,6 +55,7 @@ export default function RecipeDetail() {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('recipe');
+  const [sharing, setSharing] = useState(false);
 
   const portionMultiplier = useMemo(() => {
     if (effectivePortions && recipe) {
@@ -102,6 +104,25 @@ export default function RecipeDetail() {
     toast({ title: '📥 PDF exporté', description: 'Votre recette a été téléchargée.' });
   };
 
+  const handleShareRecipe = async () => {
+    if (!recipe || !user) return;
+    setSharing(true);
+    try {
+      const data = await callEdgeFunction<{ success: boolean; token: string; error?: string }>(
+        'create-share-link',
+        { recipe_id: recipe.id }
+      );
+      if (!data.success || !data.token) throw new Error(data.error || 'Erreur');
+      const shareUrl = `${window.location.origin}/share/recipe/${data.token}`;
+      await navigator.clipboard.writeText(shareUrl);
+      toast({ title: 'Lien copié ! 🎉', description: 'Partage cette recette avec tes amis.' });
+    } catch (err: any) {
+      toast({ title: 'Erreur', description: err.message || 'Impossible de créer le lien.', variant: 'destructive' });
+    } finally {
+      setSharing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
@@ -144,10 +165,13 @@ export default function RecipeDetail() {
             </Button>
             <div className="flex items-center gap-2">
               <FavoriteButton isFavorite={isFavorite(recipe.id)} onClick={() => toggleFavorite(recipe.id)} size="default" />
+              <Button variant="outline" onClick={handleShareRecipe} disabled={sharing} className="gap-2">
+                {sharing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
+                <span className="hidden sm:inline">Partager</span>
+              </Button>
               <Button variant="outline" onClick={handleExportPdf} className="gap-2">
                 <Download className="h-4 w-4" />
-                <span className="hidden sm:inline">Exporter en PDF</span>
-                <span className="sm:hidden">PDF</span>
+                <span className="hidden sm:inline">PDF</span>
               </Button>
             </div>
           </div>
