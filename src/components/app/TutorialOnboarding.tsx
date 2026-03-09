@@ -86,10 +86,6 @@ export function TutorialOnboarding() {
         setLoading(false);
         return;
       }
-        localStorage.setItem(localKey, 'true');
-        setLoading(false);
-        return;
-      }
 
       setVisible(true);
       setLoading(false);
