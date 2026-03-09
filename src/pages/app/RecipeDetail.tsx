@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
-import { Clock, Users, Flame, ChefHat, ArrowLeft, Utensils, BarChart3, RefreshCw, Download } from 'lucide-react';
+import { Clock, Users, Flame, ChefHat, ArrowLeft, Utensils, BarChart3, RefreshCw, Download, Share2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { storagePublicBaseUrl } from '@/lib/supabaseUrls';
 import { RecipeMacrosCard } from '@/components/app/RecipeMacrosCard';
