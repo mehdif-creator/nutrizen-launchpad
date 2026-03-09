@@ -183,45 +183,29 @@ Deno.serve(async (req) => {
     }
     // ── End subscription gate ───────────────────────────────────────────────────
 
-    // Atomic credit deduction via check_and_consume_credits RPC
-    // Uses user_wallets with FOR UPDATE lock + ledger entry
-    const creditReferenceId = `${menuFeatureKey}:${weekStartStr}:${user.id}`;
+    // ── Pre-check balance (read-only) — actual deduction AFTER successful menu generation ──
+    const { data: walletPreCheck } = await supabaseClient
+      .from('user_wallets')
+      .select('subscription_credits, lifetime_credits')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    const preCheckBalance = (walletPreCheck?.subscription_credits ?? 0) + (walletPreCheck?.lifetime_credits ?? 0);
 
-    console.log(`[generate-menu] Consuming ${menuCost} credits via atomic RPC (feature=${menuFeatureKey}, ref=${creditReferenceId})`);
-
-    const { data: creditsCheck, error: creditsError } = await supabaseClient.rpc('check_and_consume_credits', {
-      p_user_id: user.id,
-      p_feature: menuFeatureKey,
-      p_cost: menuCost,
-    });
-
-    if (creditsError) {
-      console.error('[generate-menu] Credits RPC error:', creditsError);
+    if (preCheckBalance < menuCost) {
+      console.log(`[generate-menu] Insufficient credits (pre-check): ${preCheckBalance} < ${menuCost}`);
       return new Response(
         JSON.stringify({
           success: false,
-          message: 'Erreur lors de la vérification des crédits.',
-        }),
-        { status: 500, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!creditsCheck?.success) {
-      const currentBalance = creditsCheck?.current_balance ?? 0;
-      console.log(`[generate-menu] Insufficient credits: ${currentBalance} < ${menuCost}`);
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error_code: creditsCheck?.error_code || 'INSUFFICIENT_CREDITS',
-          message: `Crédits insuffisants. Tu as ${currentBalance} crédits, il en faut ${menuCost} pour générer un menu.`,
-          current_balance: currentBalance,
+          error_code: 'INSUFFICIENT_CREDITS',
+          message: `Crédits insuffisants. Tu as ${preCheckBalance} crédits, il en faut ${menuCost} pour générer un menu.`,
+          current_balance: preCheckBalance,
           required: menuCost,
         }),
         { status: 402, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`[generate-menu] ✅ ${menuCost} credits consumed. New balance: ${creditsCheck.new_balance}`);
+    console.log(`[generate-menu] Pre-check OK: ${preCheckBalance} credits available, ${menuCost} required. Proceeding with generation...`);
 
     const householdAdults = profileData?.household_adults ?? 1;
     const householdChildren = profileData?.household_children ?? 0;
