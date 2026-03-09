@@ -8,9 +8,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Mail, MessageCircle, Book, CreditCard, Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
-const MAILTO_LINK = 'mailto:support@mynutrizen.fr?subject=Demande de support NutriZen';
 
 export default function Support() {
   return (
@@ -37,16 +35,13 @@ export default function Support() {
                 <p className="text-xs md:text-sm text-muted-foreground mb-3 md:mb-4">
                   Notre équipe est là pour vous accompagner. N'hésitez pas à nous contacter !
                 </p>
-                <Button 
-                  variant="outline" 
-                  className="w-full sm:w-auto text-sm"
-                  asChild
+                <a 
+                  href="mailto:support@mynutrizen.fr?subject=Demande%20de%20support%20NutriZen"
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground w-full sm:w-auto"
                 >
-                  <a href={MAILTO_LINK}>
-                    <Mail className="mr-2 h-4 w-4" />
-                    support@mynutrizen.fr
-                  </a>
-                </Button>
+                  <Mail className="h-4 w-4" />
+                  support@mynutrizen.fr
+                </a>
                 <p className="text-xs text-muted-foreground mt-2">
                   Délai de réponse : sous 24h en semaine
                 </p>
@@ -212,12 +207,13 @@ export default function Support() {
               Notre équipe est là pour vous aider. Envoyez-nous un email avec le maximum de détails 
               sur votre question, et nous vous répondrons dans les plus brefs délais.
             </p>
-            <Button className="w-full sm:w-auto text-sm" asChild>
-              <a href={MAILTO_LINK}>
-                <Mail className="mr-2 h-4 w-4" />
-                Contacter le support
-              </a>
-            </Button>
+            <a 
+              href="mailto:support@mynutrizen.fr?subject=Demande%20de%20support%20NutriZen"
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 w-full sm:w-auto"
+            >
+              <Mail className="h-4 w-4" />
+              Contacter le support
+            </a>
           </Card>
         </div>
       </main>
