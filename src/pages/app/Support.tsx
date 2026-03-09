@@ -199,16 +199,9 @@ export default function Support() {
           <Card className="mt-6 md:mt-8 p-4 md:p-6 bg-muted/30">
             <h3 className="text-base md:text-lg font-semibold mb-2">Vous ne trouvez pas la réponse ?</h3>
             <p className="text-xs md:text-sm text-muted-foreground mb-4">
-              Notre équipe est là pour vous aider. Envoyez-nous un email avec le maximum de détails 
-              sur votre question, et nous vous répondrons dans les plus brefs délais.
+              Utilisez le formulaire en haut de page pour nous écrire directement.
+              Nous vous répondrons dans les plus brefs délais.
             </p>
-            <a 
-              href="mailto:support@mynutrizen.fr?subject=Demande%20de%20support%20NutriZen"
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 w-full sm:w-auto"
-            >
-              <Mail className="h-4 w-4" />
-              Contacter le support
-            </a>
           </Card>
         </div>
       </main>
