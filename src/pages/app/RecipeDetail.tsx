@@ -55,6 +55,7 @@ export default function RecipeDetail() {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('recipe');
+  const [sharing, setSharing] = useState(false);
 
   const portionMultiplier = useMemo(() => {
     if (effectivePortions && recipe) {
