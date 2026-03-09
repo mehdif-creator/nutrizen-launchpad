@@ -83,8 +83,8 @@ Deno.serve(async (req) => {
       identifier: `user:${user.id}`,
       endpoint:   'suggest-substitution',
       maxTokens:  20,
-      refillRate: 20,
-      cost:       60,
+      refillRate: 1,
+      cost:       1,
     });
     if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
 
