@@ -34,16 +34,10 @@ export default function Support() {
               <div className="flex-1">
                 <h2 className="text-lg md:text-xl font-semibold mb-1 md:mb-2">Besoin d'aide ?</h2>
                 <p className="text-xs md:text-sm text-muted-foreground mb-3 md:mb-4">
-                  Notre équipe est là pour vous accompagner. N'hésitez pas à nous contacter !
+                  Notre équipe est là pour vous accompagner. Décrivez votre problème ci-dessous.
                 </p>
-                <a 
-                  href="mailto:support@mynutrizen.fr?subject=Demande%20de%20support%20NutriZen"
-                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground w-full sm:w-auto"
-                >
-                  <Mail className="h-4 w-4" />
-                  support@mynutrizen.fr
-                </a>
-                <p className="text-xs text-muted-foreground mt-2">
+                <SupportContactForm />
+                <p className="text-xs text-muted-foreground mt-3">
                   Délai de réponse : sous 24h en semaine
                 </p>
               </div>
