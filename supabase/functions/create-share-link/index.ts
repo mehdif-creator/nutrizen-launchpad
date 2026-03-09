@@ -38,7 +38,56 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const weekStart = body.week_start;
+    const recipeId = body.recipe_id;
 
+    if (!weekStart && !recipeId) {
+      return new Response(
+        JSON.stringify({ error: 'week_start ou recipe_id requis' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Recipe share flow
+    if (recipeId) {
+      // Check existing
+      const { data: existing } = await supabaseClient
+        .from('share_links')
+        .select('id, token, created_at, expires_at')
+        .eq('user_id', user.id)
+        .eq('recipe_id', recipeId)
+        .maybeSingle();
+
+      if (existing && existing.expires_at && new Date(existing.expires_at) > new Date()) {
+        return new Response(
+          JSON.stringify({ success: true, token: existing.token, is_new: false }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      if (existing) {
+        await supabaseClient.from('share_links').delete().eq('id', existing.id);
+      }
+
+      const { data: newLink, error: insertError } = await supabaseClient
+        .from('share_links')
+        .insert({ user_id: user.id, recipe_id: recipeId })
+        .select('id, token, created_at, expires_at')
+        .single();
+
+      if (insertError) {
+        console.error('[create-share-link] Insert error:', insertError);
+        return new Response(
+          JSON.stringify({ error: 'Impossible de créer le lien.' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, token: newLink.token, is_new: true }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Week share flow (original)
     if (!weekStart || typeof weekStart !== 'string') {
       return new Response(
         JSON.stringify({ error: 'week_start requis (format YYYY-MM-DD)' }),
@@ -46,7 +95,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if link already exists for this user + week
     const { data: existing } = await supabaseClient
       .from('share_links')
       .select('id, token, created_at, expires_at')
@@ -55,9 +103,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (existing) {
-      // Check if expired, if so refresh it
       if (existing.expires_at && new Date(existing.expires_at) < new Date()) {
-        // Delete expired and create new
         await supabaseClient.from('share_links').delete().eq('id', existing.id);
       } else {
         return new Response(
@@ -73,7 +119,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Verify user has a menu for this week
     const { data: menu } = await supabaseClient
       .from('user_weekly_menus')
       .select('menu_id')
@@ -83,7 +128,7 @@ Deno.serve(async (req) => {
 
     if (!menu) {
       return new Response(
-        JSON.stringify({ error: 'Aucun menu trouvé pour cette semaine. Génère d\'abord ton menu !' }),
+        JSON.stringify({ error: 'Aucun menu trouvé pour cette semaine.' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
