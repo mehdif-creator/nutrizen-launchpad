@@ -1008,6 +1008,21 @@ Deno.serve(async (req) => {
 
     console.log(`[generate-menu] ✅ SUCCESS: Generated menu ${menu.menu_id} with ${usedFallback || 'strict filters'}`);
 
+    // ── SUCCESS: Now deduct credits atomically ──
+    console.log(`[generate-menu] Deducting ${menuCost} credits after successful generation (feature=${menuFeatureKey})`);
+    const { data: creditsCheck, error: creditsError } = await supabaseClient.rpc('check_and_consume_credits', {
+      p_user_id: user.id,
+      p_feature: menuFeatureKey,
+      p_cost: menuCost,
+    });
+
+    if (creditsError) {
+      console.error('[generate-menu] Credits deduction error after success:', creditsError);
+      // Still return the successful menu
+    } else {
+      console.log(`[generate-menu] ✅ ${menuCost} credits consumed. New balance: ${creditsCheck?.new_balance}`);
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
