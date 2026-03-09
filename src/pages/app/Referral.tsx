@@ -227,8 +227,8 @@ export default function Referral() {
                 <Button variant="outline" onClick={() => shareOnSocial('twitter')}>
                   Twitter
                 </Button>
-                <Button variant="outline" onClick={() => shareOnSocial('linkedin')}>
-                  LinkedIn
+                <Button variant="outline" onClick={() => shareOnSocial('instagram')}>
+                  Instagram
                 </Button>
                 <Button variant="outline" onClick={() => shareOnSocial('whatsapp')}>
                   WhatsApp
