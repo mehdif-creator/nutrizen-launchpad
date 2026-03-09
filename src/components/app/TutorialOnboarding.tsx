@@ -81,7 +81,11 @@ export function TutorialOnboarding() {
         .eq('id', user.id)
         .maybeSingle();
 
-      if (data?.tutorial_completed) {
+      if ((data as any)?.tutorial_completed) {
+        localStorage.setItem(localKey, 'true');
+        setLoading(false);
+        return;
+      }
         localStorage.setItem(localKey, 'true');
         setLoading(false);
         return;
