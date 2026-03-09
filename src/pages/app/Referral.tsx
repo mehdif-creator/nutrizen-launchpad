@@ -74,9 +74,13 @@ export default function Referral() {
       case 'facebook':
         shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
         break;
-      case 'linkedin':
-        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
-        break;
+      case 'instagram':
+        navigator.clipboard.writeText(url);
+        toast({
+          title: 'Lien copié ! 📸',
+          description: 'Colle-le dans ta story Instagram.',
+        });
+        return;
       case 'whatsapp':
         shareUrl = `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`;
         break;
@@ -223,8 +227,8 @@ export default function Referral() {
                 <Button variant="outline" onClick={() => shareOnSocial('twitter')}>
                   Twitter
                 </Button>
-                <Button variant="outline" onClick={() => shareOnSocial('linkedin')}>
-                  LinkedIn
+                <Button variant="outline" onClick={() => shareOnSocial('instagram')}>
+                  Instagram
                 </Button>
                 <Button variant="outline" onClick={() => shareOnSocial('whatsapp')}>
                   WhatsApp
