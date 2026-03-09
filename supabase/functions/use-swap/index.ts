@@ -397,7 +397,6 @@ Deno.serve(async (req) => {
     }
 
     // Tag the transaction with idempotency key if provided
-    const requestId = validatedInput.request_id;
     if (requestId && !creditsError) {
       await supabaseClient
         .from('credit_transactions')
