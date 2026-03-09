@@ -83,8 +83,8 @@ Deno.serve(async (req) => {
       identifier: `user:${user.id}`,
       endpoint:   'suggest-substitution',
       maxTokens:  20,
-      refillRate: 20,
-      cost:       60,
+      refillRate: 1,
+      cost:       1,
     });
     if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
 
@@ -266,7 +266,7 @@ Réponds UNIQUEMENT en JSON valide, sans markdown, avec ce format:
     // ── SUCCESS: Now deduct credits atomically ──
     const { data: creditsResult, error: creditsError } = await supabaseAdmin.rpc('check_and_consume_credits', {
       p_user_id: user.id,
-      p_feature: 'substitution',
+      p_feature: 'substitutions',
       p_cost: SUBSTITUTION_COST,
     });
 
@@ -281,7 +281,7 @@ Réponds UNIQUEMENT en JSON valide, sans markdown, avec ce format:
         .from('credit_transactions')
         .update({ idempotency_key: `substitution:${request_id}` })
         .eq('user_id', user.id)
-        .eq('feature', 'substitution')
+        .eq('feature', 'substitutions')
         .is('idempotency_key', null)
         .order('created_at', { ascending: false })
         .limit(1);
