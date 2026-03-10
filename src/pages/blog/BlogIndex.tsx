@@ -74,7 +74,7 @@ export default function BlogIndex() {
   const categories = useMemo(() => {
     const cats = new Set<string>();
     articles.forEach(a => {
-      const c = a.cluster_context || a.tags?.[0];
+      const c = getCategoryLabel(a.cluster_context || a.tags?.[0]);
       if (c) cats.add(c);
     });
     return ['Tous', ...Array.from(cats).sort((a, b) => a.localeCompare(b, 'fr'))];
