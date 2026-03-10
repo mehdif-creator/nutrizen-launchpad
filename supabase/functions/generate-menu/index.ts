@@ -356,61 +356,52 @@ Deno.serve(async (req) => {
       console.log(`[generate-menu] Allergen keys from legacy preferences.allergies: ${allergyKeys.length} key(s)`);
     }
 
-    // 2. From aliments_eviter array - need to map to canonical keys via dictionary
-    if (preferences?.aliments_eviter && Array.isArray(preferences.aliments_eviter)) {
-      const avoidItems = preferences.aliments_eviter
-        .map((ing: string) => (ing || '').toLowerCase().trim())
-        .filter((ing: string) => ing.length > 0 && ing.length <= 50);
+    // 2. From foods_to_avoid (new) or aliments_eviter (legacy)
+    const avoidItems = (eff.foodsToAvoid || [])
+      .map((ing: string) => (ing || '').toLowerCase().trim())
+      .filter((ing: string) => ing.length > 0 && ing.length <= 50);
 
-      if (avoidItems.length > 0) {
-        // Escape each item before building the .or() filter to prevent injection
-        const safeItems = avoidItems.map(escapePostgrestPattern).filter(i => i.length > 0);
-        
-        if (safeItems.length > 0) {
-          const orFilter = safeItems.map(item => `pattern.ilike.%${item}%`).join(',');
-          // Only query if filter string contains no unbalanced quotes or parentheses
-          if (!/[()'"\\]/.test(orFilter)) {
-            const { data: dictMatches } = await supabaseClient
-              .from('restriction_dictionary')
-              .select('key, pattern')
-              .or(orFilter);
-            
-            if (dictMatches && dictMatches.length > 0) {
-              const mappedKeys = dictMatches.map((d: any) => d.key);
-              userRestrictionKeys.push(...mappedKeys);
-              console.log(`[generate-menu] Mapped ${avoidItems.length} aliments_eviter item(s) to ${[...new Set(mappedKeys)].length} key(s) via dictionary`);
-            }
+    if (avoidItems.length > 0) {
+      const safeItems = avoidItems.map(escapePostgrestPattern).filter((i: string) => i.length > 0);
+      
+      if (safeItems.length > 0) {
+        const orFilter = safeItems.map((item: string) => `pattern.ilike.%${item}%`).join(',');
+        if (!/[()'"\\]/.test(orFilter)) {
+          const { data: dictMatches } = await supabaseClient
+            .from('restriction_dictionary')
+            .select('key, pattern')
+            .or(orFilter);
+          
+          if (dictMatches && dictMatches.length > 0) {
+            const mappedKeys = dictMatches.map((d: any) => d.key);
+            userRestrictionKeys.push(...mappedKeys);
+            console.log(`[generate-menu] Mapped ${avoidItems.length} foods_to_avoid to ${[...new Set(mappedKeys)].length} key(s)`);
           }
         }
-        
-        // Also add the raw items as keys (in case they're already canonical)
-        for (const item of avoidItems) {
-          if (allergenToKeyMap[item.charAt(0).toUpperCase() + item.slice(1)]) {
-            userRestrictionKeys.push(allergenToKeyMap[item.charAt(0).toUpperCase() + item.slice(1)]);
-          } else {
-            // Check if it's a known key directly (e.g., "pork", "dairy")
-            const { data: directMatch } = await supabaseClient
-              .from('restriction_dictionary')
-              .select('key')
-              .eq('key', item)
-              .limit(1);
-            if (directMatch && directMatch.length > 0) {
-              userRestrictionKeys.push(item);
-            } else {
-              if (item === 'porc' || item === 'cochon') {
-                userRestrictionKeys.push('pork');
-              }
-            }
+      }
+      
+      for (const item of avoidItems) {
+        if (allergenToKeyMap[item.charAt(0).toUpperCase() + item.slice(1)]) {
+          userRestrictionKeys.push(allergenToKeyMap[item.charAt(0).toUpperCase() + item.slice(1)]);
+        } else {
+          const { data: directMatch } = await supabaseClient
+            .from('restriction_dictionary')
+            .select('key')
+            .eq('key', item)
+            .limit(1);
+          if (directMatch && directMatch.length > 0) {
+            userRestrictionKeys.push(item);
+          } else if (item === 'porc' || item === 'cochon') {
+            userRestrictionKeys.push('pork');
           }
         }
       }
     }
 
-    // 3. From autres_allergies free text
-    if (preferences?.autres_allergies) {
-      const freeText = (preferences.autres_allergies || '').toLowerCase().trim();
+    // 3. From other_allergies free text
+    if (eff.otherAllergies) {
+      const freeText = (eff.otherAllergies || '').toLowerCase().trim();
       if (freeText.length > 0) {
-        // Query dictionary to find canonical keys
         const { data: textMatches } = await supabaseClient
           .from('restriction_dictionary')
           .select('key, pattern');
@@ -422,8 +413,7 @@ Deno.serve(async (req) => {
             }
           }
         }
-        // Log count only — free-text allergies are special-category health data (GDPR Art. 9)
-        console.log(`[generate-menu] Extracted ${userRestrictionKeys.length} keys from autres_allergies text`);
+        console.log(`[generate-menu] Extracted keys from other_allergies text`);
       }
     }
 
@@ -441,8 +431,8 @@ Deno.serve(async (req) => {
       'kosher': ['pork', 'shellfish'],
     };
 
-    if (preferences?.type_alimentation) {
-      const dietKey = preferences.type_alimentation.toLowerCase().trim();
+    if (eff.dietType) {
+      const dietKey = eff.dietType.toLowerCase().trim();
       const dietExclusions = DIET_EXCLUSIONS[dietKey];
       if (dietExclusions) {
         userRestrictionKeys.push(...dietExclusions);
