@@ -20,6 +20,8 @@ import { STATUS_LABELS } from './seo/types';
 
 export default function AdminSeoFactory() {
   const { articles, loading, refetch, deleteArticle } = useSeoArticles();
+  const { stats, fetchItems: fetchQueueItems } = useArticleQueue();
+  const { autoMode, toggleAutoMode, isRunning, stopProcessing } = useQueueProcessor(fetchQueueItems);
   const [detailArticle, setDetailArticle] = useState<SeoArticle | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
