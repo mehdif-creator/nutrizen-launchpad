@@ -99,7 +99,7 @@ export default function Login() {
                 />
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full min-h-[52px]" disabled={loading}>
                 <Mail className="mr-2 h-4 w-4" />
                 {loading ? 'Envoi...' : 'Recevoir un nouveau lien magique'}
               </Button>
