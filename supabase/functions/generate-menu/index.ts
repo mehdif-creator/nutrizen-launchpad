@@ -814,11 +814,11 @@ Format attendu (JSON uniquement, sans markdown) :
       .single();
 
     if (menuError) {
-      console.error("[generate-menu] Error upserting menu:", menuError);
-      throw new Error("Failed to save menu");
+      console.error("[generate-menu] Error upserting menu:", JSON.stringify(menuError));
+      throw new Error(`Failed to save menu: ${menuError.message || menuError.code || JSON.stringify(menuError)}`);
     }
 
-    console.log(`[generate-menu] Menu saved: ${menu.menu_id}`);
+    console.log(`[generate-menu] ✅ Menu saved: menu_id=${menu.menu_id}, week_start=${weekStartStr}`);
 
     // ── CLEAN UP OLD MENU ITEMS ──
     // AI-generated menus store all data in the payload JSONB column.
