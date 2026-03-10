@@ -170,7 +170,8 @@ function validateRecipe(recipe: GeneratedRecipe, ctx: UserContext): { valid: boo
   }
 
   // 2.2 Diet type
-  const dietType = (ctx.foodStyle?.diet_type || ctx.legacyPreferences?.type_alimentation || '').toLowerCase();
+  const rawDietType = (ctx.foodStyle?.diet_type || ctx.legacyPreferences?.type_alimentation || '');
+  const dietType = normalizeDietType(rawDietType);
   const dietExclusions = DIET_EXCLUSIONS[dietType] || [];
   for (const excl of dietExclusions) {
     if (allText.includes(excl)) {
