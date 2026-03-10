@@ -238,6 +238,7 @@ export default function Profile() {
           membresSelectionnes: m.who_eats_custom || [],
           portionsOverride: m.portions_manual ? Number(m.portions) : null,
           lieu: m.location || 'maison',
+          batchCooking: m.batch_cooking ?? false,
         }));
         setMeals(loaded);
       }
