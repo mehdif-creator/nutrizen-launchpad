@@ -96,10 +96,15 @@ export default function Dashboard() {
       dayDate.setUTCDate(dayDate.getUTCDate() + index);
       const dateStr = dayDate.toISOString().split('T')[0];
       
-      const mapMeal = (meal: any) => meal ? {
+      // Rotating food placeholder images for AI recipes without images
+      const AI_FOOD_PLACEHOLDERS = [
+        '/img/recipe-curry.jpg', '/img/recipe-salad.jpg', '/img/recipe-salmon.jpg',
+        '/img/recipe-lasagna.jpg', '/img/recipe-noodles.jpg', '/img/recipe-omelette.jpg',
+      ];
+      const mapMeal = (meal: any, mealIdx: number) => meal ? {
         recipe_id: meal.recipe_id || `ai-${index}-${meal.title}`,
         title: meal.title || 'Recette IA',
-        image_url: meal.image_url || null,
+        image_url: meal.image_url || AI_FOOD_PLACEHOLDERS[(index * 2 + mealIdx) % AI_FOOD_PLACEHOLDERS.length],
         prep_min: meal.prep_min || 0,
         total_min: meal.total_min || 0,
         calories: meal.calories || 0,
