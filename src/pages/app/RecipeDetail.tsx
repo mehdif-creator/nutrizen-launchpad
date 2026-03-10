@@ -68,6 +68,20 @@ export default function RecipeDetail() {
   useEffect(() => {
     const loadRecipe = async () => {
       if (!id) return;
+      
+      // AI-generated recipes have IDs like "ai-0-RecipeTitle"
+      if (id.startsWith('ai-')) {
+        try {
+          await loadAiRecipe(id);
+        } catch (err) {
+          console.error('Error loading AI recipe:', err);
+          toast({ title: "Erreur", description: "Impossible de charger la recette IA.", variant: "destructive" });
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
+      
       try {
         const { data, error } = await supabase.from('recipes').select('*').eq('id', id).single();
         if (error) throw error;
@@ -80,8 +94,63 @@ export default function RecipeDetail() {
         setLoading(false);
       }
     };
+    
+    const loadAiRecipe = async (aiId: string) => {
+      if (!user?.id) return;
+      
+      // Fetch current weekly menu payload
+      const { data: menuData, error } = await supabase
+        .from('user_weekly_menus')
+        .select('payload')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (error || !menuData?.payload) {
+        throw new Error('Menu introuvable');
+      }
+      
+      const payload = menuData.payload as any;
+      const days = payload?.days || [];
+      
+      // Search through all days for matching recipe
+      for (const day of days) {
+        for (const meal of [day.lunch, day.dinner]) {
+          if (!meal) continue;
+          // Match by title (the AI id contains the title)
+          const titleFromId = decodeURIComponent(aiId.replace(/^ai-\d+-/, ''));
+          if (meal.title === titleFromId || aiId === `ai-${days.indexOf(day)}-${meal.title}`) {
+            setRecipe({
+              id: aiId,
+              title: meal.title,
+              image_url: meal.image_url || undefined,
+              prep_time_min: meal.prep_min || meal.temps_preparation_min,
+              total_time_min: meal.total_min || meal.temps_preparation_min,
+              servings: meal.servings_used || meal.base_servings || meal.portions,
+              calories_kcal: meal.kcal_par_portion || (meal.calories && meal.servings_used ? Math.round(meal.calories / meal.servings_used) : meal.calories),
+              proteins_g: meal.macros_par_portion?.proteines_g || (meal.proteins_g && meal.servings_used ? Math.round(meal.proteins_g / meal.servings_used) : meal.proteins_g),
+              carbs_g: meal.macros_par_portion?.glucides_g || (meal.carbs_g && meal.servings_used ? Math.round(meal.carbs_g / meal.servings_used) : meal.carbs_g),
+              fats_g: meal.macros_par_portion?.lipides_g || (meal.fats_g && meal.servings_used ? Math.round(meal.fats_g / meal.servings_used) : meal.fats_g),
+              ingredients: (meal.ingredients || []).map((ing: any) => ({
+                name: ing.nom,
+                quantity: parseFloat(ing.quantite) || null,
+                unit: ing.unite,
+              })),
+              instructions: meal.etapes || [],
+              allergens: [],
+              appliances: [],
+            });
+            return;
+          }
+        }
+      }
+      
+      throw new Error('Recette IA introuvable dans le menu');
+    };
+    
     loadRecipe();
-  }, [id, toast, awardRecipeView]);
+  }, [id, user?.id, toast, awardRecipeView]);
 
   const handleExportPdf = () => {
     if (!recipe) return;
