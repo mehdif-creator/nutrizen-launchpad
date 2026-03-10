@@ -331,12 +331,14 @@ export default function Dashboard() {
     if (!user || generating) return;
 
     setGenerating(true);
+    console.log("[handleRegenWeek] ── START ── userId:", user.id);
 
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
         throw new Error("Session expirée. Reconnecte-toi.");
       }
+      console.log("[handleRegenWeek] Session OK, invoking generate-menu...");
 
       const { data, error } = await supabase.functions.invoke("generate-menu", {
         headers: {
@@ -344,16 +346,19 @@ export default function Dashboard() {
         },
       });
 
+      console.log("[handleRegenWeek] Raw response:", { data, error });
+
       // supabase.functions.invoke puts non-2xx responses in error.context
       if (error) {
         let errorMessage = error.message || "Erreur inconnue";
         try {
           if ((error as any).context) {
             const body = await (error as any).context.json();
+            console.log("[handleRegenWeek] Error body from context:", body);
             errorMessage = body?.message || body?.error || errorMessage;
           }
         } catch (_) { /* ignore parse error */ }
-        console.error("Error regenerating week:", { message: errorMessage, error });
+        console.error("[handleRegenWeek] Error:", { message: errorMessage, error });
         toast({
           title: "Génération impossible",
           description: errorMessage,
@@ -363,17 +368,19 @@ export default function Dashboard() {
       }
 
       if (data?.success) {
+        console.log("[handleRegenWeek] ✅ Success:", data);
         toast({ title: "Menus générés avec succès ✅" });
         invalidateAll();
       } else {
+        console.warn("[handleRegenWeek] Non-success response:", data);
         toast({
           title: "Génération impossible",
-          description: data?.message || "Impossible de générer un menu.",
+          description: data?.message || data?.error || "Impossible de générer un menu.",
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error("Error regenerating week:", error);
+      console.error("[handleRegenWeek] Exception:", error);
       toast({
         title: "Erreur",
         description: error instanceof Error ? error.message : "Impossible de générer la semaine. Réessaie plus tard.",
@@ -381,6 +388,7 @@ export default function Dashboard() {
       });
     } finally {
       setGenerating(false);
+      console.log("[handleRegenWeek] ── END ──");
     }
   };
 

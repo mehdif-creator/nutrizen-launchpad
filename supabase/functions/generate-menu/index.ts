@@ -904,13 +904,14 @@ Format attendu (JSON uniquement, sans markdown) :
     );
 
   } catch (error) {
-    console.error("[generate-menu] Error:", error);
+    console.error("[generate-menu] ❌ FATAL ERROR:", error);
+    console.error("[generate-menu] Error type:", typeof error, "name:", (error as any)?.name, "message:", (error as any)?.message, "code:", (error as any)?.code);
     if (supabaseClient) {
       await logEdgeFunctionError('generate-menu', error).catch(() => {});
     }
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ success: false, error: errorMessage, message: errorMessage }),
       { headers: { ...corsHeaders, ...getSecurityHeaders(), "Content-Type": "application/json" }, status: 400 }
     );
   }
