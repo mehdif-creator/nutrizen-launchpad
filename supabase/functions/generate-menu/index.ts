@@ -824,19 +824,37 @@ Deno.serve(async (req) => {
 
     console.log(`[generate-menu] ✅ Menu saved: menu_id=${menu.menu_id}, week_start=${weekStartStr}`);
 
-    // ── CLEAN UP OLD MENU ITEMS ──
-    // AI-generated menus store all data in the payload JSONB column.
-    // We skip user_weekly_menu_items for AI menus because recipe_id is NOT NULL
-    // and AI recipes don't have DB recipe IDs.
+    // ── INSERT MENU ITEMS (real recipe IDs from DB) ──
     const { error: deleteError } = await supabaseClient
       .from("user_weekly_menu_items")
       .delete()
       .eq("weekly_menu_id", menu.menu_id);
     if (deleteError) console.error("[generate-menu] Error deleting old items:", deleteError);
-    console.log(`[generate-menu] Skipping user_weekly_menu_items insert (AI-generated, no recipe_id)`);
 
-    // AI-generated menus: skip user_daily_recipes (recipe_ids are null, data lives in payload JSONB)
-    console.log(`[generate-menu] Skipping user_daily_recipes insert (AI-generated, no recipe_ids)`);
+    const menuItems: any[] = [];
+    days.forEach((day: any, dayIndex: number) => {
+      for (const [slot, meal] of [['lunch', day.lunch], ['dinner', day.dinner]] as const) {
+        if (meal && meal.recipe_id) {
+          menuItems.push({
+            weekly_menu_id: menu.menu_id,
+            recipe_id: meal.recipe_id,
+            day_of_week: dayIndex,
+            meal_slot: slot === 'lunch' ? 'dejeuner' : 'diner',
+            target_servings: meal.servings_used || meal.base_servings || 1,
+            portion_factor: meal.portion_factor || 1,
+            scale_factor: meal.portion_factor || 1,
+          });
+        }
+      }
+    });
+
+    if (menuItems.length > 0) {
+      const { error: itemsError } = await supabaseClient
+        .from("user_weekly_menu_items")
+        .insert(menuItems);
+      if (itemsError) console.error("[generate-menu] Error inserting menu items:", itemsError);
+      else console.log(`[generate-menu] ✅ Inserted ${menuItems.length} menu items`);
+    }
 
     // ── STORE GENERATED RECIPES FOR NON-REPETITION ──
     if (recipesToStore.length > 0) {
