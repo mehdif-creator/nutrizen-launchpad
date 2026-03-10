@@ -92,7 +92,8 @@ export const Header = ({ onCtaClick }: HeaderProps) => {
         {/* Mobile Menu Button */}
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="md:hidden p-2"
+          className="md:hidden p-3 min-h-[44px] min-w-[44px] flex items-center justify-center"
+          aria-label={mobileMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
         >
           {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>

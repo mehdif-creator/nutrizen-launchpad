@@ -139,11 +139,11 @@ export const Hero = ({ onCtaClick, onExampleClick, copy }: HeroProps) => {
 
           {/* Right: Hero Image */}
           <div className="relative animate-slide-up">
-            <div className="aspect-square rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center overflow-hidden">
+            <div className="aspect-square max-h-[50vh] lg:max-h-none rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center overflow-hidden">
               <img
                 src={heroImage}
                 alt={heroImageAlt}
-                className="w-full h-full object-cover rounded-2xl"
+                className="w-full h-full object-cover rounded-2xl max-w-full"
                 width={600}
                 height={600}
                 fetchPriority="high"

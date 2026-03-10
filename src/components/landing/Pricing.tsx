@@ -95,7 +95,7 @@ export const Pricing = ({ onCtaClick, pricingNote, comparison = defaultCompariso
           </div>
         )}
 
-        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {/* FREE — Je découvre */}
           <Card className="p-6 md:p-8 relative border border-muted/50 opacity-90 hover:opacity-100 transition-opacity">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">

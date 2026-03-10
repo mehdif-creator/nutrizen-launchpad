@@ -71,7 +71,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-accent/10 to-primary/10 dark:from-accent/5 dark:to-primary/5 p-4">
       <div className="w-full max-w-md">
-        <div className="bg-card rounded-2xl shadow-card p-8">
+        <div className="bg-card rounded-2xl shadow-card p-5 sm:p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold mb-2 text-foreground">Connexion</h1>
             <p className="text-muted-foreground">

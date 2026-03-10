@@ -157,13 +157,47 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    overflow-x: hidden;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-bold tracking-tight;
+  }
+
+  /* Global mobile-first: min tap targets */
+  @media (max-width: 768px) {
+    button, a, [role="button"], input[type="submit"], input[type="button"] {
+      min-height: 44px;
+    }
+
+    input, select, textarea {
+      font-size: 16px !important; /* prevent iOS auto-zoom */
+    }
+
+    /* Ensure all content has minimum padding */
+    .container {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    /* Prevent any horizontal overflow */
+    main, section, article, div {
+      max-width: 100vw;
+    }
+
+    /* Remove hover-only effects on mobile */
+    .card-hover:hover {
+      transform: none;
+      box-shadow: var(--shadow-card);
+    }
   }
 }
 
