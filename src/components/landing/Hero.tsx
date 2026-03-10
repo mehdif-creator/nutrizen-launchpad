@@ -63,7 +63,7 @@ export const Hero = ({ onCtaClick, onExampleClick, copy }: HeroProps) => {
                   {badge}
                 </div>
               )}
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+              <h1 className="text-[clamp(1.75rem,5vw,3rem)] md:text-5xl lg:text-6xl font-bold leading-tight">
                 {h1}
               </h1>
               <p className="text-xl text-muted-foreground font-medium">
