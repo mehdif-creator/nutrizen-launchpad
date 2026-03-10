@@ -294,7 +294,7 @@ export default function Affiliate() {
               </Card>
 
               {/* Stats */}
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                 <Card className="p-6">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm text-muted-foreground">Conversions actives</p>
