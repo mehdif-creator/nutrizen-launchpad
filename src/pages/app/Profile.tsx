@@ -1026,11 +1026,28 @@ export default function Profile() {
                       <Select value={dietType} onValueChange={setDietType}>
                         <SelectTrigger id="type_alim"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
                         <SelectContent>
-                          {['Omnivore', 'Végétarien', 'Végétalien', 'Pescétarien', 'Flexitarien', 'Kéto', 'Low Carb', 'Paléo', 'Méditerranéen'].map((type) => (
-                            <SelectItem key={type} value={type.toLowerCase()}>{type}</SelectItem>
+                          {[
+                            { value: 'omnivore', label: 'Omnivore' },
+                            { value: 'vegetarien', label: 'Végétarien' },
+                            { value: 'vegan', label: 'Végétalien / Vegan' },
+                            { value: 'pescetarien', label: 'Pescétarien' },
+                            { value: 'flexitarien', label: 'Flexitarien' },
+                            { value: 'halal', label: 'Halal' },
+                            { value: 'casher', label: 'Casher' },
+                            { value: 'keto', label: 'Kéto' },
+                            { value: 'low_carb', label: 'Low Carb' },
+                            { value: 'paleo', label: 'Paléo' },
+                            { value: 'mediterraneen', label: 'Méditerranéen' },
+                          ].map((t) => (
+                            <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                      {['vegan', 'vegetarien', 'pescetarien', 'halal', 'casher'].includes(dietType) && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Aucune recette contenant des ingrédients incompatibles avec ce régime ne sera proposée.
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
