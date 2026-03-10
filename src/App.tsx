@@ -85,7 +85,7 @@ const Pro = lazy(() => import('./pages/Pro'));
 const Affiliate = lazy(() => import('./pages/Affiliate'));
 const PostCheckout = lazy(() => import('./pages/PostCheckout'));
 const PostCheckoutProfile = lazy(() => import('./pages/PostCheckoutProfile'));
-const Credits = lazy(() => import('./pages/Credits'));
+
 const About = lazy(() => import('./pages/About'));
 const PinterestOAuthCallback = lazy(() => import('./pages/oauth/PinterestOAuthCallback'));
 const SharedWeekPlan = lazy(() => import('./pages/share/SharedWeekPlan'));
