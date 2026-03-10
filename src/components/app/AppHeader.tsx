@@ -194,8 +194,8 @@ export const AppHeader = () => {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="xl:hidden border-t bg-background">
-          <nav className="container py-4 flex flex-col gap-4">
+        <div className="xl:hidden fixed inset-0 top-14 z-40 bg-background overflow-y-auto">
+          <nav className="container py-4 flex flex-col gap-1">
             {/* Gamification in mobile */}
             <div className="pb-3 border-b">
               <GamificationHeader />
