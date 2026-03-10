@@ -85,48 +85,124 @@ Deno.serve(async (req) => {
       new Date(subRow.trial_end) > now;
     const hasValidAccess = isActiveSub || isTrialing;
 
-    // Get user's household info for portion calculations (and fallback meals_per_day)
-    const { data: profileData, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('household_adults, household_children, kid_portion_ratio, meals_per_day')
-      .eq('id', user.id)
-      .single();
+    // ── Fetch all user data in parallel (new tables + legacy fallback) ──
+    const [
+      { data: profileData },
+      { data: preferences },
+      { data: userProfile },
+      { data: userObjectives },
+      { data: userEatingHabits },
+      { data: userMealsConfig },
+      { data: userAllergies },
+      { data: userFoodStyle },
+      { data: userNutritionGoals },
+      { data: userHousehold },
+      { data: userLifestyle },
+    ] = await Promise.all([
+      supabaseClient.from('profiles').select('household_adults, household_children, kid_portion_ratio, meals_per_day').eq('id', user.id).single(),
+      supabaseClient.from('preferences').select('*').eq('user_id', user.id).maybeSingle(),
+      supabaseClient.from('user_profile').select('*').eq('user_id', user.id).maybeSingle(),
+      supabaseClient.from('user_objectives').select('*').eq('user_id', user.id).maybeSingle(),
+      supabaseClient.from('user_eating_habits').select('*').eq('user_id', user.id).maybeSingle(),
+      supabaseClient.from('user_meals_config').select('*').eq('user_id', user.id),
+      supabaseClient.from('user_allergies').select('*').eq('user_id', user.id).maybeSingle(),
+      supabaseClient.from('user_food_style').select('*').eq('user_id', user.id).maybeSingle(),
+      supabaseClient.from('user_nutrition_goals').select('*').eq('user_id', user.id).maybeSingle(),
+      supabaseClient.from('user_household').select('*').eq('user_id', user.id).maybeSingle(),
+      supabaseClient.from('user_lifestyle').select('*').eq('user_id', user.id).maybeSingle(),
+    ]);
 
-    if (profileError) {
-      console.warn('[generate-menu] Could not fetch household info, using defaults:', profileError);
+    const hasNewTables = !!(userProfile || userEatingHabits || userAllergies || userFoodStyle);
+    console.log(`[generate-menu] Data sources: newTables=${hasNewTables}, legacyPrefs=${!!preferences}`);
+
+    // ── Build unified effective preferences from new tables, fallback to legacy ──
+    const eff = {
+      age: userProfile?.age ?? preferences?.age ?? null,
+      currentWeight: userProfile?.current_weight ?? preferences?.poids_actuel_kg ?? null,
+      medicalConditions: userProfile?.medical_conditions ?? [],
+      activityLevel: userProfile?.activity_level ?? preferences?.niveau_activite ?? null,
+
+      mainGoal: userObjectives?.main_goal ?? preferences?.objectif_principal ?? null,
+      mainBlockers: userObjectives?.main_blockers ?? [],
+
+      mealsPerDay: userEatingHabits?.meals_per_day ?? preferences?.repas_par_jour ?? profileData?.meals_per_day ?? 2,
+      appetiteSize: userEatingHabits?.appetite_size ?? null,
+      prepTime: userEatingHabits?.prep_time ?? (preferences?.temps_preparation ? [preferences.temps_preparation] : []),
+      batchCooking: userEatingHabits?.batch_cooking ?? preferences?.batch_cooking ?? null,
+      cookingLevel: userEatingHabits?.cooking_level ?? preferences?.niveau_cuisine ?? null,
+      availableTools: userEatingHabits?.available_tools ?? [
+        ...(preferences?.appliances_owned || []),
+        ...(preferences?.ustensiles || []),
+      ],
+
+      // Allergies: new format is jsonb array [{name, type, traces_ok}]
+      allergiesRaw: userAllergies?.allergies ?? null,
+      otherAllergies: userAllergies?.other_allergies ?? preferences?.autres_allergies ?? null,
+      tracesAccepted: userAllergies?.traces_accepted ?? false,
+      // Legacy flat array fallback
+      allergiesFlat: preferences?.allergies ?? [],
+
+      dietType: userFoodStyle?.diet_type ?? preferences?.type_alimentation ?? null,
+      foodsToAvoid: userFoodStyle?.foods_to_avoid ?? preferences?.aliments_eviter ?? [],
+      favoriteIngredients: userFoodStyle?.favorite_ingredients ?? preferences?.ingredients_favoris ?? [],
+      favoriteCuisines: userFoodStyle?.favorite_cuisines ?? preferences?.cuisine_preferee ?? [],
+      spiceLevel: userFoodStyle?.spice_level ?? preferences?.niveau_epices ?? null,
+      cookingMethod: userFoodStyle?.cooking_method ?? null,
+      preferOrganic: userFoodStyle?.prefer_organic ?? false,
+      reduceSugar: userFoodStyle?.reduce_sugar ?? preferences?.limiter_sucre ?? false,
+      preferSeasonal: userFoodStyle?.prefer_seasonal ?? false,
+
+      caloricGoal: userNutritionGoals?.caloric_goal ?? null,
+      targetKcal: userNutritionGoals?.target_kcal ?? null,
+      proteinGPerDay: userNutritionGoals?.protein_g_per_day ?? null,
+      macrosCustom: userNutritionGoals?.macros_custom ?? false,
+      macroProteinPct: userNutritionGoals?.macro_protein_pct ?? 30,
+      macroCarbsPct: userNutritionGoals?.macro_carbs_pct ?? 45,
+      macroFatPct: userNutritionGoals?.macro_fat_pct ?? 25,
+      dairyPreference: userNutritionGoals?.dairy_preference ?? preferences?.produits_laitiers ?? null,
+      trackFiber: userNutritionGoals?.track_fiber ?? preferences?.recettes_riches_fibres ?? false,
+      portionSize: userNutritionGoals?.portion_size ?? null,
+      // Legacy fields for calorie/macro filters
+      objectifCalorique: preferences?.objectif_calorique ?? null,
+      apportProteinesGKg: preferences?.apport_proteines_g_kg ?? null,
+      repartitionMacros: preferences?.repartition_macros ?? null,
+
+      householdAdults: userHousehold?.adults_count ?? profileData?.household_adults ?? 1,
+      householdChildren: userHousehold?.children_count ?? profileData?.household_children ?? 0,
+      childrenAges: userHousehold?.children_ages ?? [],
+      totalPortions: userHousehold?.total_portions ?? null,
+
+      workType: userLifestyle?.work_type ?? null,
+      scheduleType: userLifestyle?.schedule_type ?? null,
+      stressLevel: userLifestyle?.stress_level ?? preferences?.niveau_stress ?? null,
+      sleepHours: userLifestyle?.sleep_hours ?? preferences?.sommeil_heures ?? null,
+
+      // Keep legacy fields for filters that haven't been remapped
+      niveauSel: preferences?.niveau_sel ?? null,
+      modeCuissonPrefere: preferences?.mode_cuisson_prefere ?? [],
+    };
+
+    // Meals config: determine which meals should generate recipes
+    const mealsConfig = (userMealsConfig || []) as any[];
+    const lunchConfig = mealsConfig.find((m: any) => m.meal_type === 'dejeuner');
+    const dinnerConfig = mealsConfig.find((m: any) => m.meal_type === 'diner');
+    const generateLunch = eff.mealsPerDay >= 2 && (lunchConfig?.generate_recipe !== false);
+    const generateDinner = dinnerConfig?.generate_recipe !== false;
+
+    console.log(`[generate-menu] mealsPerDay=${eff.mealsPerDay}, generateLunch=${generateLunch}, generateDinner=${generateDinner}`);
+
+    // Validate age
+    if (typeof eff.age === 'number' && (eff.age < 18 || eff.age > 99)) {
+      console.error(`[generate-menu] Invalid age: ${eff.age}`);
+      return new Response(
+        JSON.stringify({ success: false, message: "Âge invalide. L'âge doit être entre 18 et 99 ans." }),
+        { status: 400, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Get user preferences (needed to decide feature key/cost)
-    const { data: preferences, error: prefError } = await supabaseClient
-      .from('preferences')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-
-    if (prefError && prefError.code !== 'PGRST116') {
-      console.error('[generate-menu] Error fetching preferences:', prefError);
-    }
-
-    console.log('[generate-menu] User preferences:', preferences ? 'Found' : 'Not found');
-
-    // preferences.repas_par_jour is set by Profile page
-    // profiles.meals_per_day is set by Onboarding — use preferences first
-    const mealsPerDay = preferences?.repas_par_jour ?? profileData?.meals_per_day ?? 2;
-    console.log(`[generate-menu] mealsPerDay=${mealsPerDay} (pref=${preferences?.repas_par_jour}, profile=${profileData?.meals_per_day})`);
-
-    // Validate age if present
-    if (typeof preferences?.age === 'number') {
-      const age = preferences.age;
-      if (age < 18 || age > 99) {
-        console.error(`[generate-menu] Invalid age: ${age}`);
-        return new Response(
-          JSON.stringify({
-            success: false,
-            message: "Âge invalide. L'âge doit être entre 18 et 99 ans.",
-          }),
-          { status: 400, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
-        );
-      }
+    // Medical conditions context for future AI prompt integration
+    if (eff.medicalConditions.length > 0) {
+      console.log(`[generate-menu] Medical conditions: ${eff.medicalConditions.length} condition(s) noted`);
     }
 
     // Decide which pricing key applies for this user
