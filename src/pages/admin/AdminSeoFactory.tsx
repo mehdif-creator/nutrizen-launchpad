@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { AppFooter } from '@/components/app/AppFooter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, RefreshCw, FileText, Search, ImageIcon } from 'lucide-react';
+import { ArrowLeft, RefreshCw, FileText, Search, ImageIcon, Wrench } from 'lucide-react';
 import { callEdgeFunction } from '@/lib/edgeFn';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
@@ -21,6 +21,7 @@ export default function AdminSeoFactory() {
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'date' | 'score' | 'status'>('date');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isCleaning, setIsCleaning] = useState(false);
   const { toast } = useToast();
 
   const handleRefreshAllImages = async () => {
@@ -103,6 +104,19 @@ export default function AdminSeoFactory() {
             <Button variant="ghost" size="icon"><ArrowLeft className="h-5 w-5" /></Button>
           </Link>
           <h1 className="text-3xl font-bold flex-1">SEO Factory</h1>
+          <Button variant="outline" size="sm" onClick={async () => {
+            setIsCleaning(true);
+            try {
+              const data = await callEdgeFunction<{ total: number; fixed: number }>('seo-cleanup-articles', {});
+              toast({ title: `🧹 ${data?.fixed || 0} article(s) nettoyé(s) sur ${data?.total || 0}` });
+              await refetch();
+            } catch (err: any) {
+              toast({ title: 'Erreur nettoyage', description: err?.message, variant: 'destructive' });
+            } finally { setIsCleaning(false); }
+          }} disabled={isCleaning}>
+            <Wrench className="mr-2 h-4 w-4" />
+            {isCleaning ? 'Nettoyage…' : '🧹 Nettoyer titres/images'}
+          </Button>
           <Button variant="outline" size="sm" onClick={handleRefreshAllImages} disabled={isRefreshing}>
             <ImageIcon className="mr-2 h-4 w-4" />
             {isRefreshing ? 'Régénération…' : '🖼️ Régénérer les images'}

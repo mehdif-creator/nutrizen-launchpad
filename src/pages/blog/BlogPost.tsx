@@ -156,6 +156,33 @@ export default function BlogPost() {
     ? (article.draft_html || article.content || '')
     : (article.content || '');
 
+  // --- Sanitize: strip duplicate title at start of body ---
+  const titleText = (h1 || article.title || '').trim();
+  if (titleText) {
+    // Strip leading <h1> or <h2> whose text matches the title
+    const titleEscaped = titleText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    rawHtml = rawHtml.replace(
+      new RegExp(`^\\s*<(h[12])[^>]*>\\s*${titleEscaped}\\s*<\\/\\1>\\s*`, 'i'),
+      ''
+    );
+  }
+
+  // --- Sanitize: strip duplicate hero image at start of body ---
+  if (heroImage) {
+    // Strip leading <figure>...<img src="heroImage">...</figure> or standalone <img>
+    const imgEscaped = heroImage.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    rawHtml = rawHtml.replace(
+      new RegExp(`^\\s*<figure[^>]*>\\s*<img[^>]*src=["']${imgEscaped}["'][^>]*/?>\\s*(?:<figcaption[^>]*>.*?</figcaption>\\s*)?</figure>\\s*`, 'is'),
+      ''
+    );
+    rawHtml = rawHtml.replace(
+      new RegExp(`^\\s*<img[^>]*src=["']${imgEscaped}["'][^>]*/?>\\s*`, 'i'),
+      ''
+    );
+  }
+  // Strip leading markdown image syntax
+  rawHtml = rawHtml.replace(/^\s*!\[.*?\]\(.*?\)\s*/, '');
+
   // 1. Replace image placeholders with real URLs
   if (images && images.length > 0) {
     images.forEach((img: any, index: number) => {

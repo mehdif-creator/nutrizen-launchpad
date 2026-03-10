@@ -102,6 +102,18 @@ DISCLAIMER TEXT (always use this exact French text, adapt only the topic):
 conseil médical ou diététique personnalisé. Consultez un professionnel de santé 
 pour toute question relative à votre alimentation ou santé."
 
+CRITICAL FORMATTING RULES — NEVER VIOLATE:
+1. Do NOT start the article with the title. The title is stored separately
+   and will be rendered by the frontend. Starting the body with the title
+   causes it to appear twice on the page.
+2. Do NOT include a cover image or any image tag at the very top of the
+   article body. The cover image is stored separately in image_url and will
+   be rendered by the frontend. Including it in the body causes it to appear twice.
+3. Start the article body DIRECTLY with the first paragraph of introductory
+   text — no title, no image, no preamble heading.
+4. You may use images within the body to illustrate specific points,
+   but NEVER as the very first element.
+
 STRICT RULES:
 - Output ONLY valid JSON matching the schema. No markdown wrapper.
 - content_html must be valid, well-formed HTML (no unclosed tags).
