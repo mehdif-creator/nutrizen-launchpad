@@ -475,7 +475,7 @@ export default function Profile() {
           niveau_activite: activityLevel,
           objectif_principal: mainGoal,
           repas_par_jour: mealsPerDay,
-          temps_preparation: prepTime,
+          temps_preparation: prepTimeCode,
           batch_cooking: batchCooking,
           niveau_cuisine: cookingLevel,
           ustensiles: availableTools,
