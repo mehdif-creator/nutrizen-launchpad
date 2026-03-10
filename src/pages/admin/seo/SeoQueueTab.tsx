@@ -160,6 +160,9 @@ export function SeoQueueTab() {
           </div>
         </div>
         <div className="flex items-center gap-3 flex-wrap text-sm">
+          <Button variant="outline" size="sm" onClick={() => fetchItems()} title="Actualiser">
+            <RefreshCw className="h-3.5 w-3.5 mr-1" /> Actualiser
+          </Button>
           <Badge variant="secondary">{stats.pending} en attente</Badge>
           <Badge variant="default" className="bg-blue-600">{stats.processing} en cours</Badge>
           <Badge variant="default" className="bg-green-600">{stats.done} terminé{stats.done !== 1 ? 's' : ''}</Badge>
