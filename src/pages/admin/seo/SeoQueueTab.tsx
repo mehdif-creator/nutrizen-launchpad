@@ -7,11 +7,12 @@ import { Switch } from '@/components/ui/switch';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Loader2, Play, Trash2, RotateCcw, RefreshCw, ExternalLink, Upload, Clock, AlertCircle,
+  Loader2, Play, Trash2, RotateCcw, RefreshCw, ExternalLink, Upload, Clock, AlertCircle, Square, CirclePlay,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useArticleQueue } from './useArticleQueue';
 import { useQueueProcessor } from './useQueueProcessor';
+import type { QueueStatus } from './useQueueProcessor';
 import { AUTO_PIPELINE_LABELS } from './types';
 import { cn } from '@/lib/utils';
 
@@ -26,7 +27,7 @@ const CATEGORIES = [
 
 export function SeoQueueTab() {
   const { items, loading, stats, fetchItems, bulkInsert, deleteItem, retryItem, clearDone } = useArticleQueue();
-  const { autoMode, toggleAutoMode, processing, processItem } = useQueueProcessor(fetchItems);
+  const { autoMode, toggleAutoMode, processing, processItem, isRunning, stopProcessing } = useQueueProcessor(fetchItems);
   const { toast } = useToast();
 
   const [bulkText, setBulkText] = useState('');
@@ -58,8 +59,36 @@ export function SeoQueueTab() {
 
   const estimatedHours = stats.pending * 8;
 
+  // Queue status indicator
+  const queueStatus: QueueStatus = isRunning ? 'running' : stats.pending === 0 && stats.processing === 0 ? 'empty' : 'stopped';
+
   return (
     <div className="space-y-6">
+      {/* Status indicator */}
+      <div className="flex items-center gap-3">
+        {queueStatus === 'running' && (
+          <div className="flex items-center gap-2 text-sm font-medium text-green-700 dark:text-green-400">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500" />
+            </span>
+            Génération en cours…
+          </div>
+        )}
+        {queueStatus === 'stopped' && (
+          <div className="flex items-center gap-2 text-sm font-medium text-destructive">
+            <span className="inline-flex rounded-full h-3 w-3 bg-destructive" />
+            Génération stoppée
+          </div>
+        )}
+        {queueStatus === 'empty' && !isRunning && (
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <span className="inline-flex rounded-full h-3 w-3 bg-muted-foreground/40" />
+            File vide
+          </div>
+        )}
+      </div>
+
       {/* Processing progress card */}
       {processing.item && (
         <Card className="p-4 border-primary/30 bg-primary/5">
@@ -151,13 +180,35 @@ export function SeoQueueTab() {
 
       {/* Controls bar */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <Switch checked={autoMode} onCheckedChange={toggleAutoMode} />
             <span className="text-sm font-medium">
               {autoMode ? 'Traitement auto activé' : 'Traitement auto désactivé'}
             </span>
           </div>
+          {/* Prominent stop/resume button */}
+          {autoMode || isRunning ? (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={stopProcessing}
+              className="gap-1.5"
+            >
+              <Square className="h-3.5 w-3.5" />
+              Stopper la génération
+            </Button>
+          ) : stats.pending > 0 ? (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => toggleAutoMode(true)}
+              className="gap-1.5 bg-green-600 hover:bg-green-700"
+            >
+              <CirclePlay className="h-3.5 w-3.5" />
+              Reprendre la génération
+            </Button>
+          ) : null}
         </div>
         <div className="flex items-center gap-3 flex-wrap text-sm">
           <Button variant="outline" size="sm" onClick={() => fetchItems()} title="Actualiser">

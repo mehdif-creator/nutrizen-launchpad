@@ -16,6 +16,8 @@ export interface ProcessingState {
   startedAt: Date | null;
 }
 
+export type QueueStatus = 'running' | 'stopped' | 'empty';
+
 export function useQueueProcessor(refetchQueue: () => Promise<any>) {
   const [autoMode, setAutoMode] = useState(() => {
     try { return localStorage.getItem(LS_KEY) === 'true'; } catch { return false; }
@@ -25,6 +27,7 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
   });
   const abortRef = useRef(false);
   const runningRef = useRef(false);
+  const [isRunning, setIsRunning] = useState(false);
   const { toast } = useToast();
 
   const toggleAutoMode = useCallback((on: boolean) => {
@@ -33,6 +36,13 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
     if (!on) abortRef.current = true;
   }, []);
 
+  const stopProcessing = useCallback(async () => {
+    abortRef.current = true;
+    toggleAutoMode(false);
+    // If there's a processing item, it will finish its current step then stop.
+    // The runQueue loop handles resetting to pending if interrupted before completion.
+  }, [toggleAutoMode]);
+
   const processOneItem = useCallback(async (item: QueueItem) => {
     // Mark as processing
     await supabase
@@ -40,7 +50,7 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
       .update({ status: 'processing', started_at: new Date().toISOString() } as any)
       .eq('id', item.id);
 
-    // 1. Create seo_articles row
+    // 1. Create seo_articles row with clean category
     const cleanCategory = item.category ? getCategoryLabel(item.category) : null;
     const { data: articleRow, error: insertErr } = await supabase
       .from('seo_articles')
@@ -113,6 +123,7 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
   const runQueue = useCallback(async () => {
     if (runningRef.current) return;
     runningRef.current = true;
+    setIsRunning(true);
     abortRef.current = false;
 
     try {
@@ -142,7 +153,21 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
           await processOneItem(nextItem);
           toast({ title: `✅ « ${nextItem.topic} » terminé` });
         } catch (err: any) {
-          if (err.message === 'Queue processing stopped') break;
+          if (err.message === 'Queue processing stopped') {
+            // Reset item to pending if it was interrupted
+            await supabase
+              .from('article_queue' as any)
+              .update({ status: 'pending', started_at: null } as any)
+              .eq('id', nextItem.id)
+              .eq('status', 'processing');
+
+            const pendingResult = await refetchQueue();
+            const pendingCount = Array.isArray(pendingResult)
+              ? pendingResult.filter((i: any) => i.status === 'pending').length
+              : 0;
+            toast({ title: `⏹ Génération stoppée — ${pendingCount} article(s) restant(s) en attente` });
+            break;
+          }
           console.error('[queue] Error processing item:', err);
           await supabase
             .from('article_queue' as any)
@@ -165,6 +190,7 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
     } finally {
       setProcessing({ item: null, stepIndex: -1, stepLabel: '', startedAt: null });
       runningRef.current = false;
+      setIsRunning(false);
     }
   }, [processOneItem, refetchQueue, toast]);
 
@@ -205,5 +231,5 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
     }
   }, [processOneItem, refetchQueue, toast]);
 
-  return { autoMode, toggleAutoMode, processing, processItem, isRunning: runningRef.current };
+  return { autoMode, toggleAutoMode, processing, processItem, isRunning, stopProcessing };
 }
