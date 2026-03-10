@@ -838,7 +838,7 @@ Deno.serve(async (req) => {
           menuItems.push({
             weekly_menu_id: menu.menu_id,
             recipe_id: meal.recipe_id,
-            day_of_week: dayIndex,
+            day_of_week: dayIndex + 1,
             meal_slot: slot === 'lunch' ? 'dejeuner' : 'diner',
             target_servings: meal.servings_used || meal.base_servings || 1,
             portion_factor: meal.portion_factor || 1,
