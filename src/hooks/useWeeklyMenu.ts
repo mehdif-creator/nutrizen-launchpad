@@ -97,6 +97,7 @@ async function fetchWeeklyMenu(userId: string): Promise<WeeklyMenu | null> {
     created_at: data.created_at,
     updated_at: data.updated_at,
     used_fallback: data.used_fallback,
+    needs_regeneration: data.needs_regeneration ?? false,
     household: payload?.household,
   };
 }
