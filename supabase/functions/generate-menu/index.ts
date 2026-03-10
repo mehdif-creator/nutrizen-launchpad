@@ -494,7 +494,7 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
     if (authError || !user) throw new Error("Invalid token");
 
-    console.log(`[generate-menu] Processing request for user: ${redactId(user.id)}`);
+    console.log(`[generate-menu] ── START ── user=${redactId(user.id)} (full_id=${user.id})`);
 
     // Rate limiting
     const rl = await checkRateLimit(supabaseClient, {
@@ -536,7 +536,7 @@ Deno.serve(async (req) => {
 
     // ── BUILD USER CONTEXT ──
     const ctx = await buildUserContext(supabaseClient, user.id);
-    console.log(`[generate-menu] User context loaded`);
+    console.log(`[generate-menu] User context loaded. Profile keys: ${Object.keys(ctx.profile).join(',') || '(empty)'}. Habits keys: ${Object.keys(ctx.habits).join(',') || '(empty)'}. MealsConfig count: ${ctx.mealsConfig.length}. Allergies keys: ${Object.keys(ctx.allergies).join(',') || '(empty)'}. FoodStyle keys: ${Object.keys(ctx.foodStyle).join(',') || '(empty)'}. Nutrition keys: ${Object.keys(ctx.nutrition).join(',') || '(empty)'}. Household keys: ${Object.keys(ctx.household).join(',') || '(empty)'}`);
 
     // Determine meals per day and which meals to generate
     const mealsPerDay = ctx.habits?.meals_per_day ?? ctx.legacyPreferences?.repas_par_jour ?? ctx.legacyProfile?.meals_per_day ?? 2;
@@ -644,6 +644,8 @@ Deno.serve(async (req) => {
 
     // ── BUILD PROMPT & CALL AI ──
     const { system, user: userPrompt } = buildMenuPrompt(ctx, mealSlots, recentRecipeNames);
+    console.log(`[generate-menu] Prompt length: system=${system.length} chars, user=${userPrompt.length} chars`);
+    console.log(`[generate-menu] Prompt preview (first 500): ${userPrompt.substring(0, 500)}`);
     console.log(`[generate-menu] Calling AI for menu generation...`);
 
     let aiResponse: any;
@@ -665,12 +667,13 @@ Deno.serve(async (req) => {
       throw e;
     }
 
+    console.log(`[generate-menu] AI response received. Keys: ${Object.keys(aiResponse || {}).join(',')}`);
     if (!aiResponse?.menu || !Array.isArray(aiResponse.menu)) {
       console.error('[generate-menu] Invalid AI response structure:', JSON.stringify(aiResponse).substring(0, 500));
       throw new Error('Invalid AI response format');
     }
 
-    console.log(`[generate-menu] AI returned ${aiResponse.menu.length} days`);
+    console.log(`[generate-menu] AI returned ${aiResponse.menu.length} days, first day repas count: ${aiResponse.menu[0]?.repas?.length ?? 0}`);
 
     // ── PARTIE 5 — POST-GENERATION VALIDATION ──
     const validatedMenu: any[] = [];
@@ -811,11 +814,11 @@ Format attendu (JSON uniquement, sans markdown) :
       .single();
 
     if (menuError) {
-      console.error("[generate-menu] Error upserting menu:", menuError);
-      throw new Error("Failed to save menu");
+      console.error("[generate-menu] Error upserting menu:", JSON.stringify(menuError));
+      throw new Error(`Failed to save menu: ${menuError.message || menuError.code || JSON.stringify(menuError)}`);
     }
 
-    console.log(`[generate-menu] Menu saved: ${menu.menu_id}`);
+    console.log(`[generate-menu] ✅ Menu saved: menu_id=${menu.menu_id}, week_start=${weekStartStr}`);
 
     // ── CLEAN UP OLD MENU ITEMS ──
     // AI-generated menus store all data in the payload JSONB column.
@@ -901,13 +904,14 @@ Format attendu (JSON uniquement, sans markdown) :
     );
 
   } catch (error) {
-    console.error("[generate-menu] Error:", error);
+    console.error("[generate-menu] ❌ FATAL ERROR:", error);
+    console.error("[generate-menu] Error type:", typeof error, "name:", (error as any)?.name, "message:", (error as any)?.message, "code:", (error as any)?.code);
     if (supabaseClient) {
       await logEdgeFunctionError('generate-menu', error).catch(() => {});
     }
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ success: false, error: errorMessage, message: errorMessage }),
       { headers: { ...corsHeaders, ...getSecurityHeaders(), "Content-Type": "application/json" }, status: 400 }
     );
   }
