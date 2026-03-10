@@ -3347,6 +3347,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_generated_recipes: {
+        Row: {
+          generated_at: string
+          id: string
+          meal_type: string
+          menu_id: string | null
+          recipe_name: string
+          user_id: string
+          week_start: string | null
+        }
+        Insert: {
+          generated_at?: string
+          id?: string
+          meal_type: string
+          menu_id?: string | null
+          recipe_name: string
+          user_id: string
+          week_start?: string | null
+        }
+        Update: {
+          generated_at?: string
+          id?: string
+          meal_type?: string
+          menu_id?: string | null
+          recipe_name?: string
+          user_id?: string
+          week_start?: string | null
+        }
+        Relationships: []
+      }
       user_household: {
         Row: {
           adults_count: number | null
@@ -3923,6 +3953,7 @@ export type Database = {
           created_at: string | null
           id: string | null
           menu_id: string
+          needs_regeneration: boolean | null
           payload: Json
           updated_at: string | null
           used_fallback: string | null
@@ -3933,6 +3964,7 @@ export type Database = {
           created_at?: string | null
           id?: string | null
           menu_id?: string
+          needs_regeneration?: boolean | null
           payload?: Json
           updated_at?: string | null
           used_fallback?: string | null
@@ -3943,6 +3975,7 @@ export type Database = {
           created_at?: string | null
           id?: string | null
           menu_id?: string
+          needs_regeneration?: boolean | null
           payload?: Json
           updated_at?: string | null
           used_fallback?: string | null
