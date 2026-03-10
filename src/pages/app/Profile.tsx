@@ -349,9 +349,6 @@ export default function Profile() {
         updated_at: now,
       }));
 
-      // Delete old meals config then insert new ones
-      const deleteMeals = supabase.from('user_meals_config').delete().eq('user_id', user.id);
-
       const results = await Promise.all([
         supabase.from('user_profile').upsert({
           user_id: user.id,
@@ -363,7 +360,7 @@ export default function Profile() {
           weight_deadline: weightDeadline || null,
           activity_level: activityLevel || null,
           sport_frequency: sportFrequency || null,
-          medical_conditions: medicalConditions.length > 0 ? medicalConditions : null,
+          medical_conditions: medicalCodes.length > 0 ? medicalCodes : null,
           updated_at: now,
         }, { onConflict: 'user_id' }),
 
@@ -379,7 +376,7 @@ export default function Profile() {
           user_id: user.id,
           meals_per_day: mealsPerDay,
           appetite_size: appetiteSize || null,
-          prep_time: prepTime ? [prepTime] : null,
+          prep_time: prepTimeCode ? [prepTimeCode] : null,
           batch_cooking: batchCooking || null,
           cooking_level: cookingLevel || null,
           cooking_frequency: null,
@@ -447,8 +444,6 @@ export default function Profile() {
           sport_advice: sportAdvice,
           updated_at: now,
         }, { onConflict: 'user_id' }),
-
-        deleteMeals,
       ]);
 
       // Check for errors
@@ -458,7 +453,8 @@ export default function Profile() {
         throw new Error(errors[0].error!.message);
       }
 
-      // Insert meals config after delete
+      // Upsert meals config: delete old then insert new (sequential for atomicity)
+      await supabase.from('user_meals_config').delete().eq('user_id', user.id);
       if (mealsUpserts.length > 0) {
         const { error: mealsErr } = await supabase.from('user_meals_config').insert(mealsUpserts);
         if (mealsErr) {
