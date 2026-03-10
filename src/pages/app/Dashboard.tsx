@@ -699,6 +699,7 @@ export default function Dashboard() {
                         recipe_id: dayData.dinner.recipe_id,
                         title: dayData.dinner.title,
                         image_url: dayData.dinner.image_url,
+                        image_path: dayData.dinner.image_path,
                         prep_min: dayData.dinner.prep_min,
                         total_min: dayData.dinner.total_min,
                         calories: dayData.dinner.calories,
