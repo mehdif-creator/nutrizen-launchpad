@@ -19,6 +19,15 @@ function formatDateFr(dateStr: string | null) {
   });
 }
 
+function calculateReadTime(content: string): number {
+  const wordCount = content
+    .replace(/<[^>]*>/g, '')
+    .replace(/[#*`_~]/g, '')
+    .split(/\s+/)
+    .filter(w => w.length > 0).length;
+  return Math.max(1, Math.round(wordCount / 200));
+}
+
 function useArticleSeoHead(article: ReturnType<typeof useBlogArticleBySlug>['article']) {
   useEffect(() => {
     if (!article) return;
@@ -142,7 +151,6 @@ export default function BlogPost() {
   }
 
   const outline = article.outline as any;
-  const readingTime = outline?.reading_time_minutes;
   const h1 = outline?.h1 || article.title;
   const images = article.image_urls as any[];
   const heroImage = images?.[0]?.url || images?.[0] || article.cover_url;
@@ -167,19 +175,13 @@ export default function BlogPost() {
     );
   }
 
-  // --- Sanitize: strip duplicate hero image at start of body ---
-  if (heroImage) {
-    // Strip leading <figure>...<img src="heroImage">...</figure> or standalone <img>
-    const imgEscaped = heroImage.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    rawHtml = rawHtml.replace(
-      new RegExp(`^\\s*<figure[^>]*>\\s*<img[^>]*src=["']${imgEscaped}["'][^>]*/?>\\s*(?:<figcaption[^>]*>.*?</figcaption>\\s*)?</figure>\\s*`, 'is'),
-      ''
-    );
-    rawHtml = rawHtml.replace(
-      new RegExp(`^\\s*<img[^>]*src=["']${imgEscaped}["'][^>]*/?>\\s*`, 'i'),
-      ''
-    );
-  }
+  // --- Sanitize: strip ANY leading image at start of body ---
+  // Strip leading <figure>...<img>...</figure>
+  rawHtml = rawHtml.replace(/^\s*<figure[^>]*>\s*<img[^>]*\/?>\s*(?:<figcaption[^>]*>.*?<\/figcaption>\s*)?<\/figure>\s*/is, '');
+  // Strip leading <p><img></p>
+  rawHtml = rawHtml.replace(/^\s*<p>\s*<img[^>]*\/?>\s*<\/p>\s*/i, '');
+  // Strip leading standalone <img>
+  rawHtml = rawHtml.replace(/^\s*<img[^>]*\/?>\s*/i, '');
   // Strip leading markdown image syntax
   rawHtml = rawHtml.replace(/^\s*!\[.*?\]\(.*?\)\s*/, '');
 
@@ -262,7 +264,7 @@ export default function BlogPost() {
             </h1>
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
               <span>📅 {formatDateFr(article.published_at)}</span>
-              {readingTime && <span>⏱ {readingTime} min de lecture</span>}
+              <span>⏱ {calculateReadTime(htmlContent)} min de lecture</span>
               <span>✍️ {article.author || 'NutriZen'}</span>
             </div>
           </header>
