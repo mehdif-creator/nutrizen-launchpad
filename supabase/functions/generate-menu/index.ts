@@ -108,7 +108,7 @@ async function buildUserContext(supabaseClient: any, userId: string): Promise<Us
 // PARTIE 2 — validateRecipe() — HARD CONSTRAINTS
 // ══════════════════════════════════════════════════════════════
 
-// Diet exclusion map
+// Diet exclusion map (normalized keys — no accents, lowercase)
 const DIET_EXCLUSIONS: Record<string, string[]> = {
   'vegan': ['viande', 'poulet', 'bœuf', 'porc', 'agneau', 'canard', 'dinde', 'poisson', 'saumon', 'thon', 'crevette', 'crabe', 'homard', 'fruits de mer', 'œuf', 'oeuf', 'lait', 'crème', 'beurre', 'fromage', 'yaourt', 'miel', 'gélatine'],
   'vegetarien': ['viande', 'poulet', 'bœuf', 'porc', 'agneau', 'canard', 'dinde', 'poisson', 'saumon', 'thon', 'crevette', 'crabe', 'homard', 'fruits de mer', 'gélatine'],
@@ -116,6 +116,27 @@ const DIET_EXCLUSIONS: Record<string, string[]> = {
   'halal': ['porc', 'jambon', 'bacon', 'lard', 'saucisson', 'chorizo', 'vin', 'bière', 'alcool', 'rhum', 'cognac', 'calvados'],
   'casher': ['porc', 'jambon', 'bacon', 'lard', 'saucisson', 'chorizo', 'crevette', 'crabe', 'homard', 'fruits de mer'],
 };
+
+// Normalize diet type from form labels to diet exclusion keys
+function normalizeDietType(raw: string): string {
+  const normalized = (raw || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // strip accents
+  const map: Record<string, string> = {
+    'vegetalien': 'vegan',
+    'vegan': 'vegan',
+    'vegetarien': 'vegetarien',
+    'pescetarien': 'pescetarien',
+    'halal': 'halal',
+    'casher': 'casher',
+    'omnivore': 'omnivore',
+    'flexitarien': 'omnivore',
+    'keto': 'omnivore',
+    'low carb': 'omnivore',
+    'paleo': 'omnivore',
+    'mediterraneen': 'omnivore',
+  };
+  return map[normalized] || normalized;
+}
 
 // Medical condition restrictions
 const MEDICAL_EXCLUSIONS: Record<string, string[]> = {
@@ -149,7 +170,8 @@ function validateRecipe(recipe: GeneratedRecipe, ctx: UserContext): { valid: boo
   }
 
   // 2.2 Diet type
-  const dietType = (ctx.foodStyle?.diet_type || ctx.legacyPreferences?.type_alimentation || '').toLowerCase();
+  const rawDietType = (ctx.foodStyle?.diet_type || ctx.legacyPreferences?.type_alimentation || '');
+  const dietType = normalizeDietType(rawDietType);
   const dietExclusions = DIET_EXCLUSIONS[dietType] || [];
   for (const excl of dietExclusions) {
     if (allText.includes(excl)) {
@@ -203,7 +225,7 @@ function getCurrentSeason(): string {
 
 function buildMenuPrompt(ctx: UserContext, mealSlots: { type: string; portions: number; who_eats: string }[], recentRecipeNames: string[]): { system: string; user: string } {
   // Resolve values with fallback to legacy
-  const dietType = ctx.foodStyle?.diet_type || ctx.legacyPreferences?.type_alimentation || 'omnivore';
+  const dietType = normalizeDietType(ctx.foodStyle?.diet_type || ctx.legacyPreferences?.type_alimentation || 'omnivore');
   const allergyList: AllergyEntry[] = Array.isArray(ctx.allergies?.allergies) ? ctx.allergies.allergies : [];
   const allergyDesc = allergyList.length > 0
     ? allergyList.map(a => `${a.name} (${a.type}${a.traces_ok ? ', traces OK' : ', traces interdites'})`).join(', ')
