@@ -74,6 +74,39 @@ export type Database = {
         }
         Relationships: []
       }
+      affiliate_commissions: {
+        Row: {
+          affiliate_code: string
+          commission_amount_cents: number
+          created_at: string
+          id: string
+          referred_user_id: string
+          status: string
+          stripe_invoice_id: string
+          subscription_amount_cents: number
+        }
+        Insert: {
+          affiliate_code: string
+          commission_amount_cents: number
+          created_at?: string
+          id?: string
+          referred_user_id: string
+          status?: string
+          stripe_invoice_id: string
+          subscription_amount_cents: number
+        }
+        Update: {
+          affiliate_code?: string
+          commission_amount_cents?: number
+          created_at?: string
+          id?: string
+          referred_user_id?: string
+          status?: string
+          stripe_invoice_id?: string
+          subscription_amount_cents?: number
+        }
+        Relationships: []
+      }
       affiliate_conversions: {
         Row: {
           affiliate_user_id: string
@@ -140,6 +173,65 @@ export type Database = {
           period_end?: string | null
           period_start?: string | null
           status?: string
+        }
+        Relationships: []
+      }
+      affiliate_referrals: {
+        Row: {
+          affiliate_code: string
+          converted: boolean
+          created_at: string
+          id: string
+          referred_user_id: string | null
+          stripe_customer_id: string | null
+        }
+        Insert: {
+          affiliate_code: string
+          converted?: boolean
+          created_at?: string
+          id?: string
+          referred_user_id?: string | null
+          stripe_customer_id?: string | null
+        }
+        Update: {
+          affiliate_code?: string
+          converted?: boolean
+          created_at?: string
+          id?: string
+          referred_user_id?: string | null
+          stripe_customer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_referrals_affiliate_code_fkey"
+            columns: ["affiliate_code"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["affiliate_code"]
+          },
+        ]
+      }
+      affiliates: {
+        Row: {
+          affiliate_code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          user_id: string
+        }
+        Insert: {
+          affiliate_code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          user_id: string
+        }
+        Update: {
+          affiliate_code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          user_id?: string
         }
         Relationships: []
       }

@@ -19,7 +19,6 @@ import {
   TrendingUp,
   Copy,
   Check,
-  Sparkles,
   Gift,
   Target,
   BarChart3,
@@ -49,7 +48,7 @@ function generateAffiliateCode(): string {
   return code;
 }
 
-function anonymizeEmail(userId: string): string {
+function anonymizeUserId(userId: string): string {
   return userId.slice(0, 3) + '***';
 }
 
@@ -76,8 +75,9 @@ export default function Affiliate() {
   const initAffiliate = async () => {
     if (!user) return;
     try {
-      // Check if affiliate exists
-      const { data: existing } = await supabase
+      const db = supabase as any;
+
+      const { data: existing } = await db
         .from('affiliates')
         .select('affiliate_code, is_active')
         .eq('user_id', user.id)
@@ -87,17 +87,15 @@ export default function Affiliate() {
       if (existing) {
         code = existing.affiliate_code;
       } else {
-        // Auto-create affiliate row
         code = generateAffiliateCode();
-        const { error } = await supabase.from('affiliates').insert({
+        const { error } = await db.from('affiliates').insert({
           user_id: user.id,
           affiliate_code: code,
         });
         if (error) {
-          // Retry with different code on unique conflict
           if (error.code === '23505') {
             code = generateAffiliateCode();
-            await supabase.from('affiliates').insert({
+            await db.from('affiliates').insert({
               user_id: user.id,
               affiliate_code: code,
             });
@@ -117,8 +115,9 @@ export default function Affiliate() {
   };
 
   const loadStats = async (code: string) => {
-    // Active conversions
-    const { data: referrals } = await supabase
+    const db = supabase as any;
+
+    const { data: referrals } = await db
       .from('affiliate_referrals')
       .select('id')
       .eq('affiliate_code', code)
@@ -126,8 +125,7 @@ export default function Affiliate() {
 
     setActiveConversions(referrals?.length || 0);
 
-    // All commissions
-    const { data: allCommissions } = await supabase
+    const { data: allCommissions } = await db
       .from('affiliate_commissions')
       .select('*')
       .eq('affiliate_code', code)
@@ -136,7 +134,6 @@ export default function Affiliate() {
     if (allCommissions) {
       setCommissions(allCommissions as Commission[]);
 
-      // Monthly commission (current month, pending)
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       const monthly = allCommissions
@@ -144,11 +141,9 @@ export default function Affiliate() {
         .reduce((sum: number, c: any) => sum + c.commission_amount_cents, 0);
       setMonthlyCommission(monthly / 100);
 
-      // Total earnings
       const total = allCommissions.reduce((sum: number, c: any) => sum + c.commission_amount_cents, 0);
       setTotalEarnings(total / 100);
 
-      // Pending payout
       const pending = allCommissions
         .filter((c: any) => c.status === 'pending')
         .reduce((sum: number, c: any) => sum + c.commission_amount_cents, 0);
@@ -186,13 +181,13 @@ export default function Affiliate() {
 
       <main className="flex-1 py-12 md:py-20">
         <div className="container px-4">
-          {/* Hero Section */}
+          {/* Hero */}
           <div className="max-w-4xl mx-auto text-center mb-12">
             <h1 className="text-3xl md:text-5xl font-bold mb-4">
               Programme d'Affiliation NutriZen
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-6">
-              Gagne jusqu'à <span className="font-bold text-[#0D7377]">20% de commission</span> sur chaque abonnement payé
+              Gagne jusqu'à <span className="font-bold text-primary">20% de commission</span> sur chaque abonnement payé
             </p>
             {!user && (
               <Button size="lg" onClick={() => navigate('/auth/login')}>
@@ -255,7 +250,7 @@ export default function Affiliate() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <Euro className="h-4 w-4 text-[#0D7377]" />
+                    <Euro className="h-4 w-4 text-primary" />
                     <span className="font-medium">Affiliation (partenaires)</span>
                   </div>
                   <ul className="text-muted-foreground space-y-1 ml-6">
@@ -287,7 +282,7 @@ export default function Affiliate() {
                     className="flex-shrink-0"
                   >
                     {copied ? (
-                      <Check className="h-4 w-4 text-[#0D7377]" />
+                      <Check className="h-4 w-4 text-primary" />
                     ) : (
                       <Copy className="h-4 w-4" />
                     )}
@@ -311,51 +306,51 @@ export default function Affiliate() {
                 <Card className="p-6">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm text-muted-foreground">Commission mensuelle</p>
-                    <TrendingUp className="h-5 w-5 text-[#0D7377]" />
+                    <TrendingUp className="h-5 w-5 text-primary" />
                   </div>
-                  <p className="text-3xl font-bold text-[#0D7377]">{monthlyCommission.toFixed(2)}€</p>
+                  <p className="text-3xl font-bold text-primary">{monthlyCommission.toFixed(2)}€</p>
                   <p className="text-xs text-muted-foreground mt-1">Ce mois-ci (en attente)</p>
                 </Card>
 
                 <Card className="p-6">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm text-muted-foreground">Gains totaux</p>
-                    <Euro className="h-5 w-5 text-[#0D7377]" />
+                    <Euro className="h-5 w-5 text-primary" />
                   </div>
-                  <p className="text-3xl font-bold text-[#0D7377]">{totalEarnings.toFixed(2)}€</p>
+                  <p className="text-3xl font-bold text-primary">{totalEarnings.toFixed(2)}€</p>
                   <p className="text-xs text-muted-foreground mt-1">Tous les temps</p>
                 </Card>
 
                 <Card className="p-6">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm text-muted-foreground">En attente de paiement</p>
-                    <BarChart3 className="h-5 w-5 text-[#E07B39]" />
+                    <BarChart3 className="h-5 w-5 text-accent" />
                   </div>
-                  <p className="text-3xl font-bold text-[#E07B39]">{pendingPayout.toFixed(2)}€</p>
+                  <p className="text-3xl font-bold text-accent">{pendingPayout.toFixed(2)}€</p>
                   <p className="text-xs text-muted-foreground mt-1">À verser</p>
                 </Card>
               </div>
 
               {/* Commission Info */}
-              <Card className="p-6 bg-gradient-to-br from-[#0D7377]/5 to-emerald-500/5">
+              <Card className="p-6 bg-gradient-to-br from-primary/5 to-accent/5">
                 <h3 className="font-semibold mb-3">Conditions de commission</h3>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
-                    <span className="text-[#0D7377]">✓</span>
+                    <span className="text-primary">✓</span>
                     <span>
                       Tu gagnes <strong className="text-foreground">20% de commission</strong> sur
                       chaque abonnement payé via ton lien
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-[#0D7377]">✓</span>
+                    <span className="text-primary">✓</span>
                     <span>
                       La commission est <strong className="text-foreground">récurrente</strong> :
                       tu continues à gagner tant que l'abonnement reste actif
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-[#0D7377]">✓</span>
+                    <span className="text-primary">✓</span>
                     <span>
                       Paiements mensuels via virement bancaire (minimum 50€)
                     </span>
@@ -389,12 +384,12 @@ export default function Affiliate() {
                               })}
                             </TableCell>
                             <TableCell className="font-mono text-sm">
-                              {anonymizeEmail(c.referred_user_id)}
+                              {anonymizeUserId(c.referred_user_id)}
                             </TableCell>
                             <TableCell className="text-right">
                               {(c.subscription_amount_cents / 100).toFixed(2)}€
                             </TableCell>
-                            <TableCell className="text-right font-medium text-[#0D7377]">
+                            <TableCell className="text-right font-medium text-primary">
                               {(c.commission_amount_cents / 100).toFixed(2)}€
                             </TableCell>
                             <TableCell className="text-right">
@@ -402,8 +397,8 @@ export default function Affiliate() {
                                 variant={c.status === 'paid' ? 'default' : 'secondary'}
                                 className={
                                   c.status === 'paid'
-                                    ? 'bg-[#0D7377] text-white'
-                                    : 'bg-[#E07B39]/10 text-[#E07B39] border-[#E07B39]/30'
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-accent/10 text-accent border-accent/30'
                                 }
                               >
                                 {c.status === 'paid' ? 'Payé' : 'En attente'}

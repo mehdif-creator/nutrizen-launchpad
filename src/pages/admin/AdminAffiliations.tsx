@@ -38,35 +38,36 @@ export default function AdminAffiliations() {
   const loadAffiliates = async () => {
     setLoading(true);
     try {
-      // Get all affiliates
-      const { data: affs, error } = await supabase
+      const db = supabase as any;
+
+      const { data: affs, error } = await db
         .from('affiliates')
         .select('affiliate_code, user_id, is_active, created_at')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // For each affiliate, get commissions and profile email
       const rows: AffiliateRow[] = [];
       for (const aff of affs || []) {
-        // Get email from profiles
         const { data: profile } = await supabase
           .from('profiles')
           .select('email')
           .eq('id', aff.user_id)
           .maybeSingle();
 
-        // Get commissions
-        const { data: comms } = await supabase
+        const { data: comms } = await db
           .from('affiliate_commissions')
           .select('commission_amount_cents, status')
           .eq('affiliate_code', aff.affiliate_code);
 
-        const total = comms?.reduce((s, c) => s + c.commission_amount_cents, 0) || 0;
-        const pending = comms?.filter(c => c.status === 'pending').reduce((s, c) => s + c.commission_amount_cents, 0) || 0;
+        const total = comms?.reduce((s: number, c: any) => s + c.commission_amount_cents, 0) || 0;
+        const pending = comms?.filter((c: any) => c.status === 'pending').reduce((s: number, c: any) => s + c.commission_amount_cents, 0) || 0;
 
         rows.push({
-          ...aff,
+          affiliate_code: aff.affiliate_code,
+          user_id: aff.user_id,
+          is_active: aff.is_active,
+          created_at: aff.created_at,
           email: profile?.email || 'N/A',
           total_commissions: total,
           pending_amount: pending,
@@ -85,9 +86,7 @@ export default function AdminAffiliations() {
   const markAsPaid = async (affiliateCode: string) => {
     setPaying(affiliateCode);
     try {
-      // Use service role via RPC or direct update
-      // Since admin has service_role through ProtectedRoute, we update directly
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('affiliate_commissions')
         .update({ status: 'paid' })
         .eq('affiliate_code', affiliateCode)
@@ -149,10 +148,10 @@ export default function AdminAffiliations() {
                         {aff.is_active ? 'Actif' : 'Inactif'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right font-medium text-[#0D7377]">
+                    <TableCell className="text-right font-medium text-primary">
                       {(aff.total_commissions / 100).toFixed(2)}€
                     </TableCell>
-                    <TableCell className="text-right font-medium text-[#E07B39]">
+                    <TableCell className="text-right font-medium text-accent">
                       {(aff.pending_amount / 100).toFixed(2)}€
                     </TableCell>
                     <TableCell className="text-right">
