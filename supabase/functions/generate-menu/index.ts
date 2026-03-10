@@ -809,7 +809,7 @@ Deno.serve(async (req) => {
             effective_size: effectivePortions,
           },
           medical_conditions: ctx.profile?.medical_conditions ?? [],
-          ai_generated: true,
+          ai_generated: false,
         },
         used_fallback: null,
         needs_regeneration: false,
