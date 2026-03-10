@@ -320,9 +320,13 @@ function buildMenuPrompt(ctx: UserContext, mealSlots: { type: string; portions: 
   }
 
   // Meal slots description
-  const mealSlotsDesc = mealSlots.map(s =>
-    `${s.type === 'dejeuner' ? 'Déjeuner' : 'Dîner'} : ${s.portions} portions — qui mange : ${s.who_eats}`
-  ).join('\n');
+  const mealSlotsDesc = mealSlots.map(s => {
+    let desc = `${s.type === 'dejeuner' ? 'Déjeuner' : 'Dîner'} : ${s.portions} portions — qui mange : ${s.who_eats}`;
+    if (s.batch_cooking) {
+      desc += '\n  → Ce repas doit être en batch cooking : proposer une recette qui se conserve 3-4 jours au réfrigérateur et peut être préparée en grande quantité. Indiquer "batch_cooking" dans les tags.';
+    }
+    return desc;
+  }).join('\n');
 
   // Recent recipes for non-repetition
   const recentRecipesStr = recentRecipeNames.length > 0
