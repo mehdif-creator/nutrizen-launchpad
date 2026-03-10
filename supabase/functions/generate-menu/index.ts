@@ -205,7 +205,8 @@ Deno.serve(async (req) => {
       console.log(`[generate-menu] Medical conditions: ${eff.medicalConditions.length} condition(s) noted`);
     }
 
-    // Decide which pricing key applies for this user
+    // Determine actual slots: skip meals where generate_recipe=false
+    const mealsPerDay = eff.mealsPerDay;
     const menuFeatureKey = mealsPerDay >= 2 ? 'generate_week_2' : 'generate_week_1';
     let menuCost = mealsPerDay >= 2 ? 11 : 6;
 
