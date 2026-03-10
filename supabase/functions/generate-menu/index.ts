@@ -224,7 +224,7 @@ function getCurrentSeason(): string {
   return 'hiver';
 }
 
-function buildMenuPrompt(ctx: UserContext, mealSlots: { type: string; portions: number; who_eats: string }[], recentRecipeNames: string[]): { system: string; user: string } {
+function buildMenuPrompt(ctx: UserContext, mealSlots: { type: string; portions: number; who_eats: string; batch_cooking: boolean }[], recentRecipeNames: string[]): { system: string; user: string } {
   // Resolve values with fallback to legacy
   const dietType = normalizeDietType(ctx.foodStyle?.diet_type || ctx.legacyPreferences?.type_alimentation || 'omnivore');
   const allergyList: AllergyEntry[] = Array.isArray(ctx.allergies?.allergies) ? ctx.allergies.allergies : [];
