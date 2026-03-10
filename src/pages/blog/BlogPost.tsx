@@ -349,7 +349,7 @@ export default function BlogPost() {
                         <div className="p-4">
                           {ra.cluster_context && (
                             <span className="inline-block text-xs font-semibold uppercase tracking-wide text-primary bg-primary/10 px-2 py-0.5 rounded-full mb-2">
-                              {ra.cluster_context}
+                              {getCategoryLabel(ra.cluster_context)}
                             </span>
                           )}
                           <h3 className="font-semibold text-sm mb-1 line-clamp-2">{raTitle}</h3>

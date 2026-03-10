@@ -41,9 +41,10 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
       .eq('id', item.id);
 
     // 1. Create seo_articles row
+    const cleanCategory = item.category ? getCategoryLabel(item.category) : null;
     const { data: articleRow, error: insertErr } = await supabase
       .from('seo_articles')
-      .insert({ keyword: item.topic, cluster_context: item.category || null })
+      .insert({ keyword: item.topic, cluster_context: cleanCategory })
       .select('id')
       .single();
 

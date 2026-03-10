@@ -307,7 +307,7 @@ function ArticleCard({ article, searchQuery }: { article: BlogArticle; searchQue
   const [imgError, setImgError] = useState(false);
   const title = getTitle(article);
   const excerpt = getExcerpt(article);
-  const category = article.cluster_context || article.tags?.[0] || 'Nutrition';
+  const category = getCategoryLabel(article.cluster_context || article.tags?.[0]);
   const readingTime = getReadingTime(article);
 
   // Fix 1: Parse image_urls safely
