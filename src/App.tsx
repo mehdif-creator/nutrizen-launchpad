@@ -201,7 +201,7 @@ const App = () => {
         <Route path="/affiliate" element={<Affiliate />} />
         <Route path="/post-checkout" element={<PostCheckout />} />
         <Route path="/post-checkout-profile" element={<ProtectedRoute skipOnboardingCheck><PostCheckoutProfile /></ProtectedRoute>} />
-        <Route path="/credits" element={<Credits />} />
+        <Route path="/credits" element={<Navigate to="/app" replace />} />
         <Route path="/a-propos" element={<About />} />
         <Route path="/about" element={<About />} />
 
