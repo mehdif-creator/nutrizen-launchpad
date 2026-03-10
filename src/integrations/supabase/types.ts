@@ -235,6 +235,56 @@ export type Database = {
         }
         Relationships: []
       }
+      article_queue: {
+        Row: {
+          article_id: string | null
+          category: string | null
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          priority: number | null
+          started_at: string | null
+          status: string
+          target_keyword: string | null
+          topic: string
+        }
+        Insert: {
+          article_id?: string | null
+          category?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          priority?: number | null
+          started_at?: string | null
+          status?: string
+          target_keyword?: string | null
+          topic: string
+        }
+        Update: {
+          article_id?: string | null
+          category?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          priority?: number | null
+          started_at?: string | null
+          status?: string
+          target_keyword?: string | null
+          topic?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "article_queue_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "seo_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       automation_jobs: {
         Row: {
           created_at: string
