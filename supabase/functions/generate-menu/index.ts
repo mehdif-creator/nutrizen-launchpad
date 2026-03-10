@@ -494,7 +494,7 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
     if (authError || !user) throw new Error("Invalid token");
 
-    console.log(`[generate-menu] Processing request for user: ${redactId(user.id)}`);
+    console.log(`[generate-menu] ── START ── user=${redactId(user.id)} (full_id=${user.id})`);
 
     // Rate limiting
     const rl = await checkRateLimit(supabaseClient, {
