@@ -237,13 +237,13 @@ export default function ScanRepas() {
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/30">
       <AppHeader />
 
-      <main className="flex-1 container py-8 max-w-5xl">
+      <main className="flex-1 container py-6 md:py-8 px-4 max-w-5xl">
         {/* Hero */}
-        <div className="text-center mb-12 animate-fade-in">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-primary/80 to-accent bg-clip-text text-transparent">
+        <div className="text-center mb-8 md:mb-12 animate-fade-in">
+          <h1 className="text-[clamp(1.5rem,4vw,3rem)] md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-primary/80 to-accent bg-clip-text text-transparent">
             Analyse ton repas en 1 clic 🍽️
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
             Prends une photo de ton repas et découvre instantanément ses apports nutritionnels.
           </p>
           <div className="flex items-center justify-center gap-2 mt-4 text-sm text-muted-foreground bg-muted/50 px-4 py-2 rounded-full w-fit mx-auto">
