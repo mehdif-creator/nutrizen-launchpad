@@ -890,16 +890,15 @@ Deno.serve(async (req) => {
     console.log(`[generate-menu] Dinner recipes: ${dinnerRecipes.map((r: any) => r.title).join(", ")}`);
 
 
-    // Build weekly menu with portion factors for BOTH lunch and dinner
+    // Build weekly menu with per-meal portion factors
     const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
-    const roundedServings = Math.max(1, Math.round(effectiveHouseholdSize));
     
-    // Helper to build a meal entry
+    // Helper to build a meal entry with per-meal portions
     const buildMealEntry = (recipe: any, dayIndex: number, mealType: 'lunch' | 'dinner') => {
-      // Use recipe.servings (what ingredients are written for, usually 1 person)
-      // NOT base_servings (which is a batch/yield field, often 4)
       const recipeServings = recipe.servings || 1;
-      const portionFactor = effectiveHouseholdSize / recipeServings;
+      // Use per-meal portions from user_meals_config if available
+      const mealPortions = mealType === 'lunch' ? lunchPortions : dinnerPortions;
+      const portionFactor = mealPortions / recipeServings;
       
       return {
         recipe_id: recipe.id,
@@ -912,27 +911,35 @@ Deno.serve(async (req) => {
         carbs_g: Math.round((recipe.carbs_g || 0) * portionFactor),
         fats_g: Math.round((recipe.fats_g || 0) * portionFactor),
         portion_factor: portionFactor,
-        servings_used: roundedHouseholdServings,
+        servings_used: Math.max(1, Math.round(mealPortions)),
         base_servings: recipeServings,
+        generate_recipe: mealType === 'lunch' ? generateLunch : generateDinner,
       };
     };
     
-    // Build days with dinner always, lunch only if meals_per_day >= 2
+    // Build days: skip recipe generation for meals where generate_recipe=false
     const days = weekdays.map((dayName, index) => {
       const dinnerRecipe = dinnerRecipes[index];
-      const entry: any = {
-        day: dayName,
-        dinner: buildMealEntry(dinnerRecipe, index, 'dinner'),
-      };
+      const entry: any = { day: dayName };
+      
+      if (generateDinner && dinnerRecipe) {
+        entry.dinner = buildMealEntry(dinnerRecipe, index, 'dinner');
+      } else {
+        entry.dinner = { skip: true, reason: dinnerConfig?.location || 'restaurant' };
+      }
+      
       if (mealsPerDay >= 2 && lunchRecipes[index]) {
-        entry.lunch = buildMealEntry(lunchRecipes[index], index, 'lunch');
+        if (generateLunch) {
+          entry.lunch = buildMealEntry(lunchRecipes[index], index, 'lunch');
+        } else {
+          entry.lunch = { skip: true, reason: lunchConfig?.location || 'restaurant' };
+        }
       }
       return entry;
     });
 
     console.log(`[generate-menu] Upserting menu for week starting: ${weekStartStr}`);
 
-    // Upsert weekly menu with fallback tracking and household info
     const { data: menu, error: menuError } = await supabaseClient
       .from("user_weekly_menus")
       .upsert({
@@ -941,10 +948,12 @@ Deno.serve(async (req) => {
         payload: { 
           days,
           household: {
-            adults: householdAdults,
-            children: householdChildren,
+            adults: eff.householdAdults,
+            children: eff.householdChildren,
+            children_ages: eff.childrenAges,
             effective_size: effectiveHouseholdSize
-          }
+          },
+          medical_conditions: eff.medicalConditions,
         },
         used_fallback: usedFallback
       }, {
