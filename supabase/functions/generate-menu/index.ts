@@ -467,257 +467,231 @@ Deno.serve(async (req) => {
         console.log(`[generate-menu] Will filter out recipes with ingredient_keys overlapping: [${userRestrictionKeys.join(", ")}]`);
       }
 
-      if (preferences) {
+      // Apply hard filters using unified eff.* object
+      {
         // Legacy allergen check (keep for recipes without ingredient_keys)
-        if (preferences.allergies && Array.isArray(preferences.allergies) && preferences.allergies.length > 0) {
-          const userAllergens = preferences.allergies.map((a: string) => allergenToKeyMap[a] || a.toLowerCase());
-          query = query.not("allergens", "cs", `{${userAllergens.join(",")}}`);
-          console.log(`[generate-menu] Legacy allergen exclusions: ${userAllergens.join(", ")}`);
+        const allergyNames = eff.allergiesRaw
+          ? (eff.allergiesRaw as any[]).map((a: any) => {
+              const name = typeof a === 'string' ? a : a.name;
+              return allergenToKeyMap[name] || (name || '').toLowerCase();
+            })
+          : (eff.allergiesFlat || []).map((a: string) => allergenToKeyMap[a] || a.toLowerCase());
+        if (allergyNames.length > 0) {
+          query = query.not("allergens", "cs", `{${allergyNames.join(",")}}`);
         }
 
-        // ALWAYS enforce appliance constraints (but allow recipes with no appliances specified)
-        // Check both appliances_owned AND ustensiles (Profile page stores in ustensiles)
-        const ownedAppliances = [
-          ...(preferences.appliances_owned || []),
-          ...(preferences.ustensiles || []),
-        ];
+        // Appliance constraints
+        const ownedAppliances = eff.availableTools || [];
         const hasAirfryer = ownedAppliances.some((a: string) => 
           a.toLowerCase().replace(/\s/g, '') === 'airfryer' || 
           a.toLowerCase() === 'air fryer'
         );
         if (!hasAirfryer) {
-          // appliances is text[] — use {value} syntax (no quotes)
           query = query.not("appliances", "cs", "{airfryer}");
-          // Also filter cooking_method text[] (confirmed populated for airfryer recipes)
           query = query.not("cooking_method", "cs", "{airfryer}");
-          // Fallback: ingredients_text for any untagged recipes
           query = query.not("ingredients_text", "ilike", "%airfryer%");
-          console.log(`[generate-menu] Excluding airfryer recipes (array + cooking_method + text fallback)`);
+          console.log(`[generate-menu] Excluding airfryer recipes`);
         }
 
-        // ── HARD FILTER: Dairy exclusion ──────────────────────────
-        // produits_laitiers = "Sans" → exclude all dairy
-        if (preferences.produits_laitiers === 'Sans') {
+        // HARD FILTER: Dairy exclusion
+        if (eff.dairyPreference === 'Sans' || eff.dairyPreference === 'sans') {
           if (!userRestrictionKeys.includes('dairy')) {
             userRestrictionKeys.push('dairy');
-            console.log(`[generate-menu] Hard filter: dairy excluded (produits_laitiers=Sans)`);
+            console.log(`[generate-menu] Hard filter: dairy excluded`);
           }
         }
 
-        // ── HARD FILTER: Spice level ──────────────────────────────
-        // spice_level in DB: "doux", "moyen", "épicé"
-        // Profile values: "Doux", "Moyen", "Épicé", "Très épicé"
-        if (preferences.niveau_epices) {
-          const spice = preferences.niveau_epices.toLowerCase();
+        // HARD FILTER: Spice level
+        if (eff.spiceLevel) {
+          const spice = eff.spiceLevel.toLowerCase();
           if (spice === 'doux' || spice === 'sans épices') {
-            // Only allow "doux" recipes
             query = query.eq("spice_level", "doux");
-            console.log(`[generate-menu] Hard filter: spice_level=doux only`);
           } else if (spice === 'moyen') {
-            // Allow "doux" and "moyen"
             query = query.in("spice_level", ["doux", "moyen"]);
-            console.log(`[generate-menu] Hard filter: spice_level doux+moyen only`);
           }
-          // "Épicé" and "Très épicé" → no restriction
         }
 
-        // ── HARD FILTER: autres_allergies free text (porc etc.) ───
-        // Already handled via restriction_dictionary above
-        // (no change needed here, already implemented)
+        // Resolve prep time from new tables (array) or legacy (string)
+        const firstPrepTime = eff.prepTime?.[0] ?? preferences?.temps_preparation ?? null;
 
         // F0: Strict filters
         if (fallbackLevel === 0) {
-          // Filter by prep time
-          if (preferences.temps_preparation) {
+          if (firstPrepTime) {
             let maxPrepTime = 60;
-            if (preferences.temps_preparation === "<10 min") maxPrepTime = 10;
-            else if (preferences.temps_preparation === "10-20 min") maxPrepTime = 20;
-            else if (preferences.temps_preparation === "20-40 min") maxPrepTime = 40;
+            if (firstPrepTime === "<10 min" || firstPrepTime === '15min') maxPrepTime = 15;
+            else if (firstPrepTime === "10-20 min" || firstPrepTime === '15_30min') maxPrepTime = 30;
+            else if (firstPrepTime === "20-40 min" || firstPrepTime === '30_45min') maxPrepTime = 45;
             query = query.lte("prep_time_min", maxPrepTime);
-            console.log(`[generate-menu] Max prep time: ${maxPrepTime} min`);
-          }
 
-          // Filter by total time
-          if (preferences.temps_preparation) {
             let maxTotalTime = 90;
-            if (preferences.temps_preparation === "<10 min") maxTotalTime = 15;
-            else if (preferences.temps_preparation === "10-20 min") maxTotalTime = 30;
-            else if (preferences.temps_preparation === "20-40 min") maxTotalTime = 60;
+            if (firstPrepTime === "<10 min" || firstPrepTime === '15min') maxTotalTime = 20;
+            else if (firstPrepTime === "10-20 min" || firstPrepTime === '15_30min') maxTotalTime = 45;
+            else if (firstPrepTime === "20-40 min" || firstPrepTime === '30_45min') maxTotalTime = 60;
             query = query.lte("total_time_min", maxTotalTime);
-            console.log(`[generate-menu] Max total time: ${maxTotalTime} min`);
           }
 
-          // Filter by calories if range provided
-          if (preferences.objectif_calorique) {
+          // Calorie filter: precise target_kcal from new tables, or legacy range
+          if (eff.targetKcal && eff.targetKcal > 0) {
+            const perMeal = Math.round(eff.targetKcal / Math.max(mealsPerDay, 1));
+            const margin = Math.round(perMeal * 0.25);
+            query = query.gte("calories_kcal", perMeal - margin).lte("calories_kcal", perMeal + margin);
+            console.log(`[generate-menu] Calorie per meal: ${perMeal}±${margin} kcal (from target_kcal)`);
+          } else if (eff.caloricGoal) {
+            const goalMap: Record<string, [number, number]> = {
+              'hypocalorique': [200, 500],
+              'equilibre': [400, 700],
+              'hypercalorique': [500, 900],
+            };
+            const [minCal, maxCal] = goalMap[eff.caloricGoal] || [0, 10000];
+            if (minCal > 0) {
+              query = query.gte("calories_kcal", minCal).lte("calories_kcal", maxCal);
+            }
+          } else if (eff.objectifCalorique) {
             const calorieMap: Record<string, [number, number]> = {
               "1200-1500 kcal": [300, 500],
               "1500-1800 kcal": [375, 600],
               "1800-2100 kcal": [450, 700],
               "2100+ kcal": [525, 900]
             };
-            const [minCal, maxCal] = calorieMap[preferences.objectif_calorique] || [0, 10000];
+            const [minCal, maxCal] = calorieMap[eff.objectifCalorique] || [0, 10000];
             query = query.gte("calories_kcal", minCal).lte("calories_kcal", maxCal);
-            console.log(`[generate-menu] Calorie range: ${minCal}-${maxCal} kcal`);
           }
 
-          // Filter by minimum proteins
-          if (preferences.apport_proteines_g_kg && preferences.poids_actuel_kg) {
-            const minProteins = Math.round((preferences.apport_proteines_g_kg * preferences.poids_actuel_kg) / 3);
+          // Protein filter
+          if (eff.proteinGPerDay && eff.proteinGPerDay > 0) {
+            const minProteins = Math.round(eff.proteinGPerDay / Math.max(mealsPerDay, 1));
             query = query.gte("proteins_g", minProteins);
-            console.log(`[generate-menu] Min proteins: ${minProteins}g per meal`);
+          } else if (eff.apportProteinesGKg && eff.currentWeight) {
+            const minProteins = Math.round((eff.apportProteinesGKg * eff.currentWeight) / 3);
+            query = query.gte("proteins_g", minProteins);
           }
 
-          // Filter by diet type — validate against allowlist to prevent PostgREST injection
-          const rawDiet = (preferences.type_alimentation ?? '').toLowerCase().trim();
+          // Diet type
+          const rawDiet = (eff.dietType ?? '').toLowerCase().trim();
           const safeDiet = ALLOWED_DIET_TYPES.has(rawDiet) ? rawDiet : null;
           if (safeDiet && safeDiet !== 'omnivore') {
             query = query.or(`diet_type.eq.${safeDiet},diet_type.is.null`);
-            console.log(`[generate-menu] Diet type: ${safeDiet}`);
           }
 
-          // Filter by cuisine preference
-          if (preferences.cuisine_preferee && Array.isArray(preferences.cuisine_preferee) && preferences.cuisine_preferee.length > 0) {
-            query = query.in("cuisine_type", preferences.cuisine_preferee);
-            console.log(`[generate-menu] Preferred cuisines: ${preferences.cuisine_preferee.join(", ")}`);
+          // Cuisine preference
+          if (eff.favoriteCuisines && eff.favoriteCuisines.length > 0) {
+            query = query.in("cuisine_type", eff.favoriteCuisines);
           }
 
-          // Filter by difficulty level
-          if (preferences.niveau_cuisine) {
+          // Difficulty level
+          if (eff.cookingLevel) {
             const difficultyMap: Record<string, string> = {
-              "Débutant": "beginner",
-              "Intermédiaire": "intermediate",
-              "Expert": "expert"
+              "Débutant": "beginner", "debutant": "beginner",
+              "Intermédiaire": "intermediate", "intermediaire": "intermediate",
+              "Expert": "expert", "avance": "expert",
             };
-            const difficulty = difficultyMap[preferences.niveau_cuisine];
-            if (difficulty) {
-              query = query.eq("difficulty_level", difficulty);
-              console.log(`[generate-menu] Difficulty: ${difficulty}`);
-            }
+            const difficulty = difficultyMap[eff.cookingLevel];
+            if (difficulty) query = query.eq("difficulty_level", difficulty);
           }
 
-          // ── SOFT FILTER: Cooking method preference ────────────────
-          if (preferences.mode_cuisson_prefere && 
-              Array.isArray(preferences.mode_cuisson_prefere) && 
-              preferences.mode_cuisson_prefere.length > 0) {
+          // Cooking method preference
+          const cookMethods = eff.modeCuissonPrefere?.length > 0
+            ? eff.modeCuissonPrefere
+            : (eff.cookingMethod ? [eff.cookingMethod] : []);
+          if (cookMethods.length > 0) {
             const cookingMap: Record<string, string[]> = {
-              'Grillé':  ['grillé', 'plancha', 'barbecue', 'rôti'],
-              'Mijoté':  ['mijoté', 'ragoût', 'braisé', 'curry'],
-              'Vapeur':  ['vapeur'],
-              'Cru':     ['cru', 'mariné'],
+              'Grillé': ['grillé','plancha','barbecue','rôti'], 'grille': ['grillé','plancha','barbecue','rôti'],
+              'Mijoté': ['mijoté','ragoût','braisé','curry'], 'mijote': ['mijoté','ragoût','braisé','curry'],
+              'Vapeur': ['vapeur'], 'vapeur': ['vapeur'],
+              'Cru': ['cru','mariné'], 'cru': ['cru','mariné'],
             };
             const dbMethods: string[] = [];
-            for (const pref of preferences.mode_cuisson_prefere) {
+            for (const pref of cookMethods) {
               const mapped = cookingMap[pref];
               if (mapped) dbMethods.push(...mapped);
             }
             if (dbMethods.length > 0) {
               const orFilter = dbMethods.map(m => `cooking_method.cs.{${m}}`).join(',');
               query = query.or(orFilter);
-              console.log(`[generate-menu] F0: Cooking methods: ${dbMethods.join(', ')}`);
             }
           }
 
-          // ── SOFT FILTER: Salt level ───────────────────────────────
-          if (preferences.niveau_sel) {
-            const sel = preferences.niveau_sel.toLowerCase();
-            if (sel === 'sans sel') {
-              query = query.eq("salt_level", "bas");
-              console.log(`[generate-menu] F0: salt_level=bas (sans sel)`);
-            } else if (sel === 'peu salé') {
-              query = query.in("salt_level", ["bas", "normal"]);
-              console.log(`[generate-menu] F0: salt_level bas+normal (peu salé)`);
-            }
+          // Salt level
+          if (eff.niveauSel) {
+            const sel = eff.niveauSel.toLowerCase();
+            if (sel === 'sans sel') query = query.eq("salt_level", "bas");
+            else if (sel === 'peu salé') query = query.in("salt_level", ["bas", "normal"]);
           }
 
-          // ── SOFT FILTER: High fiber recipes ──────────────────────
-          if (preferences.recettes_riches_fibres === true) {
+          // High fiber
+          if (eff.trackFiber === true) {
             query = query.not("ingredients_text", "ilike", "%-")
               .or("ingredient_keywords.cs.{high_fiber},ingredients_text.ilike.%légumineuse%,ingredients_text.ilike.%lentille%,ingredients_text.ilike.%haricot%,ingredients_text.ilike.%quinoa%");
-            console.log(`[generate-menu] F0: High fiber filter active`);
           }
 
-          // ── SOFT FILTER: Macro distribution ──────────────────────
-          if (preferences.repartition_macros) {
-            const macros = preferences.repartition_macros.toLowerCase();
-            if (macros === 'pauvre en glucides' || macros === 'low carb') {
-              query = query.lte("carbs_g", 35);
-              console.log(`[generate-menu] F0: Low carb filter: carbs_g <= 35`);
-            } else if (macros === 'riche en protéines') {
-              query = query.gte("proteins_g", 25);
-              console.log(`[generate-menu] F0: High protein filter: proteins_g >= 25`);
-            }
+          // Macro distribution
+          if (eff.macrosCustom && eff.macroCarbsPct < 30) {
+            query = query.lte("carbs_g", 35);
+          } else if (eff.repartitionMacros) {
+            const macros = eff.repartitionMacros.toLowerCase();
+            if (macros === 'pauvre en glucides' || macros === 'low carb') query = query.lte("carbs_g", 35);
+            else if (macros === 'riche en protéines') query = query.gte("proteins_g", 25);
           }
 
-          // ── SOFT FILTER: Calorie objective alignment ──────────────
-          if (!preferences.objectif_calorique && preferences.objectif_principal) {
-            const obj = preferences.objectif_principal.toLowerCase();
-            if (obj.includes('perte') || obj.includes('poids')) {
-              query = query.lte("calories_kcal", 550);
-              console.log(`[generate-menu] F0: Low calorie bias (perte de poids): <= 550 kcal`);
-            } else if (obj.includes('muscle') || obj.includes('prise')) {
-              query = query.gte("calories_kcal", 450);
-              console.log(`[generate-menu] F0: High calorie bias (prise de muscle): >= 450 kcal`);
-            }
+          // Calorie objective alignment from mainGoal
+          if (!eff.targetKcal && !eff.objectifCalorique && eff.mainGoal) {
+            const obj = eff.mainGoal.toLowerCase();
+            if (obj.includes('perte') || obj.includes('poids')) query = query.lte("calories_kcal", 550);
+            else if (obj.includes('muscle') || obj.includes('prise')) query = query.gte("calories_kcal", 450);
           }
 
-          // ── SOFT FILTER: Limit added sugar ───────────────────────
-          if (preferences.limiter_sucre === true) {
+          // Limit added sugar
+          if (eff.reduceSugar === true) {
             query = query.not("ingredients_text", "ilike", "%sucre ajouté%");
             query = query.not("ingredients_text", "ilike", "%sirop%");
-            console.log(`[generate-menu] F0: Limiting added sugar recipes`);
           }
         }
         
-        // F1: Widen time constraints (+10 prep, +15 total)
+        // F1: Widen time constraints
         else if (fallbackLevel === 1) {
-          if (preferences.temps_preparation) {
+          if (firstPrepTime) {
             let maxPrepTime = 60;
-            if (preferences.temps_preparation === "<10 min") maxPrepTime = 20;
-            else if (preferences.temps_preparation === "10-20 min") maxPrepTime = 30;
-            else if (preferences.temps_preparation === "20-40 min") maxPrepTime = 50;
+            if (firstPrepTime === "<10 min" || firstPrepTime === '15min') maxPrepTime = 25;
+            else if (firstPrepTime === "10-20 min" || firstPrepTime === '15_30min') maxPrepTime = 40;
+            else if (firstPrepTime === "20-40 min" || firstPrepTime === '30_45min') maxPrepTime = 55;
             query = query.lte("prep_time_min", maxPrepTime);
-            console.log(`[generate-menu] F1: Relaxed prep time to ${maxPrepTime} min`);
-          }
 
-          if (preferences.temps_preparation) {
             let maxTotalTime = 90;
-            if (preferences.temps_preparation === "<10 min") maxTotalTime = 30;
-            else if (preferences.temps_preparation === "10-20 min") maxTotalTime = 45;
-            else if (preferences.temps_preparation === "20-40 min") maxTotalTime = 75;
+            if (firstPrepTime === "<10 min" || firstPrepTime === '15min') maxTotalTime = 35;
+            else if (firstPrepTime === "10-20 min" || firstPrepTime === '15_30min') maxTotalTime = 50;
+            else if (firstPrepTime === "20-40 min" || firstPrepTime === '30_45min') maxTotalTime = 75;
             query = query.lte("total_time_min", maxTotalTime);
-            console.log(`[generate-menu] F1: Relaxed total time to ${maxTotalTime} min`);
           }
 
-          // Keep other filters from F0 — validate against allowlist
-          const rawDietF1 = (preferences.type_alimentation ?? '').toLowerCase().trim();
+          const rawDietF1 = (eff.dietType ?? '').toLowerCase().trim();
           const safeDietF1 = ALLOWED_DIET_TYPES.has(rawDietF1) ? rawDietF1 : null;
           if (safeDietF1 && safeDietF1 !== 'omnivore') {
             query = query.or(`diet_type.eq.${safeDietF1},diet_type.is.null`);
           }
         }
         
-        // F2: Ignore diet tags but keep all other filters
+        // F2: Ignore diet tags
         else if (fallbackLevel === 2) {
           console.log(`[generate-menu] F2: Ignoring diet type filter`);
-          // Time filters relaxed like F1
-          if (preferences.temps_preparation) {
+          if (firstPrepTime) {
             let maxPrepTime = 60;
-            if (preferences.temps_preparation === "<10 min") maxPrepTime = 20;
-            else if (preferences.temps_preparation === "10-20 min") maxPrepTime = 30;
-            else if (preferences.temps_preparation === "20-40 min") maxPrepTime = 50;
+            if (firstPrepTime === "<10 min" || firstPrepTime === '15min') maxPrepTime = 25;
+            else if (firstPrepTime === "10-20 min" || firstPrepTime === '15_30min') maxPrepTime = 40;
+            else if (firstPrepTime === "20-40 min" || firstPrepTime === '30_45min') maxPrepTime = 55;
             query = query.lte("prep_time_min", maxPrepTime);
           }
         }
         
-        // F3: Ignore cuisines, courses, and meal types
+        // F3: Ignore cuisines, courses, meal types
         else if (fallbackLevel === 3) {
           console.log(`[generate-menu] F3: Ignoring cuisine, course, and meal type filters`);
-          // No additional filters - just exclusions and appliances
         }
         
-        // F4: Last resort - absolutely minimal filters
+        // F4: Last resort
         else if (fallbackLevel === 4) {
-          console.log(`[generate-menu] F4: Last resort - published recipes only with mandatory exclusions`);
+          console.log(`[generate-menu] F4: Last resort — published recipes only with mandatory exclusions`);
+        }
+      }
           // Only allergens, exclusions, and appliances enforced (already applied above)
           // This will match any published recipe that doesn't violate exclusions
         }
