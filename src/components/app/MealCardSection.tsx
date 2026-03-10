@@ -23,6 +23,7 @@ export interface MealConfig {
   membresSelectionnes: string[]; // for 'personnalise'
   portionsOverride: number | null;
   lieu: string;
+  batchCooking: boolean;
 }
 
 interface MealCardSectionProps {
