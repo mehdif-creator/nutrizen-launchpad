@@ -102,7 +102,7 @@ export default function PostCheckoutProfile() {
       
       // Redirect to dashboard after 2 seconds
       setTimeout(() => {
-        navigate('/app/meal-plan');
+        navigate('/app');
       }, 2000);
 
     } catch (error) {

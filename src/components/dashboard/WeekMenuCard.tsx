@@ -98,7 +98,7 @@ export function WeekMenuCard({
 
         {/* Action */}
         <div className="flex gap-2">
-          <Link to="/app/meal-plan" className="flex-1">
+          <Link to="/app" className="flex-1">
             <Button variant="outline" size="sm" className="w-full">
               Voir ma semaine
             </Button>
