@@ -115,8 +115,8 @@ export default function Dashboard() {
         date: dateStr,
         day_name: day.day || dayNames[index],
         day_index: index,
-        lunch: mapMeal(day.lunch, 0),
-        dinner: mapMeal(day.dinner, 1),
+        lunch: mapMeal(day.lunch),
+        dinner: mapMeal(day.dinner),
       };
     });
   }, [rpcWeeklyDays, menu, days]);

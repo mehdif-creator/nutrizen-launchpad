@@ -122,9 +122,10 @@ export default function RecipeDetail() {
           const titleFromId = decodeURIComponent(aiId.replace(/^ai-\d+-/, ''));
           if (meal.title === titleFromId || aiId === `ai-${days.indexOf(day)}-${meal.title}`) {
             setRecipe({
-              id: aiId,
+              id: meal.recipe_id || aiId,
               title: meal.title,
               image_url: meal.image_url || undefined,
+              image_path: meal.image_path || undefined,
               prep_time_min: meal.prep_min || meal.temps_preparation_min,
               total_time_min: meal.total_min || meal.temps_preparation_min,
               servings: meal.servings_used || meal.base_servings || meal.portions,
