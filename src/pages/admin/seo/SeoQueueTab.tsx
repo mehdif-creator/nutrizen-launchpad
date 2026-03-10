@@ -5,8 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Loader2, Play, Trash2, RotateCcw, ExternalLink, Upload, Clock, AlertCircle,
+  Loader2, Play, Trash2, RotateCcw, RefreshCw, ExternalLink, Upload, Clock, AlertCircle,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useArticleQueue } from './useArticleQueue';
