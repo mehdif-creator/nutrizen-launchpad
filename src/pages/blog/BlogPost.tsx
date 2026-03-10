@@ -252,11 +252,11 @@ export default function BlogPost() {
             <div className="flex gap-2 mb-4">
               {article.tags?.map((tag) => (
                 <Badge key={tag} className="bg-secondary text-secondary-foreground">
-                  {tag}
+                  {getCategoryLabel(tag)}
                 </Badge>
               )) || (
                 <Badge className="bg-secondary text-secondary-foreground">
-                  {article.cluster_context || 'Nutrition'}
+                  {getCategoryLabel(article.cluster_context)}
                 </Badge>
               )}
             </div>
