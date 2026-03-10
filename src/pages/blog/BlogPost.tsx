@@ -142,7 +142,6 @@ export default function BlogPost() {
   }
 
   const outline = article.outline as any;
-  const readingTime = outline?.reading_time_minutes;
   const h1 = outline?.h1 || article.title;
   const images = article.image_urls as any[];
   const heroImage = images?.[0]?.url || images?.[0] || article.cover_url;
