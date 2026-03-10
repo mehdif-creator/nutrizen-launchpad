@@ -175,19 +175,13 @@ export default function BlogPost() {
     );
   }
 
-  // --- Sanitize: strip duplicate hero image at start of body ---
-  if (heroImage) {
-    // Strip leading <figure>...<img src="heroImage">...</figure> or standalone <img>
-    const imgEscaped = heroImage.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    rawHtml = rawHtml.replace(
-      new RegExp(`^\\s*<figure[^>]*>\\s*<img[^>]*src=["']${imgEscaped}["'][^>]*/?>\\s*(?:<figcaption[^>]*>.*?</figcaption>\\s*)?</figure>\\s*`, 'is'),
-      ''
-    );
-    rawHtml = rawHtml.replace(
-      new RegExp(`^\\s*<img[^>]*src=["']${imgEscaped}["'][^>]*/?>\\s*`, 'i'),
-      ''
-    );
-  }
+  // --- Sanitize: strip ANY leading image at start of body ---
+  // Strip leading <figure>...<img>...</figure>
+  rawHtml = rawHtml.replace(/^\s*<figure[^>]*>\s*<img[^>]*\/?>\s*(?:<figcaption[^>]*>.*?<\/figcaption>\s*)?<\/figure>\s*/is, '');
+  // Strip leading <p><img></p>
+  rawHtml = rawHtml.replace(/^\s*<p>\s*<img[^>]*\/?>\s*<\/p>\s*/i, '');
+  // Strip leading standalone <img>
+  rawHtml = rawHtml.replace(/^\s*<img[^>]*\/?>\s*/i, '');
   // Strip leading markdown image syntax
   rawHtml = rawHtml.replace(/^\s*!\[.*?\]\(.*?\)\s*/, '');
 
