@@ -369,6 +369,7 @@ export default function Profile() {
         portions_manual: m.portionsOverride !== null,
         location: m.lieu,
         generate_recipe: m.lieu !== 'ecole' && m.lieu !== 'restaurant',
+        batch_cooking: m.batchCooking,
         updated_at: now,
       }));
 
