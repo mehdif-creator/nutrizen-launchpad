@@ -42,6 +42,7 @@ function defaultMeal(type: 'dejeuner' | 'diner'): MealConfig {
     membresSelectionnes: [],
     portionsOverride: null,
     lieu: 'maison',
+    batchCooking: false,
   };
 }
 
