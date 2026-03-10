@@ -295,7 +295,7 @@ export default function Dashboard() {
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
-        throw new Error("No session");
+        throw new Error("Session expirée. Reconnecte-toi.");
       }
 
       const { data, error } = await supabase.functions.invoke("generate-menu", {
@@ -304,13 +304,26 @@ export default function Dashboard() {
         },
       });
 
-      if (error) throw error;
+      // supabase.functions.invoke puts non-2xx responses in error.context
+      if (error) {
+        let errorMessage = error.message || "Erreur inconnue";
+        try {
+          if ((error as any).context) {
+            const body = await (error as any).context.json();
+            errorMessage = body?.message || body?.error || errorMessage;
+          }
+        } catch (_) { /* ignore parse error */ }
+        console.error("Error regenerating week:", { message: errorMessage, error });
+        toast({
+          title: "Génération impossible",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return;
+      }
 
       if (data?.success) {
-        toast({
-          title: "Menus générés avec succès",
-        });
-        // Explicitly invalidate all queries for immediate UI update
+        toast({ title: "Menus générés avec succès ✅" });
         invalidateAll();
       } else {
         toast({
@@ -323,7 +336,7 @@ export default function Dashboard() {
       console.error("Error regenerating week:", error);
       toast({
         title: "Erreur",
-        description: "Impossible de générer la semaine. Réessaie plus tard.",
+        description: error instanceof Error ? error.message : "Impossible de générer la semaine. Réessaie plus tard.",
         variant: "destructive",
       });
     } finally {

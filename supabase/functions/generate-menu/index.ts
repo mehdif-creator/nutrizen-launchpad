@@ -817,46 +817,16 @@ Format attendu (JSON uniquement, sans markdown) :
 
     console.log(`[generate-menu] Menu saved: ${menu.menu_id}`);
 
-    // ── SAVE MENU ITEMS ──
+    // ── CLEAN UP OLD MENU ITEMS ──
+    // AI-generated menus store all data in the payload JSONB column.
+    // We skip user_weekly_menu_items for AI menus because recipe_id is NOT NULL
+    // and AI recipes don't have DB recipe IDs.
     const { error: deleteError } = await supabaseClient
       .from("user_weekly_menu_items")
       .delete()
       .eq("weekly_menu_id", menu.menu_id);
     if (deleteError) console.error("[generate-menu] Error deleting old items:", deleteError);
-
-    const menuItems: any[] = [];
-    days.forEach((day: any, index: number) => {
-      const dayOfWeek = index + 1;
-      if (day.lunch) {
-        menuItems.push({
-          weekly_menu_id: menu.menu_id,
-          recipe_id: null,
-          day_of_week: dayOfWeek,
-          meal_slot: 'lunch',
-          target_servings: day.lunch.servings_used,
-          scale_factor: 1,
-          portion_factor: 1,
-        });
-      }
-      if (day.dinner) {
-        menuItems.push({
-          weekly_menu_id: menu.menu_id,
-          recipe_id: null,
-          day_of_week: dayOfWeek,
-          meal_slot: 'dinner',
-          target_servings: day.dinner.servings_used,
-          scale_factor: 1,
-          portion_factor: 1,
-        });
-      }
-    });
-
-    if (menuItems.length > 0) {
-      const { error: itemsError } = await supabaseClient
-        .from("user_weekly_menu_items")
-        .insert(menuItems);
-      if (itemsError) console.error("[generate-menu] Error inserting menu items:", itemsError);
-    }
+    console.log(`[generate-menu] Skipping user_weekly_menu_items insert (AI-generated, no recipe_id)`);
 
     // ── SAVE DAILY RECIPES ──
     const weekEndDate = new Date(weekStartStr + 'T00:00:00Z');
