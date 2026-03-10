@@ -146,8 +146,18 @@ Return only the JSON object.
 
     const draft = await callOpenAI(DRAFT_SYSTEM_PROMPT, userPrompt, 0.7, 8000);
 
-    // Replace CTA placeholders with actual HTML blocks
+    // --- Sanitize: strip duplicate title/image from generated body ---
     let finalHtml = draft.content_html || "";
+    const articleTitle = (article.outline as any)?.h1 || article.keyword || "";
+    if (articleTitle) {
+      const escaped = articleTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      finalHtml = finalHtml.replace(new RegExp(`^\\s*<(h[12])[^>]*>\\s*${escaped}\\s*<\\/\\1>\\s*`, 'i'), '');
+    }
+    // Strip leading <img> or <figure> with first image
+    finalHtml = finalHtml.replace(/^\s*<figure[^>]*>\s*<img[^>]*\/?>\s*(?:<figcaption[^>]*>.*?<\/figcaption>\s*)?<\/figure>\s*/is, '');
+    finalHtml = finalHtml.replace(/^\s*<img[^>]*\/?>\s*/i, '');
+
+    // Replace CTA placeholders with actual HTML blocks
     const ctaBlocks = (draft.cta_blocks as any[]) || [];
     const ctaMap: Record<string, any> = {};
     for (const block of ctaBlocks) {
