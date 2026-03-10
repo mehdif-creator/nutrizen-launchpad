@@ -225,7 +225,7 @@ function getCurrentSeason(): string {
 
 function buildMenuPrompt(ctx: UserContext, mealSlots: { type: string; portions: number; who_eats: string }[], recentRecipeNames: string[]): { system: string; user: string } {
   // Resolve values with fallback to legacy
-  const dietType = ctx.foodStyle?.diet_type || ctx.legacyPreferences?.type_alimentation || 'omnivore';
+  const dietType = normalizeDietType(ctx.foodStyle?.diet_type || ctx.legacyPreferences?.type_alimentation || 'omnivore');
   const allergyList: AllergyEntry[] = Array.isArray(ctx.allergies?.allergies) ? ctx.allergies.allergies : [];
   const allergyDesc = allergyList.length > 0
     ? allergyList.map(a => `${a.name} (${a.type}${a.traces_ok ? ', traces OK' : ', traces interdites'})`).join(', ')
