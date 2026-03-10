@@ -36,7 +36,7 @@ export function CreditsEconomyModal({
 
   const handleBuyCredits = () => {
     onOpenChange(false);
-    navigate('/credits');
+    navigate('/app');
   };
 
   return (

@@ -150,12 +150,12 @@ export const ValueStack = ({ onCtaClick }: ValueStackProps) => {
             </div>
 
             <Button
-              onClick={() => navigate('/credits')}
+              onClick={() => navigate('/auth/signup')}
               variant="outline"
               className="w-full border-accent text-accent hover:bg-accent/10"
               size="lg"
             >
-              Voir les packs Crédits Zen
+              Commencer gratuitement
             </Button>
           </Card>
         </div>

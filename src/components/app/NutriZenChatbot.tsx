@@ -170,7 +170,7 @@ export function NutriZenChatbot() {
         id: `credit-warn-${Date.now()}`,
         role: 'system-notice',
         mode,
-        content: `⚡ Crédits insuffisants. [Rechargez vos crédits](/credits) pour utiliser l'Assistant Nutrition.`,
+        content: `⚡ Crédits insuffisants. Contactez le support pour recharger vos crédits.`,
       }]);
       return;
     }

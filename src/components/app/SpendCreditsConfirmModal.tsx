@@ -110,7 +110,7 @@ export function SpendCreditsConfirmModal({
             <AlertDialogAction
               onClick={() => {
                 onOpenChange(false);
-                navigate('/credits');
+                navigate('/app');
               }}
               className="gap-2"
             >
