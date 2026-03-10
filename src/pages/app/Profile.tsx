@@ -475,17 +475,23 @@ export default function Profile() {
         description: 'Votre menu se régénère avec vos nouvelles préférences...',
       });
 
-      // Trigger menu regeneration
+      // Mark current menus as needing regeneration + trigger regeneration
       try {
         const { data: session } = await supabase.auth.getSession();
         if (session.session) {
+          // Flag existing menus as needing regeneration
+          await supabase
+            .from('user_weekly_menus')
+            .update({ needs_regeneration: true })
+            .eq('user_id', user.id);
+
           const { error: menuErr } = await supabase.functions.invoke('generate-menu', {
             headers: { Authorization: `Bearer ${session.session.access_token}` },
           });
           if (menuErr) {
             console.error('Edge Function error (generate-menu):', menuErr);
           } else {
-            toast({ title: '🎉 Menu mis à jour !', description: 'Votre menu hebdomadaire a été régénéré.' });
+            toast({ title: '🎉 Menu mis à jour !', description: 'Votre menu hebdomadaire a été régénéré avec vos nouvelles préférences.' });
           }
         }
       } catch (menuError) {
