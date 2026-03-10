@@ -4,7 +4,7 @@
  * Security: Auth required, strict CORS, Zod validation, credit debit
  */
 import { createClient } from '../_shared/deps.ts';
-import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { z } from 'npm:zod@3.22.4';
 import { getCorsHeaders } from '../_shared/security.ts';
 
 // Valid job types

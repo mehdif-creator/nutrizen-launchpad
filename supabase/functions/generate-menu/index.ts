@@ -1,5 +1,5 @@
 import { createClient } from '../_shared/deps.ts';
-import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { z } from "npm:zod@3.22.4";
 import { checkRateLimit, rateLimitExceededResponse } from '../_shared/rateLimit.ts';
 import { getCorsHeaders, getSecurityHeaders, logEdgeFunctionError } from '../_shared/security.ts';
 
