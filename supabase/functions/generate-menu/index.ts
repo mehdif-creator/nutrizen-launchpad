@@ -831,32 +831,8 @@ Format attendu (JSON uniquement, sans markdown) :
     if (deleteError) console.error("[generate-menu] Error deleting old items:", deleteError);
     console.log(`[generate-menu] Skipping user_weekly_menu_items insert (AI-generated, no recipe_id)`);
 
-    // ── SAVE DAILY RECIPES ──
-    const weekEndDate = new Date(weekStartStr + 'T00:00:00Z');
-    weekEndDate.setUTCDate(weekEndDate.getUTCDate() + 7);
-    const weekEndStr = weekEndDate.toISOString().split('T')[0];
-
-    await supabaseClient
-      .from("user_daily_recipes")
-      .delete()
-      .eq("user_id", user.id)
-      .gte("date", weekStartStr)
-      .lte("date", weekEndStr);
-
-    const dailyRecipes = days.map((day: any, index: number) => {
-      const dayDate = new Date(weekStartStr + 'T00:00:00Z');
-      dayDate.setUTCDate(dayDate.getUTCDate() + index);
-      return {
-        user_id: user.id,
-        date: dayDate.toISOString().split('T')[0],
-        lunch_recipe_id: null,
-        dinner_recipe_id: null,
-      };
-    });
-
-    await supabaseClient
-      .from("user_daily_recipes")
-      .upsert(dailyRecipes, { onConflict: 'user_id,date' });
+    // AI-generated menus: skip user_daily_recipes (recipe_ids are null, data lives in payload JSONB)
+    console.log(`[generate-menu] Skipping user_daily_recipes insert (AI-generated, no recipe_ids)`);
 
     // ── STORE GENERATED RECIPES FOR NON-REPETITION ──
     if (recipesToStore.length > 0) {

@@ -81,7 +81,11 @@ export default function Dashboard() {
   // Fallback: convert payload days to DayRecipes format for AI-generated menus
   // (RPC reads user_weekly_menu_items which is empty for AI menus)
   const weeklyDays = useMemo(() => {
-    if (rpcWeeklyDays.length > 0) return rpcWeeklyDays;
+    // RPC returns data from user_weekly_menu_items — only use if it has actual recipes
+    const rpcHasRecipes = rpcWeeklyDays.length > 0 && rpcWeeklyDays.some(d => d.lunch || d.dinner);
+    if (rpcHasRecipes) return rpcWeeklyDays;
+    
+    // Fallback: map from JSONB payload (AI-generated menus)
     if (!menu || !days || days.length === 0) return [];
     
     const weekStart = menu.week_start;
