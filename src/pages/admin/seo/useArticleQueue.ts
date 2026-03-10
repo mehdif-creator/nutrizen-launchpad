@@ -29,13 +29,15 @@ export function useArticleQueue() {
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data, error, count } = await supabase
       .from('article_queue')
-      .select('*')
+      .select('*', { count: 'exact' })
       .order('priority', { ascending: true })
       .order('created_at', { ascending: true });
     if (error) {
-      console.error('article_queue fetch error:', error);
+      console.error('article_queue fetch error:', error.message, error.details, error.hint);
+    } else {
+      console.log(`article_queue: fetched ${data?.length ?? 0} rows (count=${count})`);
     }
     setItems((data ?? []) as unknown as QueueItem[]);
     setLoading(false);
