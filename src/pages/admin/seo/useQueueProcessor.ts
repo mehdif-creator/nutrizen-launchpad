@@ -4,6 +4,7 @@ import { callEdgeFunction } from '@/lib/edgeFn';
 import { useToast } from '@/hooks/use-toast';
 import type { QueueItem } from './useArticleQueue';
 import { AUTO_PIPELINE_SEQUENCE, AUTO_PIPELINE_LABELS } from './types';
+import { getCategoryLabel } from '@/lib/categoryMapping';
 
 const LS_KEY = 'seo-queue-auto-processing';
 const DELAY_BETWEEN_ITEMS_MS = 30_000;
