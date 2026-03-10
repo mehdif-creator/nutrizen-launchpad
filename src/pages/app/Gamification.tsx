@@ -34,7 +34,7 @@ export default function Gamification() {
   }, [user?.id]);
 
   const handleBuyCredits = () => {
-    navigate('/pricing');
+    navigate('/app');
   };
 
   const isLoading = dashboardLoading || gamLoading;

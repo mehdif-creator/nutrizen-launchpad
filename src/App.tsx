@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { useReferralTracking } from '@/hooks/useReferralTracking';
@@ -33,7 +33,7 @@ const Gamification = lazy(() => import('./pages/app/Gamification'));
 const Onboarding = lazy(() => import('./pages/app/Onboarding'));
 const ShoppingList = lazy(() => import('./pages/app/ShoppingList'));
 const SupabaseDebug = lazy(() => import('./pages/app/SupabaseDebug'));
-const FamillePlus = lazy(() => import('./pages/app/FamillePlus'));
+
 const DayMenu = lazy(() => import('./pages/app/DayMenu'));
 const ScanBarcode = lazy(() => import('./pages/app/ScanBarcode'));
 
@@ -85,7 +85,7 @@ const Pro = lazy(() => import('./pages/Pro'));
 const Affiliate = lazy(() => import('./pages/Affiliate'));
 const PostCheckout = lazy(() => import('./pages/PostCheckout'));
 const PostCheckoutProfile = lazy(() => import('./pages/PostCheckoutProfile'));
-const Credits = lazy(() => import('./pages/Credits'));
+
 const About = lazy(() => import('./pages/About'));
 const PinterestOAuthCallback = lazy(() => import('./pages/oauth/PinterestOAuthCallback'));
 const SharedWeekPlan = lazy(() => import('./pages/share/SharedWeekPlan'));
@@ -135,10 +135,10 @@ const App = () => {
         <Route path="/app/recipes/:id" element={<ProtectedRoute><ErrorBoundary><RecipeDetail /></ErrorBoundary></ProtectedRoute>} />
         <Route path="/app/shopping-list" element={<ProtectedRoute><ErrorBoundary><ShoppingList /></ErrorBoundary></ProtectedRoute>} />
         <Route path="/app/supabase-debug" element={<ProtectedRoute requireAdmin><SupabaseDebug /></ProtectedRoute>} />
-        <Route path="/app/famille-plus" element={<ProtectedRoute><FamillePlus /></ProtectedRoute>} />
+        <Route path="/app/famille-plus" element={<Navigate to="/app" replace />} />
         <Route path="/app/day-menu/:date" element={<ProtectedRoute><DayMenu /></ProtectedRoute>} />
         <Route path="/app/scan-barcode" element={<ProtectedRoute><ErrorBoundary><ScanBarcode /></ErrorBoundary></ProtectedRoute>} />
-        <Route path="/pricing" element={<FamillePlus />} />
+        <Route path="/pricing" element={<Navigate to="/" replace />} />
 
         {/* Admin (Protected + Admin Only) */}
         <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
@@ -201,7 +201,7 @@ const App = () => {
         <Route path="/affiliate" element={<Affiliate />} />
         <Route path="/post-checkout" element={<PostCheckout />} />
         <Route path="/post-checkout-profile" element={<ProtectedRoute skipOnboardingCheck><PostCheckoutProfile /></ProtectedRoute>} />
-        <Route path="/credits" element={<Credits />} />
+        <Route path="/credits" element={<Navigate to="/app" replace />} />
         <Route path="/a-propos" element={<About />} />
         <Route path="/about" element={<About />} />
 
