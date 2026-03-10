@@ -77,6 +77,7 @@ export default function ShoppingList() {
     else setIsLoading(true);
 
     try {
+      // 1. Try the RPC (works for DB-backed menus with user_weekly_menu_items)
       const { data, error } = await supabase.rpc(
         'get_shopping_list_from_weekly_menu',
         { p_user_id: user.id, p_week_start: weekStart }
@@ -84,12 +85,45 @@ export default function ShoppingList() {
 
       if (error) throw error;
 
-      const rawItems: RawShoppingItem[] = (data || []).map((row: any) => ({
+      let rawItems: RawShoppingItem[] = (data || []).map((row: any) => ({
         ingredient_name: row.ingredient_name,
         total_quantity: row.total_quantity,
         unit: row.unit,
         formatted_display: row.formatted_display,
       }));
+
+      // 2. If RPC returned nothing, try extracting from AI menu payload
+      if (rawItems.length === 0) {
+        const { data: menuData } = await supabase
+          .from('user_weekly_menus')
+          .select('payload')
+          .eq('user_id', user.id)
+          .eq('week_start', weekStart)
+          .maybeSingle();
+
+        const payload = menuData?.payload as any;
+        if (payload?.ai_generated && payload?.days) {
+          const aiItems: RawShoppingItem[] = [];
+          for (const day of payload.days) {
+            for (const meal of [day.lunch, day.dinner]) {
+              if (!meal?.ingredients) continue;
+              for (const ing of meal.ingredients) {
+                const qty = parseFloat(ing.quantite) || 0;
+                const unit = ing.unite || '';
+                const name = ing.nom || '';
+                if (!name) continue;
+                aiItems.push({
+                  ingredient_name: name,
+                  total_quantity: qty,
+                  unit,
+                  formatted_display: qty > 0 ? `${qty} ${unit} ${name}`.trim() : name,
+                });
+              }
+            }
+          }
+          rawItems = aiItems;
+        }
+      }
 
       // Merge & deduplicate through the pipeline
       const merged = mergeShoppingItems(rawItems);
