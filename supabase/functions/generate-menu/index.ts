@@ -85,51 +85,128 @@ Deno.serve(async (req) => {
       new Date(subRow.trial_end) > now;
     const hasValidAccess = isActiveSub || isTrialing;
 
-    // Get user's household info for portion calculations (and fallback meals_per_day)
-    const { data: profileData, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('household_adults, household_children, kid_portion_ratio, meals_per_day')
-      .eq('id', user.id)
-      .single();
+    // ── Fetch all user data in parallel (new tables + legacy fallback) ──
+    const [
+      { data: profileData },
+      { data: preferences },
+      { data: userProfile },
+      { data: userObjectives },
+      { data: userEatingHabits },
+      { data: userMealsConfig },
+      { data: userAllergies },
+      { data: userFoodStyle },
+      { data: userNutritionGoals },
+      { data: userHousehold },
+      { data: userLifestyle },
+    ] = await Promise.all([
+      supabaseClient.from('profiles').select('household_adults, household_children, kid_portion_ratio, meals_per_day').eq('id', user.id).single(),
+      supabaseClient.from('preferences').select('*').eq('user_id', user.id).maybeSingle(),
+      supabaseClient.from('user_profile').select('*').eq('user_id', user.id).maybeSingle(),
+      supabaseClient.from('user_objectives').select('*').eq('user_id', user.id).maybeSingle(),
+      supabaseClient.from('user_eating_habits').select('*').eq('user_id', user.id).maybeSingle(),
+      supabaseClient.from('user_meals_config').select('*').eq('user_id', user.id),
+      supabaseClient.from('user_allergies').select('*').eq('user_id', user.id).maybeSingle(),
+      supabaseClient.from('user_food_style').select('*').eq('user_id', user.id).maybeSingle(),
+      supabaseClient.from('user_nutrition_goals').select('*').eq('user_id', user.id).maybeSingle(),
+      supabaseClient.from('user_household').select('*').eq('user_id', user.id).maybeSingle(),
+      supabaseClient.from('user_lifestyle').select('*').eq('user_id', user.id).maybeSingle(),
+    ]);
 
-    if (profileError) {
-      console.warn('[generate-menu] Could not fetch household info, using defaults:', profileError);
+    const hasNewTables = !!(userProfile || userEatingHabits || userAllergies || userFoodStyle);
+    console.log(`[generate-menu] Data sources: newTables=${hasNewTables}, legacyPrefs=${!!preferences}`);
+
+    // ── Build unified effective preferences from new tables, fallback to legacy ──
+    const eff = {
+      age: userProfile?.age ?? preferences?.age ?? null,
+      currentWeight: userProfile?.current_weight ?? preferences?.poids_actuel_kg ?? null,
+      medicalConditions: userProfile?.medical_conditions ?? [],
+      activityLevel: userProfile?.activity_level ?? preferences?.niveau_activite ?? null,
+
+      mainGoal: userObjectives?.main_goal ?? preferences?.objectif_principal ?? null,
+      mainBlockers: userObjectives?.main_blockers ?? [],
+
+      mealsPerDay: userEatingHabits?.meals_per_day ?? preferences?.repas_par_jour ?? profileData?.meals_per_day ?? 2,
+      appetiteSize: userEatingHabits?.appetite_size ?? null,
+      prepTime: userEatingHabits?.prep_time ?? (preferences?.temps_preparation ? [preferences.temps_preparation] : []),
+      batchCooking: userEatingHabits?.batch_cooking ?? preferences?.batch_cooking ?? null,
+      cookingLevel: userEatingHabits?.cooking_level ?? preferences?.niveau_cuisine ?? null,
+      availableTools: userEatingHabits?.available_tools ?? [
+        ...(preferences?.appliances_owned || []),
+        ...(preferences?.ustensiles || []),
+      ],
+
+      // Allergies: new format is jsonb array [{name, type, traces_ok}]
+      allergiesRaw: userAllergies?.allergies ?? null,
+      otherAllergies: userAllergies?.other_allergies ?? preferences?.autres_allergies ?? null,
+      tracesAccepted: userAllergies?.traces_accepted ?? false,
+      // Legacy flat array fallback
+      allergiesFlat: preferences?.allergies ?? [],
+
+      dietType: userFoodStyle?.diet_type ?? preferences?.type_alimentation ?? null,
+      foodsToAvoid: userFoodStyle?.foods_to_avoid ?? preferences?.aliments_eviter ?? [],
+      favoriteIngredients: userFoodStyle?.favorite_ingredients ?? preferences?.ingredients_favoris ?? [],
+      favoriteCuisines: userFoodStyle?.favorite_cuisines ?? preferences?.cuisine_preferee ?? [],
+      spiceLevel: userFoodStyle?.spice_level ?? preferences?.niveau_epices ?? null,
+      cookingMethod: userFoodStyle?.cooking_method ?? null,
+      preferOrganic: userFoodStyle?.prefer_organic ?? false,
+      reduceSugar: userFoodStyle?.reduce_sugar ?? preferences?.limiter_sucre ?? false,
+      preferSeasonal: userFoodStyle?.prefer_seasonal ?? false,
+
+      caloricGoal: userNutritionGoals?.caloric_goal ?? null,
+      targetKcal: userNutritionGoals?.target_kcal ?? null,
+      proteinGPerDay: userNutritionGoals?.protein_g_per_day ?? null,
+      macrosCustom: userNutritionGoals?.macros_custom ?? false,
+      macroProteinPct: userNutritionGoals?.macro_protein_pct ?? 30,
+      macroCarbsPct: userNutritionGoals?.macro_carbs_pct ?? 45,
+      macroFatPct: userNutritionGoals?.macro_fat_pct ?? 25,
+      dairyPreference: userNutritionGoals?.dairy_preference ?? preferences?.produits_laitiers ?? null,
+      trackFiber: userNutritionGoals?.track_fiber ?? preferences?.recettes_riches_fibres ?? false,
+      portionSize: userNutritionGoals?.portion_size ?? null,
+      // Legacy fields for calorie/macro filters
+      objectifCalorique: preferences?.objectif_calorique ?? null,
+      apportProteinesGKg: preferences?.apport_proteines_g_kg ?? null,
+      repartitionMacros: preferences?.repartition_macros ?? null,
+
+      householdAdults: userHousehold?.adults_count ?? profileData?.household_adults ?? 1,
+      householdChildren: userHousehold?.children_count ?? profileData?.household_children ?? 0,
+      childrenAges: userHousehold?.children_ages ?? [],
+      totalPortions: userHousehold?.total_portions ?? null,
+
+      workType: userLifestyle?.work_type ?? null,
+      scheduleType: userLifestyle?.schedule_type ?? null,
+      stressLevel: userLifestyle?.stress_level ?? preferences?.niveau_stress ?? null,
+      sleepHours: userLifestyle?.sleep_hours ?? preferences?.sommeil_heures ?? null,
+
+      // Keep legacy fields for filters that haven't been remapped
+      niveauSel: preferences?.niveau_sel ?? null,
+      modeCuissonPrefere: preferences?.mode_cuisson_prefere ?? [],
+    };
+
+    // Meals config: determine which meals should generate recipes
+    const mealsConfig = (userMealsConfig || []) as any[];
+    const lunchConfig = mealsConfig.find((m: any) => m.meal_type === 'dejeuner');
+    const dinnerConfig = mealsConfig.find((m: any) => m.meal_type === 'diner');
+    const generateLunch = eff.mealsPerDay >= 2 && (lunchConfig?.generate_recipe !== false);
+    const generateDinner = dinnerConfig?.generate_recipe !== false;
+
+    console.log(`[generate-menu] mealsPerDay=${eff.mealsPerDay}, generateLunch=${generateLunch}, generateDinner=${generateDinner}`);
+
+    // Validate age
+    if (typeof eff.age === 'number' && (eff.age < 18 || eff.age > 99)) {
+      console.error(`[generate-menu] Invalid age: ${eff.age}`);
+      return new Response(
+        JSON.stringify({ success: false, message: "Âge invalide. L'âge doit être entre 18 et 99 ans." }),
+        { status: 400, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Get user preferences (needed to decide feature key/cost)
-    const { data: preferences, error: prefError } = await supabaseClient
-      .from('preferences')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-
-    if (prefError && prefError.code !== 'PGRST116') {
-      console.error('[generate-menu] Error fetching preferences:', prefError);
+    // Medical conditions context for future AI prompt integration
+    if (eff.medicalConditions.length > 0) {
+      console.log(`[generate-menu] Medical conditions: ${eff.medicalConditions.length} condition(s) noted`);
     }
 
-    console.log('[generate-menu] User preferences:', preferences ? 'Found' : 'Not found');
-
-    // preferences.repas_par_jour is set by Profile page
-    // profiles.meals_per_day is set by Onboarding — use preferences first
-    const mealsPerDay = preferences?.repas_par_jour ?? profileData?.meals_per_day ?? 2;
-    console.log(`[generate-menu] mealsPerDay=${mealsPerDay} (pref=${preferences?.repas_par_jour}, profile=${profileData?.meals_per_day})`);
-
-    // Validate age if present
-    if (typeof preferences?.age === 'number') {
-      const age = preferences.age;
-      if (age < 18 || age > 99) {
-        console.error(`[generate-menu] Invalid age: ${age}`);
-        return new Response(
-          JSON.stringify({
-            success: false,
-            message: "Âge invalide. L'âge doit être entre 18 et 99 ans.",
-          }),
-          { status: 400, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
-        );
-      }
-    }
-
-    // Decide which pricing key applies for this user
+    // Determine actual slots: skip meals where generate_recipe=false
+    const mealsPerDay = eff.mealsPerDay;
     const menuFeatureKey = mealsPerDay >= 2 ? 'generate_week_2' : 'generate_week_1';
     let menuCost = mealsPerDay >= 2 ? 11 : 6;
 
@@ -207,115 +284,124 @@ Deno.serve(async (req) => {
 
     console.log(`[generate-menu] Pre-check OK: ${preCheckBalance} credits available, ${menuCost} required. Proceeding with generation...`);
 
-    const householdAdults = profileData?.household_adults ?? 1;
-    const householdChildren = profileData?.household_children ?? 0;
-    const kidRatio = profileData?.kid_portion_ratio ?? 0.6;
-    const effectiveHouseholdSize = householdAdults + householdChildren * kidRatio;
+    // ── Household portion calculation ──
+    // Prefer new user_household with per-child age coefficients
+    const childCoeff = (age: number): number => {
+      if (age <= 3) return 0.3;
+      if (age <= 8) return 0.5;
+      if (age <= 13) return 0.7;
+      return 1.0;
+    };
+
+    let effectiveHouseholdSize: number;
+    if (eff.totalPortions && eff.totalPortions > 0) {
+      // Pre-calculated in user_household
+      effectiveHouseholdSize = eff.totalPortions;
+    } else if (eff.childrenAges.length > 0) {
+      const childSum = eff.childrenAges.reduce((s: number, a: number) => s + childCoeff(a), 0);
+      effectiveHouseholdSize = eff.householdAdults + childSum;
+    } else {
+      const kidRatio = profileData?.kid_portion_ratio ?? 0.6;
+      effectiveHouseholdSize = eff.householdAdults + eff.householdChildren * kidRatio;
+    }
     const roundedHouseholdServings = Math.max(1, Math.round(effectiveHouseholdSize));
 
-    console.log(`[generate-menu] Household size: ${householdAdults} adults + ${householdChildren} children = ${effectiveHouseholdSize.toFixed(1)} effective portions`);
-    console.log(`[generate-menu] Target servings per meal: ${roundedHouseholdServings}`);
+    // Per-meal portions from user_meals_config (may differ between lunch & dinner)
+    const lunchPortions = lunchConfig?.portions ?? roundedHouseholdServings;
+    const dinnerPortions = dinnerConfig?.portions ?? roundedHouseholdServings;
+
+    console.log(`[generate-menu] Household: ${eff.householdAdults}A + ${eff.householdChildren}C = ${effectiveHouseholdSize.toFixed(1)} eff. portions`);
+    console.log(`[generate-menu] Per-meal portions: lunch=${lunchPortions}, dinner=${dinnerPortions}`);
 
     // ============================================================
     // SAFETY GATE: Build user restriction keys from dictionary
-    // This ensures synonym matching (porc -> jambon, lardon, bacon, etc.)
     // ============================================================
     
-    // Map user-facing allergen names to canonical keys
     const allergenToKeyMap: Record<string, string> = {
-      "Gluten": "gluten",
-      "Lactose": "dairy",
-      "Fruits à coque": "nuts",
-      "Arachide": "peanuts",
-      "Œufs": "eggs",
-      "Fruits de mer": "shellfish",
-      "Soja": "soy",
-      "Sésame": "sesame",
-      "Poisson": "fish",
-      "Porc": "pork",
-      "Bœuf": "beef",
+      "Gluten": "gluten", "Lactose": "dairy", "Fruits à coque": "nuts",
+      "Arachide": "peanuts", "Œufs": "eggs", "Fruits de mer": "shellfish",
+      "Soja": "soy", "Sésame": "sesame", "Poisson": "fish",
+      "Porc": "pork", "Bœuf": "beef",
     };
 
-    // Collect all restriction keys the user wants to avoid
     let userRestrictionKeys: string[] = [];
     
-    // Allowlist for diet types to prevent PostgREST filter injection
     const ALLOWED_DIET_TYPES = new Set([
       'omnivore', 'vegetarien', 'végétarien', 'vegetarian',
       'vegan', 'végétalien', 'pescatarien', 'pescatarian',
       'halal', 'casher', 'kosher',
     ]);
 
-    // Escape PostgREST special characters from user-provided strings
     function escapePostgrestPattern(value: string): string {
       return value.replace(/[%_,.()'"\\\s]/g, (c) => `\\${c}`).slice(0, 50);
     }
 
-    // 1. From structured allergies array
-    if (preferences?.allergies && Array.isArray(preferences.allergies)) {
-      const allergyKeys = preferences.allergies
+    // 1. From NEW user_allergies (jsonb array [{name, type, traces_ok}])
+    if (eff.allergiesRaw && Array.isArray(eff.allergiesRaw) && eff.allergiesRaw.length > 0) {
+      const allergyKeys = eff.allergiesRaw
+        .map((a: any) => {
+          const name = typeof a === 'string' ? a : a.name;
+          return allergenToKeyMap[name] || (name || '').toLowerCase().trim();
+        })
+        .filter((k: string) => k.length > 0);
+      userRestrictionKeys.push(...allergyKeys);
+      console.log(`[generate-menu] Allergen keys from user_allergies: ${allergyKeys.length} key(s)`);
+    }
+    // Fallback: legacy flat allergies array
+    else if (eff.allergiesFlat && Array.isArray(eff.allergiesFlat) && eff.allergiesFlat.length > 0) {
+      const allergyKeys = eff.allergiesFlat
         .map((a: string) => allergenToKeyMap[a] || a.toLowerCase().trim())
         .filter((k: string) => k.length > 0);
       userRestrictionKeys.push(...allergyKeys);
-      // Log count only — allergen names are special-category health data (GDPR Art. 9)
-      console.log(`[generate-menu] Allergen keys from preferences.allergies: ${allergyKeys.length} key(s)`);
+      console.log(`[generate-menu] Allergen keys from legacy preferences.allergies: ${allergyKeys.length} key(s)`);
     }
 
-    // 2. From aliments_eviter array - need to map to canonical keys via dictionary
-    if (preferences?.aliments_eviter && Array.isArray(preferences.aliments_eviter)) {
-      const avoidItems = preferences.aliments_eviter
-        .map((ing: string) => (ing || '').toLowerCase().trim())
-        .filter((ing: string) => ing.length > 0 && ing.length <= 50);
+    // 2. From foods_to_avoid (new) or aliments_eviter (legacy)
+    const avoidItems = (eff.foodsToAvoid || [])
+      .map((ing: string) => (ing || '').toLowerCase().trim())
+      .filter((ing: string) => ing.length > 0 && ing.length <= 50);
 
-      if (avoidItems.length > 0) {
-        // Escape each item before building the .or() filter to prevent injection
-        const safeItems = avoidItems.map(escapePostgrestPattern).filter(i => i.length > 0);
-        
-        if (safeItems.length > 0) {
-          const orFilter = safeItems.map(item => `pattern.ilike.%${item}%`).join(',');
-          // Only query if filter string contains no unbalanced quotes or parentheses
-          if (!/[()'"\\]/.test(orFilter)) {
-            const { data: dictMatches } = await supabaseClient
-              .from('restriction_dictionary')
-              .select('key, pattern')
-              .or(orFilter);
-            
-            if (dictMatches && dictMatches.length > 0) {
-              const mappedKeys = dictMatches.map((d: any) => d.key);
-              userRestrictionKeys.push(...mappedKeys);
-              console.log(`[generate-menu] Mapped ${avoidItems.length} aliments_eviter item(s) to ${[...new Set(mappedKeys)].length} key(s) via dictionary`);
-            }
+    if (avoidItems.length > 0) {
+      const safeItems = avoidItems.map(escapePostgrestPattern).filter((i: string) => i.length > 0);
+      
+      if (safeItems.length > 0) {
+        const orFilter = safeItems.map((item: string) => `pattern.ilike.%${item}%`).join(',');
+        if (!/[()'"\\]/.test(orFilter)) {
+          const { data: dictMatches } = await supabaseClient
+            .from('restriction_dictionary')
+            .select('key, pattern')
+            .or(orFilter);
+          
+          if (dictMatches && dictMatches.length > 0) {
+            const mappedKeys = dictMatches.map((d: any) => d.key);
+            userRestrictionKeys.push(...mappedKeys);
+            console.log(`[generate-menu] Mapped ${avoidItems.length} foods_to_avoid to ${[...new Set(mappedKeys)].length} key(s)`);
           }
         }
-        
-        // Also add the raw items as keys (in case they're already canonical)
-        for (const item of avoidItems) {
-          if (allergenToKeyMap[item.charAt(0).toUpperCase() + item.slice(1)]) {
-            userRestrictionKeys.push(allergenToKeyMap[item.charAt(0).toUpperCase() + item.slice(1)]);
-          } else {
-            // Check if it's a known key directly (e.g., "pork", "dairy")
-            const { data: directMatch } = await supabaseClient
-              .from('restriction_dictionary')
-              .select('key')
-              .eq('key', item)
-              .limit(1);
-            if (directMatch && directMatch.length > 0) {
-              userRestrictionKeys.push(item);
-            } else {
-              if (item === 'porc' || item === 'cochon') {
-                userRestrictionKeys.push('pork');
-              }
-            }
+      }
+      
+      for (const item of avoidItems) {
+        if (allergenToKeyMap[item.charAt(0).toUpperCase() + item.slice(1)]) {
+          userRestrictionKeys.push(allergenToKeyMap[item.charAt(0).toUpperCase() + item.slice(1)]);
+        } else {
+          const { data: directMatch } = await supabaseClient
+            .from('restriction_dictionary')
+            .select('key')
+            .eq('key', item)
+            .limit(1);
+          if (directMatch && directMatch.length > 0) {
+            userRestrictionKeys.push(item);
+          } else if (item === 'porc' || item === 'cochon') {
+            userRestrictionKeys.push('pork');
           }
         }
       }
     }
 
-    // 3. From autres_allergies free text
-    if (preferences?.autres_allergies) {
-      const freeText = (preferences.autres_allergies || '').toLowerCase().trim();
+    // 3. From other_allergies free text
+    if (eff.otherAllergies) {
+      const freeText = (eff.otherAllergies || '').toLowerCase().trim();
       if (freeText.length > 0) {
-        // Query dictionary to find canonical keys
         const { data: textMatches } = await supabaseClient
           .from('restriction_dictionary')
           .select('key, pattern');
@@ -327,8 +413,7 @@ Deno.serve(async (req) => {
             }
           }
         }
-        // Log count only — free-text allergies are special-category health data (GDPR Art. 9)
-        console.log(`[generate-menu] Extracted ${userRestrictionKeys.length} keys from autres_allergies text`);
+        console.log(`[generate-menu] Extracted keys from other_allergies text`);
       }
     }
 
@@ -346,8 +431,8 @@ Deno.serve(async (req) => {
       'kosher': ['pork', 'shellfish'],
     };
 
-    if (preferences?.type_alimentation) {
-      const dietKey = preferences.type_alimentation.toLowerCase().trim();
+    if (eff.dietType) {
+      const dietKey = eff.dietType.toLowerCase().trim();
       const dietExclusions = DIET_EXCLUSIONS[dietKey];
       if (dietExclusions) {
         userRestrictionKeys.push(...dietExclusions);
@@ -382,259 +467,229 @@ Deno.serve(async (req) => {
         console.log(`[generate-menu] Will filter out recipes with ingredient_keys overlapping: [${userRestrictionKeys.join(", ")}]`);
       }
 
-      if (preferences) {
+      // Apply hard filters using unified eff.* object
+      {
         // Legacy allergen check (keep for recipes without ingredient_keys)
-        if (preferences.allergies && Array.isArray(preferences.allergies) && preferences.allergies.length > 0) {
-          const userAllergens = preferences.allergies.map((a: string) => allergenToKeyMap[a] || a.toLowerCase());
-          query = query.not("allergens", "cs", `{${userAllergens.join(",")}}`);
-          console.log(`[generate-menu] Legacy allergen exclusions: ${userAllergens.join(", ")}`);
+        const allergyNames = eff.allergiesRaw
+          ? (eff.allergiesRaw as any[]).map((a: any) => {
+              const name = typeof a === 'string' ? a : a.name;
+              return allergenToKeyMap[name] || (name || '').toLowerCase();
+            })
+          : (eff.allergiesFlat || []).map((a: string) => allergenToKeyMap[a] || a.toLowerCase());
+        if (allergyNames.length > 0) {
+          query = query.not("allergens", "cs", `{${allergyNames.join(",")}}`);
         }
 
-        // ALWAYS enforce appliance constraints (but allow recipes with no appliances specified)
-        // Check both appliances_owned AND ustensiles (Profile page stores in ustensiles)
-        const ownedAppliances = [
-          ...(preferences.appliances_owned || []),
-          ...(preferences.ustensiles || []),
-        ];
+        // Appliance constraints
+        const ownedAppliances = eff.availableTools || [];
         const hasAirfryer = ownedAppliances.some((a: string) => 
           a.toLowerCase().replace(/\s/g, '') === 'airfryer' || 
           a.toLowerCase() === 'air fryer'
         );
         if (!hasAirfryer) {
-          // appliances is text[] — use {value} syntax (no quotes)
           query = query.not("appliances", "cs", "{airfryer}");
-          // Also filter cooking_method text[] (confirmed populated for airfryer recipes)
           query = query.not("cooking_method", "cs", "{airfryer}");
-          // Fallback: ingredients_text for any untagged recipes
           query = query.not("ingredients_text", "ilike", "%airfryer%");
-          console.log(`[generate-menu] Excluding airfryer recipes (array + cooking_method + text fallback)`);
+          console.log(`[generate-menu] Excluding airfryer recipes`);
         }
 
-        // ── HARD FILTER: Dairy exclusion ──────────────────────────
-        // produits_laitiers = "Sans" → exclude all dairy
-        if (preferences.produits_laitiers === 'Sans') {
+        // HARD FILTER: Dairy exclusion
+        if (eff.dairyPreference === 'Sans' || eff.dairyPreference === 'sans') {
           if (!userRestrictionKeys.includes('dairy')) {
             userRestrictionKeys.push('dairy');
-            console.log(`[generate-menu] Hard filter: dairy excluded (produits_laitiers=Sans)`);
+            console.log(`[generate-menu] Hard filter: dairy excluded`);
           }
         }
 
-        // ── HARD FILTER: Spice level ──────────────────────────────
-        // spice_level in DB: "doux", "moyen", "épicé"
-        // Profile values: "Doux", "Moyen", "Épicé", "Très épicé"
-        if (preferences.niveau_epices) {
-          const spice = preferences.niveau_epices.toLowerCase();
+        // HARD FILTER: Spice level
+        if (eff.spiceLevel) {
+          const spice = eff.spiceLevel.toLowerCase();
           if (spice === 'doux' || spice === 'sans épices') {
-            // Only allow "doux" recipes
             query = query.eq("spice_level", "doux");
-            console.log(`[generate-menu] Hard filter: spice_level=doux only`);
           } else if (spice === 'moyen') {
-            // Allow "doux" and "moyen"
             query = query.in("spice_level", ["doux", "moyen"]);
-            console.log(`[generate-menu] Hard filter: spice_level doux+moyen only`);
           }
-          // "Épicé" and "Très épicé" → no restriction
         }
 
-        // ── HARD FILTER: autres_allergies free text (porc etc.) ───
-        // Already handled via restriction_dictionary above
-        // (no change needed here, already implemented)
+        // Resolve prep time from new tables (array) or legacy (string)
+        const firstPrepTime = eff.prepTime?.[0] ?? preferences?.temps_preparation ?? null;
 
         // F0: Strict filters
         if (fallbackLevel === 0) {
-          // Filter by prep time
-          if (preferences.temps_preparation) {
+          if (firstPrepTime) {
             let maxPrepTime = 60;
-            if (preferences.temps_preparation === "<10 min") maxPrepTime = 10;
-            else if (preferences.temps_preparation === "10-20 min") maxPrepTime = 20;
-            else if (preferences.temps_preparation === "20-40 min") maxPrepTime = 40;
+            if (firstPrepTime === "<10 min" || firstPrepTime === '15min') maxPrepTime = 15;
+            else if (firstPrepTime === "10-20 min" || firstPrepTime === '15_30min') maxPrepTime = 30;
+            else if (firstPrepTime === "20-40 min" || firstPrepTime === '30_45min') maxPrepTime = 45;
             query = query.lte("prep_time_min", maxPrepTime);
-            console.log(`[generate-menu] Max prep time: ${maxPrepTime} min`);
-          }
 
-          // Filter by total time
-          if (preferences.temps_preparation) {
             let maxTotalTime = 90;
-            if (preferences.temps_preparation === "<10 min") maxTotalTime = 15;
-            else if (preferences.temps_preparation === "10-20 min") maxTotalTime = 30;
-            else if (preferences.temps_preparation === "20-40 min") maxTotalTime = 60;
+            if (firstPrepTime === "<10 min" || firstPrepTime === '15min') maxTotalTime = 20;
+            else if (firstPrepTime === "10-20 min" || firstPrepTime === '15_30min') maxTotalTime = 45;
+            else if (firstPrepTime === "20-40 min" || firstPrepTime === '30_45min') maxTotalTime = 60;
             query = query.lte("total_time_min", maxTotalTime);
-            console.log(`[generate-menu] Max total time: ${maxTotalTime} min`);
           }
 
-          // Filter by calories if range provided
-          if (preferences.objectif_calorique) {
+          // Calorie filter: precise target_kcal from new tables, or legacy range
+          if (eff.targetKcal && eff.targetKcal > 0) {
+            const perMeal = Math.round(eff.targetKcal / Math.max(mealsPerDay, 1));
+            const margin = Math.round(perMeal * 0.25);
+            query = query.gte("calories_kcal", perMeal - margin).lte("calories_kcal", perMeal + margin);
+            console.log(`[generate-menu] Calorie per meal: ${perMeal}±${margin} kcal (from target_kcal)`);
+          } else if (eff.caloricGoal) {
+            const goalMap: Record<string, [number, number]> = {
+              'hypocalorique': [200, 500],
+              'equilibre': [400, 700],
+              'hypercalorique': [500, 900],
+            };
+            const [minCal, maxCal] = goalMap[eff.caloricGoal] || [0, 10000];
+            if (minCal > 0) {
+              query = query.gte("calories_kcal", minCal).lte("calories_kcal", maxCal);
+            }
+          } else if (eff.objectifCalorique) {
             const calorieMap: Record<string, [number, number]> = {
               "1200-1500 kcal": [300, 500],
               "1500-1800 kcal": [375, 600],
               "1800-2100 kcal": [450, 700],
               "2100+ kcal": [525, 900]
             };
-            const [minCal, maxCal] = calorieMap[preferences.objectif_calorique] || [0, 10000];
+            const [minCal, maxCal] = calorieMap[eff.objectifCalorique] || [0, 10000];
             query = query.gte("calories_kcal", minCal).lte("calories_kcal", maxCal);
-            console.log(`[generate-menu] Calorie range: ${minCal}-${maxCal} kcal`);
           }
 
-          // Filter by minimum proteins
-          if (preferences.apport_proteines_g_kg && preferences.poids_actuel_kg) {
-            const minProteins = Math.round((preferences.apport_proteines_g_kg * preferences.poids_actuel_kg) / 3);
+          // Protein filter
+          if (eff.proteinGPerDay && eff.proteinGPerDay > 0) {
+            const minProteins = Math.round(eff.proteinGPerDay / Math.max(mealsPerDay, 1));
             query = query.gte("proteins_g", minProteins);
-            console.log(`[generate-menu] Min proteins: ${minProteins}g per meal`);
+          } else if (eff.apportProteinesGKg && eff.currentWeight) {
+            const minProteins = Math.round((eff.apportProteinesGKg * eff.currentWeight) / 3);
+            query = query.gte("proteins_g", minProteins);
           }
 
-          // Filter by diet type — validate against allowlist to prevent PostgREST injection
-          const rawDiet = (preferences.type_alimentation ?? '').toLowerCase().trim();
+          // Diet type
+          const rawDiet = (eff.dietType ?? '').toLowerCase().trim();
           const safeDiet = ALLOWED_DIET_TYPES.has(rawDiet) ? rawDiet : null;
           if (safeDiet && safeDiet !== 'omnivore') {
             query = query.or(`diet_type.eq.${safeDiet},diet_type.is.null`);
-            console.log(`[generate-menu] Diet type: ${safeDiet}`);
           }
 
-          // Filter by cuisine preference
-          if (preferences.cuisine_preferee && Array.isArray(preferences.cuisine_preferee) && preferences.cuisine_preferee.length > 0) {
-            query = query.in("cuisine_type", preferences.cuisine_preferee);
-            console.log(`[generate-menu] Preferred cuisines: ${preferences.cuisine_preferee.join(", ")}`);
+          // Cuisine preference
+          if (eff.favoriteCuisines && eff.favoriteCuisines.length > 0) {
+            query = query.in("cuisine_type", eff.favoriteCuisines);
           }
 
-          // Filter by difficulty level
-          if (preferences.niveau_cuisine) {
+          // Difficulty level
+          if (eff.cookingLevel) {
             const difficultyMap: Record<string, string> = {
-              "Débutant": "beginner",
-              "Intermédiaire": "intermediate",
-              "Expert": "expert"
+              "Débutant": "beginner", "debutant": "beginner",
+              "Intermédiaire": "intermediate", "intermediaire": "intermediate",
+              "Expert": "expert", "avance": "expert",
             };
-            const difficulty = difficultyMap[preferences.niveau_cuisine];
-            if (difficulty) {
-              query = query.eq("difficulty_level", difficulty);
-              console.log(`[generate-menu] Difficulty: ${difficulty}`);
-            }
+            const difficulty = difficultyMap[eff.cookingLevel];
+            if (difficulty) query = query.eq("difficulty_level", difficulty);
           }
 
-          // ── SOFT FILTER: Cooking method preference ────────────────
-          if (preferences.mode_cuisson_prefere && 
-              Array.isArray(preferences.mode_cuisson_prefere) && 
-              preferences.mode_cuisson_prefere.length > 0) {
+          // Cooking method preference
+          const cookMethods = eff.modeCuissonPrefere?.length > 0
+            ? eff.modeCuissonPrefere
+            : (eff.cookingMethod ? [eff.cookingMethod] : []);
+          if (cookMethods.length > 0) {
             const cookingMap: Record<string, string[]> = {
-              'Grillé':  ['grillé', 'plancha', 'barbecue', 'rôti'],
-              'Mijoté':  ['mijoté', 'ragoût', 'braisé', 'curry'],
-              'Vapeur':  ['vapeur'],
-              'Cru':     ['cru', 'mariné'],
+              'Grillé': ['grillé','plancha','barbecue','rôti'], 'grille': ['grillé','plancha','barbecue','rôti'],
+              'Mijoté': ['mijoté','ragoût','braisé','curry'], 'mijote': ['mijoté','ragoût','braisé','curry'],
+              'Vapeur': ['vapeur'], 'vapeur': ['vapeur'],
+              'Cru': ['cru','mariné'], 'cru': ['cru','mariné'],
             };
             const dbMethods: string[] = [];
-            for (const pref of preferences.mode_cuisson_prefere) {
+            for (const pref of cookMethods) {
               const mapped = cookingMap[pref];
               if (mapped) dbMethods.push(...mapped);
             }
             if (dbMethods.length > 0) {
               const orFilter = dbMethods.map(m => `cooking_method.cs.{${m}}`).join(',');
               query = query.or(orFilter);
-              console.log(`[generate-menu] F0: Cooking methods: ${dbMethods.join(', ')}`);
             }
           }
 
-          // ── SOFT FILTER: Salt level ───────────────────────────────
-          if (preferences.niveau_sel) {
-            const sel = preferences.niveau_sel.toLowerCase();
-            if (sel === 'sans sel') {
-              query = query.eq("salt_level", "bas");
-              console.log(`[generate-menu] F0: salt_level=bas (sans sel)`);
-            } else if (sel === 'peu salé') {
-              query = query.in("salt_level", ["bas", "normal"]);
-              console.log(`[generate-menu] F0: salt_level bas+normal (peu salé)`);
-            }
+          // Salt level
+          if (eff.niveauSel) {
+            const sel = eff.niveauSel.toLowerCase();
+            if (sel === 'sans sel') query = query.eq("salt_level", "bas");
+            else if (sel === 'peu salé') query = query.in("salt_level", ["bas", "normal"]);
           }
 
-          // ── SOFT FILTER: High fiber recipes ──────────────────────
-          if (preferences.recettes_riches_fibres === true) {
+          // High fiber
+          if (eff.trackFiber === true) {
             query = query.not("ingredients_text", "ilike", "%-")
               .or("ingredient_keywords.cs.{high_fiber},ingredients_text.ilike.%légumineuse%,ingredients_text.ilike.%lentille%,ingredients_text.ilike.%haricot%,ingredients_text.ilike.%quinoa%");
-            console.log(`[generate-menu] F0: High fiber filter active`);
           }
 
-          // ── SOFT FILTER: Macro distribution ──────────────────────
-          if (preferences.repartition_macros) {
-            const macros = preferences.repartition_macros.toLowerCase();
-            if (macros === 'pauvre en glucides' || macros === 'low carb') {
-              query = query.lte("carbs_g", 35);
-              console.log(`[generate-menu] F0: Low carb filter: carbs_g <= 35`);
-            } else if (macros === 'riche en protéines') {
-              query = query.gte("proteins_g", 25);
-              console.log(`[generate-menu] F0: High protein filter: proteins_g >= 25`);
-            }
+          // Macro distribution
+          if (eff.macrosCustom && eff.macroCarbsPct < 30) {
+            query = query.lte("carbs_g", 35);
+          } else if (eff.repartitionMacros) {
+            const macros = eff.repartitionMacros.toLowerCase();
+            if (macros === 'pauvre en glucides' || macros === 'low carb') query = query.lte("carbs_g", 35);
+            else if (macros === 'riche en protéines') query = query.gte("proteins_g", 25);
           }
 
-          // ── SOFT FILTER: Calorie objective alignment ──────────────
-          if (!preferences.objectif_calorique && preferences.objectif_principal) {
-            const obj = preferences.objectif_principal.toLowerCase();
-            if (obj.includes('perte') || obj.includes('poids')) {
-              query = query.lte("calories_kcal", 550);
-              console.log(`[generate-menu] F0: Low calorie bias (perte de poids): <= 550 kcal`);
-            } else if (obj.includes('muscle') || obj.includes('prise')) {
-              query = query.gte("calories_kcal", 450);
-              console.log(`[generate-menu] F0: High calorie bias (prise de muscle): >= 450 kcal`);
-            }
+          // Calorie objective alignment from mainGoal
+          if (!eff.targetKcal && !eff.objectifCalorique && eff.mainGoal) {
+            const obj = eff.mainGoal.toLowerCase();
+            if (obj.includes('perte') || obj.includes('poids')) query = query.lte("calories_kcal", 550);
+            else if (obj.includes('muscle') || obj.includes('prise')) query = query.gte("calories_kcal", 450);
           }
 
-          // ── SOFT FILTER: Limit added sugar ───────────────────────
-          if (preferences.limiter_sucre === true) {
+          // Limit added sugar
+          if (eff.reduceSugar === true) {
             query = query.not("ingredients_text", "ilike", "%sucre ajouté%");
             query = query.not("ingredients_text", "ilike", "%sirop%");
-            console.log(`[generate-menu] F0: Limiting added sugar recipes`);
           }
         }
         
-        // F1: Widen time constraints (+10 prep, +15 total)
+        // F1: Widen time constraints
         else if (fallbackLevel === 1) {
-          if (preferences.temps_preparation) {
+          if (firstPrepTime) {
             let maxPrepTime = 60;
-            if (preferences.temps_preparation === "<10 min") maxPrepTime = 20;
-            else if (preferences.temps_preparation === "10-20 min") maxPrepTime = 30;
-            else if (preferences.temps_preparation === "20-40 min") maxPrepTime = 50;
+            if (firstPrepTime === "<10 min" || firstPrepTime === '15min') maxPrepTime = 25;
+            else if (firstPrepTime === "10-20 min" || firstPrepTime === '15_30min') maxPrepTime = 40;
+            else if (firstPrepTime === "20-40 min" || firstPrepTime === '30_45min') maxPrepTime = 55;
             query = query.lte("prep_time_min", maxPrepTime);
-            console.log(`[generate-menu] F1: Relaxed prep time to ${maxPrepTime} min`);
-          }
 
-          if (preferences.temps_preparation) {
             let maxTotalTime = 90;
-            if (preferences.temps_preparation === "<10 min") maxTotalTime = 30;
-            else if (preferences.temps_preparation === "10-20 min") maxTotalTime = 45;
-            else if (preferences.temps_preparation === "20-40 min") maxTotalTime = 75;
+            if (firstPrepTime === "<10 min" || firstPrepTime === '15min') maxTotalTime = 35;
+            else if (firstPrepTime === "10-20 min" || firstPrepTime === '15_30min') maxTotalTime = 50;
+            else if (firstPrepTime === "20-40 min" || firstPrepTime === '30_45min') maxTotalTime = 75;
             query = query.lte("total_time_min", maxTotalTime);
-            console.log(`[generate-menu] F1: Relaxed total time to ${maxTotalTime} min`);
           }
 
-          // Keep other filters from F0 — validate against allowlist
-          const rawDietF1 = (preferences.type_alimentation ?? '').toLowerCase().trim();
+          const rawDietF1 = (eff.dietType ?? '').toLowerCase().trim();
           const safeDietF1 = ALLOWED_DIET_TYPES.has(rawDietF1) ? rawDietF1 : null;
           if (safeDietF1 && safeDietF1 !== 'omnivore') {
             query = query.or(`diet_type.eq.${safeDietF1},diet_type.is.null`);
           }
         }
         
-        // F2: Ignore diet tags but keep all other filters
+        // F2: Ignore diet tags
         else if (fallbackLevel === 2) {
           console.log(`[generate-menu] F2: Ignoring diet type filter`);
-          // Time filters relaxed like F1
-          if (preferences.temps_preparation) {
+          if (firstPrepTime) {
             let maxPrepTime = 60;
-            if (preferences.temps_preparation === "<10 min") maxPrepTime = 20;
-            else if (preferences.temps_preparation === "10-20 min") maxPrepTime = 30;
-            else if (preferences.temps_preparation === "20-40 min") maxPrepTime = 50;
+            if (firstPrepTime === "<10 min" || firstPrepTime === '15min') maxPrepTime = 25;
+            else if (firstPrepTime === "10-20 min" || firstPrepTime === '15_30min') maxPrepTime = 40;
+            else if (firstPrepTime === "20-40 min" || firstPrepTime === '30_45min') maxPrepTime = 55;
             query = query.lte("prep_time_min", maxPrepTime);
           }
         }
         
-        // F3: Ignore cuisines, courses, and meal types
+        // F3: Ignore cuisines, courses, meal types
         else if (fallbackLevel === 3) {
           console.log(`[generate-menu] F3: Ignoring cuisine, course, and meal type filters`);
-          // No additional filters - just exclusions and appliances
         }
         
-        // F4: Last resort - absolutely minimal filters
+        // F4: Last resort
         else if (fallbackLevel === 4) {
-          console.log(`[generate-menu] F4: Last resort - published recipes only with mandatory exclusions`);
-          // Only allergens, exclusions, and appliances enforced (already applied above)
-          // This will match any published recipe that doesn't violate exclusions
+          console.log(`[generate-menu] F4: Last resort — published recipes only with mandatory exclusions`);
         }
       }
 
@@ -831,16 +886,15 @@ Deno.serve(async (req) => {
     console.log(`[generate-menu] Dinner recipes: ${dinnerRecipes.map((r: any) => r.title).join(", ")}`);
 
 
-    // Build weekly menu with portion factors for BOTH lunch and dinner
+    // Build weekly menu with per-meal portion factors
     const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
-    const roundedServings = Math.max(1, Math.round(effectiveHouseholdSize));
     
-    // Helper to build a meal entry
+    // Helper to build a meal entry with per-meal portions
     const buildMealEntry = (recipe: any, dayIndex: number, mealType: 'lunch' | 'dinner') => {
-      // Use recipe.servings (what ingredients are written for, usually 1 person)
-      // NOT base_servings (which is a batch/yield field, often 4)
       const recipeServings = recipe.servings || 1;
-      const portionFactor = effectiveHouseholdSize / recipeServings;
+      // Use per-meal portions from user_meals_config if available
+      const mealPortions = mealType === 'lunch' ? lunchPortions : dinnerPortions;
+      const portionFactor = mealPortions / recipeServings;
       
       return {
         recipe_id: recipe.id,
@@ -853,27 +907,35 @@ Deno.serve(async (req) => {
         carbs_g: Math.round((recipe.carbs_g || 0) * portionFactor),
         fats_g: Math.round((recipe.fats_g || 0) * portionFactor),
         portion_factor: portionFactor,
-        servings_used: roundedHouseholdServings,
+        servings_used: Math.max(1, Math.round(mealPortions)),
         base_servings: recipeServings,
+        generate_recipe: mealType === 'lunch' ? generateLunch : generateDinner,
       };
     };
     
-    // Build days with dinner always, lunch only if meals_per_day >= 2
+    // Build days: skip recipe generation for meals where generate_recipe=false
     const days = weekdays.map((dayName, index) => {
       const dinnerRecipe = dinnerRecipes[index];
-      const entry: any = {
-        day: dayName,
-        dinner: buildMealEntry(dinnerRecipe, index, 'dinner'),
-      };
+      const entry: any = { day: dayName };
+      
+      if (generateDinner && dinnerRecipe) {
+        entry.dinner = buildMealEntry(dinnerRecipe, index, 'dinner');
+      } else {
+        entry.dinner = { skip: true, reason: dinnerConfig?.location || 'restaurant' };
+      }
+      
       if (mealsPerDay >= 2 && lunchRecipes[index]) {
-        entry.lunch = buildMealEntry(lunchRecipes[index], index, 'lunch');
+        if (generateLunch) {
+          entry.lunch = buildMealEntry(lunchRecipes[index], index, 'lunch');
+        } else {
+          entry.lunch = { skip: true, reason: lunchConfig?.location || 'restaurant' };
+        }
       }
       return entry;
     });
 
     console.log(`[generate-menu] Upserting menu for week starting: ${weekStartStr}`);
 
-    // Upsert weekly menu with fallback tracking and household info
     const { data: menu, error: menuError } = await supabaseClient
       .from("user_weekly_menus")
       .upsert({
@@ -882,10 +944,12 @@ Deno.serve(async (req) => {
         payload: { 
           days,
           household: {
-            adults: householdAdults,
-            children: householdChildren,
+            adults: eff.householdAdults,
+            children: eff.householdChildren,
+            children_ages: eff.childrenAges,
             effective_size: effectiveHouseholdSize
-          }
+          },
+          medical_conditions: eff.medicalConditions,
         },
         used_fallback: usedFallback
       }, {
