@@ -19,6 +19,15 @@ function formatDateFr(dateStr: string | null) {
   });
 }
 
+function calculateReadTime(content: string): number {
+  const wordCount = content
+    .replace(/<[^>]*>/g, '')
+    .replace(/[#*`_~]/g, '')
+    .split(/\s+/)
+    .filter(w => w.length > 0).length;
+  return Math.max(1, Math.round(wordCount / 200));
+}
+
 function useArticleSeoHead(article: ReturnType<typeof useBlogArticleBySlug>['article']) {
   useEffect(() => {
     if (!article) return;
