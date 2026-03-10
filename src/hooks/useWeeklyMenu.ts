@@ -29,6 +29,7 @@ export interface WeeklyMenu {
   created_at: string;
   updated_at: string;
   used_fallback?: string | null;
+  needs_regeneration?: boolean;
   household?: {
     adults: number;
     children: number;
