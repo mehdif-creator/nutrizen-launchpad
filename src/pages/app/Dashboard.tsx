@@ -36,6 +36,10 @@ import { useGamificationState } from "@/hooks/useGamificationV2";
 import { LoadingMessages } from "@/components/common/LoadingMessages";
 import { ShareWeekCard } from "@/components/dashboard/ShareWeekCard";
 import { TutorialOnboarding } from "@/components/app/TutorialOnboarding";
+import { MobileBottomNav } from "@/components/app/MobileBottomNav";
+import { MobileTonightCard } from "@/components/app/MobileTonightCard";
+import { MobileDayCarousel } from "@/components/app/MobileDayCarousel";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -44,6 +48,7 @@ export default function Dashboard() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
 
   /** Invalidate all dashboard-related queries at once */
   const invalidateAll = () => {
@@ -153,6 +158,13 @@ export default function Dashboard() {
   const referralUrl = "https://mynutrizen.fr/i/" + (user?.id.slice(0, 8) || "user");
 
   const loading = statsLoading || menuLoading;
+
+  // Today's data for mobile hero card
+  const todayData = useMemo(() => {
+    if (!weeklyDays.length) return null;
+    const today = new Date().toISOString().split('T')[0];
+    return weeklyDays.find((d) => d.date === today) || null;
+  }, [weeklyDays]);
 
   const handleSwap = async (recipeId: string, mealType: 'lunch' | 'dinner', dayIndex: number) => {
     if (!user?.id || !menu || swapping) return;
@@ -346,15 +358,42 @@ export default function Dashboard() {
       {/* Onboarding Coach */}
       <OnboardingCoach userId={user?.id} />
 
-      <main className="flex-1">
-        {/* Hero Section */}
-        <section className="px-4 sm:px-6 lg:px-10 py-4 md:py-8">
+      <main className="flex-1 pb-20 md:pb-0">
+        {/* ═══ MOBILE CONDENSED HEADER ═══ */}
+        <section className="md:hidden px-4 pt-4 pb-2 space-y-3">
+          {/* Row 1: Name + badges */}
+          <div className="flex items-center justify-between">
+            <h1 className="text-lg font-semibold">Salut, {firstName} 🔥</h1>
+            <div className="flex items-center gap-2">
+              {streak > 0 && (
+                <div className="flex items-center gap-1 px-2 py-0.5 bg-orange-500/10 rounded-lg">
+                  <Flame className="h-3.5 w-3.5 text-orange-500" />
+                  <span className="text-xs font-bold text-orange-500">{streak}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-1 px-2 py-0.5 bg-primary/10 rounded-lg">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                <span className="text-xs font-bold text-primary">{stats.credits_zen} crédits</span>
+              </div>
+            </div>
+          </div>
+          {/* Row 2: Progress bar only */}
+          <div className="flex items-center gap-3">
+            <Progress value={(validated / 5) * 100} className="flex-1 h-2" />
+            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+              {validated}/5 jours
+            </span>
+          </div>
+        </section>
+
+        {/* ═══ DESKTOP Hero Section (hidden on mobile) ═══ */}
+        <section className="hidden md:block px-4 sm:px-6 lg:px-10 py-4 md:py-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 md:mb-6">
             <div>
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1">Salut, {firstName} ! 👋</h1>
               <p className="text-sm md:text-base text-muted-foreground">Voici ton tableau de bord NutriZen</p>
             </div>
-          <div className="flex flex-wrap items-center gap-2" data-onboarding-target="generate-menu">
+            <div className="flex flex-wrap items-center gap-2" data-onboarding-target="generate-menu">
               <Button onClick={handleRegenWeek} size="sm" disabled={generating}>
                 {generating ? "Génération..." : "Régénérer la semaine"}
               </Button>
@@ -397,8 +436,53 @@ export default function Dashboard() {
           <StreakBar />
         </section>
 
-        {/* Quick Links */}
-        <section className="px-4 sm:px-6 lg:px-10 mb-6 md:mb-8">
+        {/* ═══ MOBILE: Generate button + Tonight card ═══ */}
+        <section className="md:hidden px-4 space-y-3 mb-4">
+          <div className="flex gap-2">
+            <Button onClick={handleRegenWeek} size="sm" disabled={generating} className="flex-1">
+              {generating ? "Génération..." : "Régénérer la semaine"}
+            </Button>
+            {hasDays && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const ws = getCurrentWeekStart();
+                    const { data: rawData } = await supabase.rpc(
+                      'get_shopping_list_from_weekly_menu',
+                      { p_user_id: user!.id, p_week_start: ws }
+                    );
+                    const rawItems: RawShoppingItem[] = (rawData || []).map((r: any) => ({
+                      ingredient_name: r.ingredient_name,
+                      total_quantity: r.total_quantity,
+                      unit: r.unit,
+                      formatted_display: r.formatted_display,
+                    }));
+                    const merged = mergeShoppingItems(rawItems);
+                    const hhLabel = formatHouseholdDisplay(householdAdults, householdChildren);
+                    exportWeeklyPackPdf(ws, weeklyDays, merged, hhLabel);
+                    toast({ title: "📥 PDF téléchargé", description: "Pack complet de la semaine." });
+                  } catch (err) {
+                    console.error('PDF export error:', err);
+                    toast({ title: "Erreur", description: "Impossible de générer le PDF.", variant: "destructive" });
+                  }
+                }}
+              >
+                <FileDown className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+          <MobileTonightCard
+            todayData={todayData}
+            onValidate={handleValidateMeal}
+            onSwap={handleSwap}
+            swapsRemaining={stats.credits_zen}
+          />
+        </section>
+
+        {/* Quick Links — hidden on mobile */}
+        <section className="hidden md:block px-4 sm:px-6 lg:px-10 mb-6 md:mb-8">
           <h3 className="text-base md:text-lg font-semibold mb-3">Accès rapide</h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Link
@@ -440,8 +524,8 @@ export default function Dashboard() {
           </div>
         </section>
 
-        {/* KPI Row */}
-        <section className="px-4 sm:px-6 lg:px-10 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4 mb-6 md:mb-8">
+        {/* KPI Row — hidden on mobile */}
+        <section className="hidden md:grid px-4 sm:px-6 lg:px-10 grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4 mb-6 md:mb-8">
           <StatCard
             label="Temps gagné"
             value={`+${Math.round(minutesSaved / 60)}h`}
@@ -496,8 +580,8 @@ export default function Dashboard() {
         </section>
 
         {/* Week Planner */}
-        <section className="px-4 sm:px-6 lg:px-10 grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
-          {/* Left: Meals + Quick Links */}
+        <section id="week-section" className="px-4 sm:px-6 lg:px-10 grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
+          {/* Left: Meals */}
           <div className="xl:col-span-2 space-y-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg md:text-xl font-bold">Semaine en cours</h2>
@@ -514,56 +598,70 @@ export default function Dashboard() {
                 </Button>
               </div>
             ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {weeklyDays.map((dayData, i) => (
-                  <DayCardWithRecipes
-                    key={`${dayData.day_name}-${i}`}
-                    day={dayData.day_name}
-                    date={dayData.date}
-                    dayIndex={dayData.day_index}
-                    lunchRecipe={dayData.lunch ? {
-                      recipe_id: dayData.lunch.recipe_id,
-                      title: dayData.lunch.title,
-                      image_url: dayData.lunch.image_url,
-                      prep_min: dayData.lunch.prep_min,
-                      total_min: dayData.lunch.total_min,
-                      calories: dayData.lunch.calories,
-                      portion_factor: dayData.lunch.portion_factor,
-                      macros: {
-                        proteins_g: dayData.lunch.proteins_g,
-                        carbs_g: dayData.lunch.carbs_g,
-                        fats_g: dayData.lunch.fats_g,
-                      }
-                    } : null}
-                    dinnerRecipe={dayData.dinner ? {
-                      recipe_id: dayData.dinner.recipe_id,
-                      title: dayData.dinner.title,
-                      image_url: dayData.dinner.image_url,
-                      prep_min: dayData.dinner.prep_min,
-                      total_min: dayData.dinner.total_min,
-                      calories: dayData.dinner.calories,
-                      portion_factor: dayData.dinner.portion_factor,
-                      macros: {
-                        proteins_g: dayData.dinner.proteins_g,
-                        carbs_g: dayData.dinner.carbs_g,
-                        fats_g: dayData.dinner.fats_g,
-                      }
-                    } : null}
-                    onValidate={handleValidateMeal}
-                    onSwap={handleSwap}
-                    swapsRemaining={stats.credits_zen}
-                    swapping={swapping}
-                    householdAdults={householdAdults}
-                    householdChildren={householdChildren}
-                    data-onboarding-target={i === 0 ? "meal-card" : undefined}
-                  />
-                ))}
-              </div>
+              <>
+                {/* Mobile: Day carousel */}
+                <MobileDayCarousel
+                  weeklyDays={weeklyDays}
+                  onValidate={handleValidateMeal}
+                  onSwap={handleSwap}
+                  swapsRemaining={stats.credits_zen}
+                  swapping={swapping}
+                  householdAdults={householdAdults}
+                  householdChildren={householdChildren}
+                />
+
+                {/* Desktop: Full grid */}
+                <div className="hidden md:grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {weeklyDays.map((dayData, i) => (
+                    <DayCardWithRecipes
+                      key={`${dayData.day_name}-${i}`}
+                      day={dayData.day_name}
+                      date={dayData.date}
+                      dayIndex={dayData.day_index}
+                      lunchRecipe={dayData.lunch ? {
+                        recipe_id: dayData.lunch.recipe_id,
+                        title: dayData.lunch.title,
+                        image_url: dayData.lunch.image_url,
+                        prep_min: dayData.lunch.prep_min,
+                        total_min: dayData.lunch.total_min,
+                        calories: dayData.lunch.calories,
+                        portion_factor: dayData.lunch.portion_factor,
+                        macros: {
+                          proteins_g: dayData.lunch.proteins_g,
+                          carbs_g: dayData.lunch.carbs_g,
+                          fats_g: dayData.lunch.fats_g,
+                        }
+                      } : null}
+                      dinnerRecipe={dayData.dinner ? {
+                        recipe_id: dayData.dinner.recipe_id,
+                        title: dayData.dinner.title,
+                        image_url: dayData.dinner.image_url,
+                        prep_min: dayData.dinner.prep_min,
+                        total_min: dayData.dinner.total_min,
+                        calories: dayData.dinner.calories,
+                        portion_factor: dayData.dinner.portion_factor,
+                        macros: {
+                          proteins_g: dayData.dinner.proteins_g,
+                          carbs_g: dayData.dinner.carbs_g,
+                          fats_g: dayData.dinner.fats_g,
+                        }
+                      } : null}
+                      onValidate={handleValidateMeal}
+                      onSwap={handleSwap}
+                      swapsRemaining={stats.credits_zen}
+                      swapping={swapping}
+                      householdAdults={householdAdults}
+                      householdChildren={householdChildren}
+                      data-onboarding-target={i === 0 ? "meal-card" : undefined}
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </div>
 
-          {/* Right: Sidebar */}
-          <aside className="space-y-4 md:space-y-6">
+          {/* Right: Sidebar — hidden on mobile */}
+          <aside className="hidden md:block space-y-4 md:space-y-6">
             {/* Progression Card */}
             <ProgressionCardV2 />
 
@@ -656,6 +754,7 @@ export default function Dashboard() {
 
       <AppFooter />
       <TutorialOnboarding />
+      <MobileBottomNav />
     </div>
   );
 }
