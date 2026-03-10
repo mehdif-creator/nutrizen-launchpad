@@ -3,7 +3,7 @@ import { AppFooter } from '@/components/app/AppFooter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { ArrowLeft, RefreshCw, FileText, Search, ImageIcon, Wrench } from 'lucide-react';
+import { ArrowLeft, RefreshCw, FileText, Search, ImageIcon, Wrench, Square, CirclePlay } from 'lucide-react';
 import { callEdgeFunction } from '@/lib/edgeFn';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
@@ -13,6 +13,8 @@ import { SeoArticleDetail } from './seo/SeoArticleDetail';
 import { SeoKeywordExpander } from './seo/SeoKeywordExpander';
 import { SeoQueueTab } from './seo/SeoQueueTab';
 import { useSeoArticles } from './seo/useSeoArticles';
+import { useArticleQueue } from './seo/useArticleQueue';
+import { useQueueProcessor } from './seo/useQueueProcessor';
 import type { SeoArticle } from './seo/types';
 import { STATUS_LABELS } from './seo/types';
 
