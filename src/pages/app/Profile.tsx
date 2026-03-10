@@ -269,6 +269,30 @@ export default function Profile() {
     }
   };
 
+  // Map display labels → DB codes for medical conditions
+  const MEDICAL_LABEL_TO_CODE: Record<string, string> = {
+    'Diabète type 2': 'diabete_2',
+    'Hypertension': 'hypertension',
+    'Cholestérol élevé': 'cholesterol',
+    'Hypothyroïdie': 'hypothyroidie',
+    'Aucune': 'aucune',
+    'Autre': 'autre',
+  };
+  const MEDICAL_CODE_TO_LABEL: Record<string, string> = Object.fromEntries(
+    Object.entries(MEDICAL_LABEL_TO_CODE).map(([k, v]) => [v, k])
+  );
+
+  // Map form prep_time values → DB codes for edge function
+  const PREP_TIME_TO_CODE: Record<string, string> = {
+    'moins_10': '15min',
+    '10_20': '15_30min',
+    '20_40': '30_45min',
+    'plus_40': '45min_plus',
+  };
+  const PREP_CODE_TO_FORM: Record<string, string> = Object.fromEntries(
+    Object.entries(PREP_TIME_TO_CODE).map(([k, v]) => [v, k])
+  );
+
   const handleSave = async () => {
     if (!user) {
       toast({ title: 'Erreur', description: 'Vous devez être connecté pour sauvegarder vos préférences.', variant: 'destructive' });
@@ -286,6 +310,14 @@ export default function Profile() {
         type: allergieTypes[name] || 'allergie',
         traces_ok: tracesAccepted,
       }));
+
+      // Convert medical conditions from display labels to DB codes
+      const medicalCodes = medicalConditions
+        .map(label => MEDICAL_LABEL_TO_CODE[label] || label)
+        .filter(c => c !== 'aucune');
+
+      // Convert prep_time from form value to DB code
+      const prepTimeCode = PREP_TIME_TO_CODE[prepTime] || prepTime;
 
       // Build meals config upserts
       const mealsUpserts = meals.map(m => ({
