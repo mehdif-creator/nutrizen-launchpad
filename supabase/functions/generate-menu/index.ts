@@ -30,6 +30,7 @@ interface MealConfig {
   portions_manual: boolean;
   location: string;
   generate_recipe: boolean;
+  batch_cooking: boolean;
 }
 
 interface UserContext {
