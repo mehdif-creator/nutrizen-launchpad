@@ -16,6 +16,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { User, Target, Utensils, AlertTriangle, Leaf, Scale, Users, Heart, Save, Baby, ChevronDown } from 'lucide-react';
 import { MealCardSection, type MealConfig } from '@/components/app/MealCardSection';
+import { Separator } from '@/components/ui/separator';
+import { InfoBanner } from '@/components/common/InfoBanner';
+import { X } from 'lucide-react';
 
 /** Age-based child portion coefficient */
 function childPortionCoeff(age: number): number {
