@@ -2924,6 +2924,30 @@ export type Database = {
           },
         ]
       }
+      user_allergies: {
+        Row: {
+          allergies: Json | null
+          other_allergies: string | null
+          traces_accepted: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          allergies?: Json | null
+          other_allergies?: string | null
+          traces_accepted?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          allergies?: Json | null
+          other_allergies?: string | null
+          traces_accepted?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_badges: {
         Row: {
           badge_code: string
@@ -3098,6 +3122,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_eating_habits: {
+        Row: {
+          appetite_size: string | null
+          available_tools: string[] | null
+          batch_cooking: string | null
+          cooking_frequency: string | null
+          cooking_level: string | null
+          meal_frequency: string | null
+          meals_per_day: number | null
+          prep_time: string[] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          appetite_size?: string | null
+          available_tools?: string[] | null
+          batch_cooking?: string | null
+          cooking_frequency?: string | null
+          cooking_level?: string | null
+          meal_frequency?: string | null
+          meals_per_day?: number | null
+          prep_time?: string[] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          appetite_size?: string | null
+          available_tools?: string[] | null
+          batch_cooking?: string | null
+          cooking_frequency?: string | null
+          cooking_level?: string | null
+          meal_frequency?: string | null
+          meals_per_day?: number | null
+          prep_time?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_events: {
         Row: {
           credits_delta: number
@@ -3124,6 +3187,54 @@ export type Database = {
           meta?: Json
           occurred_at?: string
           points_delta?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_food_style: {
+        Row: {
+          bio_local: string | null
+          cooking_method: string | null
+          diet_type: string | null
+          favorite_cuisines: string[] | null
+          favorite_ingredients: string[] | null
+          foods_to_avoid: string[] | null
+          gluten_free_pref: boolean | null
+          prefer_organic: boolean | null
+          prefer_seasonal: boolean | null
+          reduce_sugar: boolean | null
+          spice_level: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          bio_local?: string | null
+          cooking_method?: string | null
+          diet_type?: string | null
+          favorite_cuisines?: string[] | null
+          favorite_ingredients?: string[] | null
+          foods_to_avoid?: string[] | null
+          gluten_free_pref?: boolean | null
+          prefer_organic?: boolean | null
+          prefer_seasonal?: boolean | null
+          reduce_sugar?: boolean | null
+          spice_level?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          bio_local?: string | null
+          cooking_method?: string | null
+          diet_type?: string | null
+          favorite_cuisines?: string[] | null
+          favorite_ingredients?: string[] | null
+          foods_to_avoid?: string[] | null
+          gluten_free_pref?: boolean | null
+          prefer_organic?: boolean | null
+          prefer_seasonal?: boolean | null
+          reduce_sugar?: boolean | null
+          spice_level?: string | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -3236,6 +3347,192 @@ export type Database = {
         }
         Relationships: []
       }
+      user_household: {
+        Row: {
+          adults_count: number | null
+          children_ages: number[] | null
+          children_count: number | null
+          family_allergies: string | null
+          partner_absent_days: number | null
+          total_portions: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          adults_count?: number | null
+          children_ages?: number[] | null
+          children_count?: number | null
+          family_allergies?: string | null
+          partner_absent_days?: number | null
+          total_portions?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          adults_count?: number | null
+          children_ages?: number[] | null
+          children_count?: number | null
+          family_allergies?: string | null
+          partner_absent_days?: number | null
+          total_portions?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_lifestyle: {
+        Row: {
+          main_motivation: string | null
+          schedule_type: string | null
+          shopping_frequency: string | null
+          shopping_location: string | null
+          sleep_hours: number | null
+          sport_advice: boolean | null
+          stress_level: string | null
+          updated_at: string | null
+          user_id: string
+          weekly_budget_food: string | null
+          work_type: string | null
+        }
+        Insert: {
+          main_motivation?: string | null
+          schedule_type?: string | null
+          shopping_frequency?: string | null
+          shopping_location?: string | null
+          sleep_hours?: number | null
+          sport_advice?: boolean | null
+          stress_level?: string | null
+          updated_at?: string | null
+          user_id: string
+          weekly_budget_food?: string | null
+          work_type?: string | null
+        }
+        Update: {
+          main_motivation?: string | null
+          schedule_type?: string | null
+          shopping_frequency?: string | null
+          shopping_location?: string | null
+          sleep_hours?: number | null
+          sport_advice?: boolean | null
+          stress_level?: string | null
+          updated_at?: string | null
+          user_id?: string
+          weekly_budget_food?: string | null
+          work_type?: string | null
+        }
+        Relationships: []
+      }
+      user_meals_config: {
+        Row: {
+          generate_recipe: boolean | null
+          id: string
+          location: string | null
+          meal_time: string | null
+          meal_type: string
+          portions: number | null
+          portions_manual: boolean | null
+          updated_at: string | null
+          user_id: string
+          who_eats: string | null
+          who_eats_custom: string[] | null
+        }
+        Insert: {
+          generate_recipe?: boolean | null
+          id?: string
+          location?: string | null
+          meal_time?: string | null
+          meal_type: string
+          portions?: number | null
+          portions_manual?: boolean | null
+          updated_at?: string | null
+          user_id: string
+          who_eats?: string | null
+          who_eats_custom?: string[] | null
+        }
+        Update: {
+          generate_recipe?: boolean | null
+          id?: string
+          location?: string | null
+          meal_time?: string | null
+          meal_type?: string
+          portions?: number | null
+          portions_manual?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+          who_eats?: string | null
+          who_eats_custom?: string[] | null
+        }
+        Relationships: []
+      }
+      user_nutrition_goals: {
+        Row: {
+          caloric_goal: string | null
+          dairy_preference: string | null
+          macro_carbs_pct: number | null
+          macro_fat_pct: number | null
+          macro_protein_pct: number | null
+          macros_custom: boolean | null
+          portion_size: string | null
+          protein_g_per_day: number | null
+          target_kcal: number | null
+          track_fiber: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          caloric_goal?: string | null
+          dairy_preference?: string | null
+          macro_carbs_pct?: number | null
+          macro_fat_pct?: number | null
+          macro_protein_pct?: number | null
+          macros_custom?: boolean | null
+          portion_size?: string | null
+          protein_g_per_day?: number | null
+          target_kcal?: number | null
+          track_fiber?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          caloric_goal?: string | null
+          dairy_preference?: string | null
+          macro_carbs_pct?: number | null
+          macro_fat_pct?: number | null
+          macro_protein_pct?: number | null
+          macros_custom?: boolean | null
+          portion_size?: string | null
+          protein_g_per_day?: number | null
+          target_kcal?: number | null
+          track_fiber?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_objectives: {
+        Row: {
+          goal_duration: string | null
+          main_blockers: string[] | null
+          main_goal: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          goal_duration?: string | null
+          main_blockers?: string[] | null
+          main_goal?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          goal_duration?: string | null
+          main_blockers?: string[] | null
+          main_goal?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_points: {
         Row: {
           created_at: string | null
@@ -3272,6 +3569,51 @@ export type Database = {
           total_points?: number
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_profile: {
+        Row: {
+          activity_level: string | null
+          age: number | null
+          created_at: string | null
+          current_weight: number | null
+          gender: string | null
+          height_cm: number | null
+          medical_conditions: string[] | null
+          sport_frequency: string | null
+          target_weight: number | null
+          updated_at: string | null
+          user_id: string
+          weight_deadline: string | null
+        }
+        Insert: {
+          activity_level?: string | null
+          age?: number | null
+          created_at?: string | null
+          current_weight?: number | null
+          gender?: string | null
+          height_cm?: number | null
+          medical_conditions?: string[] | null
+          sport_frequency?: string | null
+          target_weight?: number | null
+          updated_at?: string | null
+          user_id: string
+          weight_deadline?: string | null
+        }
+        Update: {
+          activity_level?: string | null
+          age?: number | null
+          created_at?: string | null
+          current_weight?: number | null
+          gender?: string | null
+          height_cm?: number | null
+          medical_conditions?: string[] | null
+          sport_frequency?: string | null
+          target_weight?: number | null
+          updated_at?: string | null
+          user_id?: string
+          weight_deadline?: string | null
         }
         Relationships: []
       }
