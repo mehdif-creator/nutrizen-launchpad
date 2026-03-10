@@ -1085,12 +1085,39 @@ export default function Profile() {
                     <div className="space-y-2">
                       <Label>Cuisine préférée</Label>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        {['Italienne', 'Française', 'Asiatique', 'Mexicaine', 'Méditerranéenne', 'Indienne', 'Américaine', 'Africaine', 'Autre'].map((cuisine) => (
-                          <div key={cuisine} className="flex items-center space-x-2">
-                            <Checkbox id={cuisine} checked={favoriteCuisines.includes(cuisine)} onCheckedChange={() => toggleInArray(favoriteCuisines, setFavoriteCuisines, cuisine)} />
-                            <Label htmlFor={cuisine} className="text-sm">{cuisine}</Label>
-                          </div>
-                        ))}
+                        <div className="flex items-center space-x-2 col-span-2 md:col-span-3">
+                          <Checkbox
+                            id="cuisine_toutes"
+                            checked={favoriteCuisines.length === 0 || favoriteCuisines.includes('toutes')}
+                            onCheckedChange={(checked) => {
+                              if (checked) setFavoriteCuisines([]);
+                              // unchecking does nothing special, user picks cuisines below
+                            }}
+                          />
+                          <Label htmlFor="cuisine_toutes" className="text-sm font-medium">Toutes / Peu importe</Label>
+                        </div>
+                        <Separator className="col-span-2 md:col-span-3" />
+                        {['Italienne', 'Française', 'Asiatique', 'Mexicaine', 'Méditerranéenne', 'Indienne', 'Américaine', 'Africaine', 'Autre'].map((cuisine) => {
+                          const allSelected = favoriteCuisines.length === 0;
+                          return (
+                            <div key={cuisine} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={cuisine}
+                                checked={!allSelected && favoriteCuisines.includes(cuisine)}
+                                disabled={allSelected}
+                                onCheckedChange={() => {
+                                  setFavoriteCuisines(prev => {
+                                    const filtered = prev.filter(c => c !== 'toutes');
+                                    return filtered.includes(cuisine)
+                                      ? filtered.filter(c => c !== cuisine)
+                                      : [...filtered, cuisine];
+                                  });
+                                }}
+                              />
+                              <Label htmlFor={cuisine} className={`text-sm ${allSelected ? 'text-muted-foreground' : ''}`}>{cuisine}</Label>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
