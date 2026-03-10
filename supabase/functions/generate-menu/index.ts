@@ -541,7 +541,7 @@ Deno.serve(async (req) => {
     const effectivePortions = computeEffectivePortions(ctx);
     const defaultPortions = Math.max(1, Math.round(effectivePortions));
 
-    const mealSlots: { type: string; portions: number; who_eats: string }[] = [];
+    const mealSlots: { type: string; portions: number; who_eats: string; batch_cooking: boolean }[] = [];
 
     if (mealsPerDay >= 2) {
       const lunchConfig = ctx.mealsConfig.find((m: MealConfig) => m.meal_type === 'dejeuner');
@@ -550,6 +550,7 @@ Deno.serve(async (req) => {
           type: 'dejeuner',
           portions: lunchConfig?.portions ?? defaultPortions,
           who_eats: lunchConfig?.who_eats ?? 'famille',
+          batch_cooking: lunchConfig?.batch_cooking ?? false,
         });
       }
     }
@@ -560,6 +561,7 @@ Deno.serve(async (req) => {
         type: 'diner',
         portions: dinnerConfig?.portions ?? defaultPortions,
         who_eats: dinnerConfig?.who_eats ?? 'famille',
+        batch_cooking: dinnerConfig?.batch_cooking ?? false,
       });
     }
 
