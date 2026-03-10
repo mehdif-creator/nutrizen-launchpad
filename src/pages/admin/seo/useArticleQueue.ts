@@ -95,18 +95,26 @@ export function useArticleQueue() {
       toInsert.push({ topic: topic.trim(), category, priority });
     }
 
+    let totalInserted = 0;
     if (toInsert.length > 0) {
       // Insert in batches of 500 to avoid payload limits
       for (let i = 0; i < toInsert.length; i += 500) {
         const batch = toInsert.slice(i, i + 500);
-        const { error } = await supabase.from('article_queue').insert(batch);
-        if (error) console.error('bulk insert error:', error);
+        const { data: inserted, error } = await supabase
+          .from('article_queue')
+          .insert(batch)
+          .select('id');
+        if (error) {
+          console.error('bulk insert error:', error);
+          throw new Error(`Erreur d'insertion : ${error.message}`);
+        }
+        totalInserted += (inserted?.length ?? 0);
       }
     }
 
     // Force refresh after insert
     await fetchItems();
-    return { inserted: toInsert.length, duplicates, existing: existingWarnings };
+    return { inserted: totalInserted, duplicates, existing: existingWarnings };
   };
 
   const deleteItem = async (id: string) => {
