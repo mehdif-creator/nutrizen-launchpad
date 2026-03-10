@@ -30,6 +30,7 @@ interface MealConfig {
   portions_manual: boolean;
   location: string;
   generate_recipe: boolean;
+  batch_cooking: boolean;
 }
 
 interface UserContext {
@@ -223,7 +224,7 @@ function getCurrentSeason(): string {
   return 'hiver';
 }
 
-function buildMenuPrompt(ctx: UserContext, mealSlots: { type: string; portions: number; who_eats: string }[], recentRecipeNames: string[]): { system: string; user: string } {
+function buildMenuPrompt(ctx: UserContext, mealSlots: { type: string; portions: number; who_eats: string; batch_cooking: boolean }[], recentRecipeNames: string[]): { system: string; user: string } {
   // Resolve values with fallback to legacy
   const dietType = normalizeDietType(ctx.foodStyle?.diet_type || ctx.legacyPreferences?.type_alimentation || 'omnivore');
   const allergyList: AllergyEntry[] = Array.isArray(ctx.allergies?.allergies) ? ctx.allergies.allergies : [];
@@ -319,9 +320,13 @@ function buildMenuPrompt(ctx: UserContext, mealSlots: { type: string; portions: 
   }
 
   // Meal slots description
-  const mealSlotsDesc = mealSlots.map(s =>
-    `${s.type === 'dejeuner' ? 'Déjeuner' : 'Dîner'} : ${s.portions} portions — qui mange : ${s.who_eats}`
-  ).join('\n');
+  const mealSlotsDesc = mealSlots.map(s => {
+    let desc = `${s.type === 'dejeuner' ? 'Déjeuner' : 'Dîner'} : ${s.portions} portions — qui mange : ${s.who_eats}`;
+    if (s.batch_cooking) {
+      desc += '\n  → Ce repas doit être en batch cooking : proposer une recette qui se conserve 3-4 jours au réfrigérateur et peut être préparée en grande quantité. Indiquer "batch_cooking" dans les tags.';
+    }
+    return desc;
+  }).join('\n');
 
   // Recent recipes for non-repetition
   const recentRecipesStr = recentRecipeNames.length > 0
@@ -540,7 +545,7 @@ Deno.serve(async (req) => {
     const effectivePortions = computeEffectivePortions(ctx);
     const defaultPortions = Math.max(1, Math.round(effectivePortions));
 
-    const mealSlots: { type: string; portions: number; who_eats: string }[] = [];
+    const mealSlots: { type: string; portions: number; who_eats: string; batch_cooking: boolean }[] = [];
 
     if (mealsPerDay >= 2) {
       const lunchConfig = ctx.mealsConfig.find((m: MealConfig) => m.meal_type === 'dejeuner');
@@ -549,6 +554,7 @@ Deno.serve(async (req) => {
           type: 'dejeuner',
           portions: lunchConfig?.portions ?? defaultPortions,
           who_eats: lunchConfig?.who_eats ?? 'famille',
+          batch_cooking: lunchConfig?.batch_cooking ?? false,
         });
       }
     }
@@ -559,6 +565,7 @@ Deno.serve(async (req) => {
         type: 'diner',
         portions: dinnerConfig?.portions ?? defaultPortions,
         who_eats: dinnerConfig?.who_eats ?? 'famille',
+        batch_cooking: dinnerConfig?.batch_cooking ?? false,
       });
     }
 

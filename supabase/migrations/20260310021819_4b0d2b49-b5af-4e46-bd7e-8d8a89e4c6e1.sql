@@ -1,0 +1,1 @@
+ALTER TABLE user_meals_config ADD COLUMN IF NOT EXISTS batch_cooking boolean DEFAULT false;

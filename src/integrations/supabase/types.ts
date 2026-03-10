@@ -3454,6 +3454,7 @@ export type Database = {
       }
       user_meals_config: {
         Row: {
+          batch_cooking: boolean | null
           generate_recipe: boolean | null
           id: string
           location: string | null
@@ -3467,6 +3468,7 @@ export type Database = {
           who_eats_custom: string[] | null
         }
         Insert: {
+          batch_cooking?: boolean | null
           generate_recipe?: boolean | null
           id?: string
           location?: string | null
@@ -3480,6 +3482,7 @@ export type Database = {
           who_eats_custom?: string[] | null
         }
         Update: {
+          batch_cooking?: boolean | null
           generate_recipe?: boolean | null
           id?: string
           location?: string | null

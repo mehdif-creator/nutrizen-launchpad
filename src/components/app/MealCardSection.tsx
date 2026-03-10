@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { MobileSelect } from '@/components/ui/mobile-select';
 import { Clock, Users, MapPin, AlertCircle, Edit2, Lock } from 'lucide-react';
 
@@ -22,6 +23,7 @@ export interface MealConfig {
   membresSelectionnes: string[]; // for 'personnalise'
   portionsOverride: number | null;
   lieu: string;
+  batchCooking: boolean;
 }
 
 interface MealCardSectionProps {
@@ -40,6 +42,7 @@ function defaultMeal(type: 'dejeuner' | 'diner'): MealConfig {
     membresSelectionnes: [],
     portionsOverride: null,
     lieu: 'maison',
+    batchCooking: false,
   };
 }
 
@@ -294,6 +297,25 @@ function MealCard({
           <p className="text-xs text-muted-foreground">
             NutriZen ne génèrera pas de recette pour ce repas.
           </p>
+        </div>
+      )}
+
+      {/* Batch cooking toggle */}
+      {!showNoRecipeNote && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor={`batch_${meal.type}`} className="text-sm">Batch cooking pour ce repas ?</Label>
+            <Switch
+              id={`batch_${meal.type}`}
+              checked={meal.batchCooking}
+              onCheckedChange={(checked) => onChange({ batchCooking: !!checked })}
+            />
+          </div>
+          {meal.batchCooking && (
+            <p className="text-xs text-primary/80">
+              Les recettes de ce repas seront adaptées pour être préparées en grande quantité et conservées 3-4 jours.
+            </p>
+          )}
         </div>
       )}
     </Card>

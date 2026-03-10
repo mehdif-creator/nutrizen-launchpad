@@ -16,6 +16,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { User, Target, Utensils, AlertTriangle, Leaf, Scale, Users, Heart, Save, Baby, ChevronDown } from 'lucide-react';
 import { MealCardSection, type MealConfig } from '@/components/app/MealCardSection';
+import { Separator } from '@/components/ui/separator';
+import { InfoBanner } from '@/components/common/InfoBanner';
+import { X } from 'lucide-react';
 
 /** Age-based child portion coefficient */
 function childPortionCoeff(age: number): number {
@@ -30,6 +33,25 @@ interface AllergyEntry {
   name: string;
   type: 'allergie' | 'intolerance';
   traces_ok: boolean;
+}
+
+/** Household first-visit banner */
+function HouseholdBanner() {
+  const [dismissed, setDismissed] = useState(() => localStorage.getItem('nutrizen_household_banner_dismissed') === 'true');
+  if (dismissed) return null;
+  return (
+    <div className="relative flex items-start gap-3 p-4 rounded-xl border bg-primary/10 border-primary/20 text-sm">
+      <span className="text-lg flex-shrink-0">👨‍👩‍👧</span>
+      <div className="flex-1">
+        <p className="font-medium text-primary">Commencez ici</p>
+        <p className="text-muted-foreground text-xs mt-0.5">La composition de votre foyer détermine les portions de toutes vos recettes. Renseignez-la en premier.</p>
+      </div>
+      <button onClick={() => { setDismissed(true); localStorage.setItem('nutrizen_household_banner_dismissed', 'true'); }}
+        className="h-6 w-6 flex items-center justify-center rounded-sm hover:bg-accent flex-shrink-0" aria-label="Fermer">
+        <X className="h-4 w-4" />
+      </button>
+    </div>
+  );
 }
 
 export default function Profile() {
@@ -216,6 +238,7 @@ export default function Profile() {
           membresSelectionnes: m.who_eats_custom || [],
           portionsOverride: m.portions_manual ? Number(m.portions) : null,
           lieu: m.location || 'maison',
+          batchCooking: m.batch_cooking ?? false,
         }));
         setMeals(loaded);
       }
@@ -346,6 +369,7 @@ export default function Profile() {
         portions_manual: m.portionsOverride !== null,
         location: m.lieu,
         generate_recipe: m.lieu !== 'ecole' && m.lieu !== 'restaurant',
+        batch_cooking: m.batchCooking,
         updated_at: now,
       }));
 
@@ -590,11 +614,86 @@ export default function Profile() {
           <div className="mb-6 md:mb-8">
             <h1 className="text-2xl md:text-3xl font-bold mb-2">Vos préférences</h1>
             <p className="text-sm md:text-base text-muted-foreground">
-              Aidez-nous à personnaliser vos recommandations au maximum
+              Commencez par votre foyer, puis renseignez vos préférences pour des menus parfaitement adaptés.
             </p>
           </div>
 
-          <Accordion type="multiple" defaultValue={["section1", "section2"]} className="space-y-4">
+          <Accordion type="multiple" defaultValue={[
+            // Open "Votre foyer" by default if no household data saved yet
+            ...(householdAdults <= 1 && householdChildren === 0 ? ["section_foyer"] : []),
+            "section1", "section2"
+          ]} className="space-y-4">
+
+            {/* ═══════════ Section 0: Votre foyer (FIRST) ═══════════ */}
+            <AccordionItem value="section_foyer">
+              <Card>
+                <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                  <CardHeader className="p-0">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Users className="w-5 h-5 text-primary" />
+                      Votre foyer
+                    </CardTitle>
+                  </CardHeader>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <CardContent className="space-y-4 pt-4">
+                    <HouseholdBanner />
+                    <p className="text-sm text-muted-foreground">
+                      Les portions de vos menus et votre liste de courses seront automatiquement adaptées à la composition de votre foyer.
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <Label htmlFor="hh_adults" className="flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" />Nombre d'adultes</Label>
+                        <Input id="hh_adults" type="number" min={0} max={10} step={1} value={householdAdults} onChange={(e) => setHouseholdAdults(Math.max(0, parseInt(e.target.value) || 0))} className="text-center text-lg font-semibold" />
+                        <p className="text-xs text-muted-foreground">1 portion = 1 adulte</p>
+                      </div>
+                      <div className="space-y-3">
+                        <Label htmlFor="hh_children" className="flex items-center gap-2"><Baby className="h-4 w-4 text-muted-foreground" />Nombre d'enfants</Label>
+                        <Input id="hh_children" type="number" min={0} max={10} step={1} value={householdChildren} onChange={(e) => setHouseholdChildren(Math.max(0, parseInt(e.target.value) || 0))} className="text-center text-lg font-semibold" />
+                      </div>
+                    </div>
+
+                    {householdChildren > 0 && (
+                      <div className="space-y-3">
+                        <Label>Âge de chaque enfant</Label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {childAges.map((ca, idx) => (
+                            <div key={idx} className="space-y-1">
+                              <Label htmlFor={`child_age_${idx}`} className="text-xs text-muted-foreground">Enfant {idx + 1}</Label>
+                              <Input id={`child_age_${idx}`} type="number" min={0} max={18} value={ca} onChange={(e) => { const n = [...childAges]; n[idx] = parseInt(e.target.value) || 0; setChildAges(n); }} className="text-center" />
+                              <p className="text-[10px] text-muted-foreground text-center">Coeff : {childPortionCoeff(ca)}</p>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground">0-3 ans = 0.3 · 4-8 ans = 0.5 · 9-13 ans = 0.7 · 14+ ans = 1.0</p>
+                      </div>
+                    )}
+
+                    <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium">Portions équivalentes</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {householdAdults} adulte{householdAdults > 1 ? 's' : ''}
+                            {householdChildren > 0 && ` + ${householdChildren} enfant${householdChildren > 1 ? 's' : ''}`}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-primary">{effectivePortions.toFixed(1)}</p>
+                          <p className="text-xs text-muted-foreground">portions</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="family_allergies">Allergies des proches</Label>
+                      <Input id="family_allergies" value={familyAllergies} onChange={(e) => setFamilyAllergies(e.target.value)} placeholder="Ex : Arachides, gluten..." />
+                    </div>
+                  </CardContent>
+                </AccordionContent>
+              </Card>
+            </AccordionItem>
 
             {/* ═══════════ Section 1: Votre profil ═══════════ */}
             <AccordionItem value="section1">
@@ -948,11 +1047,28 @@ export default function Profile() {
                       <Select value={dietType} onValueChange={setDietType}>
                         <SelectTrigger id="type_alim"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
                         <SelectContent>
-                          {['Omnivore', 'Végétarien', 'Végétalien', 'Pescétarien', 'Flexitarien', 'Kéto', 'Low Carb', 'Paléo', 'Méditerranéen'].map((type) => (
-                            <SelectItem key={type} value={type.toLowerCase()}>{type}</SelectItem>
+                          {[
+                            { value: 'omnivore', label: 'Omnivore' },
+                            { value: 'vegetarien', label: 'Végétarien' },
+                            { value: 'vegan', label: 'Végétalien / Vegan' },
+                            { value: 'pescetarien', label: 'Pescétarien' },
+                            { value: 'flexitarien', label: 'Flexitarien' },
+                            { value: 'halal', label: 'Halal' },
+                            { value: 'casher', label: 'Casher' },
+                            { value: 'keto', label: 'Kéto' },
+                            { value: 'low_carb', label: 'Low Carb' },
+                            { value: 'paleo', label: 'Paléo' },
+                            { value: 'mediterraneen', label: 'Méditerranéen' },
+                          ].map((t) => (
+                            <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                      {['vegan', 'vegetarien', 'pescetarien', 'halal', 'casher'].includes(dietType) && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Aucune recette contenant des ingrédients incompatibles avec ce régime ne sera proposée.
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -990,12 +1106,39 @@ export default function Profile() {
                     <div className="space-y-2">
                       <Label>Cuisine préférée</Label>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        {['Italienne', 'Française', 'Asiatique', 'Mexicaine', 'Méditerranéenne', 'Indienne', 'Américaine', 'Africaine', 'Autre'].map((cuisine) => (
-                          <div key={cuisine} className="flex items-center space-x-2">
-                            <Checkbox id={cuisine} checked={favoriteCuisines.includes(cuisine)} onCheckedChange={() => toggleInArray(favoriteCuisines, setFavoriteCuisines, cuisine)} />
-                            <Label htmlFor={cuisine} className="text-sm">{cuisine}</Label>
-                          </div>
-                        ))}
+                        <div className="flex items-center space-x-2 col-span-2 md:col-span-3">
+                          <Checkbox
+                            id="cuisine_toutes"
+                            checked={favoriteCuisines.length === 0 || favoriteCuisines.includes('toutes')}
+                            onCheckedChange={(checked) => {
+                              if (checked) setFavoriteCuisines([]);
+                              // unchecking does nothing special, user picks cuisines below
+                            }}
+                          />
+                          <Label htmlFor="cuisine_toutes" className="text-sm font-medium">Toutes / Peu importe</Label>
+                        </div>
+                        <Separator className="col-span-2 md:col-span-3" />
+                        {['Italienne', 'Française', 'Asiatique', 'Mexicaine', 'Méditerranéenne', 'Indienne', 'Américaine', 'Africaine', 'Autre'].map((cuisine) => {
+                          const allSelected = favoriteCuisines.length === 0;
+                          return (
+                            <div key={cuisine} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={cuisine}
+                                checked={!allSelected && favoriteCuisines.includes(cuisine)}
+                                disabled={allSelected}
+                                onCheckedChange={() => {
+                                  setFavoriteCuisines(prev => {
+                                    const filtered = prev.filter(c => c !== 'toutes');
+                                    return filtered.includes(cuisine)
+                                      ? filtered.filter(c => c !== cuisine)
+                                      : [...filtered, cuisine];
+                                  });
+                                }}
+                              />
+                              <Label htmlFor={cuisine} className={`text-sm ${allSelected ? 'text-muted-foreground' : ''}`}>{cuisine}</Label>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
@@ -1134,75 +1277,7 @@ export default function Profile() {
               </Card>
             </AccordionItem>
 
-            {/* ═══════════ Section 7: Votre foyer ═══════════ */}
-            <AccordionItem value="section7">
-              <Card>
-                <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                  <CardHeader className="p-0">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Users className="w-5 h-5 text-primary" />
-                      Votre foyer
-                    </CardTitle>
-                  </CardHeader>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <CardContent className="space-y-4 pt-4">
-                    <p className="text-sm text-muted-foreground">
-                      Les portions de vos menus et votre liste de courses seront automatiquement adaptées à la composition de votre foyer.
-                    </p>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      <div className="space-y-3">
-                        <Label htmlFor="hh_adults" className="flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" />Nombre d'adultes</Label>
-                        <Input id="hh_adults" type="number" min={0} max={10} step={1} value={householdAdults} onChange={(e) => setHouseholdAdults(Math.max(0, parseInt(e.target.value) || 0))} className="text-center text-lg font-semibold" />
-                        <p className="text-xs text-muted-foreground">1 portion = 1 adulte</p>
-                      </div>
-                      <div className="space-y-3">
-                        <Label htmlFor="hh_children" className="flex items-center gap-2"><Baby className="h-4 w-4 text-muted-foreground" />Nombre d'enfants</Label>
-                        <Input id="hh_children" type="number" min={0} max={10} step={1} value={householdChildren} onChange={(e) => setHouseholdChildren(Math.max(0, parseInt(e.target.value) || 0))} className="text-center text-lg font-semibold" />
-                      </div>
-                    </div>
-
-                    {householdChildren > 0 && (
-                      <div className="space-y-3">
-                        <Label>Âge de chaque enfant</Label>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                          {childAges.map((ca, idx) => (
-                            <div key={idx} className="space-y-1">
-                              <Label htmlFor={`child_age_${idx}`} className="text-xs text-muted-foreground">Enfant {idx + 1}</Label>
-                              <Input id={`child_age_${idx}`} type="number" min={0} max={18} value={ca} onChange={(e) => { const n = [...childAges]; n[idx] = parseInt(e.target.value) || 0; setChildAges(n); }} className="text-center" />
-                              <p className="text-[10px] text-muted-foreground text-center">Coeff : {childPortionCoeff(ca)}</p>
-                            </div>
-                          ))}
-                        </div>
-                        <p className="text-xs text-muted-foreground">0-3 ans = 0.3 · 4-8 ans = 0.5 · 9-13 ans = 0.7 · 14+ ans = 1.0</p>
-                      </div>
-                    )}
-
-                    <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium">Portions équivalentes</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {householdAdults} adulte{householdAdults > 1 ? 's' : ''}
-                            {householdChildren > 0 && ` + ${householdChildren} enfant${householdChildren > 1 ? 's' : ''}`}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-primary">{effectivePortions.toFixed(1)}</p>
-                          <p className="text-xs text-muted-foreground">portions</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="family_allergies">Allergies des proches</Label>
-                      <Input id="family_allergies" value={familyAllergies} onChange={(e) => setFamilyAllergies(e.target.value)} placeholder="Ex : Arachides, gluten..." />
-                    </div>
-                  </CardContent>
-                </AccordionContent>
-              </Card>
-            </AccordionItem>
+            {/* Section 7 removed — Votre foyer is now at the top */}
 
             {/* ═══════════ Section 8: Mode de vie ═══════════ */}
             <AccordionItem value="section8">
@@ -1318,13 +1393,28 @@ export default function Profile() {
             </AccordionItem>
           </Accordion>
 
-          <div className="mt-6 md:mt-8 pb-4">
+          {/* Desktop save button */}
+          <div className="mt-6 md:mt-8 pb-4 hidden md:block">
             <Button onClick={handleSave} disabled={saving} className="w-full text-sm md:text-base" size="lg">
               <Save className="w-4 h-4 mr-2" />
               {saving ? 'Sauvegarde...' : '💾 Sauvegarder'}
             </Button>
             {saveError && (
               <p className="text-sm text-destructive mt-2 text-center">{saveError}</p>
+            )}
+          </div>
+
+          {/* Spacer for mobile sticky button */}
+          <div className="h-20 md:hidden" />
+
+          {/* Mobile sticky save button */}
+          <div className="fixed bottom-[72px] left-4 right-4 z-40 md:hidden">
+            <Button onClick={handleSave} disabled={saving} className="w-full text-sm shadow-[0_-4px_12px_rgba(0,0,0,0.15)]" size="lg">
+              <Save className="w-4 h-4 mr-2" />
+              {saving ? 'Sauvegarde...' : '💾 Sauvegarder'}
+            </Button>
+            {saveError && (
+              <p className="text-sm text-destructive mt-2 text-center bg-background rounded px-2 py-1">{saveError}</p>
             )}
           </div>
         </div>
