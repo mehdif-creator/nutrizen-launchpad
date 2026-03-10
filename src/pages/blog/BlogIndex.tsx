@@ -102,7 +102,7 @@ export default function BlogIndex() {
     // 2. Category
     if (selectedCategory && selectedCategory !== 'Tous') {
       result = result.filter(a =>
-        (a.cluster_context || a.tags?.[0]) === selectedCategory
+        getCategoryLabel(a.cluster_context || a.tags?.[0]) === selectedCategory
       );
     }
 
