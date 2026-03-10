@@ -49,6 +49,7 @@ const AdminMacrosMaintenance = lazy(() => import('./pages/admin/AdminMacrosMaint
 const AdminHealth = lazy(() => import('./pages/admin/AdminHealth'));
 const AutomationIndex = lazy(() => import('./pages/admin/AutomationIndex'));
 const AdminSeoFactory = lazy(() => import('./pages/admin/AdminSeoFactory'));
+const AdminAffiliations = lazy(() => import('./pages/admin/AdminAffiliations'));
 
 // KPI Detail Pages
 const KpiMrr = lazy(() => import('./pages/admin/kpis/KpiMrr'));
@@ -152,6 +153,7 @@ const App = () => {
         <Route path="/admin/health" element={<ProtectedRoute requireAdmin><AdminHealth /></ProtectedRoute>} />
         <Route path="/admin/automation/*" element={<ProtectedRoute requireAdmin><AutomationIndex /></ProtectedRoute>} />
         <Route path="/admin/seo-factory" element={<ProtectedRoute requireAdmin><AdminSeoFactory /></ProtectedRoute>} />
+        <Route path="/admin/affiliations" element={<ProtectedRoute requireAdmin><AdminAffiliations /></ProtectedRoute>} />
 
         {/* Admin KPI Detail Pages */}
         <Route path="/admin/kpis/mrr" element={<ProtectedRoute requireAdmin><KpiMrr /></ProtectedRoute>} />
@@ -199,6 +201,7 @@ const App = () => {
         <Route path="/mum" element={<Mum />} />
         <Route path="/pro" element={<Pro />} />
         <Route path="/affiliate" element={<Affiliate />} />
+        <Route path="/affiliation" element={<Affiliate />} />
         <Route path="/post-checkout" element={<PostCheckout />} />
         <Route path="/post-checkout-profile" element={<ProtectedRoute skipOnboardingCheck><PostCheckoutProfile /></ProtectedRoute>} />
         <Route path="/credits" element={<Navigate to="/app" replace />} />

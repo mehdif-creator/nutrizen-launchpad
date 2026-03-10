@@ -327,6 +327,52 @@ Deno.serve(async (req) => {
         return okResponse(corsHeaders);
       }
 
+      // ── AFFILIATE COMMISSION (runs on every invoice.paid with a subscription) ──
+      if (subscriptionId && invoice.amount_paid && invoice.amount_paid > 0) {
+        try {
+          // Check if this user was referred by an affiliate
+          const { data: referral } = await supabaseAdmin
+            .from('affiliate_referrals')
+            .select('affiliate_code, converted')
+            .eq('referred_user_id', userId)
+            .limit(1)
+            .maybeSingle();
+
+          if (referral) {
+            // Insert commission (idempotent via unique stripe_invoice_id)
+            const commissionCents = Math.round(invoice.amount_paid * 0.20);
+            const { error: commError } = await supabaseAdmin
+              .from('affiliate_commissions')
+              .upsert({
+                affiliate_code: referral.affiliate_code,
+                referred_user_id: userId,
+                stripe_invoice_id: invoice.id,
+                subscription_amount_cents: invoice.amount_paid,
+                commission_amount_cents: commissionCents,
+                status: 'pending',
+              }, { onConflict: 'stripe_invoice_id' });
+
+            if (commError) {
+              logStep("WARN: Affiliate commission insert error", { error: commError.message });
+            } else {
+              logStep("Affiliate commission recorded", { code: referral.affiliate_code, amount: commissionCents });
+            }
+
+            // Mark as converted on first payment
+            if (!referral.converted) {
+              await supabaseAdmin
+                .from('affiliate_referrals')
+                .update({ converted: true, stripe_customer_id: customerId })
+                .eq('referred_user_id', userId)
+                .eq('affiliate_code', referral.affiliate_code);
+              logStep("Affiliate referral marked as converted");
+            }
+          }
+        } catch (affErr) {
+          logStep("WARN: Affiliate commission error (non-blocking)", { error: String(affErr) });
+        }
+      }
+
       if (billingReason === 'subscription_create' || billingReason === 'subscription_cycle') {
         // ── MONTHLY REFILL ──
         if (!subscriptionId) {
