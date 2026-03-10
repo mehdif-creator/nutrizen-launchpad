@@ -644,6 +644,8 @@ Deno.serve(async (req) => {
 
     // ── BUILD PROMPT & CALL AI ──
     const { system, user: userPrompt } = buildMenuPrompt(ctx, mealSlots, recentRecipeNames);
+    console.log(`[generate-menu] Prompt length: system=${system.length} chars, user=${userPrompt.length} chars`);
+    console.log(`[generate-menu] Prompt preview (first 500): ${userPrompt.substring(0, 500)}`);
     console.log(`[generate-menu] Calling AI for menu generation...`);
 
     let aiResponse: any;
