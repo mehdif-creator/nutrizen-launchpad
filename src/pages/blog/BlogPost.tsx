@@ -264,7 +264,7 @@ export default function BlogPost() {
             </h1>
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
               <span>📅 {formatDateFr(article.published_at)}</span>
-              {readingTime && <span>⏱ {readingTime} min de lecture</span>}
+              <span>⏱ {calculateReadTime(htmlContent)} min de lecture</span>
               <span>✍️ {article.author || 'NutriZen'}</span>
             </div>
           </header>
