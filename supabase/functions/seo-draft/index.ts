@@ -51,6 +51,12 @@ Use {{IMAGE_1_URL}}, {{IMAGE_2_URL}} etc. as image placeholders.
 Include FAQ section with <details><summary> elements.
 End with disclaimer.
 
+CRITICAL FORMATTING RULES — NEVER VIOLATE:
+1. Do NOT start the article with the title. The title is stored separately and rendered by the frontend.
+2. Do NOT include a cover image or any image tag as the very first element of the body.
+3. Start the article body DIRECTLY with the first paragraph of introductory text.
+4. You may use images within the body to illustrate points, but NEVER as the very first element.
+
 STRICT RULES: Output ONLY valid JSON. ALL text in French (fr-FR). content_html must be valid HTML.
 
 OUTPUT SCHEMA:
