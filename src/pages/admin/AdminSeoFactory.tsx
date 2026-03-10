@@ -111,6 +111,16 @@ export default function AdminSeoFactory() {
           <Button variant="outline" size="sm" onClick={() => refetch()}>
             <RefreshCw className="mr-2 h-4 w-4" />Actualiser
           </Button>
+          {/* Queue stop/resume - accessible from any tab */}
+          {autoMode || isRunning ? (
+            <Button variant="destructive" size="sm" onClick={stopProcessing} className="gap-1.5">
+              <Square className="h-3.5 w-3.5" />Stopper
+            </Button>
+          ) : stats.pending > 0 ? (
+            <Button variant="default" size="sm" onClick={() => toggleAutoMode(true)} className="gap-1.5 bg-green-600 hover:bg-green-700">
+              <CirclePlay className="h-3.5 w-3.5" />Reprendre ({stats.pending})
+            </Button>
+          ) : null}
         </div>
 
         {/* Main tabs */}
