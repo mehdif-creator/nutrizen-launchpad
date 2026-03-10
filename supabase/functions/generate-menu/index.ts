@@ -108,7 +108,7 @@ async function buildUserContext(supabaseClient: any, userId: string): Promise<Us
 // PARTIE 2 — validateRecipe() — HARD CONSTRAINTS
 // ══════════════════════════════════════════════════════════════
 
-// Diet exclusion map
+// Diet exclusion map (normalized keys — no accents, lowercase)
 const DIET_EXCLUSIONS: Record<string, string[]> = {
   'vegan': ['viande', 'poulet', 'bœuf', 'porc', 'agneau', 'canard', 'dinde', 'poisson', 'saumon', 'thon', 'crevette', 'crabe', 'homard', 'fruits de mer', 'œuf', 'oeuf', 'lait', 'crème', 'beurre', 'fromage', 'yaourt', 'miel', 'gélatine'],
   'vegetarien': ['viande', 'poulet', 'bœuf', 'porc', 'agneau', 'canard', 'dinde', 'poisson', 'saumon', 'thon', 'crevette', 'crabe', 'homard', 'fruits de mer', 'gélatine'],
@@ -116,6 +116,27 @@ const DIET_EXCLUSIONS: Record<string, string[]> = {
   'halal': ['porc', 'jambon', 'bacon', 'lard', 'saucisson', 'chorizo', 'vin', 'bière', 'alcool', 'rhum', 'cognac', 'calvados'],
   'casher': ['porc', 'jambon', 'bacon', 'lard', 'saucisson', 'chorizo', 'crevette', 'crabe', 'homard', 'fruits de mer'],
 };
+
+// Normalize diet type from form labels to diet exclusion keys
+function normalizeDietType(raw: string): string {
+  const normalized = (raw || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // strip accents
+  const map: Record<string, string> = {
+    'vegetalien': 'vegan',
+    'vegan': 'vegan',
+    'vegetarien': 'vegetarien',
+    'pescetarien': 'pescetarien',
+    'halal': 'halal',
+    'casher': 'casher',
+    'omnivore': 'omnivore',
+    'flexitarien': 'omnivore',
+    'keto': 'omnivore',
+    'low carb': 'omnivore',
+    'paleo': 'omnivore',
+    'mediterraneen': 'omnivore',
+  };
+  return map[normalized] || normalized;
+}
 
 // Medical condition restrictions
 const MEDICAL_EXCLUSIONS: Record<string, string[]> = {
