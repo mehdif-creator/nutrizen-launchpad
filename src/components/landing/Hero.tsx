@@ -90,7 +90,7 @@ export const Hero = ({ onCtaClick, onExampleClick, copy }: HeroProps) => {
                 <Button
                   onClick={onCtaClick}
                   size="lg"
-                  className="w-full sm:w-auto bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] shadow-glow transition-tech text-base md:text-lg px-6 md:px-8 py-4"
+                  className="w-full sm:w-auto bg-gradient-to-r from-primary to-accent text-white active:scale-[0.99] shadow-glow transition-tech text-base md:text-lg px-6 md:px-8 min-h-[52px]"
                 >
                   {primaryCta}
                 </Button>
