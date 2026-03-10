@@ -10,7 +10,7 @@
  *
  * No client-held secrets required.
  */
-import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { z } from 'npm:zod@3.22.4';
 import { createClient } from '../_shared/deps.ts';
 import { getCorsHeaders, getClientIp, generateRequestId, Logger } from '../_shared/security.ts';
 

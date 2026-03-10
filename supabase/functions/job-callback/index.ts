@@ -4,7 +4,7 @@
  * Security: HMAC signature verification, strict CORS, Zod validation
  */
 import { createClient } from '../_shared/deps.ts';
-import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { z } from 'npm:zod@3.22.4';
 import { createHmac } from "node:crypto";
 import { getCorsHeaders } from '../_shared/security.ts';
 
