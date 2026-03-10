@@ -160,7 +160,7 @@ export default function Profile() {
         supabase.from('user_lifestyle').select('*').eq('user_id', user.id).maybeSingle(),
       ]);
 
-      // Section 1
+      // Section 1 — reverse map medical codes to display labels
       if (profile) {
         setGender(profile.gender || '');
         setAge(profile.age);
@@ -170,7 +170,16 @@ export default function Profile() {
         setWeightDeadline(profile.weight_deadline || '');
         setActivityLevel(profile.activity_level || '');
         setSportFrequency(profile.sport_frequency || '');
-        setMedicalConditions(profile.medical_conditions || []);
+        const MEDICAL_CODE_TO_LABEL: Record<string, string> = {
+          'diabete_2': 'Diabète type 2',
+          'hypertension': 'Hypertension',
+          'cholesterol': 'Cholestérol élevé',
+          'hypothyroidie': 'Hypothyroïdie',
+          'aucune': 'Aucune',
+          'autre': 'Autre',
+        };
+        const rawConditions: string[] = profile.medical_conditions || [];
+        setMedicalConditions(rawConditions.map((c: string) => MEDICAL_CODE_TO_LABEL[c] || c));
       }
 
       // Section 2
@@ -180,11 +189,18 @@ export default function Profile() {
         setMainBlockers(objectives.main_blockers || []);
       }
 
-      // Section 3
+      // Section 3 — reverse map prep_time codes
       if (eating) {
         setMealsPerDay(eating.meals_per_day);
         setAppetiteSize(eating.appetite_size || '');
-        setPrepTime(eating.prep_time?.[0] || '');
+        const PREP_CODE_TO_FORM: Record<string, string> = {
+          '15min': 'moins_10',
+          '15_30min': '10_20',
+          '30_45min': '20_40',
+          '45min_plus': 'plus_40',
+        };
+        const rawPrepTime = eating.prep_time?.[0] || '';
+        setPrepTime(PREP_CODE_TO_FORM[rawPrepTime] || rawPrepTime);
         setBatchCooking(eating.batch_cooking || '');
         setCookingLevel(eating.cooking_level || '');
         setMealFrequency(eating.meal_frequency || '');
