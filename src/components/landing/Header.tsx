@@ -98,55 +98,42 @@ export const Header = ({ onCtaClick }: HeaderProps) => {
         </button>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu - full screen overlay */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t bg-background">
-          <nav className="container py-4 flex flex-col gap-4">
-            <button
-              onClick={() => scrollToSection('avantages')}
-              className="text-left text-sm font-medium text-muted-foreground hover:text-foreground"
-            >
-              {t('header.advantages')}
-            </button>
-            <button
-              onClick={() => scrollToSection('comment')}
-              className="text-left text-sm font-medium text-muted-foreground hover:text-foreground"
-            >
-              {t('header.howItWorks')}
-            </button>
-            <button
-              onClick={() => scrollToSection('exemples')}
-              className="text-left text-sm font-medium text-muted-foreground hover:text-foreground"
-            >
-              {t('header.examples')}
-            </button>
-            <button
-              onClick={() => scrollToSection('tarifs')}
-              className="text-left text-sm font-medium text-muted-foreground hover:text-foreground"
-            >
-              {t('header.pricing')}
-            </button>
-            <button
-              onClick={() => scrollToSection('faq')}
-              className="text-left text-sm font-medium text-muted-foreground hover:text-foreground"
-            >
-              {t('header.faq')}
-            </button>
+        <div className="md:hidden fixed inset-0 top-16 z-40 bg-background overflow-y-auto">
+          <nav className="container py-6 flex flex-col gap-1">
+            {[
+              { action: () => scrollToSection('avantages'), label: t('header.advantages') },
+              { action: () => scrollToSection('comment'), label: t('header.howItWorks') },
+              { action: () => scrollToSection('exemples'), label: t('header.examples') },
+              { action: () => scrollToSection('tarifs'), label: t('header.pricing') },
+              { action: () => scrollToSection('faq'), label: t('header.faq') },
+            ].map(({ action, label }) => (
+              <button
+                key={label}
+                onClick={action}
+                className="text-left text-base font-medium text-muted-foreground hover:text-foreground py-3 px-2 min-h-[48px] flex items-center border-b border-border/50"
+              >
+                {label}
+              </button>
+            ))}
             <Link
               to="/blog"
-              className="text-left text-sm font-medium text-muted-foreground hover:text-foreground"
+              className="text-left text-base font-medium text-muted-foreground hover:text-foreground py-3 px-2 min-h-[48px] flex items-center border-b border-border/50"
+              onClick={() => setMobileMenuOpen(false)}
             >
               {t('header.blog')}
             </Link>
             <Link
               to="/auth/login"
-              className="text-left text-sm font-medium text-muted-foreground hover:text-foreground"
+              className="text-left text-base font-medium text-muted-foreground hover:text-foreground py-3 px-2 min-h-[48px] flex items-center border-b border-border/50"
+              onClick={() => setMobileMenuOpen(false)}
             >
               {t('header.login')}
             </Link>
             <Button
               onClick={onCtaClick}
-              className="w-full bg-gradient-to-r from-primary to-accent text-white"
+              className="w-full bg-gradient-to-r from-primary to-accent text-white mt-4 min-h-[52px] text-base"
             >
               Commencer gratuitement
             </Button>
