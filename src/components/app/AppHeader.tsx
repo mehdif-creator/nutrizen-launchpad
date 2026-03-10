@@ -264,12 +264,3 @@ export const AppHeader = () => {
     </header>
   );
 };
-
-// Dummy fragment to close cleanly — the actual closing is above
-const _AppHeaderClosed = true;
-          </nav>
-        </div>
-      )}
-    </header>
-  );
-};
