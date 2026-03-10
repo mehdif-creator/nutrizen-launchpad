@@ -220,7 +220,7 @@ export default function RecipeDetail() {
     );
   }
 
-  const imageUrl = recipe.image_url || (recipe.image_path ? `${storagePublicBaseUrl()}/${recipe.image_path}` : null);
+  const imageUrl = getRecipeImageUrl({ image_url: recipe.image_url, image_path: recipe.image_path });
   const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
   const instructions = Array.isArray(recipe.instructions) ? recipe.instructions : [];
 
