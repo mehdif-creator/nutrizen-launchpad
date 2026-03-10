@@ -224,7 +224,12 @@ function getCurrentSeason(): string {
   return 'hiver';
 }
 
-function buildMenuPrompt(ctx: UserContext, mealSlots: { type: string; portions: number; who_eats: string; batch_cooking: boolean }[], recentRecipeNames: string[]): { system: string; user: string } {
+function buildMenuPrompt(
+  ctx: UserContext,
+  mealSlots: { type: string; portions: number; who_eats: string; batch_cooking: boolean }[],
+  recentRecipeNames: string[],
+  candidateRecipes: { id: string; title: string }[]
+): { system: string; user: string } {
   // Resolve values with fallback to legacy
   const dietType = normalizeDietType(ctx.foodStyle?.diet_type || ctx.legacyPreferences?.type_alimentation || 'omnivore');
   const allergyList: AllergyEntry[] = Array.isArray(ctx.allergies?.allergies) ? ctx.allergies.allergies : [];
@@ -333,9 +338,17 @@ function buildMenuPrompt(ctx: UserContext, mealSlots: { type: string; portions: 
     ? `Ne pas reproposer ces recettes déjà générées récemment :\n${recentRecipeNames.map(n => `- ${n}`).join('\n')}`
     : '';
 
-  const system = `Tu es un nutritionniste expert. Tu génères des menus personnalisés en français pour l'application NutriZen. Tu dois STRICTEMENT respecter toutes les contraintes du profil utilisateur. Ne propose jamais une recette qui viole une contrainte alimentaire, médicale ou de préférence de l'utilisateur. Réponds uniquement en JSON valide, sans texte autour, sans markdown.`;
+  // Build candidate recipes catalog
+  const candidateList = candidateRecipes
+    .map(r => `- [${r.id}] ${r.title}`)
+    .join('\n');
 
-  const user = `Génère un menu pour ${mealSlots.length} type(s) de repas sur 7 jours pour cet utilisateur.
+  const system = `Tu es un nutritionniste expert pour l'application NutriZen. Tu DOIS sélectionner les recettes UNIQUEMENT parmi le catalogue fourni. N'invente JAMAIS de recette. Utilise EXACTEMENT le titre et l'ID du catalogue. Réponds uniquement en JSON valide, sans texte autour, sans markdown.`;
+
+  const user = `Sélectionne des recettes parmi le catalogue ci-dessous pour composer un menu de ${mealSlots.length} repas/jour sur 7 jours.
+
+=== CATALOGUE DE RECETTES DISPONIBLES ===
+${candidateList}
 
 === CONTRAINTES ABSOLUES (ne jamais violer) ===
 Régime alimentaire : ${dietType}
@@ -352,22 +365,27 @@ ${calorieInstructions}
 Répartition macros : Protéines ${macroProteinPct}% / Glucides ${macroCarbsPct}% / Lipides ${macroFatPct}%
 ${proteinGPerDay ? `Apport protéines cible : ${proteinGPerDay}g/jour` : ''}
 Temps de préparation max : ${maxPrepTime} minutes
-Niveau en cuisine : ${cookingLevel}${cookingLevel === 'debutant' ? ' (max 5 étapes, techniques simples)' : cookingLevel === 'intermediaire' ? ' (max 8 étapes)' : ' (toutes techniques)'}
+Niveau en cuisine : ${cookingLevel}
 Cuisines préférées : ${favCuisines}
-Ingrédients favoris à inclure dans au moins 60% des recettes : ${favIngredients}
+Ingrédients favoris : ${favIngredients}
 Niveau de piment : ${spiceLevel}
 ${cookingMethod ? `Mode de cuisson préféré : ${cookingMethod}` : ''}
-${preferOrganic ? 'Produits bio : oui, indiquer "bio" quand possible' : ''}
 ${preferSeasonal ? `Produits de saison : oui — Saison actuelle : ${getCurrentSeason()}` : ''}
-${reduceSugar ? 'Limiter le sucre ajouté dans toutes les recettes, y compris les desserts.' : ''}
-${batchCooking === 'oui' || batchCooking === 'parfois' ? 'Proposer au moins une recette par semaine adaptée au batch cooking (se conserve 3-4 jours). Indiquer "batch_cooking" dans les tags.' : ''}
+${reduceSugar ? 'Limiter le sucre ajouté.' : ''}
 
 === PORTIONS PAR REPAS ===
 ${mealSlotsDesc}
 
 ${recentRecipesStr}
 
-=== FORMAT DE RÉPONSE JSON ATTENDU ===
+=== RÈGLES ===
+1. Sélectionne UNIQUEMENT des recettes du catalogue ci-dessus
+2. Utilise le recipe_id (entre crochets) et le titre EXACT du catalogue
+3. Ne répète PAS la même recette dans la semaine
+4. Varie les types de cuisine et protéines d'un jour à l'autre
+5. Adapte les portions selon les besoins
+
+=== FORMAT DE RÉPONSE JSON ===
 {
   "menu": [
     {
@@ -375,28 +393,15 @@ ${recentRecipesStr}
       "repas": [
         {
           "type": "dejeuner" | "diner",
-          "nom": "Nom de la recette",
+          "recipe_id": "uuid-from-catalog",
+          "nom": "Titre exact du catalogue",
           "portions": N,
-          "kcal_par_portion": N,
-          "temps_preparation_min": N,
-          "ingredients": [
-            { "nom": "...", "quantite": "...", "unite": "..." }
-          ],
-          "etapes": ["étape 1", "étape 2"],
-          "macros_par_portion": {
-            "proteines_g": N,
-            "glucides_g": N,
-            "lipides_g": N
-          },
-          "tags": ["batch_cooking", "sans_gluten", "rapide"],
-          "conforme_profil": true
+          "type_repas_original": "dejeuner" | "diner"
         }
       ]
     }
   ]
-}
-
-IMPORTANT : Chaque recette DOIT avoir conforme_profil = true. Ne génère AUCUNE recette qui viole les contraintes.`;
+}`;
 
   return { system, user };
 }
