@@ -28,7 +28,7 @@ export const Header = ({ onCtaClick }: HeaderProps) => {
           <img 
             src={new URL('@/assets/nutrizen-main-logo.png', import.meta.url).href}
             alt="NutriZen Logo" 
-            className="h-14 w-auto"
+            className="h-10 md:h-14 w-auto max-w-[120px]"
           />
         </Link>
 
