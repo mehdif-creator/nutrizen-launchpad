@@ -184,9 +184,34 @@ export function SeoQueueTab() {
       )}
 
       {/* Queue table */}
-      {loading ? (
-        <div className="text-center py-12 text-muted-foreground">Chargement…</div>
-      ) : items.length === 0 ? (
+      {loading && items.length === 0 ? (
+        <div className="border rounded-md">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Sujet</TableHead>
+                <TableHead className="w-28">Catégorie</TableHead>
+                <TableHead className="w-20">Priorité</TableHead>
+                <TableHead className="w-28">Statut</TableHead>
+                <TableHead className="w-28">Créé le</TableHead>
+                <TableHead className="w-36">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {[1, 2, 3, 4].map(i => (
+                <TableRow key={i}>
+                  <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-8" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-16" /></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : !loading && items.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <p>La file d'attente est vide. Importez des sujets ci-dessus.</p>
         </div>

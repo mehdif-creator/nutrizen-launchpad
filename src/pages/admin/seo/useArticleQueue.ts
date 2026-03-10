@@ -28,19 +28,22 @@ export function useArticleQueue() {
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchItems = useCallback(async () => {
-    const { data } = await supabase
-      .from('article_queue' as any)
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('article_queue')
       .select('*')
       .order('priority', { ascending: true })
       .order('created_at', { ascending: true });
-    if (data) setItems(data as unknown as QueueItem[]);
+    if (error) {
+      console.error('article_queue fetch error:', error);
+    }
+    setItems((data ?? []) as unknown as QueueItem[]);
     setLoading(false);
-    return data as unknown as QueueItem[] | null;
+    return (data ?? []) as unknown as QueueItem[];
   }, []);
 
   useEffect(() => {
     fetchItems();
-    // Poll every 5s when processing items exist
     pollingRef.current = setInterval(fetchItems, 5000);
     return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
   }, [fetchItems]);
@@ -59,7 +62,7 @@ export function useArticleQueue() {
   ): Promise<{ inserted: number; duplicates: number; existing: string[] }> => {
     // Check for duplicates in queue
     const { data: existingQueue } = await supabase
-      .from('article_queue' as any)
+      .from('article_queue')
       .select('topic, status')
       .in('status', ['pending', 'processing', 'done']);
 
@@ -93,28 +96,34 @@ export function useArticleQueue() {
     }
 
     if (toInsert.length > 0) {
-      await supabase.from('article_queue' as any).insert(toInsert);
+      // Insert in batches of 500 to avoid payload limits
+      for (let i = 0; i < toInsert.length; i += 500) {
+        const batch = toInsert.slice(i, i + 500);
+        const { error } = await supabase.from('article_queue').insert(batch);
+        if (error) console.error('bulk insert error:', error);
+      }
     }
 
+    // Force refresh after insert
     await fetchItems();
     return { inserted: toInsert.length, duplicates, existing: existingWarnings };
   };
 
   const deleteItem = async (id: string) => {
-    await supabase.from('article_queue' as any).delete().eq('id', id);
+    await supabase.from('article_queue').delete().eq('id', id);
     setItems(prev => prev.filter(i => i.id !== id));
   };
 
   const retryItem = async (id: string) => {
     await supabase
-      .from('article_queue' as any)
-      .update({ status: 'pending', error_message: null, started_at: null } as any)
+      .from('article_queue')
+      .update({ status: 'pending', error_message: null, started_at: null })
       .eq('id', id);
     await fetchItems();
   };
 
   const clearDone = async () => {
-    await supabase.from('article_queue' as any).delete().eq('status', 'done');
+    await supabase.from('article_queue').delete().eq('status', 'done');
     await fetchItems();
   };
 
