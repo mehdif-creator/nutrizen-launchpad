@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useBlogArticles, BlogArticle } from '@/hooks/useBlogArticles';
 import { useSeoMeta } from '@/hooks/useSeoMeta';
 import { Search, X } from 'lucide-react';
+import { getCategoryLabel } from '@/lib/categoryMapping';
 
 function formatDate(dateStr: string | null) {
   if (!dateStr) return '';
@@ -73,7 +74,7 @@ export default function BlogIndex() {
   const categories = useMemo(() => {
     const cats = new Set<string>();
     articles.forEach(a => {
-      const c = a.cluster_context || a.tags?.[0];
+      const c = getCategoryLabel(a.cluster_context || a.tags?.[0]);
       if (c) cats.add(c);
     });
     return ['Tous', ...Array.from(cats).sort((a, b) => a.localeCompare(b, 'fr'))];
@@ -101,7 +102,7 @@ export default function BlogIndex() {
     // 2. Category
     if (selectedCategory && selectedCategory !== 'Tous') {
       result = result.filter(a =>
-        (a.cluster_context || a.tags?.[0]) === selectedCategory
+        getCategoryLabel(a.cluster_context || a.tags?.[0]) === selectedCategory
       );
     }
 
@@ -306,7 +307,7 @@ function ArticleCard({ article, searchQuery }: { article: BlogArticle; searchQue
   const [imgError, setImgError] = useState(false);
   const title = getTitle(article);
   const excerpt = getExcerpt(article);
-  const category = article.cluster_context || article.tags?.[0] || 'Nutrition';
+  const category = getCategoryLabel(article.cluster_context || article.tags?.[0]);
   const readingTime = getReadingTime(article);
 
   // Fix 1: Parse image_urls safely

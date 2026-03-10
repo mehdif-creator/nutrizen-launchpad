@@ -3,7 +3,7 @@ import { AppFooter } from '@/components/app/AppFooter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { ArrowLeft, RefreshCw, FileText, Search, ImageIcon, Wrench } from 'lucide-react';
+import { ArrowLeft, RefreshCw, FileText, Search, ImageIcon, Wrench, Square, CirclePlay } from 'lucide-react';
 import { callEdgeFunction } from '@/lib/edgeFn';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
@@ -13,11 +13,15 @@ import { SeoArticleDetail } from './seo/SeoArticleDetail';
 import { SeoKeywordExpander } from './seo/SeoKeywordExpander';
 import { SeoQueueTab } from './seo/SeoQueueTab';
 import { useSeoArticles } from './seo/useSeoArticles';
+import { useArticleQueue } from './seo/useArticleQueue';
+import { useQueueProcessor } from './seo/useQueueProcessor';
 import type { SeoArticle } from './seo/types';
 import { STATUS_LABELS } from './seo/types';
 
 export default function AdminSeoFactory() {
   const { articles, loading, refetch, deleteArticle } = useSeoArticles();
+  const { stats, fetchItems: fetchQueueItems } = useArticleQueue();
+  const { autoMode, toggleAutoMode, isRunning, stopProcessing } = useQueueProcessor(fetchQueueItems);
   const [detailArticle, setDetailArticle] = useState<SeoArticle | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
@@ -107,6 +111,16 @@ export default function AdminSeoFactory() {
           <Button variant="outline" size="sm" onClick={() => refetch()}>
             <RefreshCw className="mr-2 h-4 w-4" />Actualiser
           </Button>
+          {/* Queue stop/resume - accessible from any tab */}
+          {autoMode || isRunning ? (
+            <Button variant="destructive" size="sm" onClick={stopProcessing} className="gap-1.5">
+              <Square className="h-3.5 w-3.5" />Stopper
+            </Button>
+          ) : stats.pending > 0 ? (
+            <Button variant="default" size="sm" onClick={() => toggleAutoMode(true)} className="gap-1.5 bg-green-600 hover:bg-green-700">
+              <CirclePlay className="h-3.5 w-3.5" />Reprendre ({stats.pending})
+            </Button>
+          ) : null}
         </div>
 
         {/* Main tabs */}

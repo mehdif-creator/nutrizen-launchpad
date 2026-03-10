@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft } from 'lucide-react';
 import { useBlogArticleBySlug } from '@/hooks/useBlogArticles';
 import { useEffect } from 'react';
+import { getCategoryLabel } from '@/lib/categoryMapping';
 
 function formatDateFr(dateStr: string | null) {
   if (!dateStr) return '';
@@ -251,11 +252,11 @@ export default function BlogPost() {
             <div className="flex gap-2 mb-4">
               {article.tags?.map((tag) => (
                 <Badge key={tag} className="bg-secondary text-secondary-foreground">
-                  {tag}
+                  {getCategoryLabel(tag)}
                 </Badge>
               )) || (
                 <Badge className="bg-secondary text-secondary-foreground">
-                  {article.cluster_context || 'Nutrition'}
+                  {getCategoryLabel(article.cluster_context)}
                 </Badge>
               )}
             </div>
@@ -348,7 +349,7 @@ export default function BlogPost() {
                         <div className="p-4">
                           {ra.cluster_context && (
                             <span className="inline-block text-xs font-semibold uppercase tracking-wide text-primary bg-primary/10 px-2 py-0.5 rounded-full mb-2">
-                              {ra.cluster_context}
+                              {getCategoryLabel(ra.cluster_context)}
                             </span>
                           )}
                           <h3 className="font-semibold text-sm mb-1 line-clamp-2">{raTitle}</h3>
