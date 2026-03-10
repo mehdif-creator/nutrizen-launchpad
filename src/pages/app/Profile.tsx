@@ -614,7 +614,7 @@ export default function Profile() {
           <div className="mb-6 md:mb-8">
             <h1 className="text-2xl md:text-3xl font-bold mb-2">Vos préférences</h1>
             <p className="text-sm md:text-base text-muted-foreground">
-              Commencez par votre foyer, puis renseignez vos préférences pour des menus parfaitement adaptés.
+              Renseignez vos préférences pour des menus parfaitement adaptés.
             </p>
           </div>
 
