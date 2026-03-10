@@ -294,7 +294,7 @@ export default function Affiliate() {
               </Card>
 
               {/* Stats */}
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                 <Card className="p-6">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm text-muted-foreground">Conversions actives</p>
@@ -360,9 +360,11 @@ export default function Affiliate() {
 
               {/* Commission History */}
               {commissions.length > 0 && (
-                <Card className="p-6">
-                  <h3 className="text-xl font-semibold mb-4">Historique des commissions</h3>
-                  <div className="overflow-x-auto">
+                <Card className="p-4 md:p-6">
+                  <h3 className="text-lg md:text-xl font-semibold mb-4">Historique des commissions</h3>
+                  
+                  {/* Desktop table */}
+                  <div className="hidden md:block overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -408,6 +410,41 @@ export default function Affiliate() {
                         ))}
                       </TableBody>
                     </Table>
+                  </div>
+
+                  {/* Mobile card list */}
+                  <div className="md:hidden space-y-3">
+                    {commissions.map((c) => (
+                      <div key={c.id} className="p-4 rounded-lg border border-border bg-muted/30 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">
+                            {new Date(c.created_at).toLocaleDateString('fr-FR', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </span>
+                          <Badge
+                            variant={c.status === 'paid' ? 'default' : 'secondary'}
+                            className={
+                              c.status === 'paid'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-accent/10 text-accent border-accent/30'
+                            }
+                          >
+                            {c.status === 'paid' ? 'Payé' : 'En attente'}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Abonnement</span>
+                          <span className="text-sm font-medium">{(c.subscription_amount_cents / 100).toFixed(2)}€</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Commission (20%)</span>
+                          <span className="text-sm font-bold text-primary">{(c.commission_amount_cents / 100).toFixed(2)}€</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </Card>
               )}

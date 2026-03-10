@@ -63,7 +63,7 @@ export const Hero = ({ onCtaClick, onExampleClick, copy }: HeroProps) => {
                   {badge}
                 </div>
               )}
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+              <h1 className="text-[clamp(1.75rem,5vw,3rem)] md:text-5xl lg:text-6xl font-bold leading-tight">
                 {h1}
               </h1>
               <p className="text-xl text-muted-foreground font-medium">
@@ -90,7 +90,7 @@ export const Hero = ({ onCtaClick, onExampleClick, copy }: HeroProps) => {
                 <Button
                   onClick={onCtaClick}
                   size="lg"
-                  className="w-full sm:w-auto bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] shadow-glow transition-tech text-base md:text-lg px-6 md:px-8 py-4"
+                  className="w-full sm:w-auto bg-gradient-to-r from-primary to-accent text-white active:scale-[0.99] shadow-glow transition-tech text-base md:text-lg px-6 md:px-8 min-h-[52px]"
                 >
                   {primaryCta}
                 </Button>
@@ -139,11 +139,11 @@ export const Hero = ({ onCtaClick, onExampleClick, copy }: HeroProps) => {
 
           {/* Right: Hero Image */}
           <div className="relative animate-slide-up">
-            <div className="aspect-square rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center overflow-hidden">
+            <div className="aspect-square max-h-[50vh] lg:max-h-none rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center overflow-hidden">
               <img
                 src={heroImage}
                 alt={heroImageAlt}
-                className="w-full h-full object-cover rounded-2xl"
+                className="w-full h-full object-cover rounded-2xl max-w-full"
                 width={600}
                 height={600}
                 fetchPriority="high"

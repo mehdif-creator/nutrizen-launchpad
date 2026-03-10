@@ -124,7 +124,7 @@ export const ExampleWeek = () => {
 
         {/* Carousel */}
         <div className="max-w-3xl mx-auto">
-          <Card className="p-8 bg-background border-border shadow-card">
+          <Card className="p-5 md:p-8 bg-background border-border shadow-card">
             <div className="flex items-center justify-between mb-6">
               <Button
                 variant="outline"
@@ -173,21 +173,21 @@ export const ExampleWeek = () => {
             </div>
 
             {/* Macros */}
-            <div className="grid grid-cols-4 gap-4 p-4 bg-primary/5 rounded-lg mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 p-3 md:p-4 bg-primary/5 rounded-lg mb-6">
               <div className="text-center">
-                <div className="text-2xl font-bold text-primary">{day.macros.calories}</div>
+                <div className="text-lg md:text-2xl font-bold text-primary">{day.macros.calories}</div>
                 <div className="text-xs text-muted-foreground">kcal</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-primary">{day.macros.protein}g</div>
+                <div className="text-lg md:text-2xl font-bold text-primary">{day.macros.protein}g</div>
                 <div className="text-xs text-muted-foreground">Protéines</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-primary">{day.macros.carbs}g</div>
+                <div className="text-lg md:text-2xl font-bold text-primary">{day.macros.carbs}g</div>
                 <div className="text-xs text-muted-foreground">Glucides</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-primary">{day.macros.fat}g</div>
+                <div className="text-lg md:text-2xl font-bold text-primary">{day.macros.fat}g</div>
                 <div className="text-xs text-muted-foreground">Lipides</div>
               </div>
             </div>

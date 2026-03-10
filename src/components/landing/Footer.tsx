@@ -58,17 +58,17 @@ export const Footer = () => {
             </p>
           </div>
 
-          {/* Links - 2 columns layout */}
-          <div className="grid grid-cols-2 sm:col-span-2 lg:col-span-4 gap-8">
+          {/* Links - stacked on mobile, 2-col on tablet, 4-col on desktop */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:col-span-4 lg:grid-cols-4 gap-6 sm:gap-8">
             {footerSections.map((section) => (
               <div key={section.title}>
-                <h3 className="font-semibold mb-4 text-sm md:text-base">{section.title}</h3>
+                <h3 className="font-semibold mb-3 md:mb-4 text-sm md:text-base">{section.title}</h3>
                 <ul className="space-y-2">
                   {section.links.map((link) => (
                     <li key={link.label}>
                       <a
                         href={link.href}
-                        className="text-sm text-muted-foreground hover:text-foreground transition-tech"
+                        className="text-[13px] md:text-sm text-muted-foreground hover:text-foreground transition-tech inline-flex items-center min-h-[32px]"
                       >
                         {link.label}
                       </a>

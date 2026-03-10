@@ -155,10 +155,10 @@ export default function InspiFrigo() {
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/30d/30d/30">
       <AppHeader />
 
-      <main className="flex-1 container py-8 max-w-5xl">
+      <main className="flex-1 container py-6 md:py-8 px-4 max-w-5xl">
         {/* Hero Section */}
-        <div className="text-center mb-12 animate-fade-in">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-primary/80 to-accent bg-clip-text text-transparent">
+        <div className="text-center mb-8 md:mb-12 animate-fade-in">
+          <h1 className="text-[clamp(1.5rem,4vw,3rem)] md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-primary/80 to-accent bg-clip-text text-transparent">
             Trouve des idées de recettes à partir de ton frigo
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -226,14 +226,14 @@ export default function InspiFrigo() {
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
-                    className={`border-2 border-dashed rounded-[1.5rem] p-12 text-center transition-all duration-300 cursor-pointer ${
+                    className={`border-2 border-dashed rounded-[1.5rem] p-8 md:p-12 text-center transition-all duration-300 cursor-pointer ${
                       isDragging
-                        ? "border-primary bg-primary/5 scale-105 shadow-[0_0_20px_rgba(95,178,102,0.3)]"
-                        : "border-muted-foreground/30 hover:border-primary hover:scale-105 hover:shadow-[0_0_15px_rgba(95,178,102,0.2)]"
+                        ? "border-primary bg-primary/5"
+                        : "border-muted-foreground/30 active:border-primary"
                     }`}
                   >
                     <div className="flex flex-col items-center gap-4">
-                      <div className="p-4 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full animate-pulse">
+                      <div className="p-4 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full min-w-[120px] min-h-[120px] flex items-center justify-center">
                         <Camera className="h-12 w-12 text-primary" />
                       </div>
                       <div>

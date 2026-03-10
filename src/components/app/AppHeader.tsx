@@ -194,8 +194,8 @@ export const AppHeader = () => {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="xl:hidden border-t bg-background">
-          <nav className="container py-4 flex flex-col gap-4">
+        <div className="xl:hidden fixed inset-0 top-14 z-40 bg-background overflow-y-auto">
+          <nav className="container py-4 flex flex-col gap-1">
             {/* Gamification in mobile */}
             <div className="pb-3 border-b">
               <GamificationHeader />
@@ -236,85 +236,28 @@ export const AppHeader = () => {
               </DropdownMenu>
             </div>
             
+            {[
+              { to: "/app", icon: Home, label: "Tableau de bord" },
+              { to: "/app/scan-repas", icon: Camera, label: "ScanRepas" },
+              { to: "/app/scan-barcode", icon: ScanBarcode, label: "CodeBarres" },
+              { to: "/app/inspi-frigo", icon: Camera, label: "InspiFrigo" },
+              { to: "/app/profile", icon: User, label: "Profil" },
+              { to: "/app/settings", icon: Settings, label: "Paramètres" },
+              { to: "/app/support", icon: HelpCircle, label: "Support" },
+              { to: "/blog", icon: BookOpen, label: "Blog" },
+            ].map(({ to, icon: Icon, label }) => (
             <Link
-              to="/app"
-              className={`text-left text-sm font-medium transition-colors flex items-center gap-2 ${
-                isActivePath("/app") ? "text-primary font-semibold" : "text-muted-foreground"
+              key={to}
+              to={to}
+              className={`text-left text-base font-medium transition-colors flex items-center gap-3 min-h-[48px] px-2 border-b border-border/30 ${
+                isActivePath(to) ? "text-primary font-semibold" : "text-muted-foreground"
               }`}
               onClick={() => setMobileMenuOpen(false)}
             >
-              <Home className="h-4 w-4" />
-              Tableau de bord
+              <Icon className="h-5 w-5 flex-shrink-0" />
+              {label}
             </Link>
-            <Link
-              to="/app/scan-repas"
-              className={`text-left text-sm font-medium transition-colors flex items-center gap-2 ${
-                isActivePath("/app/scan-repas") ? "text-primary font-semibold" : "text-muted-foreground"
-              }`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <Camera className="h-4 w-4" />
-              ScanRepas
-            </Link>
-            <Link
-              to="/app/scan-barcode"
-              className={`text-left text-sm font-medium transition-colors flex items-center gap-2 ${
-                isActivePath("/app/scan-barcode") ? "text-primary font-semibold" : "text-muted-foreground"
-              }`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <ScanBarcode className="h-4 w-4" />
-              CodeBarres
-            </Link>
-            <Link
-              to="/app/inspi-frigo"
-              className={`text-left text-sm font-medium transition-colors flex items-center gap-2 ${
-                isActivePath("/app/inspi-frigo") ? "text-primary font-semibold" : "text-muted-foreground"
-              }`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <Camera className="h-4 w-4" />
-              InspiFrigo
-            </Link>
-            <Link
-              to="/app/profile"
-              className={`text-left text-sm font-medium transition-colors flex items-center gap-2 ${
-                isActivePath("/app/profile") ? "text-primary font-semibold" : "text-muted-foreground"
-              }`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <User className="h-4 w-4" />
-              Profil
-            </Link>
-            <Link
-              to="/app/settings"
-              className={`text-left text-sm font-medium transition-colors flex items-center gap-2 ${
-                isActivePath("/app/settings") ? "text-primary font-semibold" : "text-muted-foreground"
-              }`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <Settings className="h-4 w-4" />
-              Paramètres
-            </Link>
-            <Link
-              to="/app/support"
-              className={`text-left text-sm font-medium transition-colors flex items-center gap-2 ${
-                isActivePath("/app/support") ? "text-primary font-semibold" : "text-muted-foreground"
-              }`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <HelpCircle className="h-4 w-4" />
-              Support
-            </Link>
-            <Link
-              to="/blog"
-              className={`text-left text-sm font-medium transition-colors ${
-                isActivePath("/blog") ? "text-primary font-semibold" : "text-muted-foreground"
-              }`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Blog
-            </Link>
+            ))}
           </nav>
         </div>
       )}

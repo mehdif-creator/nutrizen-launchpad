@@ -37,7 +37,7 @@ export function MobileBottomNav() {
       className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card md:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      <div className="flex items-center justify-around h-16">
+      <div className="flex items-center justify-around h-[60px]">
         {tabs.map((tab) => {
           const active = isActive(tab);
           const Icon = tab.icon;
@@ -46,11 +46,11 @@ export function MobileBottomNav() {
               key={tab.id}
               to={tab.to}
               onClick={(e) => handleClick(tab, e)}
-              className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full"
+              className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full min-w-[44px]"
             >
               <Icon className={`h-5 w-5 ${active ? 'text-primary' : 'text-muted-foreground'}`} />
               <span
-                className={`text-[10px] leading-tight ${active ? 'text-primary font-medium' : 'text-muted-foreground'}`}
+                className={`text-[11px] leading-tight ${active ? 'text-primary font-medium' : 'text-muted-foreground'}`}
               >
                 {tab.label}
               </span>
