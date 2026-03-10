@@ -536,7 +536,7 @@ Deno.serve(async (req) => {
 
     // ── BUILD USER CONTEXT ──
     const ctx = await buildUserContext(supabaseClient, user.id);
-    console.log(`[generate-menu] User context loaded`);
+    console.log(`[generate-menu] User context loaded. Profile keys: ${Object.keys(ctx.profile).join(',') || '(empty)'}. Habits keys: ${Object.keys(ctx.habits).join(',') || '(empty)'}. MealsConfig count: ${ctx.mealsConfig.length}. Allergies keys: ${Object.keys(ctx.allergies).join(',') || '(empty)'}. FoodStyle keys: ${Object.keys(ctx.foodStyle).join(',') || '(empty)'}. Nutrition keys: ${Object.keys(ctx.nutrition).join(',') || '(empty)'}. Household keys: ${Object.keys(ctx.household).join(',') || '(empty)'}`);
 
     // Determine meals per day and which meals to generate
     const mealsPerDay = ctx.habits?.meals_per_day ?? ctx.legacyPreferences?.repas_par_jour ?? ctx.legacyProfile?.meals_per_day ?? 2;
