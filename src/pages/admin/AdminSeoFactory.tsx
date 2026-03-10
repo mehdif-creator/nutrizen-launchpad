@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { AppFooter } from '@/components/app/AppFooter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, RefreshCw, FileText, Search, ImageIcon } from 'lucide-react';
+import { ArrowLeft, RefreshCw, FileText, Search, ImageIcon, Wrench } from 'lucide-react';
 import { callEdgeFunction } from '@/lib/edgeFn';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
@@ -21,6 +21,7 @@ export default function AdminSeoFactory() {
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'date' | 'score' | 'status'>('date');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isCleaning, setIsCleaning] = useState(false);
   const { toast } = useToast();
 
   const handleRefreshAllImages = async () => {
