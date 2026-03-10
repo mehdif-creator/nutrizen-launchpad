@@ -667,12 +667,13 @@ Deno.serve(async (req) => {
       throw e;
     }
 
+    console.log(`[generate-menu] AI response received. Keys: ${Object.keys(aiResponse || {}).join(',')}`);
     if (!aiResponse?.menu || !Array.isArray(aiResponse.menu)) {
       console.error('[generate-menu] Invalid AI response structure:', JSON.stringify(aiResponse).substring(0, 500));
       throw new Error('Invalid AI response format');
     }
 
-    console.log(`[generate-menu] AI returned ${aiResponse.menu.length} days`);
+    console.log(`[generate-menu] AI returned ${aiResponse.menu.length} days, first day repas count: ${aiResponse.menu[0]?.repas?.length ?? 0}`);
 
     // ── PARTIE 5 — POST-GENERATION VALIDATION ──
     const validatedMenu: any[] = [];
