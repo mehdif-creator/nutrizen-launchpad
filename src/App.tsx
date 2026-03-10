@@ -19,7 +19,7 @@ const Callback = lazy(() => import('./pages/auth/Callback'));
 
 // App
 const Dashboard = lazy(() => import('./pages/app/Dashboard'));
-const MealPlan = lazy(() => import('./pages/app/MealPlan'));
+
 const Profile = lazy(() => import('./pages/app/Profile'));
 const Settings = lazy(() => import('./pages/app/Settings'));
 const Support = lazy(() => import('./pages/app/Support'));
