@@ -236,16 +236,28 @@ export const AppHeader = () => {
               </DropdownMenu>
             </div>
             
+            {[
+              { to: "/app", icon: Home, label: "Tableau de bord" },
+              { to: "/app/scan-repas", icon: Camera, label: "ScanRepas" },
+              { to: "/app/scan-barcode", icon: ScanBarcode, label: "CodeBarres" },
+              { to: "/app/inspi-frigo", icon: Camera, label: "InspiFrigo" },
+              { to: "/app/profile", icon: User, label: "Profil" },
+              { to: "/app/settings", icon: Settings, label: "Paramètres" },
+              { to: "/app/support", icon: HelpCircle, label: "Support" },
+              { to: "/blog", icon: BookOpen, label: "Blog" },
+            ].map(({ to, icon: Icon, label }) => (
             <Link
-              to="/app"
-              className={`text-left text-sm font-medium transition-colors flex items-center gap-2 ${
-                isActivePath("/app") ? "text-primary font-semibold" : "text-muted-foreground"
+              key={to}
+              to={to}
+              className={`text-left text-base font-medium transition-colors flex items-center gap-3 min-h-[48px] px-2 border-b border-border/30 ${
+                isActivePath(to) ? "text-primary font-semibold" : "text-muted-foreground"
               }`}
               onClick={() => setMobileMenuOpen(false)}
             >
-              <Home className="h-4 w-4" />
-              Tableau de bord
+              <Icon className="h-5 w-5 flex-shrink-0" />
+              {label}
             </Link>
+            ))}
             <Link
               to="/app/scan-repas"
               className={`text-left text-sm font-medium transition-colors flex items-center gap-2 ${
