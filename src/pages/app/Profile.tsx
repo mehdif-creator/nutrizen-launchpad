@@ -1256,75 +1256,7 @@ export default function Profile() {
               </Card>
             </AccordionItem>
 
-            {/* ═══════════ Section 7: Votre foyer ═══════════ */}
-            <AccordionItem value="section7">
-              <Card>
-                <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                  <CardHeader className="p-0">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Users className="w-5 h-5 text-primary" />
-                      Votre foyer
-                    </CardTitle>
-                  </CardHeader>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <CardContent className="space-y-4 pt-4">
-                    <p className="text-sm text-muted-foreground">
-                      Les portions de vos menus et votre liste de courses seront automatiquement adaptées à la composition de votre foyer.
-                    </p>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      <div className="space-y-3">
-                        <Label htmlFor="hh_adults" className="flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" />Nombre d'adultes</Label>
-                        <Input id="hh_adults" type="number" min={0} max={10} step={1} value={householdAdults} onChange={(e) => setHouseholdAdults(Math.max(0, parseInt(e.target.value) || 0))} className="text-center text-lg font-semibold" />
-                        <p className="text-xs text-muted-foreground">1 portion = 1 adulte</p>
-                      </div>
-                      <div className="space-y-3">
-                        <Label htmlFor="hh_children" className="flex items-center gap-2"><Baby className="h-4 w-4 text-muted-foreground" />Nombre d'enfants</Label>
-                        <Input id="hh_children" type="number" min={0} max={10} step={1} value={householdChildren} onChange={(e) => setHouseholdChildren(Math.max(0, parseInt(e.target.value) || 0))} className="text-center text-lg font-semibold" />
-                      </div>
-                    </div>
-
-                    {householdChildren > 0 && (
-                      <div className="space-y-3">
-                        <Label>Âge de chaque enfant</Label>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                          {childAges.map((ca, idx) => (
-                            <div key={idx} className="space-y-1">
-                              <Label htmlFor={`child_age_${idx}`} className="text-xs text-muted-foreground">Enfant {idx + 1}</Label>
-                              <Input id={`child_age_${idx}`} type="number" min={0} max={18} value={ca} onChange={(e) => { const n = [...childAges]; n[idx] = parseInt(e.target.value) || 0; setChildAges(n); }} className="text-center" />
-                              <p className="text-[10px] text-muted-foreground text-center">Coeff : {childPortionCoeff(ca)}</p>
-                            </div>
-                          ))}
-                        </div>
-                        <p className="text-xs text-muted-foreground">0-3 ans = 0.3 · 4-8 ans = 0.5 · 9-13 ans = 0.7 · 14+ ans = 1.0</p>
-                      </div>
-                    )}
-
-                    <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium">Portions équivalentes</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {householdAdults} adulte{householdAdults > 1 ? 's' : ''}
-                            {householdChildren > 0 && ` + ${householdChildren} enfant${householdChildren > 1 ? 's' : ''}`}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-primary">{effectivePortions.toFixed(1)}</p>
-                          <p className="text-xs text-muted-foreground">portions</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="family_allergies">Allergies des proches</Label>
-                      <Input id="family_allergies" value={familyAllergies} onChange={(e) => setFamilyAllergies(e.target.value)} placeholder="Ex : Arachides, gluten..." />
-                    </div>
-                  </CardContent>
-                </AccordionContent>
-              </Card>
-            </AccordionItem>
+            {/* Section 7 removed — Votre foyer is now at the top */}
 
             {/* ═══════════ Section 8: Mode de vie ═══════════ */}
             <AccordionItem value="section8">
