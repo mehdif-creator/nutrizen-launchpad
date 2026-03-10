@@ -284,58 +284,76 @@ Deno.serve(async (req) => {
 
     console.log(`[generate-menu] Pre-check OK: ${preCheckBalance} credits available, ${menuCost} required. Proceeding with generation...`);
 
-    const householdAdults = profileData?.household_adults ?? 1;
-    const householdChildren = profileData?.household_children ?? 0;
-    const kidRatio = profileData?.kid_portion_ratio ?? 0.6;
-    const effectiveHouseholdSize = householdAdults + householdChildren * kidRatio;
+    // ── Household portion calculation ──
+    // Prefer new user_household with per-child age coefficients
+    const childCoeff = (age: number): number => {
+      if (age <= 3) return 0.3;
+      if (age <= 8) return 0.5;
+      if (age <= 13) return 0.7;
+      return 1.0;
+    };
+
+    let effectiveHouseholdSize: number;
+    if (eff.totalPortions && eff.totalPortions > 0) {
+      // Pre-calculated in user_household
+      effectiveHouseholdSize = eff.totalPortions;
+    } else if (eff.childrenAges.length > 0) {
+      const childSum = eff.childrenAges.reduce((s: number, a: number) => s + childCoeff(a), 0);
+      effectiveHouseholdSize = eff.householdAdults + childSum;
+    } else {
+      const kidRatio = profileData?.kid_portion_ratio ?? 0.6;
+      effectiveHouseholdSize = eff.householdAdults + eff.householdChildren * kidRatio;
+    }
     const roundedHouseholdServings = Math.max(1, Math.round(effectiveHouseholdSize));
 
-    console.log(`[generate-menu] Household size: ${householdAdults} adults + ${householdChildren} children = ${effectiveHouseholdSize.toFixed(1)} effective portions`);
-    console.log(`[generate-menu] Target servings per meal: ${roundedHouseholdServings}`);
+    // Per-meal portions from user_meals_config (may differ between lunch & dinner)
+    const lunchPortions = lunchConfig?.portions ?? roundedHouseholdServings;
+    const dinnerPortions = dinnerConfig?.portions ?? roundedHouseholdServings;
+
+    console.log(`[generate-menu] Household: ${eff.householdAdults}A + ${eff.householdChildren}C = ${effectiveHouseholdSize.toFixed(1)} eff. portions`);
+    console.log(`[generate-menu] Per-meal portions: lunch=${lunchPortions}, dinner=${dinnerPortions}`);
 
     // ============================================================
     // SAFETY GATE: Build user restriction keys from dictionary
-    // This ensures synonym matching (porc -> jambon, lardon, bacon, etc.)
     // ============================================================
     
-    // Map user-facing allergen names to canonical keys
     const allergenToKeyMap: Record<string, string> = {
-      "Gluten": "gluten",
-      "Lactose": "dairy",
-      "Fruits à coque": "nuts",
-      "Arachide": "peanuts",
-      "Œufs": "eggs",
-      "Fruits de mer": "shellfish",
-      "Soja": "soy",
-      "Sésame": "sesame",
-      "Poisson": "fish",
-      "Porc": "pork",
-      "Bœuf": "beef",
+      "Gluten": "gluten", "Lactose": "dairy", "Fruits à coque": "nuts",
+      "Arachide": "peanuts", "Œufs": "eggs", "Fruits de mer": "shellfish",
+      "Soja": "soy", "Sésame": "sesame", "Poisson": "fish",
+      "Porc": "pork", "Bœuf": "beef",
     };
 
-    // Collect all restriction keys the user wants to avoid
     let userRestrictionKeys: string[] = [];
     
-    // Allowlist for diet types to prevent PostgREST filter injection
     const ALLOWED_DIET_TYPES = new Set([
       'omnivore', 'vegetarien', 'végétarien', 'vegetarian',
       'vegan', 'végétalien', 'pescatarien', 'pescatarian',
       'halal', 'casher', 'kosher',
     ]);
 
-    // Escape PostgREST special characters from user-provided strings
     function escapePostgrestPattern(value: string): string {
       return value.replace(/[%_,.()'"\\\s]/g, (c) => `\\${c}`).slice(0, 50);
     }
 
-    // 1. From structured allergies array
-    if (preferences?.allergies && Array.isArray(preferences.allergies)) {
-      const allergyKeys = preferences.allergies
+    // 1. From NEW user_allergies (jsonb array [{name, type, traces_ok}])
+    if (eff.allergiesRaw && Array.isArray(eff.allergiesRaw) && eff.allergiesRaw.length > 0) {
+      const allergyKeys = eff.allergiesRaw
+        .map((a: any) => {
+          const name = typeof a === 'string' ? a : a.name;
+          return allergenToKeyMap[name] || (name || '').toLowerCase().trim();
+        })
+        .filter((k: string) => k.length > 0);
+      userRestrictionKeys.push(...allergyKeys);
+      console.log(`[generate-menu] Allergen keys from user_allergies: ${allergyKeys.length} key(s)`);
+    }
+    // Fallback: legacy flat allergies array
+    else if (eff.allergiesFlat && Array.isArray(eff.allergiesFlat) && eff.allergiesFlat.length > 0) {
+      const allergyKeys = eff.allergiesFlat
         .map((a: string) => allergenToKeyMap[a] || a.toLowerCase().trim())
         .filter((k: string) => k.length > 0);
       userRestrictionKeys.push(...allergyKeys);
-      // Log count only — allergen names are special-category health data (GDPR Art. 9)
-      console.log(`[generate-menu] Allergen keys from preferences.allergies: ${allergyKeys.length} key(s)`);
+      console.log(`[generate-menu] Allergen keys from legacy preferences.allergies: ${allergyKeys.length} key(s)`);
     }
 
     // 2. From aliments_eviter array - need to map to canonical keys via dictionary
