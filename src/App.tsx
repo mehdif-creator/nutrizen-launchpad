@@ -28,7 +28,7 @@ const AITools = lazy(() => import('./pages/app/AITools'));
 const ScanRepas = lazy(() => import('./pages/app/ScanRepas'));
 const InspiFrigo = lazy(() => import('./pages/app/InspiFrigo'));
 const RecipeDetail = lazy(() => import('./pages/app/RecipeDetail'));
-const MenuHistory = lazy(() => import('./pages/app/MenuHistory'));
+
 const Gamification = lazy(() => import('./pages/app/Gamification'));
 const Onboarding = lazy(() => import('./pages/app/Onboarding'));
 const ShoppingList = lazy(() => import('./pages/app/ShoppingList'));
