@@ -123,12 +123,6 @@ export default function Dashboard() {
     }
   }, [toast]);
 
-  // Redirect admin to admin dashboard
-  if (isAdmin) {
-    return <Navigate to="/admin" replace />;
-  }
-
-  // Build week meals from database
   const weekMeals = useMemo(() => {
     if (days && days.length > 0) {
       return days.map((day: any) => ({
@@ -146,10 +140,19 @@ export default function Dashboard() {
     return [];
   }, [days]);
 
-  // Fetch normalized shopping list
   const { items: shoppingList, isLoading: shoppingListLoading } = useShoppingList(user?.id);
 
-  // KPI calculations (always use 0 as fallback)
+  const todayData = useMemo(() => {
+    if (!weeklyDays.length) return null;
+    const today = new Date().toISOString().split('T')[0];
+    return weeklyDays.find((d) => d.date === today) || null;
+  }, [weeklyDays]);
+
+  // Redirect admin to admin dashboard
+  if (isAdmin) {
+    return <Navigate to="/admin" replace />;
+  }
+
   const minutesSaved = stats.temps_gagne;
   const chargeMentalDrop = stats.charge_mentale_pct;
   const streak = stats.serie_en_cours_set_count;
@@ -158,13 +161,6 @@ export default function Dashboard() {
   const referralUrl = "https://mynutrizen.fr/i/" + (user?.id.slice(0, 8) || "user");
 
   const loading = statsLoading || menuLoading;
-
-  // Today's data for mobile hero card
-  const todayData = useMemo(() => {
-    if (!weeklyDays.length) return null;
-    const today = new Date().toISOString().split('T')[0];
-    return weeklyDays.find((d) => d.date === today) || null;
-  }, [weeklyDays]);
 
   const handleSwap = async (recipeId: string, mealType: 'lunch' | 'dinner', dayIndex: number) => {
     if (!user?.id || !menu || swapping) return;
