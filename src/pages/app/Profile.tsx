@@ -35,6 +35,25 @@ interface AllergyEntry {
   traces_ok: boolean;
 }
 
+/** Household first-visit banner */
+function HouseholdBanner() {
+  const [dismissed, setDismissed] = useState(() => localStorage.getItem('nutrizen_household_banner_dismissed') === 'true');
+  if (dismissed) return null;
+  return (
+    <div className="relative flex items-start gap-3 p-4 rounded-xl border bg-primary/10 border-primary/20 text-sm">
+      <span className="text-lg flex-shrink-0">👨‍👩‍👧</span>
+      <div className="flex-1">
+        <p className="font-medium text-primary">Commencez ici</p>
+        <p className="text-muted-foreground text-xs mt-0.5">La composition de votre foyer détermine les portions de toutes vos recettes. Renseignez-la en premier.</p>
+      </div>
+      <button onClick={() => { setDismissed(true); localStorage.setItem('nutrizen_household_banner_dismissed', 'true'); }}
+        className="h-6 w-6 flex items-center justify-center rounded-sm hover:bg-accent flex-shrink-0" aria-label="Fermer">
+        <X className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
 export default function Profile() {
   const { toast } = useToast();
   const { user } = useAuth();

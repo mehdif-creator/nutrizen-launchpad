@@ -299,6 +299,25 @@ function MealCard({
           </p>
         </div>
       )}
+
+      {/* Batch cooking toggle */}
+      {!showNoRecipeNote && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor={`batch_${meal.type}`} className="text-sm">Batch cooking pour ce repas ?</Label>
+            <Switch
+              id={`batch_${meal.type}`}
+              checked={meal.batchCooking}
+              onCheckedChange={(checked) => onChange({ batchCooking: !!checked })}
+            />
+          </div>
+          {meal.batchCooking && (
+            <p className="text-xs text-primary/80">
+              Les recettes de ce repas seront adaptées pour être préparées en grande quantité et conservées 3-4 jours.
+            </p>
+          )}
+        </div>
+      )}
     </Card>
   );
 }
