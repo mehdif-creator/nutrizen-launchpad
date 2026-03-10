@@ -749,6 +749,51 @@ Format attendu (JSON uniquement, sans markdown) :
 
     console.log(`[generate-menu] Validated ${recipesToStore.length} recipes out of ${mealSlots.length * 7} slots`);
 
+    // ── MATCH AI RECIPES TO DB RECIPES FOR IMAGES ──
+    const allRecipeNames = recipesToStore.map(r => r.recipe_name);
+    let recipeImageMap: Record<string, { id: string; image_url: string | null; image_path: string | null }> = {};
+
+    if (allRecipeNames.length > 0) {
+      // Search for matching recipes by title (case-insensitive) to get images
+      const { data: matchedRecipes } = await supabaseClient
+        .from('recipes')
+        .select('id, title, image_url, image_path')
+        .in('title', allRecipeNames);
+
+      if (matchedRecipes && matchedRecipes.length > 0) {
+        for (const r of matchedRecipes) {
+          recipeImageMap[r.title] = { id: r.id, image_url: r.image_url, image_path: r.image_path };
+        }
+        console.log(`[generate-menu] Matched ${Object.keys(recipeImageMap).length}/${allRecipeNames.length} recipes to DB for images`);
+      }
+
+      // Fuzzy fallback: try ilike for unmatched recipes
+      const unmatchedNames = allRecipeNames.filter(n => !recipeImageMap[n]);
+      if (unmatchedNames.length > 0) {
+        for (const name of unmatchedNames) {
+          // Search by partial match on main keywords
+          const keywords = name.split(/\s+/).filter(w => w.length > 3).slice(0, 3);
+          if (keywords.length === 0) continue;
+          
+          const searchPattern = `%${keywords.join('%')}%`;
+          const { data: fuzzyMatches } = await supabaseClient
+            .from('recipes')
+            .select('id, title, image_url, image_path')
+            .ilike('title', searchPattern)
+            .limit(1);
+          
+          if (fuzzyMatches && fuzzyMatches.length > 0) {
+            recipeImageMap[name] = {
+              id: fuzzyMatches[0].id,
+              image_url: fuzzyMatches[0].image_url,
+              image_path: fuzzyMatches[0].image_path,
+            };
+          }
+        }
+        console.log(`[generate-menu] After fuzzy: matched ${Object.keys(recipeImageMap).length}/${allRecipeNames.length} recipes`);
+      }
+    }
+
     // ── BUILD DAYS FOR STORAGE (backward compatible with existing dashboard) ──
     const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -756,10 +801,12 @@ Format attendu (JSON uniquement, sans markdown) :
       const entry: any = { day: weekdays[index] || `Jour ${day.jour}` };
 
       for (const recipe of day.repas) {
+        const dbMatch = recipeImageMap[recipe.nom];
         const mealEntry = {
-          recipe_id: null, // AI-generated, no DB recipe ID
+          recipe_id: dbMatch?.id || null,
           title: recipe.nom,
-          image_url: null,
+          image_url: dbMatch?.image_url || null,
+          image_path: dbMatch?.image_path || null,
           prep_min: recipe.temps_preparation_min,
           total_min: recipe.temps_preparation_min,
           calories: recipe.kcal_par_portion * recipe.portions,

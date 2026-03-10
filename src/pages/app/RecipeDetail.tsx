@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { Clock, Users, Flame, ChefHat, ArrowLeft, Utensils, BarChart3, RefreshCw, Download, Share2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { storagePublicBaseUrl } from '@/lib/supabaseUrls';
+import { getRecipeImageUrl } from '@/lib/images';
 import { RecipeMacrosCard } from '@/components/app/RecipeMacrosCard';
 import { SubstitutionsTab } from '@/components/recipe/SubstitutionsTab';
 import { scaleIngredientText, formatQuantity } from '@/lib/portions';
@@ -122,9 +122,10 @@ export default function RecipeDetail() {
           const titleFromId = decodeURIComponent(aiId.replace(/^ai-\d+-/, ''));
           if (meal.title === titleFromId || aiId === `ai-${days.indexOf(day)}-${meal.title}`) {
             setRecipe({
-              id: aiId,
+              id: meal.recipe_id || aiId,
               title: meal.title,
               image_url: meal.image_url || undefined,
+              image_path: meal.image_path || undefined,
               prep_time_min: meal.prep_min || meal.temps_preparation_min,
               total_time_min: meal.total_min || meal.temps_preparation_min,
               servings: meal.servings_used || meal.base_servings || meal.portions,
@@ -219,7 +220,7 @@ export default function RecipeDetail() {
     );
   }
 
-  const imageUrl = recipe.image_url || (recipe.image_path ? `${storagePublicBaseUrl()}/${recipe.image_path}` : null);
+  const imageUrl = getRecipeImageUrl({ image_url: recipe.image_url, image_path: recipe.image_path });
   const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
   const instructions = Array.isArray(recipe.instructions) ? recipe.instructions : [];
 
