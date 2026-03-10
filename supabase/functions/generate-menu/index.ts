@@ -692,10 +692,6 @@ Deno.serve(async (req) => {
           console.log(`[generate-menu] F4: Last resort — published recipes only with mandatory exclusions`);
         }
       }
-          // Only allergens, exclusions, and appliances enforced (already applied above)
-          // This will match any published recipe that doesn't violate exclusions
-        }
-      }
 
       return query.limit(100);
     };
