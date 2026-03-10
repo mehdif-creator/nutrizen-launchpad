@@ -19,7 +19,7 @@ const Callback = lazy(() => import('./pages/auth/Callback'));
 
 // App
 const Dashboard = lazy(() => import('./pages/app/Dashboard'));
-const MealPlan = lazy(() => import('./pages/app/MealPlan'));
+
 const Profile = lazy(() => import('./pages/app/Profile'));
 const Settings = lazy(() => import('./pages/app/Settings'));
 const Support = lazy(() => import('./pages/app/Support'));
@@ -28,7 +28,7 @@ const AITools = lazy(() => import('./pages/app/AITools'));
 const ScanRepas = lazy(() => import('./pages/app/ScanRepas'));
 const InspiFrigo = lazy(() => import('./pages/app/InspiFrigo'));
 const RecipeDetail = lazy(() => import('./pages/app/RecipeDetail'));
-const MenuHistory = lazy(() => import('./pages/app/MenuHistory'));
+
 const Gamification = lazy(() => import('./pages/app/Gamification'));
 const Onboarding = lazy(() => import('./pages/app/Onboarding'));
 const ShoppingList = lazy(() => import('./pages/app/ShoppingList'));
@@ -124,8 +124,6 @@ const App = () => {
         <Route path="/app" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/app/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/app/onboarding" element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />
-        <Route path="/app/meal-plan" element={<ProtectedRoute><ErrorBoundary><MealPlan /></ErrorBoundary></ProtectedRoute>} />
-        <Route path="/app/menu-history" element={<ProtectedRoute><MenuHistory /></ProtectedRoute>} />
         <Route path="/app/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/app/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/app/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />

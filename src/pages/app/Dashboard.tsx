@@ -437,23 +437,6 @@ export default function Dashboard() {
               </div>
             </Link>
 
-            <Link
-              to="/app/menu-history"
-              className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-orange-500/5 to-orange-500/10 p-4 transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-orange-500/50"
-            >
-              <div className="flex items-center gap-3">
-                <div className="bg-orange-500/10 rounded-lg p-2.5 group-hover:bg-orange-500/20 transition-colors">
-                  <Clock className="h-5 w-5 text-orange-600 dark:text-orange-500" />
-                </div>
-                <div>
-                  <div className="font-medium text-sm">Historique</div>
-                  <div className="text-xs text-muted-foreground">Menus passés</div>
-                </div>
-              </div>
-              <div className="absolute -right-4 -bottom-4 opacity-10">
-                <Clock className="h-20 w-20 text-orange-600 dark:text-orange-500" />
-              </div>
-            </Link>
           </div>
         </section>
 

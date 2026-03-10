@@ -61,7 +61,7 @@ export const AppHeader = () => {
           <nav className="hidden xl:flex items-center gap-0.5">
             {[
               { to: "/app", label: "Tableau de bord", icon: Home },
-              { to: "/app/meal-plan", label: "Recettes", icon: BookOpen },
+              
               { to: "/app/scan-repas", label: "ScanRepas", icon: Camera },
               { to: "/app/scan-barcode", label: "CodeBarres", icon: ScanBarcode },
               { to: "/app/inspi-frigo", label: "InspiFrigo", icon: Camera },
@@ -245,16 +245,6 @@ export const AppHeader = () => {
             >
               <Home className="h-4 w-4" />
               Tableau de bord
-            </Link>
-            <Link
-              to="/app/meal-plan"
-              className={`text-left text-sm font-medium transition-colors flex items-center gap-2 ${
-                isActivePath("/app/meal-plan") ? "text-primary font-semibold" : "text-muted-foreground"
-              }`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <BookOpen className="h-4 w-4" />
-              Recettes
             </Link>
             <Link
               to="/app/scan-repas"

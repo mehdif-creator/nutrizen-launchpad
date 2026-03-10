@@ -37,8 +37,7 @@ export function ShoppingListCard({
       emptyAction={{
         label: 'Générer la liste',
         onClick: () => {
-          // Navigate to meal plan to generate
-          navigate('/app/meal-plan');
+          navigate('/app');
         },
       }}
       onRetry={onRetry}
