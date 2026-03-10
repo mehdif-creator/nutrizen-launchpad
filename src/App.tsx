@@ -33,7 +33,7 @@ const Gamification = lazy(() => import('./pages/app/Gamification'));
 const Onboarding = lazy(() => import('./pages/app/Onboarding'));
 const ShoppingList = lazy(() => import('./pages/app/ShoppingList'));
 const SupabaseDebug = lazy(() => import('./pages/app/SupabaseDebug'));
-const FamillePlus = lazy(() => import('./pages/app/FamillePlus'));
+
 const DayMenu = lazy(() => import('./pages/app/DayMenu'));
 const ScanBarcode = lazy(() => import('./pages/app/ScanBarcode'));
 
