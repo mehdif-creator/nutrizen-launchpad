@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useBlogArticles, BlogArticle } from '@/hooks/useBlogArticles';
 import { useSeoMeta } from '@/hooks/useSeoMeta';
 import { Search, X } from 'lucide-react';
+import { getCategoryLabel } from '@/lib/categoryMapping';
 
 function formatDate(dateStr: string | null) {
   if (!dateStr) return '';
