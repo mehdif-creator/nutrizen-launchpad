@@ -647,11 +647,54 @@ Deno.serve(async (req) => {
     const recentRecipeNames = [...new Set((recentRecipes || []).map((r: any) => r.recipe_name))];
     console.log(`[generate-menu] ${recentRecipeNames.length} recent recipes for non-repetition`);
 
+    // ── FETCH CANDIDATE RECIPES FROM DB ──
+    const dietType = normalizeDietType(ctx.foodStyle?.diet_type || ctx.legacyPreferences?.type_alimentation || 'omnivore');
+    const dietTypes = [dietType];
+    if (dietType === 'omnivore') dietTypes.push('végétarien', 'pescetarien');
+    if (dietType === 'pescetarien') dietTypes.push('végétarien');
+
+    const { data: candidateRecipes, error: candidateError } = await supabaseClient
+      .from('recipes')
+      .select('id, title, image_url, image_path, ingredients, calories_kcal, prep_time_min, proteins_g, carbs_g, fats_g, base_servings, allergens, cuisine_type, allowed_meals')
+      .in('diet_type', dietTypes)
+      .eq('published', true)
+      .not('image_path', 'is', null)
+      .limit(200);
+
+    if (candidateError || !candidateRecipes || candidateRecipes.length === 0) {
+      console.error('[generate-menu] Failed to fetch candidate recipes:', candidateError);
+      throw new Error('Aucune recette disponible dans la base de données');
+    }
+
+    // Filter out recent recipes and those with conflicting allergens
+    const userAllergens = (Array.isArray(ctx.allergies?.allergies)
+      ? ctx.allergies.allergies.map((a: AllergyEntry) => a.name.toLowerCase())
+      : (ctx.legacyPreferences?.allergies || []).map((a: string) => a.toLowerCase()));
+
+    const filteredCandidates = candidateRecipes.filter((r: any) => {
+      if (recentRecipeNames.includes(r.title)) return false;
+      if (userAllergens.length > 0 && r.allergens) {
+        const recipeAllergens = (r.allergens as string[]).map((a: string) => a.toLowerCase());
+        if (userAllergens.some((ua: string) => recipeAllergens.includes(ua))) return false;
+      }
+      return true;
+    });
+
+    const finalCandidates = filteredCandidates.slice(0, 100);
+    console.log(`[generate-menu] ${candidateRecipes.length} total → ${filteredCandidates.length} filtered → ${finalCandidates.length} candidates for AI`);
+
+    // Build recipe lookup map
+    const recipeMap: Record<string, any> = {};
+    for (const r of candidateRecipes) {
+      recipeMap[r.id] = r;
+      recipeMap[r.title] = r;
+    }
+
     // ── BUILD PROMPT & CALL AI ──
-    const { system, user: userPrompt } = buildMenuPrompt(ctx, mealSlots, recentRecipeNames);
+    const candidateForPrompt = finalCandidates.map((r: any) => ({ id: r.id, title: r.title }));
+    const { system, user: userPrompt } = buildMenuPrompt(ctx, mealSlots, recentRecipeNames, candidateForPrompt);
     console.log(`[generate-menu] Prompt length: system=${system.length} chars, user=${userPrompt.length} chars`);
-    console.log(`[generate-menu] Prompt preview (first 500): ${userPrompt.substring(0, 500)}`);
-    console.log(`[generate-menu] Calling AI for menu generation...`);
+    console.log(`[generate-menu] Calling AI to select from ${finalCandidates.length} candidates...`);
 
     let aiResponse: any;
     try {
@@ -678,158 +721,65 @@ Deno.serve(async (req) => {
       throw new Error('Invalid AI response format');
     }
 
-    console.log(`[generate-menu] AI returned ${aiResponse.menu.length} days, first day repas count: ${aiResponse.menu[0]?.repas?.length ?? 0}`);
+    console.log(`[generate-menu] AI selected recipes for ${aiResponse.menu.length} days`);
 
-    // ── PARTIE 5 — POST-GENERATION VALIDATION ──
-    const validatedMenu: any[] = [];
+    // ── BUILD DAYS FROM AI SELECTION ──
+    const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
     const recipesToStore: { recipe_name: string; meal_type: string }[] = [];
 
-    for (const day of aiResponse.menu) {
-      const validatedDay: any = { jour: day.jour, repas: [] };
-
-      for (const recipe of (day.repas || [])) {
-        let currentRecipe = recipe;
-        let retries = 0;
-        let validated = false;
-
-        while (retries <= 2) {
-          const result = validateRecipe(currentRecipe, ctx);
-          if (result.valid) {
-            validated = true;
-            break;
-          }
-
-          console.warn(`[generate-menu] Recipe "${currentRecipe.nom}" rejected: ${result.reason}. Retry ${retries + 1}/2`);
-
-          if (retries >= 2) break;
-
-          // Regenerate single recipe
-          try {
-            const retryPrompt = `La recette "${currentRecipe.nom}" a été rejetée car : ${result.reason}. Propose UNE SEULE alternative différente pour un ${currentRecipe.type === 'dejeuner' ? 'déjeuner' : 'dîner'} de ${currentRecipe.portions} portions. Même format JSON. Ne reproduis pas la même erreur.
-
-Format attendu (JSON uniquement, sans markdown) :
-{
-  "type": "${currentRecipe.type}",
-  "nom": "...",
-  "portions": ${currentRecipe.portions},
-  "kcal_par_portion": N,
-  "temps_preparation_min": N,
-  "ingredients": [{"nom":"...","quantite":"...","unite":"..."}],
-  "etapes": ["..."],
-  "macros_par_portion": {"proteines_g": N, "glucides_g": N, "lipides_g": N},
-  "tags": [],
-  "conforme_profil": true
-}`;
-            const retryResponse = await callAI(system, retryPrompt);
-            currentRecipe = retryResponse.type ? retryResponse : (retryResponse.repas?.[0] ?? retryResponse);
-          } catch (retryErr) {
-            console.error(`[generate-menu] Retry AI call failed:`, retryErr);
-          }
-          retries++;
-        }
-
-        if (validated) {
-          validatedDay.repas.push(currentRecipe);
-          recipesToStore.push({ recipe_name: currentRecipe.nom, meal_type: currentRecipe.type });
-        } else {
-          // Placeholder for failed recipe
-          validatedDay.repas.push({
-            type: currentRecipe.type,
-            nom: 'Recette en cours de personnalisation',
-            portions: currentRecipe.portions,
-            kcal_par_portion: 0,
-            temps_preparation_min: 0,
-            ingredients: [],
-            etapes: [],
-            macros_par_portion: { proteines_g: 0, glucides_g: 0, lipides_g: 0 },
-            tags: ['placeholder'],
-            conforme_profil: false,
-          });
-          console.error(`[generate-menu] Recipe for day ${day.jour} ${currentRecipe.type} could not be validated after retries`);
-        }
-      }
-
-      validatedMenu.push(validatedDay);
-    }
-
-    console.log(`[generate-menu] Validated ${recipesToStore.length} recipes out of ${mealSlots.length * 7} slots`);
-
-    // ── MATCH AI RECIPES TO DB RECIPES FOR IMAGES ──
-    const allRecipeNames = recipesToStore.map(r => r.recipe_name);
-    let recipeImageMap: Record<string, { id: string; image_url: string | null; image_path: string | null }> = {};
-
-    if (allRecipeNames.length > 0) {
-      // Search for matching recipes by title (case-insensitive) to get images
-      const { data: matchedRecipes } = await supabaseClient
-        .from('recipes')
-        .select('id, title, image_url, image_path')
-        .in('title', allRecipeNames);
-
-      if (matchedRecipes && matchedRecipes.length > 0) {
-        for (const r of matchedRecipes) {
-          recipeImageMap[r.title] = { id: r.id, image_url: r.image_url, image_path: r.image_path };
-        }
-        console.log(`[generate-menu] Matched ${Object.keys(recipeImageMap).length}/${allRecipeNames.length} recipes to DB for images`);
-      }
-
-      // Fuzzy fallback: try ilike for unmatched recipes
-      const unmatchedNames = allRecipeNames.filter(n => !recipeImageMap[n]);
-      if (unmatchedNames.length > 0) {
-        for (const name of unmatchedNames) {
-          // Search by partial match on main keywords
-          const keywords = name.split(/\s+/).filter(w => w.length > 3).slice(0, 3);
-          if (keywords.length === 0) continue;
-          
-          const searchPattern = `%${keywords.join('%')}%`;
-          const { data: fuzzyMatches } = await supabaseClient
-            .from('recipes')
-            .select('id, title, image_url, image_path')
-            .ilike('title', searchPattern)
-            .limit(1);
-          
-          if (fuzzyMatches && fuzzyMatches.length > 0) {
-            recipeImageMap[name] = {
-              id: fuzzyMatches[0].id,
-              image_url: fuzzyMatches[0].image_url,
-              image_path: fuzzyMatches[0].image_path,
-            };
-          }
-        }
-        console.log(`[generate-menu] After fuzzy: matched ${Object.keys(recipeImageMap).length}/${allRecipeNames.length} recipes`);
-      }
-    }
-
-    // ── BUILD DAYS FOR STORAGE (backward compatible with existing dashboard) ──
-    const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
-
-    const days = validatedMenu.map((day, index) => {
+    const days = aiResponse.menu.map((day: any, index: number) => {
       const entry: any = { day: weekdays[index] || `Jour ${day.jour}` };
 
-      for (const recipe of day.repas) {
-        const dbMatch = recipeImageMap[recipe.nom];
+      for (const selection of (day.repas || [])) {
+        // Look up the recipe from DB by ID or title
+        const dbRecipe = recipeMap[selection.recipe_id] || recipeMap[selection.nom];
+
+        if (!dbRecipe) {
+          console.warn(`[generate-menu] Recipe not found in DB: id=${selection.recipe_id}, nom=${selection.nom}`);
+          continue;
+        }
+
+        const portions = selection.portions || defaultPortions;
+        const baseServings = dbRecipe.base_servings || 1;
+        const portionFactor = portions / baseServings;
+
+        // Parse ingredients from DB recipe
+        const ingredients = Array.isArray(dbRecipe.ingredients)
+          ? dbRecipe.ingredients.map((ing: any) => ({
+              nom: ing.name || ing.nom || '',
+              quantite: String(Math.round(((parseFloat(ing.quantity || ing.quantite) || 0) * portionFactor) * 100) / 100),
+              unite: ing.unit || ing.unite || '',
+            }))
+          : [];
+
         const mealEntry = {
-          recipe_id: dbMatch?.id || null,
-          title: recipe.nom,
-          image_url: dbMatch?.image_url || null,
-          image_path: dbMatch?.image_path || null,
-          prep_min: recipe.temps_preparation_min,
-          total_min: recipe.temps_preparation_min,
-          calories: recipe.kcal_par_portion * recipe.portions,
-          proteins_g: recipe.macros_par_portion.proteines_g * recipe.portions,
-          carbs_g: recipe.macros_par_portion.glucides_g * recipe.portions,
-          fats_g: recipe.macros_par_portion.lipides_g * recipe.portions,
-          portion_factor: 1,
-          servings_used: recipe.portions,
-          base_servings: recipe.portions,
-          ai_generated: true,
-          ingredients: recipe.ingredients,
-          etapes: recipe.etapes,
-          kcal_par_portion: recipe.kcal_par_portion,
-          macros_par_portion: recipe.macros_par_portion,
-          tags: recipe.tags,
+          recipe_id: dbRecipe.id,
+          title: dbRecipe.title,
+          image_url: dbRecipe.image_url,
+          image_path: dbRecipe.image_path,
+          prep_min: dbRecipe.prep_time_min || 0,
+          total_min: dbRecipe.prep_time_min || 0,
+          calories: Math.round((dbRecipe.calories_kcal || 0) * portionFactor),
+          proteins_g: Math.round((dbRecipe.proteins_g || 0) * portionFactor),
+          carbs_g: Math.round((dbRecipe.carbs_g || 0) * portionFactor),
+          fats_g: Math.round((dbRecipe.fats_g || 0) * portionFactor),
+          portion_factor: portionFactor,
+          servings_used: portions,
+          base_servings: baseServings,
+          ai_generated: false,
+          ingredients,
+          kcal_par_portion: dbRecipe.calories_kcal || 0,
+          macros_par_portion: {
+            proteines_g: dbRecipe.proteins_g || 0,
+            glucides_g: dbRecipe.carbs_g || 0,
+            lipides_g: dbRecipe.fats_g || 0,
+          },
+          tags: [],
         };
 
-        if (recipe.type === 'dejeuner') {
+        recipesToStore.push({ recipe_name: dbRecipe.title, meal_type: selection.type });
+
+        if (selection.type === 'dejeuner') {
           entry.lunch = mealEntry;
         } else {
           entry.dinner = mealEntry;
@@ -838,6 +788,8 @@ Format attendu (JSON uniquement, sans markdown) :
 
       return entry;
     });
+
+    console.log(`[generate-menu] Built ${days.length} days with ${recipesToStore.length} recipes from DB`);
 
     // ── SAVE MENU ──
     const householdAdults = ctx.household?.adults_count ?? ctx.legacyProfile?.household_adults ?? 1;
