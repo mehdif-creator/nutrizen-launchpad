@@ -1,4 +1,4 @@
-import "https://deno.land/std@0.168.0/dotenv/load.ts";
+// dotenv not needed in Supabase Edge Functions (env vars are injected)
 import { createClient } from "../_shared/deps.ts";
 import { getCorsHeaders, logEdgeFunctionError } from "../_shared/security.ts";
 
