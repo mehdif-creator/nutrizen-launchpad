@@ -114,7 +114,7 @@ export function MealCard({
           <Button 
             onClick={onValidate}
             size="sm" 
-            className="flex-1"
+            className="flex-1 min-h-[44px]"
           >
             Valider
           </Button>
@@ -123,6 +123,7 @@ export function MealCard({
             size="sm" 
             variant="outline"
             disabled={swapsRemaining <= 0}
+            className="min-h-[44px]"
           >
             Swap {swapsRemaining > 0 ? `(${swapsRemaining})` : "(0)"}
           </Button>
@@ -131,7 +132,7 @@ export function MealCard({
           onClick={onViewRecipe}
           size="sm" 
           variant="ghost" 
-          className="w-full text-xs"
+          className="w-full text-xs min-h-[44px]"
         >
           Voir la recette →
         </Button>

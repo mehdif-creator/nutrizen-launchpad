@@ -124,7 +124,7 @@ export const ExampleWeek = () => {
 
         {/* Carousel */}
         <div className="max-w-3xl mx-auto">
-          <Card className="p-8 bg-background border-border shadow-card">
+          <Card className="p-5 md:p-8 bg-background border-border shadow-card">
             <div className="flex items-center justify-between mb-6">
               <Button
                 variant="outline"

@@ -305,14 +305,14 @@ export default function ScanRepas() {
                     onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                     onDragLeave={() => setIsDragging(false)}
                     onDrop={handleDrop}
-                    className={`border-2 border-dashed rounded-[1.5rem] p-12 text-center transition-all duration-300 cursor-pointer ${
+                    className={`border-2 border-dashed rounded-[1.5rem] p-8 md:p-12 text-center transition-all duration-300 cursor-pointer ${
                       isDragging
-                        ? 'border-primary bg-primary/5 scale-105'
-                        : 'border-muted-foreground/30 hover:border-primary hover:scale-105'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-muted-foreground/30 active:border-primary'
                     }`}
                   >
                     <div className="flex flex-col items-center gap-4">
-                      <div className="p-4 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full animate-pulse">
+                      <div className="p-4 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full min-w-[120px] min-h-[120px] flex items-center justify-center">
                         <Camera className="h-12 w-12 text-primary" />
                       </div>
                       <div>
