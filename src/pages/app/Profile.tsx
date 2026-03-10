@@ -1372,13 +1372,28 @@ export default function Profile() {
             </AccordionItem>
           </Accordion>
 
-          <div className="mt-6 md:mt-8 pb-4">
+          {/* Desktop save button */}
+          <div className="mt-6 md:mt-8 pb-4 hidden md:block">
             <Button onClick={handleSave} disabled={saving} className="w-full text-sm md:text-base" size="lg">
               <Save className="w-4 h-4 mr-2" />
               {saving ? 'Sauvegarde...' : '💾 Sauvegarder'}
             </Button>
             {saveError && (
               <p className="text-sm text-destructive mt-2 text-center">{saveError}</p>
+            )}
+          </div>
+
+          {/* Spacer for mobile sticky button */}
+          <div className="h-20 md:hidden" />
+
+          {/* Mobile sticky save button */}
+          <div className="fixed bottom-[72px] left-4 right-4 z-40 md:hidden">
+            <Button onClick={handleSave} disabled={saving} className="w-full text-sm shadow-[0_-4px_12px_rgba(0,0,0,0.15)]" size="lg">
+              <Save className="w-4 h-4 mr-2" />
+              {saving ? 'Sauvegarde...' : '💾 Sauvegarder'}
+            </Button>
+            {saveError && (
+              <p className="text-sm text-destructive mt-2 text-center bg-background rounded px-2 py-1">{saveError}</p>
             )}
           </div>
         </div>
