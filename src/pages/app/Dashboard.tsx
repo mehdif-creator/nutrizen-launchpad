@@ -76,8 +76,48 @@ export default function Dashboard() {
   useGamificationState(); // subscribes to realtime for instant dashboard updates
   
   // Get weekly recipes grouped by day (lunch + dinner)
-  const { days: weeklyDays, isLoading: weeklyDaysLoading, hasDays } = useWeeklyRecipesByDay(user?.id);
+  const { days: rpcWeeklyDays, isLoading: weeklyDaysLoading, hasDays: rpcHasDays } = useWeeklyRecipesByDay(user?.id);
   
+  // Fallback: convert payload days to DayRecipes format for AI-generated menus
+  // (RPC reads user_weekly_menu_items which is empty for AI menus)
+  const weeklyDays = useMemo(() => {
+    if (rpcWeeklyDays.length > 0) return rpcWeeklyDays;
+    if (!menu || !days || days.length === 0) return [];
+    
+    const weekStart = menu.week_start;
+    const dayNames = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+    
+    return days.map((day: any, index: number) => {
+      const dayDate = new Date(weekStart + 'T00:00:00Z');
+      dayDate.setUTCDate(dayDate.getUTCDate() + index);
+      const dateStr = dayDate.toISOString().split('T')[0];
+      
+      const mapMeal = (meal: any) => meal ? {
+        recipe_id: meal.recipe_id || `ai-${index}-${meal.title}`,
+        title: meal.title || 'Recette IA',
+        image_url: meal.image_url || null,
+        prep_min: meal.prep_min || 0,
+        total_min: meal.total_min || 0,
+        calories: meal.calories || 0,
+        proteins_g: meal.proteins_g || meal.macros_par_portion?.proteines_g || 0,
+        carbs_g: meal.carbs_g || meal.macros_par_portion?.glucides_g || 0,
+        fats_g: meal.fats_g || meal.macros_par_portion?.lipides_g || 0,
+        servings: meal.servings_used || meal.base_servings || 1,
+        portion_factor: meal.portion_factor || 1,
+      } : null;
+
+      return {
+        date: dateStr,
+        day_name: day.day || dayNames[index],
+        day_index: index,
+        lunch: mapMeal(day.lunch),
+        dinner: mapMeal(day.dinner),
+      };
+    });
+  }, [rpcWeeklyDays, menu, days]);
+  
+  const hasDays = rpcHasDays || weeklyDays.length > 0;
+
   // Credit reset fallback - runs once per session
   useCreditsReset(user?.id);
   
