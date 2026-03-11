@@ -152,10 +152,12 @@ function MealSlot({
       </div>
       <Button
         onClick={() => {
-          const pf = recipe.portion_factor && recipe.portion_factor > 0
-            ? `?portions=${recipe.portion_factor.toFixed(2)}`
-            : '';
-          navigate(`/app/recipes/${recipe.recipe_id}${pf}`);
+          const servingsParam = recipe.servings && recipe.servings > 0
+            ? `?portions=${recipe.servings}`
+            : (recipe.portion_factor && recipe.portion_factor > 0
+              ? `?portions=${recipe.portion_factor.toFixed(2)}`
+              : '');
+          navigate(`/app/recipes/${recipe.recipe_id}${servingsParam}`);
         }}
         size="sm"
         variant="ghost"
