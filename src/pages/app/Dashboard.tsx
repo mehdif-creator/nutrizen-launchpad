@@ -52,64 +52,60 @@ export default function Dashboard() {
 
   /** Invalidate all dashboard-related queries at once */
   const invalidateAll = () => {
-    queryClient.invalidateQueries({ queryKey: ['weeklyMenu'] });
-    queryClient.invalidateQueries({ queryKey: ['weeklyRecipesByDay'] });
-    queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
-    queryClient.invalidateQueries({ queryKey: ['userDashboard'] });
-    queryClient.invalidateQueries({ queryKey: ['gamification'] });
-    queryClient.invalidateQueries({ queryKey: ['shoppingList'] });
-    queryClient.invalidateQueries({ queryKey: ['effectivePortions'] });
+    queryClient.invalidateQueries({ queryKey: ["weeklyMenu"] });
+    queryClient.invalidateQueries({ queryKey: ["weeklyRecipesByDay"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboardStats"] });
+    queryClient.invalidateQueries({ queryKey: ["userDashboard"] });
+    queryClient.invalidateQueries({ queryKey: ["gamification"] });
+    queryClient.invalidateQueries({ queryKey: ["shoppingList"] });
+    queryClient.invalidateQueries({ queryKey: ["effectivePortions"] });
   };
 
   // Use custom hooks for data fetching with realtime
   const { stats, isLoading: statsLoading } = useDashboardStats(user?.id);
-  const { 
-    menu, 
-    days, 
-    hasMenu, 
-    isLoading: menuLoading,
-    householdAdults,
-    householdChildren 
-  } = useWeeklyMenu(user?.id);
-  
+  const { menu, days, hasMenu, isLoading: menuLoading, householdAdults, householdChildren } = useWeeklyMenu(user?.id);
+
   // Gamification V2 (realtime-backed)
   useGamificationState(); // subscribes to realtime for instant dashboard updates
-  
+
   // Get weekly recipes grouped by day (lunch + dinner)
   const { days: rpcWeeklyDays, isLoading: weeklyDaysLoading, hasDays: rpcHasDays } = useWeeklyRecipesByDay(user?.id);
-  
+
   // Fallback: convert payload days to DayRecipes format for AI-generated menus
   // (RPC reads user_weekly_menu_items which is empty for AI menus)
   const weeklyDays = useMemo(() => {
     // RPC returns data from user_weekly_menu_items — only use if it has actual recipes
-    const rpcHasRecipes = rpcWeeklyDays.length > 0 && rpcWeeklyDays.some(d => d.lunch || d.dinner);
+    const rpcHasRecipes = rpcWeeklyDays.length > 0 && rpcWeeklyDays.some((d) => d.lunch || d.dinner);
     if (rpcHasRecipes) return rpcWeeklyDays;
-    
+
     // Fallback: map from JSONB payload (AI-generated menus)
     if (!menu || !days || days.length === 0) return [];
-    
+
     const weekStart = menu.week_start;
     const dayNames = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
-    
+
     return days.map((day: any, index: number) => {
-      const dayDate = new Date(weekStart + 'T00:00:00Z');
+      const dayDate = new Date(weekStart + "T00:00:00Z");
       dayDate.setUTCDate(dayDate.getUTCDate() + index);
-      const dateStr = dayDate.toISOString().split('T')[0];
-      
-      const mapMeal = (meal: any) => meal ? {
-        recipe_id: meal.recipe_id || `ai-${index}-${meal.title}`,
-        title: meal.title || 'Recette IA',
-        image_url: meal.image_url || null,
-        image_path: meal.image_path || null,
-        prep_min: meal.prep_min || 0,
-        total_min: meal.total_min || 0,
-        calories: meal.calories || 0,
-        proteins_g: meal.proteins_g || meal.macros_par_portion?.proteines_g || 0,
-        carbs_g: meal.carbs_g || meal.macros_par_portion?.glucides_g || 0,
-        fats_g: meal.fats_g || meal.macros_par_portion?.lipides_g || 0,
-        servings: meal.servings_used || meal.base_servings || 1,
-        portion_factor: meal.portion_factor || 1,
-      } : null;
+      const dateStr = dayDate.toISOString().split("T")[0];
+
+      const mapMeal = (meal: any) =>
+        meal
+          ? {
+              recipe_id: meal.recipe_id || `ai-${index}-${meal.title}`,
+              title: meal.title || "Recette IA",
+              image_url: meal.image_url || null,
+              image_path: meal.image_path || null,
+              prep_min: meal.prep_min || 0,
+              total_min: meal.total_min || 0,
+              calories: meal.calories || 0,
+              proteins_g: meal.proteins_g || meal.macros_par_portion?.proteines_g || 0,
+              carbs_g: meal.carbs_g || meal.macros_par_portion?.glucides_g || 0,
+              fats_g: meal.fats_g || meal.macros_par_portion?.lipides_g || 0,
+              servings: meal.servings_used || meal.base_servings || 1,
+              portion_factor: meal.portion_factor || 1,
+            }
+          : null;
 
       return {
         date: dateStr,
@@ -120,12 +116,12 @@ export default function Dashboard() {
       };
     });
   }, [rpcWeeklyDays, menu, days]);
-  
+
   const hasDays = rpcHasDays || weeklyDays.length > 0;
 
   // Credit reset fallback - runs once per session
   useCreditsReset(user?.id);
-  
+
   // Effective portions from profile (single source of truth)
   const { data: portions } = useEffectivePortions(user?.id);
 
@@ -146,25 +142,25 @@ export default function Dashboard() {
   useEffect(() => {
     // Check for successful credit purchase
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('credits_purchased') === 'true') {
+    if (urlParams.get("credits_purchased") === "true") {
       // Force refresh credits after purchase
       invalidateAll();
-      const packParam = urlParams.get('pack');
+      const packParam = urlParams.get("pack");
       toast({
         title: "Bravo 🎉",
-        description: packParam 
+        description: packParam
           ? `Tes Crédits Zen ont été ajoutés à ton compte !`
           : "Tu viens d'ajouter des Crédits Zen non expirants à ton compte !",
       });
-      window.history.replaceState({}, '', '/app/dashboard');
+      window.history.replaceState({}, "", "/app/dashboard");
     }
 
     // Scroll to credits section if requested
-    if (urlParams.get('scroll_to') === 'credits') {
+    if (urlParams.get("scroll_to") === "credits") {
       setTimeout(() => {
-        document.getElementById('credits')?.scrollIntoView({ behavior: 'smooth' });
+        document.getElementById("credits")?.scrollIntoView({ behavior: "smooth" });
       }, 500);
-      window.history.replaceState({}, '', '/app/dashboard');
+      window.history.replaceState({}, "", "/app/dashboard");
     }
   }, [toast]);
 
@@ -189,7 +185,7 @@ export default function Dashboard() {
 
   const todayData = useMemo(() => {
     if (!weeklyDays.length) return null;
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split("T")[0];
     return weeklyDays.find((d) => d.date === today) || null;
   }, [weeklyDays]);
 
@@ -207,7 +203,7 @@ export default function Dashboard() {
 
   const loading = statsLoading || menuLoading;
 
-  const handleSwap = async (recipeId: string, mealType: 'lunch' | 'dinner', dayIndex: number) => {
+  const handleSwap = async (recipeId: string, mealType: "lunch" | "dinner", dayIndex: number) => {
     if (!user?.id || !menu || swapping) return;
 
     // Generate unique request_id for idempotency (prevents double-charge on double-click)
@@ -226,7 +222,7 @@ export default function Dashboard() {
         setCreditsError({
           currentBalance: stats.credits_zen,
           required: 1,
-          feature: 'swap',
+          feature: "swap",
         });
         setCreditsModalOpen(true);
         return;
@@ -267,17 +263,17 @@ export default function Dashboard() {
       if (responseData?.success) {
         toast({
           title: "Recette changée !",
-          description: `Nouvelle recette : ${responseData.newRecipe?.title || 'OK'}. Il te reste ${responseData.creditsRemaining} Crédits Zen.`,
+          description: `Nouvelle recette : ${responseData.newRecipe?.title || "OK"}. Il te reste ${responseData.creditsRemaining} Crédits Zen.`,
         });
         invalidateAll();
-      } else if (responseData?.error_code === 'INSUFFICIENT_CREDITS') {
+      } else if (responseData?.error_code === "INSUFFICIENT_CREDITS") {
         setCreditsError({
           currentBalance: responseData.current_balance || 0,
           required: responseData.required || 1,
-          feature: 'swap',
+          feature: "swap",
         });
         setCreditsModalOpen(true);
-      } else if (responseData?.error_code === 'DUPLICATE_REQUEST') {
+      } else if (responseData?.error_code === "DUPLICATE_REQUEST") {
         invalidateAll();
       } else {
         const errorMsg = responseData?.error || "Impossible de changer la recette.";
@@ -291,9 +287,9 @@ export default function Dashboard() {
       console.error("Error swapping:", error);
       // Try to extract meaningful message
       let msg = "Une erreur est survenue lors du swap.";
-      if (error?.message?.includes('rate limit') || error?.message?.includes('429')) {
+      if (error?.message?.includes("rate limit") || error?.message?.includes("429")) {
         msg = "Trop de requêtes. Réessaie dans quelques secondes.";
-      } else if (error?.message?.includes('Unauthorized') || error?.message?.includes('401')) {
+      } else if (error?.message?.includes("Unauthorized") || error?.message?.includes("401")) {
         msg = "Session expirée. Reconnecte-toi pour continuer.";
       } else if (error?.message) {
         msg = error.message;
@@ -308,9 +304,9 @@ export default function Dashboard() {
     }
   };
 
-  const handleValidateMeal = async (recipeId: string, mealType: 'lunch' | 'dinner') => {
+  const handleValidateMeal = async (recipeId: string, mealType: "lunch" | "dinner") => {
     try {
-      const { error } = await supabase.functions.invoke('meal-validated', {
+      const { error } = await supabase.functions.invoke("meal-validated", {
         body: { recipe_id: recipeId, meal_type: mealType },
       });
 
@@ -323,7 +319,7 @@ export default function Dashboard() {
       // Explicitly invalidate queries for immediate UI update
       invalidateAll();
     } catch (error: any) {
-      console.error('Validate meal error:', error);
+      console.error("Validate meal error:", error);
       toast({
         variant: "destructive",
         title: "Erreur",
@@ -362,7 +358,9 @@ export default function Dashboard() {
             console.log("[handleRegenWeek] Error body from context:", body);
             errorMessage = body?.message || body?.error || errorMessage;
           }
-        } catch (_) { /* ignore parse error */ }
+        } catch (_) {
+          /* ignore parse error */
+        }
         console.error("[handleRegenWeek] Error:", { message: errorMessage, error });
         toast({
           title: "Génération impossible",
@@ -416,7 +414,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
       <AppHeader />
-      
+
       {/* Onboarding Coach */}
       <OnboardingCoach userId={user?.id} />
 
@@ -442,9 +440,7 @@ export default function Dashboard() {
           {/* Row 2: Progress bar only */}
           <div className="flex items-center gap-3">
             <Progress value={(validated / 5) * 100} className="flex-1 h-2" />
-            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-              {validated}/5 jours
-            </span>
+            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">{validated}/5 jours</span>
           </div>
         </section>
 
@@ -467,10 +463,10 @@ export default function Dashboard() {
                     try {
                       const ws = getCurrentWeekStart();
                       // Fetch shopping list raw items for PDF
-                      const { data: rawData } = await supabase.rpc(
-                        'get_shopping_list_from_weekly_menu',
-                        { p_user_id: user!.id, p_week_start: ws }
-                      );
+                      const { data: rawData } = await supabase.rpc("get_shopping_list_from_weekly_menu", {
+                        p_user_id: user!.id,
+                        p_week_start: ws,
+                      });
                       const rawItems: RawShoppingItem[] = (rawData || []).map((r: any) => ({
                         ingredient_name: r.ingredient_name,
                         total_quantity: r.total_quantity,
@@ -482,7 +478,7 @@ export default function Dashboard() {
                       exportWeeklyPackPdf(ws, weeklyDays, merged, hhLabel);
                       toast({ title: "📥 PDF téléchargé", description: "Pack complet de la semaine." });
                     } catch (err) {
-                      console.error('PDF export error:', err);
+                      console.error("PDF export error:", err);
                       toast({ title: "Erreur", description: "Impossible de générer le PDF.", variant: "destructive" });
                     }
                   }}
@@ -511,10 +507,10 @@ export default function Dashboard() {
                 onClick={async () => {
                   try {
                     const ws = getCurrentWeekStart();
-                    const { data: rawData } = await supabase.rpc(
-                      'get_shopping_list_from_weekly_menu',
-                      { p_user_id: user!.id, p_week_start: ws }
-                    );
+                    const { data: rawData } = await supabase.rpc("get_shopping_list_from_weekly_menu", {
+                      p_user_id: user!.id,
+                      p_week_start: ws,
+                    });
                     const rawItems: RawShoppingItem[] = (rawData || []).map((r: any) => ({
                       ingredient_name: r.ingredient_name,
                       total_quantity: r.total_quantity,
@@ -526,7 +522,7 @@ export default function Dashboard() {
                     exportWeeklyPackPdf(ws, weeklyDays, merged, hhLabel);
                     toast({ title: "📥 PDF téléchargé", description: "Pack complet de la semaine." });
                   } catch (err) {
-                    console.error('PDF export error:', err);
+                    console.error("PDF export error:", err);
                     toast({ title: "Erreur", description: "Impossible de générer le PDF.", variant: "destructive" });
                   }
                 }}
@@ -582,7 +578,6 @@ export default function Dashboard() {
                 <Users className="h-20 w-20 text-green-600 dark:text-green-500" />
               </div>
             </Link>
-
           </div>
         </section>
 
@@ -613,7 +608,11 @@ export default function Dashboard() {
                   <StatCard
                     label="Crédits"
                     value={`${stats.credits_zen}`}
-                    sub={<span className="flex items-center gap-1">Achetés + mensuels <Info className="h-3 w-3" /></span>}
+                    sub={
+                      <span className="flex items-center gap-1">
+                        Achetés + mensuels <Info className="h-3 w-3" />
+                      </span>
+                    }
                     icon={<Sparkles className="h-4 w-4 md:h-5 md:w-5" />}
                   />
                 </div>
@@ -642,7 +641,10 @@ export default function Dashboard() {
         </section>
 
         {/* Week Planner */}
-        <section id="week-section" className="px-4 sm:px-6 lg:px-10 grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
+        <section
+          id="week-section"
+          className="px-4 sm:px-6 lg:px-10 grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8"
+        >
           {/* Left: Meals */}
           <div className="xl:col-span-2 space-y-6">
             <div className="flex items-center justify-between mb-4">
@@ -680,38 +682,46 @@ export default function Dashboard() {
                       day={dayData.day_name}
                       date={dayData.date}
                       dayIndex={dayData.day_index}
-                      lunchRecipe={dayData.lunch ? {
-                        recipe_id: dayData.lunch.recipe_id,
-                        title: dayData.lunch.title,
-                        image_url: dayData.lunch.image_url,
-                        image_path: dayData.lunch.image_path,
-                        prep_min: dayData.lunch.prep_min,
-                        total_min: dayData.lunch.total_min,
-                        calories: dayData.lunch.calories,
-                        portion_factor: dayData.lunch.portion_factor,
-                        servings: dayData.lunch.servings,
-                        macros: {
-                          proteins_g: dayData.lunch.proteins_g,
-                          carbs_g: dayData.lunch.carbs_g,
-                          fats_g: dayData.lunch.fats_g,
-                        }
-                      } : null}
-                      dinnerRecipe={dayData.dinner ? {
-                        recipe_id: dayData.dinner.recipe_id,
-                        title: dayData.dinner.title,
-                        image_url: dayData.dinner.image_url,
-                        image_path: dayData.dinner.image_path,
-                        prep_min: dayData.dinner.prep_min,
-                        total_min: dayData.dinner.total_min,
-                        calories: dayData.dinner.calories,
-                        portion_factor: dayData.dinner.portion_factor,
-                        servings: dayData.dinner.servings,
-                        macros: {
-                          proteins_g: dayData.dinner.proteins_g,
-                          carbs_g: dayData.dinner.carbs_g,
-                          fats_g: dayData.dinner.fats_g,
-                        }
-                      } : null}
+                      lunchRecipe={
+                        dayData.lunch
+                          ? {
+                              recipe_id: dayData.lunch.recipe_id,
+                              title: dayData.lunch.title,
+                              image_url: dayData.lunch.image_url,
+                              image_path: dayData.lunch.image_path,
+                              prep_min: dayData.lunch.prep_min,
+                              total_min: dayData.lunch.total_min,
+                              calories: dayData.lunch.calories,
+                              portion_factor: dayData.lunch.portion_factor,
+                              servings: dayData.lunch.servings,
+                              macros: {
+                                proteins_g: dayData.lunch.proteins_g,
+                                carbs_g: dayData.lunch.carbs_g,
+                                fats_g: dayData.lunch.fats_g,
+                              },
+                            }
+                          : null
+                      }
+                      dinnerRecipe={
+                        dayData.dinner
+                          ? {
+                              recipe_id: dayData.dinner.recipe_id,
+                              title: dayData.dinner.title,
+                              image_url: dayData.dinner.image_url,
+                              image_path: dayData.dinner.image_path,
+                              prep_min: dayData.dinner.prep_min,
+                              total_min: dayData.dinner.total_min,
+                              calories: dayData.dinner.calories,
+                              portion_factor: dayData.dinner.portion_factor,
+                              servings: dayData.dinner.servings,
+                              macros: {
+                                proteins_g: dayData.dinner.proteins_g,
+                                carbs_g: dayData.dinner.carbs_g,
+                                fats_g: dayData.dinner.fats_g,
+                              },
+                            }
+                          : null
+                      }
                       onValidate={handleValidateMeal}
                       onSwap={handleSwap}
                       swapsRemaining={stats.credits_zen}
@@ -741,14 +751,9 @@ export default function Dashboard() {
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm md:text-base font-semibold flex items-center gap-2">
                   <ShoppingCart className="h-4 w-4 text-primary" />
-                  Liste de courses
+                  Liste de courses (En Développement)
                 </h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs"
-                  onClick={() => navigate('/app/shopping-list')}
-                >
+                <Button variant="outline" size="sm" className="text-xs" onClick={() => navigate("/app/shopping-list")}>
                   <ShoppingCart className="h-3.5 w-3.5 mr-1" />
                   <span className="hidden sm:inline">Voir la liste</span>
                 </Button>
@@ -774,7 +779,7 @@ export default function Dashboard() {
                     variant="ghost"
                     size="sm"
                     className="w-full mt-2 text-xs text-primary"
-                    onClick={() => navigate('/app/shopping-list')}
+                    onClick={() => navigate("/app/shopping-list")}
                   >
                     Voir toute la liste ({shoppingList.length} articles)
                   </Button>
@@ -788,7 +793,7 @@ export default function Dashboard() {
                     size="sm"
                     variant="outline"
                     className="text-xs"
-                    onClick={() => navigate('/app/shopping-list')}
+                    onClick={() => navigate("/app/shopping-list")}
                   >
                     <ShoppingCart className="h-3.5 w-3.5 mr-1" />
                     Accéder à la liste
@@ -812,7 +817,6 @@ export default function Dashboard() {
                 Copier le lien
               </Button>
             </Card>
-
           </aside>
         </section>
       </main>
