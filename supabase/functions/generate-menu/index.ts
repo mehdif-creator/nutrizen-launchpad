@@ -864,7 +864,7 @@ Deno.serve(async (req) => {
             weekly_menu_id: menu.menu_id,
             recipe_id: meal.recipe_id,
             day_of_week: dayIndex + 1,
-            meal_slot: slot === 'lunch' ? 'dejeuner' : 'diner',
+            meal_slot: slot,
             target_servings: Math.round(meal.servings_used || meal.base_servings || 1),
             portion_factor: meal.portion_factor || 1,
             scale_factor: meal.portion_factor || 1,
