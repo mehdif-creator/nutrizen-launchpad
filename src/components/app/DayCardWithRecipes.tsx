@@ -16,6 +16,7 @@ interface Recipe {
   total_min: number;
   calories: number;
   portion_factor?: number;
+  servings?: number;
   macros: {
     proteins_g: number;
     carbs_g: number | null;
