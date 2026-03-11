@@ -689,6 +689,7 @@ export default function Dashboard() {
                         total_min: dayData.lunch.total_min,
                         calories: dayData.lunch.calories,
                         portion_factor: dayData.lunch.portion_factor,
+                        servings: dayData.lunch.servings,
                         macros: {
                           proteins_g: dayData.lunch.proteins_g,
                           carbs_g: dayData.lunch.carbs_g,
@@ -704,6 +705,7 @@ export default function Dashboard() {
                         total_min: dayData.dinner.total_min,
                         calories: dayData.dinner.calories,
                         portion_factor: dayData.dinner.portion_factor,
+                        servings: dayData.dinner.servings,
                         macros: {
                           proteins_g: dayData.dinner.proteins_g,
                           carbs_g: dayData.dinner.carbs_g,

@@ -671,11 +671,36 @@ Deno.serve(async (req) => {
       ? ctx.allergies.allergies.map((a: AllergyEntry) => a.name.toLowerCase())
       : (ctx.legacyPreferences?.allergies || []).map((a: string) => a.toLowerCase()));
 
+    // Build set of user's available appliances (normalized)
+    const userAppliances = new Set(
+      (ctx.habits?.available_tools || ctx.legacyPreferences?.appliances_owned || [])
+        .map((a: string) => (a || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim())
+        .filter((a: string) => a.length > 0)
+    );
+
     const filteredCandidates = candidateRecipes.filter((r: any) => {
       if (recentRecipeNames.includes(r.title)) return false;
       if (userAllergens.length > 0 && r.allergens) {
         const recipeAllergens = (r.allergens as string[]).map((a: string) => a.toLowerCase());
         if (userAllergens.some((ua: string) => recipeAllergens.includes(ua))) return false;
+      }
+      // Filter by required appliances: if recipe specifies required_appliances, user must have them
+      if (r.required_appliances && Array.isArray(r.required_appliances) && r.required_appliances.length > 0 && userAppliances.size > 0) {
+        const missingAppliance = r.required_appliances.some((appliance: string) => {
+          const normalized = (appliance || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+          return !userAppliances.has(normalized);
+        });
+        if (missingAppliance) return false;
+      }
+      // Also check recipe title/tags for common appliance keywords not in user's list
+      if (userAppliances.size > 0) {
+        const titleLower = (r.title || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const applianceKeywords = ['airfryer', 'air fryer', 'thermomix', 'cookeo', 'autocuiseur', 'wok', 'plancha', 'barbecue'];
+        for (const keyword of applianceKeywords) {
+          if (titleLower.includes(keyword) && !userAppliances.has(keyword)) {
+            return false;
+          }
+        }
       }
       return true;
     });
@@ -840,7 +865,7 @@ Deno.serve(async (req) => {
             recipe_id: meal.recipe_id,
             day_of_week: dayIndex + 1,
             meal_slot: slot === 'lunch' ? 'dejeuner' : 'diner',
-            target_servings: meal.servings_used || meal.base_servings || 1,
+            target_servings: Math.round(meal.servings_used || meal.base_servings || 1),
             portion_factor: meal.portion_factor || 1,
             scale_factor: meal.portion_factor || 1,
           });
