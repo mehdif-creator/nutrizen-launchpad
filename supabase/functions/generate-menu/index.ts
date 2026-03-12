@@ -881,6 +881,41 @@ Deno.serve(async (req) => {
       else console.log(`[generate-menu] ✅ Inserted ${menuItems.length} menu items`);
     }
 
+    // ── SYNC user_daily_recipes (used by dashboard RPC) ──
+    const dailyRecipeRows: any[] = [];
+    days.forEach((day: any, index: number) => {
+      const dayDate = new Date(weekStartStr + "T00:00:00Z");
+      dayDate.setUTCDate(dayDate.getUTCDate() + index);
+      const dateStr = dayDate.toISOString().split("T")[0];
+
+      dailyRecipeRows.push({
+        user_id: user.id,
+        date: dateStr,
+        lunch_recipe_id: day.lunch?.recipe_id || null,
+        dinner_recipe_id: day.dinner?.recipe_id || null,
+      });
+    });
+
+    if (dailyRecipeRows.length > 0) {
+      // Delete existing rows for this week first
+      const weekEndDate = new Date(weekStartStr + "T00:00:00Z");
+      weekEndDate.setUTCDate(weekEndDate.getUTCDate() + 6);
+      const weekEndStr = weekEndDate.toISOString().split("T")[0];
+
+      await supabaseClient
+        .from('user_daily_recipes')
+        .delete()
+        .eq('user_id', user.id)
+        .gte('date', weekStartStr)
+        .lte('date', weekEndStr);
+
+      const { error: dailyError } = await supabaseClient
+        .from('user_daily_recipes')
+        .insert(dailyRecipeRows);
+      if (dailyError) console.error('[generate-menu] Error syncing user_daily_recipes:', dailyError);
+      else console.log(`[generate-menu] ✅ Synced ${dailyRecipeRows.length} rows to user_daily_recipes`);
+    }
+
     // ── STORE GENERATED RECIPES FOR NON-REPETITION ──
     if (recipesToStore.length > 0) {
       const historyRows = recipesToStore.map(r => ({
