@@ -891,7 +891,6 @@ Deno.serve(async (req) => {
       dailyRecipeRows.push({
         user_id: user.id,
         date: dateStr,
-        day_of_week: index + 1,
         lunch_recipe_id: day.lunch?.recipe_id || null,
         dinner_recipe_id: day.dinner?.recipe_id || null,
       });
