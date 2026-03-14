@@ -101,7 +101,7 @@ export const Header = ({ onCtaClick }: HeaderProps) => {
 
       {/* Mobile Menu - full screen overlay */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 top-16 z-40 bg-background overflow-y-auto">
+        <div className="md:hidden fixed inset-0 top-0 z-[60] bg-background overflow-y-auto pt-20">
           <nav className="container py-6 flex flex-col gap-1">
             {[
               { action: () => scrollToSection('avantages'), label: t('header.advantages') },
