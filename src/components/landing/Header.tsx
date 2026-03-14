@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
@@ -99,9 +100,17 @@ export const Header = ({ onCtaClick }: HeaderProps) => {
         </button>
       </div>
 
-      {/* Mobile Menu - full screen overlay */}
-      {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 top-16 z-40 bg-background overflow-y-auto">
+      {/* Mobile Menu - rendered via portal to escape sticky stacking context */}
+      {mobileMenuOpen && createPortal(
+        <div className="md:hidden fixed inset-0 z-[9999] bg-background overflow-y-auto pt-20">
+          {/* Close button */}
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="absolute top-4 right-4 p-3 min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Fermer le menu"
+          >
+            <X size={24} />
+          </button>
           <nav className="container py-6 flex flex-col gap-1">
             {[
               { action: () => scrollToSection('avantages'), label: t('header.advantages') },
@@ -139,7 +148,8 @@ export const Header = ({ onCtaClick }: HeaderProps) => {
               Commencer gratuitement
             </Button>
           </nav>
-        </div>
+        </div>,
+        document.body
       )}
     </header>
   );
