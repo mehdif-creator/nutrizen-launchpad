@@ -282,10 +282,11 @@ export default function Profile() {
       if (household) {
         setHouseholdAdults(household.adults_count ?? 1);
         setHouseholdChildren(household.children_count ?? 0);
-        if (household.children_ages && household.children_ages.length > 0) {
-          setChildAges(household.children_ages);
+        const ages = Array.isArray(household.children_ages) ? household.children_ages : [];
+        if (ages.length > 0) {
+          setChildAges(ages);
         }
-        setFamilyAllergies(household.family_allergies || '');
+        setFamilyAllergies(household.family_allergies ?? '');
       }
 
       // Section 8
