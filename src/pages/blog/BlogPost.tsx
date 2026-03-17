@@ -8,9 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft } from 'lucide-react';
-import { useBlogArticleBySlug } from '@/hooks/useBlogArticles';
-import { useEffect } from 'react';
+import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useBlogArticleBySlug, useBlogArticles } from '@/hooks/useBlogArticles';
+import { useEffect, useRef, useState } from 'react';
 import { getCategoryLabel } from '@/lib/categoryMapping';
 
 function formatDateFr(dateStr: string | null) {
