@@ -237,7 +237,7 @@ export function NutriZenChatbot() {
         onClick={() => setIsOpen(!isOpen)}
         size="icon"
         className={cn(
-          'fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg transition-transform hover:scale-105',
+          'fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg transition-transform hover:scale-105 md:bottom-6 max-md:bottom-[84px]',
           'bg-gradient-to-br from-primary to-primary/80 text-primary-foreground',
         )}
       >
@@ -246,7 +246,7 @@ export function NutriZenChatbot() {
 
       {/* Chat window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-[380px] max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-background shadow-2xl flex flex-col animate-in slide-in-from-bottom-4 fade-in duration-300"
+        <div className="fixed bottom-24 right-6 z-50 w-[380px] max-w-[calc(100vw-2rem)] max-md:bottom-[148px] rounded-2xl border border-border bg-background shadow-2xl flex flex-col animate-in slide-in-from-bottom-4 fade-in duration-300"
           style={{ height: 'min(560px, calc(100vh - 8rem))' }}
         >
           {/* Header */}
