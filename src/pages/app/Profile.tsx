@@ -206,9 +206,9 @@ export default function Profile() {
 
       // Section 2
       if (objectives) {
-        setMainGoal(objectives.main_goal || '');
-        setGoalDuration(objectives.goal_duration || '');
-        setMainBlockers(objectives.main_blockers || []);
+        setMainGoal(objectives.main_goal ?? '');
+        setGoalDuration(objectives.goal_duration ?? '');
+        setMainBlockers(Array.isArray(objectives.main_blockers) ? objectives.main_blockers : []);
       }
 
       // Section 3 — reverse map prep_time codes
