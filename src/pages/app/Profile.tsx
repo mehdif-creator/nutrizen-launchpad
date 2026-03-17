@@ -1292,14 +1292,11 @@ export default function Profile() {
 
                     <div className="space-y-2">
                       <Label htmlFor="stress">Niveau de stress</Label>
-                      <Select value={stressLevel} onValueChange={setStressLevel}>
-                        <SelectTrigger id="stress"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="bas">Faible</SelectItem>
-                          <SelectItem value="moyen">Moyen</SelectItem>
-                          <SelectItem value="eleve">Élevé</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <MobileSelect id="stress" value={stressLevel} onValueChange={setStressLevel} placeholder="Sélectionnez..." forceNative options={[
+                        { value: 'bas', label: 'Faible' },
+                        { value: 'moyen', label: 'Moyen' },
+                        { value: 'eleve', label: 'Élevé' },
+                      ]} />
                     </div>
 
                     <div className="space-y-2">
