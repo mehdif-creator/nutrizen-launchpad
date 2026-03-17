@@ -829,14 +829,11 @@ export default function Profile() {
 
                     <div className="space-y-2">
                       <Label htmlFor="duree">Durée souhaitée</Label>
-                      <Select value={goalDuration} onValueChange={setGoalDuration}>
-                        <SelectTrigger id="duree"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="court_terme">Court terme (1-4 semaines)</SelectItem>
-                          <SelectItem value="long_terme">Long terme (3+ mois)</SelectItem>
-                          <SelectItem value="sans_limite">Sans limite</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <MobileSelect id="duree" value={goalDuration} onValueChange={setGoalDuration} placeholder="Sélectionnez..." forceNative options={[
+                        { value: 'court_terme', label: 'Court terme (1-4 semaines)' },
+                        { value: 'long_terme', label: 'Long terme (3+ mois)' },
+                        { value: 'sans_limite', label: 'Sans limite' },
+                      ]} />
                     </div>
 
                     <div className="space-y-2">
