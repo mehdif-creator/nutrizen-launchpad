@@ -1336,15 +1336,12 @@ export default function Profile() {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="freq_courses">Fréquence des courses</Label>
-                        <Select value={shoppingFrequency} onValueChange={setShoppingFrequency}>
-                          <SelectTrigger id="freq_courses"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="1x">1 fois par semaine</SelectItem>
-                            <SelectItem value="2x">2 fois par semaine</SelectItem>
-                            <SelectItem value="3x">3+ fois par semaine</SelectItem>
-                            <SelectItem value="quotidien">Quotidien</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <MobileSelect id="freq_courses" value={shoppingFrequency} onValueChange={setShoppingFrequency} placeholder="Sélectionnez..." forceNative options={[
+                          { value: '1x', label: '1 fois par semaine' },
+                          { value: '2x', label: '2 fois par semaine' },
+                          { value: '3x', label: '3+ fois par semaine' },
+                          { value: 'quotidien', label: 'Quotidien' },
+                        ]} />
                       </div>
                     </div>
 
