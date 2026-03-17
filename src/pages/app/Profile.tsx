@@ -566,9 +566,8 @@ export default function Profile() {
       }
     } catch (error) {
       console.error('Error saving preferences:', error);
-      const msg = error instanceof Error ? error.message : 'Impossible de sauvegarder vos préférences. Réessayez plus tard.';
-      setSaveError(msg);
-      toast({ title: 'Erreur', description: msg, variant: 'destructive' });
+      setSaveError('Une erreur est survenue lors de la sauvegarde, veuillez réessayer.');
+      toast({ title: 'Erreur', description: 'Une erreur est survenue lors de la sauvegarde, veuillez réessayer.', variant: 'destructive' });
     } finally {
       setSaving(false);
     }

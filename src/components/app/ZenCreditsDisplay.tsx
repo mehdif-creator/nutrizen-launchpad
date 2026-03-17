@@ -145,12 +145,12 @@ export function ZenCreditsDisplay({
           <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border/50">
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">Crédits achetés</p>
-              <p className="text-sm font-semibold text-foreground">{lifetimeCredits}</p>
+              <p className="text-sm font-semibold text-foreground">{lifetimeCredits ?? '—'}</p>
               <p className="text-xs text-muted-foreground/70">Ne périment jamais</p>
             </div>
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">Crédits abonnement</p>
-              <p className="text-sm font-semibold text-foreground">{subscriptionCredits}</p>
+              <p className="text-sm font-semibold text-foreground">{subscriptionCredits ?? '—'}</p>
               <p className="text-xs text-muted-foreground/70">Renouvelés mensuellement</p>
             </div>
           </div>
