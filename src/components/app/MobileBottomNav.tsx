@@ -1,12 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, CalendarDays, ShoppingCart, Sparkles, User } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Sparkles, Camera, ScanBarcode } from 'lucide-react';
 
 const tabs = [
   { icon: LayoutDashboard, label: 'Accueil', to: '/app/dashboard', id: 'home' },
-  { icon: CalendarDays, label: 'Semaine', to: '#semaine', id: 'week' },
-  { icon: ShoppingCart, label: 'Courses', to: '/app/shopping-list', id: 'shopping' },
   { icon: Sparkles, label: 'InspiFrigo', to: '/app/inspi-frigo', id: 'inspi' },
-  { icon: User, label: 'Profil', to: '/app/profile', id: 'profile' },
+  { icon: Camera, label: 'Scan repas', to: '/app/scan-repas', id: 'scan' },
+  { icon: ScanBarcode, label: 'Code barre', to: '/app/scan-barcode', id: 'barcode' },
+  { icon: ShoppingCart, label: 'Courses', to: '/app/shopping-list', id: 'shopping' },
 ] as const;
 
 export function MobileBottomNav() {
