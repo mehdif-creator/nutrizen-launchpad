@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MobileSelect } from '@/components/ui/mobile-select';
 import { Switch } from '@/components/ui/switch';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -830,14 +829,11 @@ export default function Profile() {
 
                     <div className="space-y-2">
                       <Label htmlFor="duree">Durée souhaitée</Label>
-                      <Select value={goalDuration} onValueChange={setGoalDuration}>
-                        <SelectTrigger id="duree"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="court_terme">Court terme (1-4 semaines)</SelectItem>
-                          <SelectItem value="long_terme">Long terme (3+ mois)</SelectItem>
-                          <SelectItem value="sans_limite">Sans limite</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <MobileSelect id="duree" value={goalDuration} onValueChange={setGoalDuration} placeholder="Sélectionnez..." forceNative options={[
+                        { value: 'court_terme', label: 'Court terme (1-4 semaines)' },
+                        { value: 'long_terme', label: 'Long terme (3+ mois)' },
+                        { value: 'sans_limite', label: 'Sans limite' },
+                      ]} />
                     </div>
 
                     <div className="space-y-2">
@@ -872,12 +868,10 @@ export default function Profile() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="repas_jour">Nombre de repas par jour</Label>
-                        <Select value={mealsPerDay?.toString() || ''} onValueChange={(v) => setMealsPerDay(parseInt(v))}>
-                          <SelectTrigger id="repas_jour"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                          <SelectContent>
-                            {[1, 2].map(n => (<SelectItem key={n} value={n.toString()}>{n}</SelectItem>))}
-                          </SelectContent>
-                        </Select>
+                        <MobileSelect id="repas_jour" value={mealsPerDay?.toString() || ''} onValueChange={(v) => setMealsPerDay(parseInt(v))} placeholder="Sélectionnez..." forceNative options={[
+                          { value: '1', label: '1' },
+                          { value: '2', label: '2' },
+                        ]} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="appetit">Taille d'appétit</Label>
@@ -933,25 +927,19 @@ export default function Profile() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="niveau_cuisine">Niveau en cuisine</Label>
-                        <Select value={cookingLevel} onValueChange={setCookingLevel}>
-                          <SelectTrigger id="niveau_cuisine"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="debutant">Débutant</SelectItem>
-                            <SelectItem value="intermediaire">Intermédiaire</SelectItem>
-                            <SelectItem value="avance">Avancé</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <MobileSelect id="niveau_cuisine" value={cookingLevel} onValueChange={setCookingLevel} placeholder="Sélectionnez..." forceNative options={[
+                          { value: 'debutant', label: 'Débutant' },
+                          { value: 'intermediaire', label: 'Intermédiaire' },
+                          { value: 'avance', label: 'Avancé' },
+                        ]} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="freq_emporter">Fréquence de repas à emporter</Label>
-                        <Select value={mealFrequency} onValueChange={setMealFrequency}>
-                          <SelectTrigger id="freq_emporter"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="rarement">Rarement</SelectItem>
-                            <SelectItem value="quelques_fois">Quelques fois</SelectItem>
-                            <SelectItem value="tous_les_jours">Tous les jours</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <MobileSelect id="freq_emporter" value={mealFrequency} onValueChange={setMealFrequency} placeholder="Sélectionnez..." forceNative options={[
+                          { value: 'rarement', label: 'Rarement' },
+                          { value: 'quelques_fois', label: 'Quelques fois' },
+                          { value: 'tous_les_jours', label: 'Tous les jours' },
+                        ]} />
                       </div>
                     </div>
 
@@ -1043,26 +1031,19 @@ export default function Profile() {
                   <CardContent className="space-y-4 pt-4">
                     <div className="space-y-2">
                       <Label htmlFor="type_alim">Type d'alimentation</Label>
-                      <Select value={dietType} onValueChange={setDietType}>
-                        <SelectTrigger id="type_alim"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                        <SelectContent>
-                          {[
-                            { value: 'omnivore', label: 'Omnivore' },
-                            { value: 'vegetarien', label: 'Végétarien' },
-                            { value: 'vegan', label: 'Végétalien / Vegan' },
-                            { value: 'pescetarien', label: 'Pescétarien' },
-                            { value: 'flexitarien', label: 'Flexitarien' },
-                            { value: 'halal', label: 'Halal' },
-                            { value: 'casher', label: 'Casher' },
-                            { value: 'keto', label: 'Kéto' },
-                            { value: 'low_carb', label: 'Low Carb' },
-                            { value: 'paleo', label: 'Paléo' },
-                            { value: 'mediterraneen', label: 'Méditerranéen' },
-                          ].map((t) => (
-                            <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <MobileSelect id="type_alim" value={dietType} onValueChange={setDietType} placeholder="Sélectionnez..." forceNative options={[
+                        { value: 'omnivore', label: 'Omnivore' },
+                        { value: 'vegetarien', label: 'Végétarien' },
+                        { value: 'vegan', label: 'Végétalien / Vegan' },
+                        { value: 'pescetarien', label: 'Pescétarien' },
+                        { value: 'flexitarien', label: 'Flexitarien' },
+                        { value: 'halal', label: 'Halal' },
+                        { value: 'casher', label: 'Casher' },
+                        { value: 'keto', label: 'Kéto' },
+                        { value: 'low_carb', label: 'Low Carb' },
+                        { value: 'paleo', label: 'Paléo' },
+                        { value: 'mediterraneen', label: 'Méditerranéen' },
+                      ]} />
                       {['vegan', 'vegetarien', 'pescetarien', 'halal', 'casher'].includes(dietType) && (
                         <p className="text-xs text-muted-foreground mt-1">
                           Aucune recette contenant des ingrédients incompatibles avec ce régime ne sera proposée.
@@ -1236,14 +1217,11 @@ export default function Profile() {
                         <div className="space-y-4 pt-2 pl-2 border-l-2 border-primary/20">
                           <div className="space-y-2">
                             <Label htmlFor="macros">Répartition des macros</Label>
-                            <Select value={macroDistribution} onValueChange={setMacroDistribution}>
-                              <SelectTrigger id="macros"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="riche_proteines">Riche en protéines</SelectItem>
-                                <SelectItem value="equilibre">Équilibré</SelectItem>
-                                <SelectItem value="pauvre_glucides">Pauvre en glucides</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <MobileSelect id="macros" value={macroDistribution} onValueChange={setMacroDistribution} placeholder="Sélectionnez..." forceNative options={[
+                              { value: 'riche_proteines', label: 'Riche en protéines' },
+                              { value: 'equilibre', label: 'Équilibré' },
+                              { value: 'pauvre_glucides', label: 'Pauvre en glucides' },
+                            ]} />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="proteines">Apport en protéines (g/kg)</Label>
@@ -1314,14 +1292,11 @@ export default function Profile() {
 
                     <div className="space-y-2">
                       <Label htmlFor="stress">Niveau de stress</Label>
-                      <Select value={stressLevel} onValueChange={setStressLevel}>
-                        <SelectTrigger id="stress"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="bas">Faible</SelectItem>
-                          <SelectItem value="moyen">Moyen</SelectItem>
-                          <SelectItem value="eleve">Élevé</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <MobileSelect id="stress" value={stressLevel} onValueChange={setStressLevel} placeholder="Sélectionnez..." forceNative options={[
+                        { value: 'bas', label: 'Faible' },
+                        { value: 'moyen', label: 'Moyen' },
+                        { value: 'eleve', label: 'Élevé' },
+                      ]} />
                     </div>
 
                     <div className="space-y-2">
@@ -1331,54 +1306,42 @@ export default function Profile() {
 
                     <div className="space-y-2">
                       <Label htmlFor="motivation">Motivation principale</Label>
-                      <Select value={mainMotivation} onValueChange={setMainMotivation}>
-                        <SelectTrigger id="motivation"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="sante">Santé</SelectItem>
-                          <SelectItem value="energie">Énergie</SelectItem>
-                          <SelectItem value="performance">Performance</SelectItem>
-                          <SelectItem value="bien_etre_mental">Bien-être mental</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <MobileSelect id="motivation" value={mainMotivation} onValueChange={setMainMotivation} placeholder="Sélectionnez..." forceNative options={[
+                        { value: 'sante', label: 'Santé' },
+                        { value: 'energie', label: 'Énergie' },
+                        { value: 'performance', label: 'Performance' },
+                        { value: 'bien_etre_mental', label: 'Bien-être mental' },
+                      ]} />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="budget_hebdo">Budget alimentaire hebdomadaire</Label>
-                      <Select value={weeklyBudget} onValueChange={setWeeklyBudget}>
-                        <SelectTrigger id="budget_hebdo"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="30_50">€30–50</SelectItem>
-                          <SelectItem value="50_100">€50–100</SelectItem>
-                          <SelectItem value="100_120">€100–120</SelectItem>
-                          <SelectItem value="plus_120">€120+</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <MobileSelect id="budget_hebdo" value={weeklyBudget} onValueChange={setWeeklyBudget} placeholder="Sélectionnez..." forceNative options={[
+                        { value: '30_50', label: '€30–50' },
+                        { value: '50_100', label: '€50–100' },
+                        { value: '100_120', label: '€100–120' },
+                        { value: 'plus_120', label: '€120+' },
+                      ]} />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="lieu">Lieu des courses</Label>
-                        <Select value={shoppingLocation} onValueChange={setShoppingLocation}>
-                          <SelectTrigger id="lieu"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="supermarche">Supermarché</SelectItem>
-                            <SelectItem value="marche">Marché</SelectItem>
-                            <SelectItem value="drive">Drive</SelectItem>
-                            <SelectItem value="livraison">Livraison</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <MobileSelect id="lieu" value={shoppingLocation} onValueChange={setShoppingLocation} placeholder="Sélectionnez..." forceNative options={[
+                          { value: 'supermarche', label: 'Supermarché' },
+                          { value: 'marche', label: 'Marché' },
+                          { value: 'drive', label: 'Drive' },
+                          { value: 'livraison', label: 'Livraison' },
+                        ]} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="freq_courses">Fréquence des courses</Label>
-                        <Select value={shoppingFrequency} onValueChange={setShoppingFrequency}>
-                          <SelectTrigger id="freq_courses"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="1x">1 fois par semaine</SelectItem>
-                            <SelectItem value="2x">2 fois par semaine</SelectItem>
-                            <SelectItem value="3x">3+ fois par semaine</SelectItem>
-                            <SelectItem value="quotidien">Quotidien</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <MobileSelect id="freq_courses" value={shoppingFrequency} onValueChange={setShoppingFrequency} placeholder="Sélectionnez..." forceNative options={[
+                          { value: '1x', label: '1 fois par semaine' },
+                          { value: '2x', label: '2 fois par semaine' },
+                          { value: '3x', label: '3+ fois par semaine' },
+                          { value: 'quotidien', label: 'Quotidien' },
+                        ]} />
                       </div>
                     </div>
 

@@ -433,7 +433,7 @@ export default function Dashboard() {
               )}
               <div className="flex items-center gap-1 px-2 py-0.5 bg-primary/10 rounded-lg">
                 <Sparkles className="h-3.5 w-3.5 text-primary" />
-                <span className="text-xs font-bold text-primary">{stats.credits_zen} crédits</span>
+                <span className="text-xs font-bold text-primary">{statsLoading ? '—' : stats.credits_zen} crédits</span>
               </div>
             </div>
           </div>
@@ -607,7 +607,7 @@ export default function Dashboard() {
                 <div>
                   <StatCard
                     label="Crédits"
-                    value={`${stats.credits_zen}`}
+                    value={statsLoading ? '—' : `${stats.credits_zen}`}
                     sub={
                       <span className="flex items-center gap-1">
                         Achetés + mensuels <Info className="h-3 w-3" />
