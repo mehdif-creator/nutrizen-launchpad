@@ -69,6 +69,7 @@ export function ZenCreditsDisplay({
       if (error) {
         if (error.code === 'PGRST116') {
           // No wallet yet, default to 0
+          setBalance(0);
           setSubscriptionCredits(0);
           setLifetimeCredits(0);
         } else {
