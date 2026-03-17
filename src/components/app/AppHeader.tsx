@@ -197,6 +197,14 @@ export const AppHeader = () => {
       {/* Mobile Menu - rendered via portal to escape sticky stacking context */}
       {mobileMenuOpen && createPortal(
         <div className="xl:hidden fixed inset-0 z-[9999] bg-background overflow-y-auto pt-16">
+          {/* Close button */}
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="absolute top-4 right-4 p-3 min-h-[44px] min-w-[44px] flex items-center justify-center z-[10000]"
+            aria-label="Fermer le menu"
+          >
+            <X size={24} />
+          </button>
           <nav className="container py-4 flex flex-col gap-1">
             {/* Gamification in mobile */}
             <div className="pb-3 border-b">
@@ -260,14 +268,6 @@ export const AppHeader = () => {
               {label}
             </Link>
             ))}
-            {/* Close button */}
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              className="absolute top-4 right-4 p-3 min-h-[44px] min-w-[44px] flex items-center justify-center"
-              aria-label="Fermer le menu"
-            >
-              <X size={24} />
-            </button>
           </nav>
         </div>,
         document.body
