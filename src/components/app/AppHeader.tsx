@@ -259,8 +259,17 @@ export const AppHeader = () => {
               {label}
             </Link>
             ))}
+            {/* Close button */}
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="absolute top-4 right-4 p-3 min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label="Fermer le menu"
+            >
+              <X size={24} />
+            </button>
           </nav>
-        </div>
+        </div>,
+        document.body
       )}
     </header>
   );
