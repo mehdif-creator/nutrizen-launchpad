@@ -1327,15 +1327,12 @@ export default function Profile() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="lieu">Lieu des courses</Label>
-                        <Select value={shoppingLocation} onValueChange={setShoppingLocation}>
-                          <SelectTrigger id="lieu"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="supermarche">Supermarché</SelectItem>
-                            <SelectItem value="marche">Marché</SelectItem>
-                            <SelectItem value="drive">Drive</SelectItem>
-                            <SelectItem value="livraison">Livraison</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <MobileSelect id="lieu" value={shoppingLocation} onValueChange={setShoppingLocation} placeholder="Sélectionnez..." forceNative options={[
+                          { value: 'supermarche', label: 'Supermarché' },
+                          { value: 'marche', label: 'Marché' },
+                          { value: 'drive', label: 'Drive' },
+                          { value: 'livraison', label: 'Livraison' },
+                        ]} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="freq_courses">Fréquence des courses</Label>
