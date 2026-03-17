@@ -1031,26 +1031,19 @@ export default function Profile() {
                   <CardContent className="space-y-4 pt-4">
                     <div className="space-y-2">
                       <Label htmlFor="type_alim">Type d'alimentation</Label>
-                      <Select value={dietType} onValueChange={setDietType}>
-                        <SelectTrigger id="type_alim"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                        <SelectContent>
-                          {[
-                            { value: 'omnivore', label: 'Omnivore' },
-                            { value: 'vegetarien', label: 'Végétarien' },
-                            { value: 'vegan', label: 'Végétalien / Vegan' },
-                            { value: 'pescetarien', label: 'Pescétarien' },
-                            { value: 'flexitarien', label: 'Flexitarien' },
-                            { value: 'halal', label: 'Halal' },
-                            { value: 'casher', label: 'Casher' },
-                            { value: 'keto', label: 'Kéto' },
-                            { value: 'low_carb', label: 'Low Carb' },
-                            { value: 'paleo', label: 'Paléo' },
-                            { value: 'mediterraneen', label: 'Méditerranéen' },
-                          ].map((t) => (
-                            <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <MobileSelect id="type_alim" value={dietType} onValueChange={setDietType} placeholder="Sélectionnez..." forceNative options={[
+                        { value: 'omnivore', label: 'Omnivore' },
+                        { value: 'vegetarien', label: 'Végétarien' },
+                        { value: 'vegan', label: 'Végétalien / Vegan' },
+                        { value: 'pescetarien', label: 'Pescétarien' },
+                        { value: 'flexitarien', label: 'Flexitarien' },
+                        { value: 'halal', label: 'Halal' },
+                        { value: 'casher', label: 'Casher' },
+                        { value: 'keto', label: 'Kéto' },
+                        { value: 'low_carb', label: 'Low Carb' },
+                        { value: 'paleo', label: 'Paléo' },
+                        { value: 'mediterraneen', label: 'Méditerranéen' },
+                      ]} />
                       {['vegan', 'vegetarien', 'pescetarien', 'halal', 'casher'].includes(dietType) && (
                         <p className="text-xs text-muted-foreground mt-1">
                           Aucune recette contenant des ingrédients incompatibles avec ce régime ne sera proposée.
