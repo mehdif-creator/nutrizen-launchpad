@@ -1316,15 +1316,12 @@ export default function Profile() {
 
                     <div className="space-y-2">
                       <Label htmlFor="budget_hebdo">Budget alimentaire hebdomadaire</Label>
-                      <Select value={weeklyBudget} onValueChange={setWeeklyBudget}>
-                        <SelectTrigger id="budget_hebdo"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="30_50">€30–50</SelectItem>
-                          <SelectItem value="50_100">€50–100</SelectItem>
-                          <SelectItem value="100_120">€100–120</SelectItem>
-                          <SelectItem value="plus_120">€120+</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <MobileSelect id="budget_hebdo" value={weeklyBudget} onValueChange={setWeeklyBudget} placeholder="Sélectionnez..." forceNative options={[
+                        { value: '30_50', label: '€30–50' },
+                        { value: '50_100', label: '€50–100' },
+                        { value: '100_120', label: '€100–120' },
+                        { value: 'plus_120', label: '€120+' },
+                      ]} />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
