@@ -270,12 +270,12 @@ export default function Profile() {
 
       // Section 6
       if (nutrition) {
-        setCaloricGoal(nutrition.caloric_goal || '');
-        setTargetKcal(nutrition.target_kcal);
-        setMacrosCustom(nutrition.macros_custom || false);
+        setCaloricGoal(nutrition.caloric_goal ?? '');
+        setTargetKcal(nutrition.target_kcal ?? null);
+        setMacrosCustom(nutrition.macros_custom ?? false);
         setProteinGPerKg(null); // derived field
-        setTrackFiber(nutrition.track_fiber || false);
-        setDairyPreference(nutrition.dairy_preference || '');
+        setTrackFiber(nutrition.track_fiber ?? false);
+        setDairyPreference(nutrition.dairy_preference ?? '');
       }
 
       // Section 7
