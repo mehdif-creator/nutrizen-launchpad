@@ -250,8 +250,8 @@ export default function Profile() {
         const types: Record<string, 'allergie' | 'intolerance'> = {};
         entries.forEach(e => { types[e.name] = e.type; });
         setAllergieTypes(types);
-        setTracesAccepted(allergies.traces_accepted || false);
-        setOtherAllergies(allergies.other_allergies || '');
+        setTracesAccepted(allergies.traces_accepted ?? false);
+        setOtherAllergies(allergies.other_allergies ?? '');
       }
 
       // Section 5
