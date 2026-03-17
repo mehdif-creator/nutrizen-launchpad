@@ -213,20 +213,20 @@ export default function Profile() {
 
       // Section 3 — reverse map prep_time codes
       if (eating) {
-        setMealsPerDay(eating.meals_per_day);
-        setAppetiteSize(eating.appetite_size || '');
+        setMealsPerDay(eating.meals_per_day ?? null);
+        setAppetiteSize(eating.appetite_size ?? '');
         const PREP_CODE_TO_FORM: Record<string, string> = {
           '15min': 'moins_10',
           '15_30min': '10_20',
           '30_45min': '20_40',
           '45min_plus': 'plus_40',
         };
-        const rawPrepTime = eating.prep_time?.[0] || '';
+        const rawPrepTime = Array.isArray(eating.prep_time) ? (eating.prep_time[0] ?? '') : '';
         setPrepTime(PREP_CODE_TO_FORM[rawPrepTime] || rawPrepTime);
-        setBatchCooking(eating.batch_cooking || '');
-        setCookingLevel(eating.cooking_level || '');
-        setMealFrequency(eating.meal_frequency || '');
-        setAvailableTools(eating.available_tools || []);
+        setBatchCooking(eating.batch_cooking ?? '');
+        setCookingLevel(eating.cooking_level ?? '');
+        setMealFrequency(eating.meal_frequency ?? '');
+        setAvailableTools(Array.isArray(eating.available_tools) ? eating.available_tools : []);
       }
 
       // Section 3b: meals config
