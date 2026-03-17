@@ -39,7 +39,6 @@ export function MobileBottomNav() {
             <Link
               key={tab.id}
               to={tab.to}
-              onClick={(e) => handleClick(tab, e)}
               className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full min-w-[44px]"
             >
               <Icon className={`h-5 w-5 ${active ? 'text-primary' : 'text-muted-foreground'}`} />

@@ -237,7 +237,7 @@ export function NutriZenChatbot() {
         onClick={() => setIsOpen(!isOpen)}
         size="icon"
         className={cn(
-          'fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg transition-transform hover:scale-105',
+          'fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg transition-transform hover:scale-105 md:bottom-6 max-md:bottom-[84px]',
           'bg-gradient-to-br from-primary to-primary/80 text-primary-foreground',
         )}
       >
