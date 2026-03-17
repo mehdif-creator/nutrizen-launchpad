@@ -76,6 +76,7 @@ export function ZenCreditsDisplay({
           console.error('Error fetching credits:', error);
         }
       } else {
+        setBalance((data as any)?.balance ?? 0);
         setSubscriptionCredits(data?.subscription_credits ?? 0);
         setLifetimeCredits(data?.lifetime_credits ?? 0);
       }
