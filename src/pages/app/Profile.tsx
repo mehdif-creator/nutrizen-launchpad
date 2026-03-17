@@ -184,14 +184,14 @@ export default function Profile() {
 
       // Section 1 — reverse map medical codes to display labels
       if (profile) {
-        setGender(profile.gender || '');
-        setAge(profile.age);
-        setHeightCm(profile.height_cm);
-        setCurrentWeight(profile.current_weight ? Number(profile.current_weight) : null);
-        setTargetWeight(profile.target_weight ? Number(profile.target_weight) : null);
-        setWeightDeadline(profile.weight_deadline || '');
-        setActivityLevel(profile.activity_level || '');
-        setSportFrequency(profile.sport_frequency || '');
+        setGender(profile.gender ?? '');
+        setAge(profile.age ?? null);
+        setHeightCm(profile.height_cm ?? null);
+        setCurrentWeight(profile.current_weight != null ? Number(profile.current_weight) : null);
+        setTargetWeight(profile.target_weight != null ? Number(profile.target_weight) : null);
+        setWeightDeadline(profile.weight_deadline ?? '');
+        setActivityLevel(profile.activity_level ?? '');
+        setSportFrequency(profile.sport_frequency ?? '');
         const MEDICAL_CODE_TO_LABEL: Record<string, string> = {
           'diabete_2': 'Diabète type 2',
           'hypertension': 'Hypertension',
@@ -200,7 +200,7 @@ export default function Profile() {
           'aucune': 'Aucune',
           'autre': 'Autre',
         };
-        const rawConditions: string[] = profile.medical_conditions || [];
+        const rawConditions: string[] = Array.isArray(profile.medical_conditions) ? profile.medical_conditions : [];
         setMedicalConditions(rawConditions.map((c: string) => MEDICAL_CODE_TO_LABEL[c] || c));
       }
 
