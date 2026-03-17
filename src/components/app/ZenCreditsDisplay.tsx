@@ -19,8 +19,8 @@ export function ZenCreditsDisplay({
   showHistoryButton = true,
   size = 'md' 
 }: ZenCreditsDisplayProps) {
-  const [subscriptionCredits, setSubscriptionCredits] = useState<number>(0);
-  const [lifetimeCredits, setLifetimeCredits] = useState<number>(0);
+  const [subscriptionCredits, setSubscriptionCredits] = useState<number | null>(null);
+  const [lifetimeCredits, setLifetimeCredits] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [historyOpen, setHistoryOpen] = useState(false);
   const navigate = useNavigate();
