@@ -19,6 +19,7 @@ export function ZenCreditsDisplay({
   showHistoryButton = true,
   size = 'md' 
 }: ZenCreditsDisplayProps) {
+  const [balance, setBalance] = useState<number | null>(null);
   const [subscriptionCredits, setSubscriptionCredits] = useState<number | null>(null);
   const [lifetimeCredits, setLifetimeCredits] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,19 +62,21 @@ export function ZenCreditsDisplay({
     try {
       const { data, error } = await supabase
         .from('user_wallets')
-        .select('subscription_credits, lifetime_credits')
+        .select('balance, subscription_credits, lifetime_credits')
         .eq('user_id', userId)
         .single();
 
       if (error) {
         if (error.code === 'PGRST116') {
           // No wallet yet, default to 0
+          setBalance(0);
           setSubscriptionCredits(0);
           setLifetimeCredits(0);
         } else {
           console.error('Error fetching credits:', error);
         }
       } else {
+        setBalance((data as any)?.balance ?? 0);
         setSubscriptionCredits(data?.subscription_credits ?? 0);
         setLifetimeCredits(data?.lifetime_credits ?? 0);
       }
@@ -98,7 +101,7 @@ export function ZenCreditsDisplay({
     lg: 'text-lg p-6',
   };
 
-  const totalCredits = (subscriptionCredits ?? 0) + (lifetimeCredits ?? 0);
+  const totalCredits = balance;
 
   return (
     <>
@@ -112,7 +115,7 @@ export function ZenCreditsDisplay({
               <div>
                 <p className="text-muted-foreground text-xs">Total Crédits Zen</p>
                 <p className={`font-bold ${size === 'lg' ? 'text-2xl' : size === 'md' ? 'text-xl' : 'text-lg'}`}>
-                  {totalCredits}
+                  {totalCredits ?? '—'}
                 </p>
               </div>
             </div>
