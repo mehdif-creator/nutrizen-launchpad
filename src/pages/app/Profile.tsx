@@ -184,14 +184,14 @@ export default function Profile() {
 
       // Section 1 — reverse map medical codes to display labels
       if (profile) {
-        setGender(profile.gender || '');
-        setAge(profile.age);
-        setHeightCm(profile.height_cm);
-        setCurrentWeight(profile.current_weight ? Number(profile.current_weight) : null);
-        setTargetWeight(profile.target_weight ? Number(profile.target_weight) : null);
-        setWeightDeadline(profile.weight_deadline || '');
-        setActivityLevel(profile.activity_level || '');
-        setSportFrequency(profile.sport_frequency || '');
+        setGender(profile.gender ?? '');
+        setAge(profile.age ?? null);
+        setHeightCm(profile.height_cm ?? null);
+        setCurrentWeight(profile.current_weight != null ? Number(profile.current_weight) : null);
+        setTargetWeight(profile.target_weight != null ? Number(profile.target_weight) : null);
+        setWeightDeadline(profile.weight_deadline ?? '');
+        setActivityLevel(profile.activity_level ?? '');
+        setSportFrequency(profile.sport_frequency ?? '');
         const MEDICAL_CODE_TO_LABEL: Record<string, string> = {
           'diabete_2': 'Diabète type 2',
           'hypertension': 'Hypertension',
@@ -200,33 +200,33 @@ export default function Profile() {
           'aucune': 'Aucune',
           'autre': 'Autre',
         };
-        const rawConditions: string[] = profile.medical_conditions || [];
+        const rawConditions: string[] = Array.isArray(profile.medical_conditions) ? profile.medical_conditions : [];
         setMedicalConditions(rawConditions.map((c: string) => MEDICAL_CODE_TO_LABEL[c] || c));
       }
 
       // Section 2
       if (objectives) {
-        setMainGoal(objectives.main_goal || '');
-        setGoalDuration(objectives.goal_duration || '');
-        setMainBlockers(objectives.main_blockers || []);
+        setMainGoal(objectives.main_goal ?? '');
+        setGoalDuration(objectives.goal_duration ?? '');
+        setMainBlockers(Array.isArray(objectives.main_blockers) ? objectives.main_blockers : []);
       }
 
       // Section 3 — reverse map prep_time codes
       if (eating) {
-        setMealsPerDay(eating.meals_per_day);
-        setAppetiteSize(eating.appetite_size || '');
+        setMealsPerDay(eating.meals_per_day ?? null);
+        setAppetiteSize(eating.appetite_size ?? '');
         const PREP_CODE_TO_FORM: Record<string, string> = {
           '15min': 'moins_10',
           '15_30min': '10_20',
           '30_45min': '20_40',
           '45min_plus': 'plus_40',
         };
-        const rawPrepTime = eating.prep_time?.[0] || '';
+        const rawPrepTime = Array.isArray(eating.prep_time) ? (eating.prep_time[0] ?? '') : '';
         setPrepTime(PREP_CODE_TO_FORM[rawPrepTime] || rawPrepTime);
-        setBatchCooking(eating.batch_cooking || '');
-        setCookingLevel(eating.cooking_level || '');
-        setMealFrequency(eating.meal_frequency || '');
-        setAvailableTools(eating.available_tools || []);
+        setBatchCooking(eating.batch_cooking ?? '');
+        setCookingLevel(eating.cooking_level ?? '');
+        setMealFrequency(eating.meal_frequency ?? '');
+        setAvailableTools(Array.isArray(eating.available_tools) ? eating.available_tools : []);
       }
 
       // Section 3b: meals config
@@ -250,55 +250,55 @@ export default function Profile() {
         const types: Record<string, 'allergie' | 'intolerance'> = {};
         entries.forEach(e => { types[e.name] = e.type; });
         setAllergieTypes(types);
-        setTracesAccepted(allergies.traces_accepted || false);
-        setOtherAllergies(allergies.other_allergies || '');
+        setTracesAccepted(allergies.traces_accepted ?? false);
+        setOtherAllergies(allergies.other_allergies ?? '');
       }
 
       // Section 5
       if (foodStyle) {
-        setDietType(foodStyle.diet_type || '');
-        setFoodsToAvoid(foodStyle.foods_to_avoid || []);
-        setFavoriteIngredients(foodStyle.favorite_ingredients || []);
-        setFavoriteCuisines(foodStyle.favorite_cuisines || []);
-        setSpiceLevel(foodStyle.spice_level || '');
+        setDietType(foodStyle.diet_type ?? '');
+        setFoodsToAvoid(Array.isArray(foodStyle.foods_to_avoid) ? foodStyle.foods_to_avoid : []);
+        setFavoriteIngredients(Array.isArray(foodStyle.favorite_ingredients) ? foodStyle.favorite_ingredients : []);
+        setFavoriteCuisines(Array.isArray(foodStyle.favorite_cuisines) ? foodStyle.favorite_cuisines : []);
+        setSpiceLevel(foodStyle.spice_level ?? '');
         setCookingMethod(Array.isArray(foodStyle.cooking_method) ? foodStyle.cooking_method : foodStyle.cooking_method ? [foodStyle.cooking_method] : []);
-        setPreferOrganic(foodStyle.prefer_organic || false);
-        setReduceSugar(foodStyle.reduce_sugar || false);
-        setPreferSeasonal(foodStyle.prefer_seasonal || false);
-        setBioLocal(foodStyle.bio_local || '');
-        // salt level stored in food_style column doesn't exist - keep from spice_level area
+        setPreferOrganic(foodStyle.prefer_organic ?? false);
+        setReduceSugar(foodStyle.reduce_sugar ?? false);
+        setPreferSeasonal(foodStyle.prefer_seasonal ?? false);
+        setBioLocal(foodStyle.bio_local ?? '');
       }
 
       // Section 6
       if (nutrition) {
-        setCaloricGoal(nutrition.caloric_goal || '');
-        setTargetKcal(nutrition.target_kcal);
-        setMacrosCustom(nutrition.macros_custom || false);
+        setCaloricGoal(nutrition.caloric_goal ?? '');
+        setTargetKcal(nutrition.target_kcal ?? null);
+        setMacrosCustom(nutrition.macros_custom ?? false);
         setProteinGPerKg(null); // derived field
-        setTrackFiber(nutrition.track_fiber || false);
-        setDairyPreference(nutrition.dairy_preference || '');
+        setTrackFiber(nutrition.track_fiber ?? false);
+        setDairyPreference(nutrition.dairy_preference ?? '');
       }
 
       // Section 7
       if (household) {
         setHouseholdAdults(household.adults_count ?? 1);
         setHouseholdChildren(household.children_count ?? 0);
-        if (household.children_ages && household.children_ages.length > 0) {
-          setChildAges(household.children_ages);
+        const ages = Array.isArray(household.children_ages) ? household.children_ages : [];
+        if (ages.length > 0) {
+          setChildAges(ages);
         }
-        setFamilyAllergies(household.family_allergies || '');
+        setFamilyAllergies(household.family_allergies ?? '');
       }
 
       // Section 8
       if (lifestyle) {
-        setWorkType(lifestyle.work_type || '');
-        setScheduleType(lifestyle.schedule_type || '');
-        setStressLevel(lifestyle.stress_level || '');
-        setSleepHours(lifestyle.sleep_hours ? Number(lifestyle.sleep_hours) : null);
-        setMainMotivation(lifestyle.main_motivation || '');
-        setWeeklyBudget(lifestyle.weekly_budget_food || '');
-        setShoppingLocation(lifestyle.shopping_location || '');
-        setShoppingFrequency(lifestyle.shopping_frequency || '');
+        setWorkType(lifestyle.work_type ?? '');
+        setScheduleType(lifestyle.schedule_type ?? '');
+        setStressLevel(lifestyle.stress_level ?? '');
+        setSleepHours(lifestyle.sleep_hours != null ? Number(lifestyle.sleep_hours) : null);
+        setMainMotivation(lifestyle.main_motivation ?? '');
+        setWeeklyBudget(lifestyle.weekly_budget_food ?? '');
+        setShoppingLocation(lifestyle.shopping_location ?? '');
+        setShoppingFrequency(lifestyle.shopping_frequency ?? '');
         setSportAdvice(lifestyle.sport_advice ?? true);
       }
     } catch (error) {
@@ -567,9 +567,8 @@ export default function Profile() {
       }
     } catch (error) {
       console.error('Error saving preferences:', error);
-      const msg = error instanceof Error ? error.message : 'Impossible de sauvegarder vos préférences. Réessayez plus tard.';
-      setSaveError(msg);
-      toast({ title: 'Erreur', description: msg, variant: 'destructive' });
+      setSaveError('Une erreur est survenue lors de la sauvegarde, veuillez réessayer.');
+      toast({ title: 'Erreur', description: 'Une erreur est survenue lors de la sauvegarde, veuillez réessayer.', variant: 'destructive' });
     } finally {
       setSaving(false);
     }
