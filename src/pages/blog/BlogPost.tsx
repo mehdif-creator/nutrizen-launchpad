@@ -118,6 +118,23 @@ export default function BlogPost() {
   const { slug } = useParams();
   const { user } = useAuth();
   const { article, relatedArticles, validSlugs, loading } = useBlogArticleBySlug(slug);
+  const { articles: allArticles } = useBlogArticles();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const carouselArticles = allArticles.filter(a => a.slug !== slug).slice(0, 12);
+
+  const updateScrollButtons = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 0);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+  };
+
+  const scrollBy = (dir: number) => {
+    scrollRef.current?.scrollBy({ left: dir * 300, behavior: 'smooth' });
+  };
 
   useArticleSeoHead(article);
 
