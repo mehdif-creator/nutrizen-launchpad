@@ -935,14 +935,11 @@ export default function Profile() {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="freq_emporter">Fréquence de repas à emporter</Label>
-                        <Select value={mealFrequency} onValueChange={setMealFrequency}>
-                          <SelectTrigger id="freq_emporter"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="rarement">Rarement</SelectItem>
-                            <SelectItem value="quelques_fois">Quelques fois</SelectItem>
-                            <SelectItem value="tous_les_jours">Tous les jours</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <MobileSelect id="freq_emporter" value={mealFrequency} onValueChange={setMealFrequency} placeholder="Sélectionnez..." forceNative options={[
+                          { value: 'rarement', label: 'Rarement' },
+                          { value: 'quelques_fois', label: 'Quelques fois' },
+                          { value: 'tous_les_jours', label: 'Tous les jours' },
+                        ]} />
                       </div>
                     </div>
 
