@@ -16,8 +16,8 @@ export function MobileBottomNav() {
     location.pathname === '/app/dashboard' ||
     location.pathname === '/tableau-de-bord';
 
-  // Only render on dashboard
-  if (!isDashboard) return null;
+  // Render on all /app pages
+  const isAppPage = location.pathname.startsWith('/app');
 
   const handleClick = (tab: typeof tabs[number], e: React.MouseEvent) => {
     if (tab.id === 'week') {
