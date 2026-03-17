@@ -115,7 +115,7 @@ export function ZenCreditsDisplay({
               <div>
                 <p className="text-muted-foreground text-xs">Total Crédits Zen</p>
                 <p className={`font-bold ${size === 'lg' ? 'text-2xl' : size === 'md' ? 'text-xl' : 'text-lg'}`}>
-                  {totalCredits}
+                  {totalCredits ?? '—'}
                 </p>
               </div>
             </div>
