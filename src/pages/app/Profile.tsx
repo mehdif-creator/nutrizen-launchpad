@@ -927,14 +927,11 @@ export default function Profile() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="niveau_cuisine">Niveau en cuisine</Label>
-                        <Select value={cookingLevel} onValueChange={setCookingLevel}>
-                          <SelectTrigger id="niveau_cuisine"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="debutant">Débutant</SelectItem>
-                            <SelectItem value="intermediaire">Intermédiaire</SelectItem>
-                            <SelectItem value="avance">Avancé</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <MobileSelect id="niveau_cuisine" value={cookingLevel} onValueChange={setCookingLevel} placeholder="Sélectionnez..." forceNative options={[
+                          { value: 'debutant', label: 'Débutant' },
+                          { value: 'intermediaire', label: 'Intermédiaire' },
+                          { value: 'avance', label: 'Avancé' },
+                        ]} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="freq_emporter">Fréquence de repas à emporter</Label>
