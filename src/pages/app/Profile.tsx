@@ -290,14 +290,14 @@ export default function Profile() {
 
       // Section 8
       if (lifestyle) {
-        setWorkType(lifestyle.work_type || '');
-        setScheduleType(lifestyle.schedule_type || '');
-        setStressLevel(lifestyle.stress_level || '');
-        setSleepHours(lifestyle.sleep_hours ? Number(lifestyle.sleep_hours) : null);
-        setMainMotivation(lifestyle.main_motivation || '');
-        setWeeklyBudget(lifestyle.weekly_budget_food || '');
-        setShoppingLocation(lifestyle.shopping_location || '');
-        setShoppingFrequency(lifestyle.shopping_frequency || '');
+        setWorkType(lifestyle.work_type ?? '');
+        setScheduleType(lifestyle.schedule_type ?? '');
+        setStressLevel(lifestyle.stress_level ?? '');
+        setSleepHours(lifestyle.sleep_hours != null ? Number(lifestyle.sleep_hours) : null);
+        setMainMotivation(lifestyle.main_motivation ?? '');
+        setWeeklyBudget(lifestyle.weekly_budget_food ?? '');
+        setShoppingLocation(lifestyle.shopping_location ?? '');
+        setShoppingFrequency(lifestyle.shopping_frequency ?? '');
         setSportAdvice(lifestyle.sport_advice ?? true);
       }
     } catch (error) {
