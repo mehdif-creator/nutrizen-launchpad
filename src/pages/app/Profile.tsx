@@ -868,12 +868,10 @@ export default function Profile() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="repas_jour">Nombre de repas par jour</Label>
-                        <Select value={mealsPerDay?.toString() || ''} onValueChange={(v) => setMealsPerDay(parseInt(v))}>
-                          <SelectTrigger id="repas_jour"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                          <SelectContent>
-                            {[1, 2].map(n => (<SelectItem key={n} value={n.toString()}>{n}</SelectItem>))}
-                          </SelectContent>
-                        </Select>
+                        <MobileSelect id="repas_jour" value={mealsPerDay?.toString() || ''} onValueChange={(v) => setMealsPerDay(parseInt(v))} placeholder="Sélectionnez..." forceNative options={[
+                          { value: '1', label: '1' },
+                          { value: '2', label: '2' },
+                        ]} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="appetit">Taille d'appétit</Label>
