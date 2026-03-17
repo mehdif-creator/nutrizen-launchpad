@@ -1306,15 +1306,12 @@ export default function Profile() {
 
                     <div className="space-y-2">
                       <Label htmlFor="motivation">Motivation principale</Label>
-                      <Select value={mainMotivation} onValueChange={setMainMotivation}>
-                        <SelectTrigger id="motivation"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="sante">Santé</SelectItem>
-                          <SelectItem value="energie">Énergie</SelectItem>
-                          <SelectItem value="performance">Performance</SelectItem>
-                          <SelectItem value="bien_etre_mental">Bien-être mental</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <MobileSelect id="motivation" value={mainMotivation} onValueChange={setMainMotivation} placeholder="Sélectionnez..." forceNative options={[
+                        { value: 'sante', label: 'Santé' },
+                        { value: 'energie', label: 'Énergie' },
+                        { value: 'performance', label: 'Performance' },
+                        { value: 'bien_etre_mental', label: 'Bien-être mental' },
+                      ]} />
                     </div>
 
                     <div className="space-y-2">
