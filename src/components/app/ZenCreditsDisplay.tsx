@@ -19,6 +19,7 @@ export function ZenCreditsDisplay({
   showHistoryButton = true,
   size = 'md' 
 }: ZenCreditsDisplayProps) {
+  const [balance, setBalance] = useState<number | null>(null);
   const [subscriptionCredits, setSubscriptionCredits] = useState<number | null>(null);
   const [lifetimeCredits, setLifetimeCredits] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
