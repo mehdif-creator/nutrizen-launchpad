@@ -193,9 +193,9 @@ export const AppHeader = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div className="xl:hidden fixed inset-0 top-14 z-40 bg-background overflow-y-auto">
+      {/* Mobile Menu - rendered via portal to escape sticky stacking context */}
+      {mobileMenuOpen && createPortal(
+        <div className="xl:hidden fixed inset-0 z-[9999] bg-background overflow-y-auto pt-16">
           <nav className="container py-4 flex flex-col gap-1">
             {/* Gamification in mobile */}
             <div className="pb-3 border-b">
