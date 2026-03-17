@@ -62,7 +62,7 @@ export function ZenCreditsDisplay({
     try {
       const { data, error } = await supabase
         .from('user_wallets')
-        .select('subscription_credits, lifetime_credits')
+        .select('balance, subscription_credits, lifetime_credits')
         .eq('user_id', userId)
         .single();
 
