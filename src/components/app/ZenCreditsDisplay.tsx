@@ -98,7 +98,7 @@ export function ZenCreditsDisplay({
     lg: 'text-lg p-6',
   };
 
-  const totalCredits = subscriptionCredits + lifetimeCredits;
+  const totalCredits = (subscriptionCredits ?? 0) + (lifetimeCredits ?? 0);
 
   return (
     <>
