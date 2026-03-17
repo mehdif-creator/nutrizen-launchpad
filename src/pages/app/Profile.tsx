@@ -1217,14 +1217,11 @@ export default function Profile() {
                         <div className="space-y-4 pt-2 pl-2 border-l-2 border-primary/20">
                           <div className="space-y-2">
                             <Label htmlFor="macros">Répartition des macros</Label>
-                            <Select value={macroDistribution} onValueChange={setMacroDistribution}>
-                              <SelectTrigger id="macros"><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="riche_proteines">Riche en protéines</SelectItem>
-                                <SelectItem value="equilibre">Équilibré</SelectItem>
-                                <SelectItem value="pauvre_glucides">Pauvre en glucides</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <MobileSelect id="macros" value={macroDistribution} onValueChange={setMacroDistribution} placeholder="Sélectionnez..." forceNative options={[
+                              { value: 'riche_proteines', label: 'Riche en protéines' },
+                              { value: 'equilibre', label: 'Équilibré' },
+                              { value: 'pauvre_glucides', label: 'Pauvre en glucides' },
+                            ]} />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="proteines">Apport en protéines (g/kg)</Label>
