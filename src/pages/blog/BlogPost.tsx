@@ -8,9 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft } from 'lucide-react';
-import { useBlogArticleBySlug } from '@/hooks/useBlogArticles';
-import { useEffect } from 'react';
+import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useBlogArticleBySlug, useBlogArticles } from '@/hooks/useBlogArticles';
+import { useEffect, useRef, useState } from 'react';
 import { getCategoryLabel } from '@/lib/categoryMapping';
 
 function formatDateFr(dateStr: string | null) {
@@ -118,6 +118,23 @@ export default function BlogPost() {
   const { slug } = useParams();
   const { user } = useAuth();
   const { article, relatedArticles, validSlugs, loading } = useBlogArticleBySlug(slug);
+  const { articles: allArticles } = useBlogArticles();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const carouselArticles = allArticles.filter(a => a.slug !== slug).slice(0, 12);
+
+  const updateScrollButtons = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 0);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+  };
+
+  const scrollBy = (dir: number) => {
+    scrollRef.current?.scrollBy({ left: dir * 300, behavior: 'smooth' });
+  };
 
   useArticleSeoHead(article);
 
@@ -304,6 +321,66 @@ export default function BlogPost() {
                     </div>
                   </details>
                 ))}
+              </div>
+            </section>
+          )}
+
+          {/* Horizontal scrollable related articles carousel */}
+          {carouselArticles.length > 0 && (
+            <section className="mt-12">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold">À lire aussi</h2>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => scrollBy(-1)}
+                    disabled={!canScrollLeft}
+                    className="p-2 rounded-full border border-border bg-background hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Défiler vers la gauche"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => scrollBy(1)}
+                    disabled={!canScrollRight}
+                    className="p-2 rounded-full border border-border bg-background hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Défiler vers la droite"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              <div
+                ref={scrollRef}
+                onScroll={updateScrollButtons}
+                className="flex gap-4 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4 snap-x snap-mandatory"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
+                {carouselArticles.map((ca) => {
+                  const caImage = ca.cover_url || (ca.image_urls as any)?.[0]?.url || (ca.image_urls as any)?.[0];
+                  const caTitle = ca.title || (ca.outline as any)?.title || ca.slug;
+                  return (
+                    <Link key={ca.id} to={`/blog/${ca.slug}`} className="flex-shrink-0 w-64 snap-start">
+                      <Card className="overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all h-full border border-border">
+                        <div className="h-36 overflow-hidden bg-muted">
+                          {caImage ? (
+                            <img src={caImage} alt={caTitle} className="w-full h-full object-cover" loading="lazy" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-3xl">🥗</div>
+                          )}
+                        </div>
+                        <div className="p-3">
+                          {ca.cluster_context && (
+                            <span className="inline-block text-xs font-semibold uppercase tracking-wide text-primary bg-primary/10 px-2 py-0.5 rounded-full mb-1">
+                              {getCategoryLabel(ca.cluster_context)}
+                            </span>
+                          )}
+                          <h3 className="font-semibold text-sm line-clamp-2">{caTitle}</h3>
+                          <span className="text-xs text-muted-foreground mt-1 block">{formatDateFr(ca.published_at)}</span>
+                        </div>
+                      </Card>
+                    </Link>
+                  );
+                })}
               </div>
             </section>
           )}
