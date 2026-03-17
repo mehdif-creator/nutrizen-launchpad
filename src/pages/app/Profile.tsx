@@ -256,17 +256,16 @@ export default function Profile() {
 
       // Section 5
       if (foodStyle) {
-        setDietType(foodStyle.diet_type || '');
-        setFoodsToAvoid(foodStyle.foods_to_avoid || []);
-        setFavoriteIngredients(foodStyle.favorite_ingredients || []);
-        setFavoriteCuisines(foodStyle.favorite_cuisines || []);
-        setSpiceLevel(foodStyle.spice_level || '');
+        setDietType(foodStyle.diet_type ?? '');
+        setFoodsToAvoid(Array.isArray(foodStyle.foods_to_avoid) ? foodStyle.foods_to_avoid : []);
+        setFavoriteIngredients(Array.isArray(foodStyle.favorite_ingredients) ? foodStyle.favorite_ingredients : []);
+        setFavoriteCuisines(Array.isArray(foodStyle.favorite_cuisines) ? foodStyle.favorite_cuisines : []);
+        setSpiceLevel(foodStyle.spice_level ?? '');
         setCookingMethod(Array.isArray(foodStyle.cooking_method) ? foodStyle.cooking_method : foodStyle.cooking_method ? [foodStyle.cooking_method] : []);
-        setPreferOrganic(foodStyle.prefer_organic || false);
-        setReduceSugar(foodStyle.reduce_sugar || false);
-        setPreferSeasonal(foodStyle.prefer_seasonal || false);
-        setBioLocal(foodStyle.bio_local || '');
-        // salt level stored in food_style column doesn't exist - keep from spice_level area
+        setPreferOrganic(foodStyle.prefer_organic ?? false);
+        setReduceSugar(foodStyle.reduce_sugar ?? false);
+        setPreferSeasonal(foodStyle.prefer_seasonal ?? false);
+        setBioLocal(foodStyle.bio_local ?? '');
       }
 
       // Section 6
