@@ -19,16 +19,10 @@ export function MobileBottomNav() {
   // Render on all /app pages
   const isAppPage = location.pathname.startsWith('/app');
 
-  const handleClick = (tab: typeof tabs[number], e: React.MouseEvent) => {
-    if (tab.id === 'week') {
-      e.preventDefault();
-      document.getElementById('week-section')?.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+  if (!isAppPage) return null;
 
   const isActive = (tab: typeof tabs[number]) => {
     if (tab.id === 'home') return isDashboard;
-    if (tab.to.startsWith('#')) return false;
     return location.pathname === tab.to;
   };
 
