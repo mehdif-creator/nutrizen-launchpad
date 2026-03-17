@@ -607,7 +607,7 @@ export default function Dashboard() {
                 <div>
                   <StatCard
                     label="Crédits"
-                    value={`${stats.credits_zen}`}
+                    value={statsLoading ? '—' : `${stats.credits_zen}`}
                     sub={
                       <span className="flex items-center gap-1">
                         Achetés + mensuels <Info className="h-3 w-3" />
