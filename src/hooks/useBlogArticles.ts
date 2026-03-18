@@ -120,7 +120,7 @@ export function useBlogArticleBySlug(slug: string | undefined) {
         const { data: seoList } = await supabase
           .from('seo_articles')
           .select('*')
-          .eq('status', 'published' as any);
+          .eq('status', 'published');
 
         const match = (seoList || []).find((a: any) => {
           const o = a.outline as any;
