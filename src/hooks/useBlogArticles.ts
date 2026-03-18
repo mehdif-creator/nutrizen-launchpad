@@ -76,8 +76,11 @@ export function useBlogArticles() {
     async function fetch() {
       const [manualRes, seoRes] = await Promise.all([
         supabase.from('blog_posts').select('*').not('published_at', 'is', null),
-        supabase.from('seo_articles').select('*').eq('status', 'published' as any),
+        supabase.from('seo_articles').select('*').eq('status', 'published'),
       ]);
+
+      if (manualRes.error) console.error('[Blog] blog_posts error:', manualRes.error);
+      if (seoRes.error) console.error('[Blog] seo_articles error:', seoRes.error);
 
       const manual = (manualRes.data || []).map(mapBlogPost);
       const seo = (seoRes.data || []).map(mapSeoArticle);
@@ -117,7 +120,7 @@ export function useBlogArticleBySlug(slug: string | undefined) {
         const { data: seoList } = await supabase
           .from('seo_articles')
           .select('*')
-          .eq('status', 'published' as any);
+          .eq('status', 'published');
 
         const match = (seoList || []).find((a: any) => {
           const o = a.outline as any;
@@ -134,8 +137,8 @@ export function useBlogArticleBySlug(slug: string | undefined) {
       const { data: relatedSeo } = await supabase
         .from('seo_articles')
         .select('*')
-        .eq('status', 'published' as any)
-        .order('published_at', { ascending: false })
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
         .limit(10);
 
       const { data: relatedManual } = await supabase
