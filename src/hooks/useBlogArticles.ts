@@ -76,8 +76,11 @@ export function useBlogArticles() {
     async function fetch() {
       const [manualRes, seoRes] = await Promise.all([
         supabase.from('blog_posts').select('*').not('published_at', 'is', null),
-        supabase.from('seo_articles').select('*').eq('status', 'published' as any),
+        supabase.from('seo_articles').select('*').eq('status', 'published'),
       ]);
+
+      if (manualRes.error) console.error('[Blog] blog_posts error:', manualRes.error);
+      if (seoRes.error) console.error('[Blog] seo_articles error:', seoRes.error);
 
       const manual = (manualRes.data || []).map(mapBlogPost);
       const seo = (seoRes.data || []).map(mapSeoArticle);
