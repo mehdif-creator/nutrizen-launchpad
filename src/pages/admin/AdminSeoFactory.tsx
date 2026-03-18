@@ -70,9 +70,12 @@ export default function AdminSeoFactory() {
     if (statusFilter.length > 0) {
       list = list.filter(a => statusFilter.includes(a.status));
     }
-    if (sortBy === 'score') {
-      list = [...list].sort((a, b) => (b.qa_score ?? -1) - (a.qa_score ?? -1));
-    }
+    list = [...list].sort((a, b) => {
+      if (sortBy === 'score') return (b.qa_score ?? -1) - (a.qa_score ?? -1);
+      if (sortBy === 'status') return a.status.localeCompare(b.status);
+      // default: date (most recent first)
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
     return list;
   }, [articles, search, statusFilter, sortBy]);
 
