@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { SocialShareButtons } from '@/components/share/SocialShareButtons';
 import { useBlogArticleBySlug, useBlogArticles } from '@/hooks/useBlogArticles';
 import { useEffect, useRef, useState } from 'react';
 import { getCategoryLabel } from '@/lib/categoryMapping';
@@ -384,6 +385,15 @@ export default function BlogPost() {
               </div>
             </section>
           )}
+
+          {/* Share Buttons */}
+          <div className="mt-10 flex flex-col items-center gap-2">
+            <p className="text-sm font-medium text-muted-foreground">Partager cet article</p>
+            <SocialShareButtons
+              url={`https://mynutrizen.fr/blog/${article.slug}`}
+              text={h1}
+            />
+          </div>
 
           {/* CTA Block */}
           <div className="mt-12 p-6 bg-gradient-to-br from-accent/10 to-primary/10 rounded-2xl">
