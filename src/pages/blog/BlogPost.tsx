@@ -386,6 +386,15 @@ export default function BlogPost() {
             </section>
           )}
 
+          {/* Share Buttons */}
+          <div className="mt-10 flex flex-col items-center gap-2">
+            <p className="text-sm font-medium text-muted-foreground">Partager cet article</p>
+            <SocialShareButtons
+              url={`https://mynutrizen.fr/blog/${article.slug}`}
+              text={h1}
+            />
+          </div>
+
           {/* CTA Block */}
           <div className="mt-12 p-6 bg-gradient-to-br from-accent/10 to-primary/10 rounded-2xl">
             <h3 className="text-xl font-bold mb-2">
