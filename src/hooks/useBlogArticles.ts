@@ -137,8 +137,8 @@ export function useBlogArticleBySlug(slug: string | undefined) {
       const { data: relatedSeo } = await supabase
         .from('seo_articles')
         .select('*')
-        .eq('status', 'published' as any)
-        .order('published_at', { ascending: false })
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
         .limit(10);
 
       const { data: relatedManual } = await supabase
