@@ -53,6 +53,33 @@ export function SeoQueueTab() {
     return bulkText.split('\n').filter(l => l.trim().length > 0).length;
   }, [bulkText]);
 
+  const sortedItems = useMemo(() => {
+    const list = [...items];
+    const dir = sortDir === 'asc' ? 1 : -1;
+    list.sort((a, b) => {
+      switch (sortBy) {
+        case 'status':
+          return dir * ((QUEUE_STATUS_ORDER[a.status] ?? 99) - (QUEUE_STATUS_ORDER[b.status] ?? 99));
+        case 'priority':
+          return dir * ((a.priority ?? 5) - (b.priority ?? 5));
+        case 'created_at':
+          return dir * (new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        default: // queue = priority asc then created_at asc
+          return (a.priority ?? 5) - (b.priority ?? 5) || new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      }
+    });
+    return list;
+  }, [items, sortBy, sortDir]);
+
+  const toggleSort = (col: QueueSortBy) => {
+    if (sortBy === col) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(col);
+      setSortDir('asc');
+    }
+  };
+
   const handleImport = async () => {
     const topics = bulkText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
     if (topics.length === 0) return;
