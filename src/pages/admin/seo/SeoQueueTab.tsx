@@ -133,8 +133,9 @@ export function SeoQueueTab() {
       if (result.existing.length > 0) msg += ` · ${result.existing.length} déjà publié(s) (avertissement)`;
       toast({ title: '✅ Import terminé', description: msg });
       setBulkText('');
-    } catch (err: any) {
-      toast({ title: 'Erreur d\'import', description: err.message, variant: 'destructive' });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Erreur inconnue';
+      toast({ title: 'Erreur d\'import', description: message, variant: 'destructive' });
     } finally {
       setImporting(false);
     }
