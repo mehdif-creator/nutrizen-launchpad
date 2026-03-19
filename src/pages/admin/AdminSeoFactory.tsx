@@ -16,7 +16,27 @@ import { useSeoArticles } from './seo/useSeoArticles';
 import { useArticleQueue } from './seo/useArticleQueue';
 import { useQueueProcessor } from './seo/useQueueProcessor';
 import type { SeoArticle } from './seo/types';
-import { STATUS_LABELS } from './seo/types';
+import { STATUS_LABELS, STATUS_ORDER } from './seo/types';
+
+function normalizeText(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+
+function getOutlineField(article: SeoArticle, key: 'title' | 'slug'): string {
+  if (!article.outline || typeof article.outline !== 'object' || Array.isArray(article.outline)) {
+    return '';
+  }
+  const value = (article.outline as Record<string, unknown>)[key];
+  return typeof value === 'string' ? value : '';
+}
+
+function getArticleSortDate(article: SeoArticle): number {
+  return new Date(article.updated_at || article.created_at).getTime();
+}
 
 export default function AdminSeoFactory() {
   const { articles, loading, refetch, deleteArticle } = useSeoArticles();
@@ -63,19 +83,36 @@ export default function AdminSeoFactory() {
 
   const filteredArticles = useMemo(() => {
     let list = articles;
-    if (search) {
-      const q = search.toLowerCase();
-      list = list.filter(a => a.keyword.toLowerCase().includes(q));
+
+    const normalizedQuery = normalizeText(search);
+    if (normalizedQuery) {
+      list = list.filter((article) => {
+        const searchableText = [
+          article.keyword,
+          article.status,
+          article.cluster_context ?? '',
+          getOutlineField(article, 'title'),
+          getOutlineField(article, 'slug'),
+        ].join(' ');
+        return normalizeText(searchableText).includes(normalizedQuery);
+      });
     }
+
     if (statusFilter.length > 0) {
       list = list.filter(a => statusFilter.includes(a.status));
     }
+
     list = [...list].sort((a, b) => {
       if (sortBy === 'score') return (b.qa_score ?? -1) - (a.qa_score ?? -1);
-      if (sortBy === 'status') return a.status.localeCompare(b.status);
-      // default: date (most recent first)
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      if (sortBy === 'status') {
+        const orderDiff = (STATUS_ORDER[b.status] ?? -999) - (STATUS_ORDER[a.status] ?? -999);
+        if (orderDiff !== 0) return orderDiff;
+        return a.status.localeCompare(b.status);
+      }
+      // default: date (most recently updated first)
+      return getArticleSortDate(b) - getArticleSortDate(a);
     });
+
     return list;
   }, [articles, search, statusFilter, sortBy]);
 
