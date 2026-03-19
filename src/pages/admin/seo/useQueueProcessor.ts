@@ -43,6 +43,40 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
     // The runQueue loop handles resetting to pending if interrupted before completion.
   }, [toggleAutoMode]);
 
+  const settleStoppedItem = useCallback(async (item: QueueItem): Promise<'done' | 'pending'> => {
+    const { data: queueRow } = await supabase
+      .from('article_queue' as any)
+      .select('article_id')
+      .eq('id', item.id)
+      .maybeSingle();
+
+    const articleId = (queueRow as { article_id?: string | null } | null)?.article_id ?? item.article_id;
+
+    if (articleId) {
+      const { data: articleRow } = await supabase
+        .from('seo_articles')
+        .select('status')
+        .eq('id', articleId)
+        .maybeSingle();
+
+      if ((articleRow as { status?: string } | null)?.status === 'published') {
+        await supabase
+          .from('article_queue' as any)
+          .update({ status: 'done', error_message: null, completed_at: new Date().toISOString() } as any)
+          .eq('id', item.id);
+        return 'done';
+      }
+    }
+
+    await supabase
+      .from('article_queue' as any)
+      .update({ status: 'pending', error_message: null, started_at: null } as any)
+      .eq('id', item.id)
+      .eq('status', 'processing');
+
+    return 'pending';
+  }, []);
+
   const processOneItem = useCallback(async (item: QueueItem) => {
     // Mark as processing
     await supabase
@@ -154,18 +188,18 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
           toast({ title: `✅ « ${nextItem.topic} » terminé` });
         } catch (err: any) {
           if (err.message === 'Queue processing stopped') {
-            // Reset item to pending if it was interrupted
-            await supabase
-              .from('article_queue' as any)
-              .update({ status: 'pending', started_at: null } as any)
-              .eq('id', nextItem.id)
-              .eq('status', 'processing');
+            const settledState = await settleStoppedItem(nextItem);
 
             const pendingResult = await refetchQueue();
             const pendingCount = Array.isArray(pendingResult)
               ? pendingResult.filter((i: any) => i.status === 'pending').length
               : 0;
-            toast({ title: `⏹ Génération stoppée — ${pendingCount} article(s) restant(s) en attente` });
+
+            toast({
+              title: settledState === 'done'
+                ? `✅ « ${nextItem.topic} » publié — file stoppée (${pendingCount} en attente)`
+                : `⏹ Génération stoppée — ${pendingCount} article(s) restant(s) en attente`,
+            });
             break;
           }
           console.error('[queue] Error processing item:', err);
@@ -192,7 +226,7 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
       runningRef.current = false;
       setIsRunning(false);
     }
-  }, [processOneItem, refetchQueue, toast]);
+  }, [processOneItem, refetchQueue, settleStoppedItem, toast]);
 
   // Auto-start when toggle is ON
   useEffect(() => {
@@ -216,20 +250,29 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
       await processOneItem(item);
       toast({ title: `✅ « ${item.topic} » terminé` });
     } catch (err: any) {
-      await supabase
-        .from('article_queue' as any)
-        .update({ status: 'error', error_message: err.message?.slice(0, 500) } as any)
-        .eq('id', item.id);
-      toast({
-        title: `❌ Erreur : ${item.topic}`,
-        description: err.message?.slice(0, 100),
-        variant: 'destructive',
-      });
+      if (err.message === 'Queue processing stopped') {
+        const settledState = await settleStoppedItem(item);
+        toast({
+          title: settledState === 'done'
+            ? `✅ « ${item.topic} » publié`
+            : `⏹ Génération stoppée — « ${item.topic} » remis en attente`,
+        });
+      } else {
+        await supabase
+          .from('article_queue' as any)
+          .update({ status: 'error', error_message: err.message?.slice(0, 500) } as any)
+          .eq('id', item.id);
+        toast({
+          title: `❌ Erreur : ${item.topic}`,
+          description: err.message?.slice(0, 100),
+          variant: 'destructive',
+        });
+      }
     } finally {
       setProcessing({ item: null, stepIndex: -1, stepLabel: '', startedAt: null });
       await refetchQueue();
     }
-  }, [processOneItem, refetchQueue, toast]);
+  }, [processOneItem, refetchQueue, settleStoppedItem, toast]);
 
   return { autoMode, toggleAutoMode, processing, processItem, isRunning, stopProcessing };
 }
