@@ -188,18 +188,18 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
           toast({ title: `✅ « ${nextItem.topic} » terminé` });
         } catch (err: any) {
           if (err.message === 'Queue processing stopped') {
-            // Reset item to pending if it was interrupted
-            await supabase
-              .from('article_queue' as any)
-              .update({ status: 'pending', started_at: null } as any)
-              .eq('id', nextItem.id)
-              .eq('status', 'processing');
+            const settledState = await settleStoppedItem(nextItem);
 
             const pendingResult = await refetchQueue();
             const pendingCount = Array.isArray(pendingResult)
               ? pendingResult.filter((i: any) => i.status === 'pending').length
               : 0;
-            toast({ title: `⏹ Génération stoppée — ${pendingCount} article(s) restant(s) en attente` });
+
+            toast({
+              title: settledState === 'done'
+                ? `✅ « ${nextItem.topic} » publié — file stoppée (${pendingCount} en attente)`
+                : `⏹ Génération stoppée — ${pendingCount} article(s) restant(s) en attente`,
+            });
             break;
           }
           console.error('[queue] Error processing item:', err);
