@@ -44,6 +44,10 @@ export function SeoQueueTab() {
   const [category, setCategory] = useState('');
   const [priority, setPriority] = useState(5);
   const [importing, setImporting] = useState(false);
+  const [sortBy, setSortBy] = useState<QueueSortBy>('queue');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [priority, setPriority] = useState(5);
+  const [importing, setImporting] = useState(false);
 
   const topicCount = useMemo(() => {
     return bulkText.split('\n').filter(l => l.trim().length > 0).length;
