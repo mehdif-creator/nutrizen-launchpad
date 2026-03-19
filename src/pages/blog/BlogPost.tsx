@@ -461,7 +461,7 @@ export default function BlogPost() {
               <p className="text-sm text-muted-foreground mb-6">Continuez à explorer nos conseils nutrition</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {relatedArticles.map((ra) => {
-                  const raImage = ra.cover_url || (ra.image_urls as any)?.[0]?.url || (ra.image_urls as any)?.[0];
+                  const raImage = resolveArticleImage(ra);
                   const raTitle = ra.title || (ra.outline as any)?.title || ra.slug;
                   const raExcerpt = ra.excerpt || (ra.outline as any)?.excerpt || (ra.outline as any)?.meta_description;
                   return (
@@ -474,6 +474,7 @@ export default function BlogPost() {
                               alt={raTitle}
                               className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                               loading="lazy"
+                              onError={withImageFallback}
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-4xl">🥗</div>
