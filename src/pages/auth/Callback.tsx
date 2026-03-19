@@ -39,6 +39,13 @@ export default function Callback() {
       return '/app';
     };
 
+    let redirected = false;
+    const doRedirect = () => {
+      if (redirected) return;
+      redirected = true;
+      window.location.replace(getDestination());
+    };
+
     // Let Supabase handle the PKCE exchange automatically.
     // We just listen for the session to be established.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -48,26 +55,44 @@ export default function Callback() {
         if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION')) {
           console.log('[AuthCallback] Sign-in successful, redirecting...');
           subscription.unsubscribe();
-          window.location.replace(getDestination());
+          doRedirect();
         }
       },
     );
 
-    // Fallback timeout — if no auth event after 12s, check session or show error
+    // Also poll getSession every 2s as a safety net (PKCE exchange may complete
+    // before the listener is registered, or the event may be missed)
+    const pollInterval = setInterval(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          console.log('[AuthCallback] Session found via polling, redirecting...');
+          clearInterval(pollInterval);
+          subscription.unsubscribe();
+          doRedirect();
+        }
+      } catch (e) {
+        console.warn('[AuthCallback] Poll error:', e);
+      }
+    }, 2000);
+
+    // Fallback timeout — if no auth event after 10s, show error with retry
     const timeout = setTimeout(() => {
+      clearInterval(pollInterval);
       subscription.unsubscribe();
 
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session) {
-          window.location.replace(getDestination());
+          doRedirect();
         } else {
           setError('La connexion a pris trop de temps. Veuillez réessayer.');
         }
       });
-    }, 12_000);
+    }, 10_000);
 
     return () => {
       clearTimeout(timeout);
+      clearInterval(pollInterval);
       subscription.unsubscribe();
     };
   }, [navigate]);
