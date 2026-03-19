@@ -14,10 +14,11 @@ NUTRIZEN VISUAL IDENTITY:
 - Style: realistic lifestyle photography, bright and airy, clean backgrounds
 - Color palette: soft greens, warm whites, natural wood tones, fresh food colors
 - Mood: positive, approachable, modern French kitchen or dining aesthetic
-- NEVER include: text, logos, watermarks, measuring tapes, scales, before/after imagery
+- NEVER include: ANY text, words, letters, numbers, captions, labels, titles, logos, watermarks, measuring tapes, scales, before/after imagery
+- CRITICAL: The image must contain ABSOLUTELY NO TEXT of any kind. No overlays, no captions, no labels, no words whatsoever.
 
 OUTPUT FORMAT: Return ONLY a refined DALL-E 3 prompt string ending with:
-"Professional food lifestyle photography, soft natural lighting, no text, no watermark, high resolution, French aesthetic."
+"Professional food lifestyle photography, soft natural lighting, absolutely no text, no words, no letters, no captions, no watermark, high resolution, French aesthetic."
 `;
 
 async function refinePrompt(rawDirection: string, articleContext: string): Promise<string> {

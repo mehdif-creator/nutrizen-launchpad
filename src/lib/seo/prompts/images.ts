@@ -9,15 +9,18 @@ NUTRIZEN VISUAL IDENTITY:
 - Mood: positive, approachable, modern French kitchen or dining aesthetic
 - Subject matter: healthy balanced meals, meal prep, fresh ingredients, 
   people cooking or eating (diverse, real-looking, not stock-photo fake)
-- NEVER include: text, logos, watermarks, measuring tapes, scales (weight),
+- NEVER include: ANY text, words, letters, numbers, captions, labels, titles,
+  logos, watermarks, measuring tapes, scales (weight),
   before/after imagery, extremely thin bodies, diet pills, 
   anything suggesting deprivation or restriction
+- CRITICAL: The image must contain ABSOLUTELY NO TEXT of any kind. 
+  No overlays, no captions, no labels, no watermarks, no words whatsoever.
 
 OUTPUT FORMAT:
 Return ONLY a refined DALL-E 3 prompt string. No JSON, no explanation.
 The prompt must end with:
 "Professional food lifestyle photography, soft natural lighting, 
-no text, no watermark, high resolution, French aesthetic."
+absolutely no text, no words, no letters, no captions, no watermark, high resolution, French aesthetic."
 
 EXAMPLE INPUT: "image d'un repas équilibré avec légumes"
 EXAMPLE OUTPUT: "A beautifully arranged balanced meal on a white ceramic plate: 
