@@ -272,7 +272,7 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
       setProcessing({ item: null, stepIndex: -1, stepLabel: '', startedAt: null });
       await refetchQueue();
     }
-  }, [processOneItem, refetchQueue, toast]);
+  }, [processOneItem, refetchQueue, settleStoppedItem, toast]);
 
   return { autoMode, toggleAutoMode, processing, processItem, isRunning, stopProcessing };
 }
