@@ -20,7 +20,7 @@ OUTPUT FORMAT:
 Return ONLY a refined DALL-E 3 prompt string. No JSON, no explanation.
 The prompt must end with:
 "Professional food lifestyle photography, soft natural lighting, 
-no text, no watermark, high resolution, French aesthetic."
+absolutely no text, no words, no letters, no captions, no watermark, high resolution, French aesthetic."
 
 EXAMPLE INPUT: "image d'un repas équilibré avec légumes"
 EXAMPLE OUTPUT: "A beautifully arranged balanced meal on a white ceramic plate: 
