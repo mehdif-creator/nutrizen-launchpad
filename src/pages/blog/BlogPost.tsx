@@ -11,8 +11,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SocialShareButtons } from '@/components/share/SocialShareButtons';
 import { useBlogArticleBySlug, useBlogArticles } from '@/hooks/useBlogArticles';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { getCategoryLabel } from '@/lib/categoryMapping';
+
+const BLOG_FALLBACK_IMAGE = '/img/hero-default.jpg';
 
 function formatDateFr(dateStr: string | null) {
   if (!dateStr) return '';
@@ -28,6 +30,30 @@ function calculateReadTime(content: string): number {
     .split(/\s+/)
     .filter(w => w.length > 0).length;
   return Math.max(1, Math.round(wordCount / 200));
+}
+
+function toSafeImageUrl(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const cleaned = value.trim();
+  if (!cleaned || cleaned === 'null' || cleaned === 'undefined') return null;
+  return cleaned;
+}
+
+function resolveArticleImage(articleLike: { cover_url?: unknown; image_urls?: unknown }): string | null {
+  const firstFromArray = Array.isArray(articleLike.image_urls)
+    ? (typeof articleLike.image_urls[0] === 'string'
+        ? articleLike.image_urls[0]
+        : (articleLike.image_urls[0] as any)?.url)
+    : null;
+
+  return toSafeImageUrl(articleLike.cover_url) || toSafeImageUrl(firstFromArray);
+}
+
+function withImageFallback(e: SyntheticEvent<HTMLImageElement>) {
+  const img = e.currentTarget;
+  if (img.dataset.fallbackApplied === 'true') return;
+  img.dataset.fallbackApplied = 'true';
+  img.src = BLOG_FALLBACK_IMAGE;
 }
 
 function useArticleSeoHead(article: ReturnType<typeof useBlogArticleBySlug>['article']) {
@@ -171,8 +197,8 @@ export default function BlogPost() {
 
   const outline = article.outline as any;
   const h1 = outline?.h1 || article.title;
-  const images = article.image_urls as any[];
-  const heroImage = images?.[0]?.url || images?.[0] || article.cover_url;
+  const images = Array.isArray(article.image_urls) ? (article.image_urls as any[]) : [];
+  const heroImage = resolveArticleImage(article);
   const heroAlt = images?.[0]?.alt || article.title;
   const draftMeta = article.draft_meta as any;
   const faqItems = draftMeta?.faq as { q: string; a: string }[] | undefined;
@@ -204,13 +230,26 @@ export default function BlogPost() {
   // Strip leading markdown image syntax
   rawHtml = rawHtml.replace(/^\s*!\[.*?\]\(.*?\)\s*/, '');
 
-  // 1. Replace image placeholders with real URLs
-  if (images && images.length > 0) {
+  // 1. Replace image placeholders with real URLs or inline images
+  if (images.length > 0) {
     images.forEach((img: any, index: number) => {
       const n = index + 1;
-      const url = typeof img === 'string' ? img : img?.url || '';
-      const alt = typeof img === 'string' ? article.title : img?.alt || '';
-      rawHtml = rawHtml.split(`{{IMAGE_${n}_URL}}`).join(url);
+      const url = toSafeImageUrl(typeof img === 'string' ? img : img?.url);
+      const alt = typeof img === 'string' ? article.title : img?.alt || article.title;
+
+      if (!url) {
+        rawHtml = rawHtml.split(`{{IMAGE_${n}_URL}}`).join('');
+        rawHtml = rawHtml.split(`{{IMAGE_${n}_ALT}}`).join(alt);
+        return;
+      }
+
+      // Handle templates that already contain src="{{IMAGE_n_URL}}"
+      rawHtml = rawHtml.split(`src="{{IMAGE_${n}_URL}}"`).join(`src="${url}"`);
+      rawHtml = rawHtml.split(`src='{{IMAGE_${n}_URL}}'`).join(`src="${url}"`);
+
+      // For standalone placeholders in text, inject a proper image block
+      const inlineImage = `<figure class="my-6"><img src="${url}" alt="${alt}" loading="lazy" class="w-full rounded-xl object-cover" /></figure>`;
+      rawHtml = rawHtml.split(`{{IMAGE_${n}_URL}}`).join(inlineImage);
       rawHtml = rawHtml.split(`{{IMAGE_${n}_ALT}}`).join(alt);
     });
   }
@@ -296,6 +335,7 @@ export default function BlogPost() {
                 alt={heroAlt}
                 className="w-full h-64 md:h-96 object-cover"
                 loading="eager"
+                onError={withImageFallback}
               />
             </figure>
           )}
@@ -357,14 +397,20 @@ export default function BlogPost() {
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
                 {carouselArticles.map((ca) => {
-                  const caImage = ca.cover_url || (ca.image_urls as any)?.[0]?.url || (ca.image_urls as any)?.[0];
+                  const caImage = resolveArticleImage(ca);
                   const caTitle = ca.title || (ca.outline as any)?.title || ca.slug;
                   return (
                     <Link key={ca.id} to={`/blog/${ca.slug}`} className="flex-shrink-0 w-64 snap-start">
                       <Card className="overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all h-full border border-border">
                         <div className="h-36 overflow-hidden bg-muted">
                           {caImage ? (
-                            <img src={caImage} alt={caTitle} className="w-full h-full object-cover" loading="lazy" />
+                            <img
+                              src={caImage}
+                              alt={caTitle}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                              onError={withImageFallback}
+                            />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-3xl">🥗</div>
                           )}
@@ -415,7 +461,7 @@ export default function BlogPost() {
               <p className="text-sm text-muted-foreground mb-6">Continuez à explorer nos conseils nutrition</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {relatedArticles.map((ra) => {
-                  const raImage = ra.cover_url || (ra.image_urls as any)?.[0]?.url || (ra.image_urls as any)?.[0];
+                  const raImage = resolveArticleImage(ra);
                   const raTitle = ra.title || (ra.outline as any)?.title || ra.slug;
                   const raExcerpt = ra.excerpt || (ra.outline as any)?.excerpt || (ra.outline as any)?.meta_description;
                   return (
@@ -428,6 +474,7 @@ export default function BlogPost() {
                               alt={raTitle}
                               className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                               loading="lazy"
+                              onError={withImageFallback}
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-4xl">🥗</div>
