@@ -397,14 +397,20 @@ export default function BlogPost() {
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
                 {carouselArticles.map((ca) => {
-                  const caImage = ca.cover_url || (ca.image_urls as any)?.[0]?.url || (ca.image_urls as any)?.[0];
+                  const caImage = resolveArticleImage(ca);
                   const caTitle = ca.title || (ca.outline as any)?.title || ca.slug;
                   return (
                     <Link key={ca.id} to={`/blog/${ca.slug}`} className="flex-shrink-0 w-64 snap-start">
                       <Card className="overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all h-full border border-border">
                         <div className="h-36 overflow-hidden bg-muted">
                           {caImage ? (
-                            <img src={caImage} alt={caTitle} className="w-full h-full object-cover" loading="lazy" />
+                            <img
+                              src={caImage}
+                              alt={caTitle}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                              onError={withImageFallback}
+                            />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-3xl">🥗</div>
                           )}
