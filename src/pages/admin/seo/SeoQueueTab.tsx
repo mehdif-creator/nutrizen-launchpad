@@ -312,14 +312,20 @@ export function SeoQueueTab() {
               <TableRow>
                 <TableHead>Sujet</TableHead>
                 <TableHead className="w-28">Catégorie</TableHead>
-                <TableHead className="w-20">Priorité</TableHead>
-                <TableHead className="w-28">Statut</TableHead>
-                <TableHead className="w-28">Créé le</TableHead>
+                <TableHead className="w-20 cursor-pointer select-none" onClick={() => toggleSort('priority')}>
+                  <span className="inline-flex items-center gap-1">Priorité <ArrowUpDown className="h-3 w-3 text-muted-foreground" /></span>
+                </TableHead>
+                <TableHead className="w-28 cursor-pointer select-none" onClick={() => toggleSort('status')}>
+                  <span className="inline-flex items-center gap-1">Statut <ArrowUpDown className="h-3 w-3 text-muted-foreground" /></span>
+                </TableHead>
+                <TableHead className="w-28 cursor-pointer select-none" onClick={() => toggleSort('created_at')}>
+                  <span className="inline-flex items-center gap-1">Créé le <ArrowUpDown className="h-3 w-3 text-muted-foreground" /></span>
+                </TableHead>
                 <TableHead className="w-36">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map(item => (
+              {sortedItems.map(item => (
                 <TableRow key={item.id}>
                   <TableCell className="font-medium max-w-[300px] truncate">
                     {item.topic}
