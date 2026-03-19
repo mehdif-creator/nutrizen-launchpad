@@ -81,7 +81,7 @@ export default function Login() {
 
           <div className="mb-6 p-4 bg-accent/10 dark:bg-accent/20 rounded-lg">
             <p className="text-sm text-center text-foreground">
-              <strong>Nouveau client ?</strong> Après ton paiement via Stripe, tu recevras un email avec un lien magique pour accéder à ton compte (vérifie tes spam si tu ne le reçoit pas).
+              <strong>Nouveau membre ?</strong> Après votre inscription, vous recevrez un email avec un lien magique pour accéder à votre espace (vérifiez vos spam si vous ne le recevez pas).
             </p>
           </div>
 
