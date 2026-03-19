@@ -226,7 +226,7 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
       runningRef.current = false;
       setIsRunning(false);
     }
-  }, [processOneItem, refetchQueue, toast]);
+  }, [processOneItem, refetchQueue, settleStoppedItem, toast]);
 
   // Auto-start when toggle is ON
   useEffect(() => {
