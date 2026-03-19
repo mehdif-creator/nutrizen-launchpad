@@ -197,8 +197,8 @@ export default function BlogPost() {
 
   const outline = article.outline as any;
   const h1 = outline?.h1 || article.title;
-  const images = article.image_urls as any[];
-  const heroImage = images?.[0]?.url || images?.[0] || article.cover_url;
+  const images = Array.isArray(article.image_urls) ? (article.image_urls as any[]) : [];
+  const heroImage = resolveArticleImage(article);
   const heroAlt = images?.[0]?.alt || article.title;
   const draftMeta = article.draft_meta as any;
   const faqItems = draftMeta?.faq as { q: string; a: string }[] | undefined;
