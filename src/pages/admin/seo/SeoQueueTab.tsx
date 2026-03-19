@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
@@ -25,6 +26,7 @@ const QUEUE_STATUS_ORDER: Record<string, number> = {
 
 type QueueSortBy = 'queue' | 'status' | 'priority' | 'created_at';
 type SortDir = 'asc' | 'desc';
+type QueueFilterStatus = 'all' | 'pending' | 'processing' | 'error' | 'done';
 
 const CATEGORIES = [
   { value: '', label: 'Aucune' },
@@ -34,6 +36,14 @@ const CATEGORIES = [
   { value: 'longue-traine', label: 'Longue traîne' },
   { value: 'autre', label: 'Autre' },
 ];
+
+function normalizeText(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
 
 export function SeoQueueTab() {
   const { items, loading, stats, fetchItems, bulkInsert, deleteItem, retryItem, clearDone } = useArticleQueue();
@@ -46,13 +56,41 @@ export function SeoQueueTab() {
   const [importing, setImporting] = useState(false);
   const [sortBy, setSortBy] = useState<QueueSortBy>('queue');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [searchFilter, setSearchFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<QueueFilterStatus>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   const topicCount = useMemo(() => {
     return bulkText.split('\n').filter(l => l.trim().length > 0).length;
   }, [bulkText]);
 
+  const availableCategories = useMemo(() => {
+    const values = Array.from(new Set(items.map(i => i.category).filter((v): v is string => Boolean(v))));
+    return values.sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+  }, [items]);
+
+  const filteredItems = useMemo(() => {
+    const normalizedSearch = normalizeText(searchFilter);
+
+    return items.filter((item) => {
+      if (statusFilter !== 'all' && item.status !== statusFilter) return false;
+      if (categoryFilter !== 'all' && (item.category ?? '') !== categoryFilter) return false;
+
+      if (!normalizedSearch) return true;
+
+      const haystack = normalizeText([
+        item.topic,
+        item.category ?? '',
+        item.status,
+        item.error_message ?? '',
+      ].join(' '));
+
+      return haystack.includes(normalizedSearch);
+    });
+  }, [items, searchFilter, statusFilter, categoryFilter]);
+
   const sortedItems = useMemo(() => {
-    const list = [...items];
+    const list = [...filteredItems];
     const dir = sortDir === 'asc' ? 1 : -1;
     list.sort((a, b) => {
       switch (sortBy) {
@@ -67,7 +105,7 @@ export function SeoQueueTab() {
       }
     });
     return list;
-  }, [items, sortBy, sortDir]);
+  }, [filteredItems, sortBy, sortDir]);
 
   const toggleSort = (col: QueueSortBy) => {
     if (sortBy === col) {
@@ -76,6 +114,12 @@ export function SeoQueueTab() {
       setSortBy(col);
       setSortDir('asc');
     }
+  };
+
+  const resetFilters = () => {
+    setSearchFilter('');
+    setStatusFilter('all');
+    setCategoryFilter('all');
   };
 
   const handleImport = async () => {
@@ -273,6 +317,51 @@ export function SeoQueueTab() {
         </div>
       )}
 
+      {/* Queue filters */}
+      <Card className="p-4">
+        <div className="flex flex-col lg:flex-row gap-3 lg:items-end">
+          <div className="flex-1">
+            <label className="text-xs text-muted-foreground mb-1 block">Recherche</label>
+            <Input
+              placeholder="Filtrer par sujet, statut ou catégorie…"
+              value={searchFilter}
+              onChange={(e) => setSearchFilter(e.target.value)}
+            />
+          </div>
+          <div className="w-full lg:w-52">
+            <label className="text-xs text-muted-foreground mb-1 block">Statut</label>
+            <select
+              className="border rounded-md px-3 py-2 text-sm bg-background w-full"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as QueueFilterStatus)}
+            >
+              <option value="all">Tous</option>
+              <option value="pending">En attente</option>
+              <option value="processing">En cours</option>
+              <option value="error">Erreur</option>
+              <option value="done">Terminé</option>
+            </select>
+          </div>
+          <div className="w-full lg:w-56">
+            <label className="text-xs text-muted-foreground mb-1 block">Catégorie</label>
+            <select
+              className="border rounded-md px-3 py-2 text-sm bg-background w-full"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+            >
+              <option value="all">Toutes</option>
+              {availableCategories.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+          <Button variant="outline" onClick={resetFilters}>Réinitialiser</Button>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {filteredItems.length} résultat{filteredItems.length > 1 ? 's' : ''} affiché{filteredItems.length > 1 ? 's' : ''} sur {items.length}
+        </p>
+      </Card>
+
       {/* Queue table */}
       {loading && items.length === 0 ? (
         <div className="border rounded-md">
@@ -304,6 +393,10 @@ export function SeoQueueTab() {
       ) : !loading && items.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <p>La file d'attente est vide. Importez des sujets ci-dessus.</p>
+        </div>
+      ) : !loading && filteredItems.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <p>Aucun résultat pour ces filtres.</p>
         </div>
       ) : (
         <div className="border rounded-md">
