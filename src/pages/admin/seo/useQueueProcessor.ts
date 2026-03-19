@@ -250,15 +250,24 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
       await processOneItem(item);
       toast({ title: `✅ « ${item.topic} » terminé` });
     } catch (err: any) {
-      await supabase
-        .from('article_queue' as any)
-        .update({ status: 'error', error_message: err.message?.slice(0, 500) } as any)
-        .eq('id', item.id);
-      toast({
-        title: `❌ Erreur : ${item.topic}`,
-        description: err.message?.slice(0, 100),
-        variant: 'destructive',
-      });
+      if (err.message === 'Queue processing stopped') {
+        const settledState = await settleStoppedItem(item);
+        toast({
+          title: settledState === 'done'
+            ? `✅ « ${item.topic} » publié`
+            : `⏹ Génération stoppée — « ${item.topic} » remis en attente`,
+        });
+      } else {
+        await supabase
+          .from('article_queue' as any)
+          .update({ status: 'error', error_message: err.message?.slice(0, 500) } as any)
+          .eq('id', item.id);
+        toast({
+          title: `❌ Erreur : ${item.topic}`,
+          description: err.message?.slice(0, 100),
+          variant: 'destructive',
+        });
+      }
     } finally {
       setProcessing({ item: null, stepIndex: -1, stepLabel: '', startedAt: null });
       await refetchQueue();
