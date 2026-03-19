@@ -11,8 +11,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SocialShareButtons } from '@/components/share/SocialShareButtons';
 import { useBlogArticleBySlug, useBlogArticles } from '@/hooks/useBlogArticles';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { getCategoryLabel } from '@/lib/categoryMapping';
+
+const BLOG_FALLBACK_IMAGE = '/img/hero-default.jpg';
 
 function formatDateFr(dateStr: string | null) {
   if (!dateStr) return '';
@@ -28,6 +30,30 @@ function calculateReadTime(content: string): number {
     .split(/\s+/)
     .filter(w => w.length > 0).length;
   return Math.max(1, Math.round(wordCount / 200));
+}
+
+function toSafeImageUrl(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const cleaned = value.trim();
+  if (!cleaned || cleaned === 'null' || cleaned === 'undefined') return null;
+  return cleaned;
+}
+
+function resolveArticleImage(articleLike: { cover_url?: unknown; image_urls?: unknown }): string | null {
+  const firstFromArray = Array.isArray(articleLike.image_urls)
+    ? (typeof articleLike.image_urls[0] === 'string'
+        ? articleLike.image_urls[0]
+        : (articleLike.image_urls[0] as any)?.url)
+    : null;
+
+  return toSafeImageUrl(articleLike.cover_url) || toSafeImageUrl(firstFromArray);
+}
+
+function withImageFallback(e: SyntheticEvent<HTMLImageElement>) {
+  const img = e.currentTarget;
+  if (img.dataset.fallbackApplied === 'true') return;
+  img.dataset.fallbackApplied = 'true';
+  img.src = BLOG_FALLBACK_IMAGE;
 }
 
 function useArticleSeoHead(article: ReturnType<typeof useBlogArticleBySlug>['article']) {
