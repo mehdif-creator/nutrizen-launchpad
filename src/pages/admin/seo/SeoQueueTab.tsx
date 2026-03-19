@@ -480,7 +480,7 @@ export function SeoQueueTab() {
   );
 }
 
-function StatusBadge({ status, articleId }: { status: string; articleId: string | null }) {
+function StatusBadge({ status, articleId: _articleId }: { status: string; articleId: string | null }) {
   switch (status) {
     case 'pending':
       return <Badge variant="secondary">En attente</Badge>;
