@@ -230,13 +230,26 @@ export default function BlogPost() {
   // Strip leading markdown image syntax
   rawHtml = rawHtml.replace(/^\s*!\[.*?\]\(.*?\)\s*/, '');
 
-  // 1. Replace image placeholders with real URLs
-  if (images && images.length > 0) {
+  // 1. Replace image placeholders with real URLs or inline images
+  if (images.length > 0) {
     images.forEach((img: any, index: number) => {
       const n = index + 1;
-      const url = typeof img === 'string' ? img : img?.url || '';
-      const alt = typeof img === 'string' ? article.title : img?.alt || '';
-      rawHtml = rawHtml.split(`{{IMAGE_${n}_URL}}`).join(url);
+      const url = toSafeImageUrl(typeof img === 'string' ? img : img?.url);
+      const alt = typeof img === 'string' ? article.title : img?.alt || article.title;
+
+      if (!url) {
+        rawHtml = rawHtml.split(`{{IMAGE_${n}_URL}}`).join('');
+        rawHtml = rawHtml.split(`{{IMAGE_${n}_ALT}}`).join(alt);
+        return;
+      }
+
+      // Handle templates that already contain src="{{IMAGE_n_URL}}"
+      rawHtml = rawHtml.split(`src="{{IMAGE_${n}_URL}}"`).join(`src="${url}"`);
+      rawHtml = rawHtml.split(`src='{{IMAGE_${n}_URL}}'`).join(`src="${url}"`);
+
+      // For standalone placeholders in text, inject a proper image block
+      const inlineImage = `<figure class="my-6"><img src="${url}" alt="${alt}" loading="lazy" class="w-full rounded-xl object-cover" /></figure>`;
+      rawHtml = rawHtml.split(`{{IMAGE_${n}_URL}}`).join(inlineImage);
       rawHtml = rawHtml.split(`{{IMAGE_${n}_ALT}}`).join(alt);
     });
   }
