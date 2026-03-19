@@ -32,7 +32,7 @@ function mapSeoArticle(a: any): BlogArticle {
     excerpt: outline?.excerpt || null,
     cover_url: images?.[0]?.url || images?.[0] || null,
     tags: a.cluster_context ? [a.cluster_context] : null,
-    published_at: a.created_at,
+    published_at: a.updated_at || a.created_at,
     content: a.draft_html,
     author: 'NutriZen',
     cluster_context: a.cluster_context,
@@ -138,7 +138,7 @@ export function useBlogArticleBySlug(slug: string | undefined) {
         .from('seo_articles')
         .select('*')
         .eq('status', 'published')
-        .order('created_at', { ascending: false })
+        .order('updated_at', { ascending: false })
         .limit(10);
 
       const { data: relatedManual } = await supabase
