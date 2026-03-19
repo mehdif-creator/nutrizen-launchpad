@@ -335,6 +335,7 @@ export default function BlogPost() {
                 alt={heroAlt}
                 className="w-full h-64 md:h-96 object-cover"
                 loading="eager"
+                onError={withImageFallback}
               />
             </figure>
           )}
