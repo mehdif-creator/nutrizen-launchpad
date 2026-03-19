@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Loader2, Play, Trash2, RotateCcw, RefreshCw, ExternalLink, Upload, Clock, AlertCircle, Square, CirclePlay,
+  Loader2, Play, Trash2, RotateCcw, RefreshCw, ExternalLink, Upload, Clock, AlertCircle, Square, CirclePlay, ArrowUpDown,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useArticleQueue } from './useArticleQueue';
@@ -15,6 +15,16 @@ import { useQueueProcessor } from './useQueueProcessor';
 import type { QueueStatus } from './useQueueProcessor';
 import { AUTO_PIPELINE_LABELS } from './types';
 import { cn } from '@/lib/utils';
+
+const QUEUE_STATUS_ORDER: Record<string, number> = {
+  processing: 0,
+  pending: 1,
+  error: 2,
+  done: 3,
+};
+
+type QueueSortBy = 'queue' | 'status' | 'priority' | 'created_at';
+type SortDir = 'asc' | 'desc';
 
 const CATEGORIES = [
   { value: '', label: 'Aucune' },
@@ -34,10 +44,39 @@ export function SeoQueueTab() {
   const [category, setCategory] = useState('');
   const [priority, setPriority] = useState(5);
   const [importing, setImporting] = useState(false);
+  const [sortBy, setSortBy] = useState<QueueSortBy>('queue');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
 
   const topicCount = useMemo(() => {
     return bulkText.split('\n').filter(l => l.trim().length > 0).length;
   }, [bulkText]);
+
+  const sortedItems = useMemo(() => {
+    const list = [...items];
+    const dir = sortDir === 'asc' ? 1 : -1;
+    list.sort((a, b) => {
+      switch (sortBy) {
+        case 'status':
+          return dir * ((QUEUE_STATUS_ORDER[a.status] ?? 99) - (QUEUE_STATUS_ORDER[b.status] ?? 99));
+        case 'priority':
+          return dir * ((a.priority ?? 5) - (b.priority ?? 5));
+        case 'created_at':
+          return dir * (new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        default: // queue = priority asc then created_at asc
+          return (a.priority ?? 5) - (b.priority ?? 5) || new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      }
+    });
+    return list;
+  }, [items, sortBy, sortDir]);
+
+  const toggleSort = (col: QueueSortBy) => {
+    if (sortBy === col) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(col);
+      setSortDir('asc');
+    }
+  };
 
   const handleImport = async () => {
     const topics = bulkText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
@@ -273,14 +312,20 @@ export function SeoQueueTab() {
               <TableRow>
                 <TableHead>Sujet</TableHead>
                 <TableHead className="w-28">Catégorie</TableHead>
-                <TableHead className="w-20">Priorité</TableHead>
-                <TableHead className="w-28">Statut</TableHead>
-                <TableHead className="w-28">Créé le</TableHead>
+                <TableHead className="w-20 cursor-pointer select-none" onClick={() => toggleSort('priority')}>
+                  <span className="inline-flex items-center gap-1">Priorité <ArrowUpDown className="h-3 w-3 text-muted-foreground" /></span>
+                </TableHead>
+                <TableHead className="w-28 cursor-pointer select-none" onClick={() => toggleSort('status')}>
+                  <span className="inline-flex items-center gap-1">Statut <ArrowUpDown className="h-3 w-3 text-muted-foreground" /></span>
+                </TableHead>
+                <TableHead className="w-28 cursor-pointer select-none" onClick={() => toggleSort('created_at')}>
+                  <span className="inline-flex items-center gap-1">Créé le <ArrowUpDown className="h-3 w-3 text-muted-foreground" /></span>
+                </TableHead>
                 <TableHead className="w-36">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map(item => (
+              {sortedItems.map(item => (
                 <TableRow key={item.id}>
                   <TableCell className="font-medium max-w-[300px] truncate">
                     {item.topic}
