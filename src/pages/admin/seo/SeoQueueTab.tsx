@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Loader2, Play, Trash2, RotateCcw, RefreshCw, ExternalLink, Upload, Clock, AlertCircle, Square, CirclePlay,
+  Loader2, Play, Trash2, RotateCcw, RefreshCw, ExternalLink, Upload, Clock, AlertCircle, Square, CirclePlay, ArrowUpDown,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useArticleQueue } from './useArticleQueue';
@@ -15,6 +15,16 @@ import { useQueueProcessor } from './useQueueProcessor';
 import type { QueueStatus } from './useQueueProcessor';
 import { AUTO_PIPELINE_LABELS } from './types';
 import { cn } from '@/lib/utils';
+
+const QUEUE_STATUS_ORDER: Record<string, number> = {
+  processing: 0,
+  pending: 1,
+  error: 2,
+  done: 3,
+};
+
+type QueueSortBy = 'queue' | 'status' | 'priority' | 'created_at';
+type SortDir = 'asc' | 'desc';
 
 const CATEGORIES = [
   { value: '', label: 'Aucune' },
