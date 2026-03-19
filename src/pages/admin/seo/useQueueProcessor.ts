@@ -43,6 +43,40 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
     // The runQueue loop handles resetting to pending if interrupted before completion.
   }, [toggleAutoMode]);
 
+  const settleStoppedItem = useCallback(async (item: QueueItem): Promise<'done' | 'pending'> => {
+    const { data: queueRow } = await supabase
+      .from('article_queue' as any)
+      .select('article_id')
+      .eq('id', item.id)
+      .maybeSingle();
+
+    const articleId = (queueRow as { article_id?: string | null } | null)?.article_id ?? item.article_id;
+
+    if (articleId) {
+      const { data: articleRow } = await supabase
+        .from('seo_articles')
+        .select('status')
+        .eq('id', articleId)
+        .maybeSingle();
+
+      if ((articleRow as { status?: string } | null)?.status === 'published') {
+        await supabase
+          .from('article_queue' as any)
+          .update({ status: 'done', error_message: null, completed_at: new Date().toISOString() } as any)
+          .eq('id', item.id);
+        return 'done';
+      }
+    }
+
+    await supabase
+      .from('article_queue' as any)
+      .update({ status: 'pending', error_message: null, started_at: null } as any)
+      .eq('id', item.id)
+      .eq('status', 'processing');
+
+    return 'pending';
+  }, []);
+
   const processOneItem = useCallback(async (item: QueueItem) => {
     // Mark as processing
     await supabase
