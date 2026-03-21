@@ -3119,6 +3119,54 @@ export type Database = {
           },
         ]
       }
+      user_bootstrap_status: {
+        Row: {
+          bootstrap_completed: boolean
+          bootstrap_version: number
+          created_at: string
+          gamification_created: boolean
+          last_error: string | null
+          last_error_step: string | null
+          points_created: boolean
+          preferences_created: boolean
+          profile_created: boolean
+          stats_created: boolean
+          updated_at: string
+          user_id: string
+          wallet_created: boolean
+        }
+        Insert: {
+          bootstrap_completed?: boolean
+          bootstrap_version?: number
+          created_at?: string
+          gamification_created?: boolean
+          last_error?: string | null
+          last_error_step?: string | null
+          points_created?: boolean
+          preferences_created?: boolean
+          profile_created?: boolean
+          stats_created?: boolean
+          updated_at?: string
+          user_id: string
+          wallet_created?: boolean
+        }
+        Update: {
+          bootstrap_completed?: boolean
+          bootstrap_version?: number
+          created_at?: string
+          gamification_created?: boolean
+          last_error?: string | null
+          last_error_step?: string | null
+          points_created?: boolean
+          preferences_created?: boolean
+          profile_created?: boolean
+          stats_created?: boolean
+          updated_at?: string
+          user_id?: string
+          wallet_created?: boolean
+        }
+        Relationships: []
+      }
       user_challenge_completions: {
         Row: {
           challenge_id: string
@@ -4557,6 +4605,10 @@ export type Database = {
         Returns: Json
       }
       check_stuck_jobs: { Args: { p_minutes?: number }; Returns: Json }
+      check_user_bootstrap_health: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
       cleanup_expired_tokens: { Args: never; Returns: undefined }
       cleanup_oauth_states: { Args: { p_ttl?: string }; Returns: number }
       cleanup_old_checkout_sessions: { Args: never; Returns: undefined }
@@ -5336,6 +5388,7 @@ export type Database = {
       refresh_recipe_macros_from_ciqual: { Args: never; Returns: undefined }
       refresh_recipe_macros_mv2: { Args: never; Returns: undefined }
       refresh_some_recipes: { Args: { batch_size?: number }; Returns: number }
+      repair_user_bootstrap: { Args: { p_user_id: string }; Returns: Json }
       resolve_range: {
         Args: { _from: string; _to: string }
         Returns: Record<string, unknown>
