@@ -152,6 +152,13 @@ export function ReferralCard({ referral, isLoading, userId, onRefresh }: Referra
         </div>
       </div>
 
+      {/* Status context */}
+      {referral.clicks > 0 && referral.signups === 0 && (
+        <p className="text-xs text-amber-600 mt-3">
+          ⏳ Des clics ont été enregistrés mais aucune inscription n'a encore abouti.
+        </p>
+      )}
+
       {/* Explanation */}
       <p className="text-xs text-muted-foreground mt-3">
         Un filleul est qualifié après son premier achat de crédits. Vous gagnez +10 crédits par filleul qualifié !
