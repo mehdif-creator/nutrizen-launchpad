@@ -396,14 +396,16 @@ export default function Affiliate() {
                             </TableCell>
                             <TableCell className="text-right">
                               <Badge
-                                variant={c.status === 'paid' ? 'default' : 'secondary'}
+                                variant={c.status === 'paid' ? 'default' : c.status === 'rejected' ? 'destructive' : 'secondary'}
                                 className={
                                   c.status === 'paid'
                                     ? 'bg-primary text-primary-foreground'
+                                    : c.status === 'rejected'
+                                    ? ''
                                     : 'bg-accent/10 text-accent border-accent/30'
                                 }
                               >
-                                {c.status === 'paid' ? 'Payé' : 'En attente'}
+                                {c.status === 'paid' ? 'Payé' : c.status === 'rejected' ? 'Rejeté' : 'En attente'}
                               </Badge>
                             </TableCell>
                           </TableRow>
