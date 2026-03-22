@@ -41,12 +41,16 @@ Deno.serve(async (_req) => {
       .not('slug', 'is', null)
       .order('created_at', { ascending: false });
 
-    // Also fetch published seo_articles that have been linked to blog_posts
+    // Fetch published seo_articles (SEO Factory)
     const { data: seoArticles } = await admin
       .from('seo_articles')
-      .select('keyword, updated_at, blog_post_id')
-      .eq('status', 'published')
-      .not('blog_post_id', 'is', null);
+      .select('id, keyword, outline, updated_at, created_at, blog_post_id')
+      .eq('status', 'published');
+
+    // Build a set of blog_post_ids that seo_articles link to, to avoid duplicates
+    const linkedBlogPostIds = new Set(
+      (seoArticles || []).filter(a => a.blog_post_id).map(a => a.blog_post_id)
+    );
 
     // Build XML
     const entries: string[] = [];
@@ -56,12 +60,26 @@ Deno.serve(async (_req) => {
       entries.push(urlEntry(`${SITE}${p.path}`, p.lastmod, p.changefreq, p.priority));
     }
 
-    // Blog posts
+    // Manual blog posts (skip if also linked from a seo_article to avoid dupes)
     if (blogPosts) {
       for (const post of blogPosts) {
         if (!post.slug) continue;
+        if (linkedBlogPostIds.has(post.id)) continue;
         const date = (post.published_at || post.created_at || '2025-01-15').substring(0, 10);
         entries.push(urlEntry(`${SITE}/blog/${post.slug}`, date, 'monthly', '0.6'));
+      }
+    }
+
+    // SEO Factory articles
+    if (seoArticles) {
+      for (const article of seoArticles) {
+        const outline = article.outline as any;
+        const slug = outline?.slug
+          || article.keyword?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+          || null;
+        if (!slug) continue;
+        const date = (article.updated_at || article.created_at || '2025-01-15').substring(0, 10);
+        entries.push(urlEntry(`${SITE}/blog/${slug}`, date, 'weekly', '0.6'));
       }
     }
 
