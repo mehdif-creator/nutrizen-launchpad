@@ -271,14 +271,31 @@ Deno.serve(async (req) => {
             .eq('status', 'pending');
         }
 
-        // Handle referral
+        // Handle referral reward on subscription checkout
         const referralCode = session.metadata?.referral_code;
-        if (referralCode && userId) {
+        if (userId) {
           try {
-            await supabaseAdmin.rpc('handle_referred_user_subscribed', {
-              p_referred_user_id: userId,
-              p_referral_code: referralCode,
+            const { data: refResult, error: refError } = await supabaseAdmin.rpc('handle_referred_user_subscribed', {
+              p_user_id: userId,
+              p_referral_code: referralCode || null,
             });
+
+            if (refError) {
+              logStep("Referral subscription reward error", { error: refError.message });
+              // Log to affiliate_events for observability
+              await supabaseAdmin.from('affiliate_events').insert({
+                referred_user_id: userId,
+                event_type: 'referral_subscription_error',
+                status: 'failed',
+                error_message: refError.message,
+                reference_type: 'checkout_session',
+                reference_id: session.id,
+                idempotency_key: `ref_sub_err:${session.id}`,
+                metadata: { referral_code: referralCode },
+              }).then(() => {}).catch(() => {});
+            } else {
+              logStep("Referral subscription reward result", { result: refResult });
+            }
           } catch (e) {
             logStep("Referral error (non-blocking)", { error: String(e) });
           }
