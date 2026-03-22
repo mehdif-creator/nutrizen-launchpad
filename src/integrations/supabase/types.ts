@@ -143,6 +143,51 @@ export type Database = {
         }
         Relationships: []
       }
+      affiliate_events: {
+        Row: {
+          affiliate_code: string | null
+          affiliate_user_id: string | null
+          created_at: string | null
+          error_message: string | null
+          event_type: string
+          id: string
+          idempotency_key: string | null
+          metadata: Json | null
+          reference_id: string | null
+          reference_type: string | null
+          referred_user_id: string | null
+          status: string
+        }
+        Insert: {
+          affiliate_code?: string | null
+          affiliate_user_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          event_type: string
+          id?: string
+          idempotency_key?: string | null
+          metadata?: Json | null
+          reference_id?: string | null
+          reference_type?: string | null
+          referred_user_id?: string | null
+          status?: string
+        }
+        Update: {
+          affiliate_code?: string | null
+          affiliate_user_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          idempotency_key?: string | null
+          metadata?: Json | null
+          reference_id?: string | null
+          reference_type?: string | null
+          referred_user_id?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       affiliate_payouts: {
         Row: {
           affiliate_user_id: string
@@ -2370,6 +2415,7 @@ export type Database = {
       referral_events: {
         Row: {
           created_at: string | null
+          error_message: string | null
           event_type: string
           id: string
           idempotency_key: string
@@ -2379,10 +2425,12 @@ export type Database = {
           referral_code: string | null
           referred_user_id: string
           referrer_user_id: string
+          status: string | null
           visitor_id: string | null
         }
         Insert: {
           created_at?: string | null
+          error_message?: string | null
           event_type: string
           id?: string
           idempotency_key: string
@@ -2392,10 +2440,12 @@ export type Database = {
           referral_code?: string | null
           referred_user_id: string
           referrer_user_id: string
+          status?: string | null
           visitor_id?: string | null
         }
         Update: {
           created_at?: string | null
+          error_message?: string | null
           event_type?: string
           id?: string
           idempotency_key?: string
@@ -2405,6 +2455,7 @@ export type Database = {
           referral_code?: string | null
           referred_user_id?: string
           referrer_user_id?: string
+          status?: string | null
           visitor_id?: string | null
         }
         Relationships: []
@@ -5321,7 +5372,7 @@ export type Database = {
         Returns: Json
       }
       handle_referred_user_subscribed: {
-        Args: { p_user_id: string }
+        Args: { p_referral_code?: string; p_user_id: string }
         Returns: Json
       }
       has_role: {
@@ -5388,6 +5439,10 @@ export type Database = {
       refresh_recipe_macros_from_ciqual: { Args: never; Returns: undefined }
       refresh_recipe_macros_mv2: { Args: never; Returns: undefined }
       refresh_some_recipes: { Args: { batch_size?: number }; Returns: number }
+      repair_referral_attribution: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
       repair_user_bootstrap: { Args: { p_user_id: string }; Returns: Json }
       resolve_range: {
         Args: { _from: string; _to: string }
