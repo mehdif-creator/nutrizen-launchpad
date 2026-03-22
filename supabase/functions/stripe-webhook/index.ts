@@ -356,33 +356,78 @@ Deno.serve(async (req) => {
             .maybeSingle();
 
           if (referral) {
-            // Insert commission (idempotent via unique stripe_invoice_id)
-            const commissionCents = Math.round(invoice.amount_paid * 0.20);
-            const { error: commError } = await supabaseAdmin
-              .from('affiliate_commissions')
-              .upsert({
+            // Get affiliate user_id for self-affiliate check
+            const { data: affiliate } = await supabaseAdmin
+              .from('affiliates')
+              .select('user_id')
+              .eq('affiliate_code', referral.affiliate_code)
+              .single();
+
+            // SELF-AFFILIATE CHECK
+            if (affiliate && affiliate.user_id === userId) {
+              logStep("Self-affiliate commission blocked", { code: referral.affiliate_code });
+              await supabaseAdmin.from('affiliate_events').insert({
                 affiliate_code: referral.affiliate_code,
+                affiliate_user_id: affiliate.user_id,
                 referred_user_id: userId,
-                stripe_invoice_id: invoice.id,
-                subscription_amount_cents: invoice.amount_paid,
-                commission_amount_cents: commissionCents,
-                status: 'pending',
-              }, { onConflict: 'stripe_invoice_id' });
-
-            if (commError) {
-              logStep("WARN: Affiliate commission insert error", { error: commError.message });
+                event_type: 'commission_rejected',
+                status: 'rejected',
+                error_message: 'Self-affiliate blocked',
+                reference_type: 'stripe_invoice',
+                reference_id: invoice.id,
+                idempotency_key: `aff_self:${invoice.id}`,
+              }).then(() => {}).catch(() => {});
             } else {
-              logStep("Affiliate commission recorded", { code: referral.affiliate_code, amount: commissionCents });
-            }
+              // Insert commission (idempotent via unique stripe_invoice_id)
+              const commissionCents = Math.round(invoice.amount_paid * 0.20);
+              const { error: commError } = await supabaseAdmin
+                .from('affiliate_commissions')
+                .upsert({
+                  affiliate_code: referral.affiliate_code,
+                  referred_user_id: userId,
+                  stripe_invoice_id: invoice.id,
+                  subscription_amount_cents: invoice.amount_paid,
+                  commission_amount_cents: commissionCents,
+                  status: 'pending',
+                }, { onConflict: 'stripe_invoice_id' });
 
-            // Mark as converted on first payment
-            if (!referral.converted) {
-              await supabaseAdmin
-                .from('affiliate_referrals')
-                .update({ converted: true, stripe_customer_id: customerId })
-                .eq('referred_user_id', userId)
-                .eq('affiliate_code', referral.affiliate_code);
-              logStep("Affiliate referral marked as converted");
+              if (commError) {
+                logStep("WARN: Affiliate commission insert error", { error: commError.message });
+                await supabaseAdmin.from('affiliate_events').insert({
+                  affiliate_code: referral.affiliate_code,
+                  affiliate_user_id: affiliate?.user_id,
+                  referred_user_id: userId,
+                  event_type: 'commission_error',
+                  status: 'failed',
+                  error_message: commError.message,
+                  reference_type: 'stripe_invoice',
+                  reference_id: invoice.id,
+                  idempotency_key: `aff_err:${invoice.id}`,
+                }).then(() => {}).catch(() => {});
+              } else {
+                logStep("Affiliate commission recorded", { code: referral.affiliate_code, amount: commissionCents });
+                await supabaseAdmin.from('affiliate_events').insert({
+                  affiliate_code: referral.affiliate_code,
+                  affiliate_user_id: affiliate?.user_id,
+                  referred_user_id: userId,
+                  event_type: 'commission',
+                  status: 'success',
+                  reference_type: 'stripe_invoice',
+                  reference_id: invoice.id,
+                  idempotency_key: `aff_comm:${invoice.id}`,
+                  metadata: { amount_cents: commissionCents, subscription_amount: invoice.amount_paid },
+                }).then(() => {}).catch(() => {});
+              }
+
+              // Mark as converted on first payment
+              if (!referral.converted) {
+                await supabaseAdmin
+                  .from('affiliate_referrals')
+                  .update({ converted: true, stripe_customer_id: customerId })
+                  .eq('referred_user_id', userId)
+                  .eq('affiliate_code', referral.affiliate_code);
+                logStep("Affiliate referral marked as converted");
+              }
             }
           }
         } catch (affErr) {
