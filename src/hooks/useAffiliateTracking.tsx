@@ -59,19 +59,32 @@ export function useAffiliateTracking() {
             .eq('is_active', true)
             .maybeSingle();
 
-          if (!affiliate || affiliate.user_id === user.id) {
+          if (!affiliate) {
+            logger.info('Invalid or inactive affiliate code', { affCode });
             localStorage.setItem('nz_aff_processed', 'true');
             return;
           }
 
-          await (supabase as any).from('affiliate_referrals').insert({
+          // SELF-AFFILIATE CHECK
+          if (affiliate.user_id === user.id) {
+            logger.info('Self-affiliate blocked', { affCode });
+            localStorage.setItem('nz_aff_processed', 'true');
+            return;
+          }
+
+          const { error: insertError } = await (supabase as any).from('affiliate_referrals').insert({
             affiliate_code: affCode,
             referred_user_id: user.id,
             converted: false,
           });
 
+          if (insertError) {
+            logger.error('Affiliate referral insert error', insertError instanceof Error ? insertError : new Error(String(insertError)));
+          } else {
+            logger.info('Affiliate referral created', { affCode });
+          }
+
           localStorage.setItem('nz_aff_processed', 'true');
-          logger.info('Affiliate referral created', { affCode });
         } catch (err) {
           logger.error('Affiliate attribution error', err instanceof Error ? err : new Error(String(err)));
         }
