@@ -189,22 +189,12 @@ export default function Referral() {
 
           {/* Status context */}
           {stats.clicks > 0 && stats.signups === 0 && (
-            <Card className="p-4 bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
-              <p className="text-sm text-amber-700 dark:text-amber-400">
+            <Card className="p-4 border-amber-200 dark:border-amber-800 bg-accent/10">
+              <p className="text-sm text-accent-foreground">
                 ⏳ Des clics ont été enregistrés mais aucune inscription n'a encore abouti.
               </p>
             </Card>
           )}
-
-          {/* Referral Links */}
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <Share2 className="h-5 w-5" />
-              Tes liens de parrainage
-            </h2>
-
-            <div className="space-y-4">
-              {['', '/fit', '/mum'].map((page) => {
                 const label = page === '' ? 'Page principale' : page === '/fit' ? 'Page Fit' : 'Page Mum';
                 const url = getReferralUrl(page);
                 return (
