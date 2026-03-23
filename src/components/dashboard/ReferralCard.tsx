@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, Copy, Check, Gift, TrendingUp, MousePointerClick } from 'lucide-react';
+import { Users, Copy, Check, TrendingUp, MousePointerClick, Euro } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import type { DashboardReferral } from '@/hooks/useUserDashboard';
@@ -46,7 +45,7 @@ export function ReferralCard({ referral, isLoading, userId, onRefresh }: Referra
 
       if (error) throw error;
 
-      toast.success('Code de parrainage créé !');
+      toast.success('Code créé !');
       onRefresh?.();
     } catch (error) {
       console.error('Error generating referral code:', error);
@@ -61,7 +60,7 @@ export function ReferralCard({ referral, isLoading, userId, onRefresh }: Referra
       <Card className="rounded-2xl border shadow-sm p-4 md:p-5">
         <div className="flex items-center gap-2 mb-3">
           <Users className="h-5 w-5 text-primary" />
-          <h3 className="text-sm md:text-base font-semibold">Parrainage</h3>
+          <h3 className="text-sm md:text-base font-semibold">Recommandation</h3>
         </div>
         <Skeleton className="h-10 w-full mb-3" />
         <div className="grid grid-cols-3 gap-2">
@@ -79,14 +78,14 @@ export function ReferralCard({ referral, isLoading, userId, onRefresh }: Referra
       <Card className="rounded-2xl border shadow-sm p-4 md:p-5">
         <div className="flex items-center gap-2 mb-3">
           <Users className="h-5 w-5 text-primary" />
-          <h3 className="text-sm md:text-base font-semibold">Parrainage</h3>
+          <h3 className="text-sm md:text-base font-semibold">Recommandation</h3>
         </div>
         <div className="py-4 text-center">
           <p className="text-sm text-muted-foreground mb-3">
-            Générez votre code de parrainage pour inviter vos amis.
+            Activez votre programme pour recommander NutriZen et gagner des commissions.
           </p>
           <Button onClick={handleGenerateCode} disabled={generating}>
-            {generating ? 'Génération...' : 'Activer le parrainage'}
+            {generating ? 'Activation...' : 'Activer le programme'}
           </Button>
         </div>
       </Card>
@@ -100,7 +99,7 @@ export function ReferralCard({ referral, isLoading, userId, onRefresh }: Referra
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Users className="h-5 w-5 text-primary" />
-          <h3 className="text-sm md:text-base font-semibold">Parrainage</h3>
+          <h3 className="text-sm md:text-base font-semibold">Recommandation</h3>
         </div>
         <Link to="/app/referral">
           <Button variant="ghost" size="sm" className="text-xs">
@@ -141,14 +140,14 @@ export function ReferralCard({ referral, isLoading, userId, onRefresh }: Referra
           <div className="text-xs text-muted-foreground">Clics</div>
         </div>
         <div className="text-center p-2 bg-muted/50 rounded-lg">
-          <TrendingUp className="h-4 w-4 mx-auto mb-1 text-blue-500" />
+          <TrendingUp className="h-4 w-4 mx-auto mb-1 text-primary" />
           <div className="text-lg font-semibold">{referral.signups}</div>
           <div className="text-xs text-muted-foreground">Inscriptions</div>
         </div>
         <div className="text-center p-2 bg-muted/50 rounded-lg">
-          <Gift className="h-4 w-4 mx-auto mb-1 text-green-500" />
+          <Euro className="h-4 w-4 mx-auto mb-1 text-green-500" />
           <div className="text-lg font-semibold">{referral.qualified}</div>
-          <div className="text-xs text-muted-foreground">Qualifiés</div>
+          <div className="text-xs text-muted-foreground">Conversions</div>
         </div>
       </div>
 
@@ -159,9 +158,9 @@ export function ReferralCard({ referral, isLoading, userId, onRefresh }: Referra
         </p>
       )}
 
-      {/* Explanation */}
+      {/* Commission explanation */}
       <p className="text-xs text-muted-foreground mt-3">
-        Un filleul est qualifié après son premier achat de crédits. Vous gagnez +10 crédits par filleul qualifié !
+        Chaque abonnement payé via votre lien vous rapporte <span className="text-primary font-medium">20 % de commission récurrente</span>.
       </p>
     </Card>
   );

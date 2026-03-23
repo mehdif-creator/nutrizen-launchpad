@@ -19,10 +19,11 @@ import {
   TrendingUp,
   Copy,
   Check,
-  Gift,
   Target,
   BarChart3,
   Loader2,
+  Rocket,
+  ShieldCheck,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -39,25 +40,19 @@ interface Commission {
   referred_user_id: string;
 }
 
-function generateAffiliateCode(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = 'AFF';
-  for (let i = 0; i < 8; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-}
-
 function anonymizeUserId(userId: string): string {
   return userId.slice(0, 3) + '***';
 }
 
+type ProgramState = 'anonymous' | 'loading' | 'not_enrolled' | 'active' | 'inactive';
+
 export default function Affiliate() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [programState, setProgramState] = useState<ProgramState>('loading');
   const [affiliateCode, setAffiliateCode] = useState('');
-  const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [activating, setActivating] = useState(false);
   const [activeConversions, setActiveConversions] = useState(0);
   const [monthlyCommission, setMonthlyCommission] = useState(0);
   const [totalEarnings, setTotalEarnings] = useState(0);
@@ -65,52 +60,85 @@ export default function Affiliate() {
   const [commissions, setCommissions] = useState<Commission[]>([]);
 
   useEffect(() => {
-    if (user) {
-      initAffiliate();
-    } else {
-      setLoading(false);
+    if (!user) {
+      setProgramState('anonymous');
+      return;
     }
+    checkEnrollment();
   }, [user]);
 
-  const initAffiliate = async () => {
+  const checkEnrollment = async () => {
     if (!user) return;
+    setProgramState('loading');
     try {
       const db = supabase as any;
-
       const { data: existing } = await db
         .from('affiliates')
         .select('affiliate_code, is_active')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      let code: string;
-      if (existing) {
-        code = existing.affiliate_code;
-      } else {
-        code = generateAffiliateCode();
-        const { error } = await db.from('affiliates').insert({
-          user_id: user.id,
-          affiliate_code: code,
-        });
-        if (error) {
-          if (error.code === '23505') {
-            code = generateAffiliateCode();
-            await db.from('affiliates').insert({
-              user_id: user.id,
-              affiliate_code: code,
-            });
-          } else {
-            throw error;
+      if (!existing) {
+        setProgramState('not_enrolled');
+        return;
+      }
+
+      if (!existing.is_active) {
+        setProgramState('inactive');
+        setAffiliateCode(existing.affiliate_code);
+        return;
+      }
+
+      setAffiliateCode(existing.affiliate_code);
+      await loadStats(existing.affiliate_code);
+      setProgramState('active');
+    } catch (error) {
+      console.error('Error checking affiliate enrollment:', error);
+      setProgramState('not_enrolled');
+    }
+  };
+
+  const handleActivate = async () => {
+    if (!user) return;
+    setActivating(true);
+    try {
+      const db = supabase as any;
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let code = 'AFF';
+      for (let i = 0; i < 8; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+
+      const { error } = await db.from('affiliates').insert({
+        user_id: user.id,
+        affiliate_code: code,
+      });
+
+      if (error) {
+        if (error.code === '23505') {
+          // Duplicate — retry with new code
+          let code2 = 'AFF';
+          for (let i = 0; i < 8; i++) {
+            code2 += chars.charAt(Math.floor(Math.random() * chars.length));
           }
+          await db.from('affiliates').insert({
+            user_id: user.id,
+            affiliate_code: code2,
+          });
+          code = code2;
+        } else {
+          throw error;
         }
       }
 
+      toast.success('Programme activé ! Votre lien est prêt.');
       setAffiliateCode(code);
-      await loadStats(code);
+      setProgramState('active');
     } catch (error) {
-      console.error('Error initializing affiliate:', error);
+      console.error('Error activating affiliate:', error);
+      toast.error("Erreur lors de l'activation");
     } finally {
-      setLoading(false);
+      setActivating(false);
     }
   };
 
@@ -163,7 +191,8 @@ export default function Affiliate() {
     }
   };
 
-  if (loading) {
+  // --- LOADING ---
+  if (programState === 'loading') {
     return (
       <div className="min-h-screen flex flex-col">
         <Header onCtaClick={() => navigate('/auth/signup')} />
@@ -184,91 +213,97 @@ export default function Affiliate() {
           {/* Hero */}
           <div className="max-w-4xl mx-auto text-center mb-12">
             <h1 className="text-3xl md:text-5xl font-bold mb-4">
-              Programme d'Affiliation NutriZen
+              Programme de Recommandation NutriZen
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-6">
-              Gagne jusqu'à <span className="font-bold text-primary">20% de commission</span> sur chaque abonnement payé
+              Gagnez jusqu'à <span className="font-bold text-primary">20 % de commission récurrente</span> sur chaque abonnement payé
             </p>
-            {!user && (
-              <Button size="lg" onClick={() => navigate('/auth/login')}>
-                Se connecter pour commencer
-              </Button>
+
+            {/* CTA based on state */}
+            {programState === 'anonymous' && (
+              <div className="space-y-3">
+                <Button size="lg" onClick={() => navigate('/auth/signup')}>
+                  <Rocket className="h-5 w-5 mr-2" />
+                  Créer un compte pour rejoindre le programme
+                </Button>
+                <p className="text-sm text-muted-foreground">
+                  Inscription gratuite — activez le programme depuis votre espace
+                </p>
+              </div>
+            )}
+
+            {programState === 'not_enrolled' && (
+              <div className="space-y-3">
+                <Button size="lg" onClick={handleActivate} disabled={activating}>
+                  {activating ? (
+                    <>
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                      Activation en cours…
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="h-5 w-5 mr-2" />
+                      Activer mon programme de recommandation
+                    </>
+                  )}
+                </Button>
+                <p className="text-sm text-muted-foreground">
+                  Vous recevrez votre lien unique immédiatement
+                </p>
+              </div>
+            )}
+
+            {programState === 'inactive' && (
+              <Card className="max-w-md mx-auto p-6 bg-destructive/5 border-destructive/20">
+                <p className="text-sm text-destructive font-medium">
+                  Votre programme a été désactivé. Contactez le support pour plus d'informations.
+                </p>
+              </Card>
             )}
           </div>
 
-          {/* How it works */}
+          {/* How it works — always visible */}
           <div className="max-w-4xl mx-auto mb-12">
             <Card className="p-6 md:p-8 bg-gradient-to-br from-primary/5 to-accent/5">
               <h2 className="text-2xl font-semibold mb-4">Comment ça marche ?</h2>
               <div className="space-y-4 text-muted-foreground">
                 <p>
-                  Le programme d'affiliation NutriZen te permet de gagner des commissions en €
-                  en recommandant notre service à ton audience.
+                  Le programme de recommandation NutriZen vous permet de gagner des commissions en €
+                  en recommandant notre service.
                 </p>
                 <div className="grid md:grid-cols-3 gap-4 mt-6">
                   <div className="text-center p-4 bg-background rounded-lg">
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
                       <Target className="h-6 w-6 text-primary" />
                     </div>
-                    <h3 className="font-semibold mb-2">1. Inscris-toi</h3>
-                    <p className="text-sm">Deviens affilié en un clic et reçois ton lien unique</p>
+                    <h3 className="font-semibold mb-2">1. Activez le programme</h3>
+                    <p className="text-sm">Créez votre compte et activez votre lien unique</p>
                   </div>
                   <div className="text-center p-4 bg-background rounded-lg">
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
                       <Users className="h-6 w-6 text-primary" />
                     </div>
-                    <h3 className="font-semibold mb-2">2. Partage</h3>
-                    <p className="text-sm">Recommande NutriZen à ton audience via ton lien</p>
+                    <h3 className="font-semibold mb-2">2. Partagez</h3>
+                    <p className="text-sm">Recommandez NutriZen via votre lien personnel</p>
                   </div>
                   <div className="text-center p-4 bg-background rounded-lg">
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
                       <Euro className="h-6 w-6 text-primary" />
                     </div>
-                    <h3 className="font-semibold mb-2">3. Gagne</h3>
-                    <p className="text-sm">Reçois 20% de commission récurrente en €</p>
+                    <h3 className="font-semibold mb-2">3. Gagnez</h3>
+                    <p className="text-sm">Recevez 20 % de commission récurrente en €</p>
                   </div>
                 </div>
               </div>
             </Card>
           </div>
 
-          {/* Difference with referral */}
-          <div className="max-w-4xl mx-auto mb-12">
-            <Card className="p-6 bg-muted/30">
-              <h3 className="font-semibold mb-3">Différence avec le parrainage</h3>
-              <div className="grid md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Gift className="h-4 w-4 text-accent" />
-                    <span className="font-medium">Parrainage (utilisateurs)</span>
-                  </div>
-                  <ul className="text-muted-foreground space-y-1 ml-6">
-                    <li>• Récompenses en mois gratuits</li>
-                    <li>• Récompenses en Crédits Zen</li>
-                    <li>• Pour tous les utilisateurs</li>
-                  </ul>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Euro className="h-4 w-4 text-primary" />
-                    <span className="font-medium">Affiliation (partenaires)</span>
-                  </div>
-                  <ul className="text-muted-foreground space-y-1 ml-6">
-                    <li>• Commission de <strong>20%</strong> en €</li>
-                    <li>• Récurrente tant que l'abonnement est actif</li>
-                    <li>• Pour créateurs de contenu & partenaires</li>
-                  </ul>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* Dashboard (logged in) */}
-          {user && (
+          {/* Active dashboard */}
+          {programState === 'active' && (
             <div className="max-w-4xl mx-auto space-y-6">
               {/* Affiliate Link */}
               <Card className="p-6">
-                <h2 className="text-xl font-semibold mb-4">Ton lien d'affiliation</h2>
+                <h2 className="text-xl font-semibold mb-4">Votre lien de recommandation</h2>
                 <div className="flex gap-2">
                   <Input
                     value={`https://mynutrizen.fr/?ref=${affiliateCode}`}
@@ -289,7 +324,7 @@ export default function Affiliate() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Partage ce lien avec ton audience pour commencer à gagner des commissions
+                  Partagez ce lien — vous gagnez 20 % sur chaque abonnement payé via ce lien
                 </p>
               </Card>
 
@@ -308,7 +343,7 @@ export default function Affiliate() {
                     <p className="text-sm text-muted-foreground">Commission mensuelle</p>
                     <TrendingUp className="h-5 w-5 text-primary" />
                   </div>
-                  <p className="text-3xl font-bold text-primary">{monthlyCommission.toFixed(2)}€</p>
+                  <p className="text-3xl font-bold text-primary">{monthlyCommission.toFixed(2)} €</p>
                   <p className="text-xs text-muted-foreground mt-1">Ce mois-ci (en attente)</p>
                 </Card>
 
@@ -317,8 +352,8 @@ export default function Affiliate() {
                     <p className="text-sm text-muted-foreground">Gains totaux</p>
                     <Euro className="h-5 w-5 text-primary" />
                   </div>
-                  <p className="text-3xl font-bold text-primary">{totalEarnings.toFixed(2)}€</p>
-                  <p className="text-xs text-muted-foreground mt-1">Tous les temps</p>
+                  <p className="text-3xl font-bold text-primary">{totalEarnings.toFixed(2)} €</p>
+                  <p className="text-xs text-muted-foreground mt-1">Depuis le début</p>
                 </Card>
 
                 <Card className="p-6">
@@ -326,7 +361,7 @@ export default function Affiliate() {
                     <p className="text-sm text-muted-foreground">En attente de paiement</p>
                     <BarChart3 className="h-5 w-5 text-accent" />
                   </div>
-                  <p className="text-3xl font-bold text-accent">{pendingPayout.toFixed(2)}€</p>
+                  <p className="text-3xl font-bold text-accent">{pendingPayout.toFixed(2)} €</p>
                   <p className="text-xs text-muted-foreground mt-1">À verser</p>
                 </Card>
               </div>
@@ -338,21 +373,21 @@ export default function Affiliate() {
                   <li className="flex items-start gap-2">
                     <span className="text-primary">✓</span>
                     <span>
-                      Tu gagnes <strong className="text-foreground">20% de commission</strong> sur
-                      chaque abonnement payé via ton lien
+                      Vous gagnez <strong className="text-foreground">20 % de commission</strong> sur
+                      chaque abonnement payé via votre lien
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary">✓</span>
                     <span>
                       La commission est <strong className="text-foreground">récurrente</strong> :
-                      tu continues à gagner tant que l'abonnement reste actif
+                      vous continuez à gagner tant que l'abonnement reste actif
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary">✓</span>
                     <span>
-                      Paiements mensuels via virement bancaire (minimum 50€)
+                      Paiements mensuels via virement bancaire (minimum 50 €)
                     </span>
                   </li>
                 </ul>
@@ -371,7 +406,7 @@ export default function Affiliate() {
                           <TableHead>Date</TableHead>
                           <TableHead>Abonné</TableHead>
                           <TableHead className="text-right">Montant abonnement</TableHead>
-                          <TableHead className="text-right">Commission (20%)</TableHead>
+                          <TableHead className="text-right">Commission (20 %)</TableHead>
                           <TableHead className="text-right">Statut</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -389,10 +424,10 @@ export default function Affiliate() {
                               {anonymizeUserId(c.referred_user_id)}
                             </TableCell>
                             <TableCell className="text-right">
-                              {(c.subscription_amount_cents / 100).toFixed(2)}€
+                              {(c.subscription_amount_cents / 100).toFixed(2)} €
                             </TableCell>
                             <TableCell className="text-right font-medium text-primary">
-                              {(c.commission_amount_cents / 100).toFixed(2)}€
+                              {(c.commission_amount_cents / 100).toFixed(2)} €
                             </TableCell>
                             <TableCell className="text-right">
                               <Badge
@@ -439,11 +474,11 @@ export default function Affiliate() {
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-muted-foreground">Abonnement</span>
-                          <span className="text-sm font-medium">{(c.subscription_amount_cents / 100).toFixed(2)}€</span>
+                          <span className="text-sm font-medium">{(c.subscription_amount_cents / 100).toFixed(2)} €</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Commission (20%)</span>
-                          <span className="text-sm font-bold text-primary">{(c.commission_amount_cents / 100).toFixed(2)}€</span>
+                          <span className="text-sm text-muted-foreground">Commission (20 %)</span>
+                          <span className="text-sm font-bold text-primary">{(c.commission_amount_cents / 100).toFixed(2)} €</span>
                         </div>
                       </div>
                     ))}
@@ -453,11 +488,11 @@ export default function Affiliate() {
             </div>
           )}
 
-          {/* Benefits for non-logged-in */}
-          {!user && (
+          {/* Benefits — visible for anonymous and not_enrolled */}
+          {(programState === 'anonymous' || programState === 'not_enrolled') && (
             <div className="max-w-4xl mx-auto mt-12">
               <h2 className="text-2xl font-semibold text-center mb-8">
-                Pourquoi devenir affilié NutriZen ?
+                Pourquoi rejoindre le programme ?
               </h2>
               <div className="grid md:grid-cols-3 gap-6">
                 <Card className="p-6 text-center">
@@ -466,7 +501,7 @@ export default function Affiliate() {
                   </div>
                   <h3 className="font-semibold mb-2">Commissions récurrentes</h3>
                   <p className="text-sm text-muted-foreground">
-                    20% de chaque abonnement, chaque mois, aussi longtemps qu'il reste actif
+                    20 % de chaque abonnement, chaque mois, aussi longtemps qu'il reste actif
                   </p>
                 </Card>
 
@@ -486,7 +521,7 @@ export default function Affiliate() {
                   </div>
                   <h3 className="font-semibold mb-2">Simple & transparent</h3>
                   <p className="text-sm text-muted-foreground">
-                    Dashboard clair, tracking en temps réel, paiements automatiques
+                    Tableau de bord clair, suivi en temps réel, paiements automatiques
                   </p>
                 </Card>
               </div>
