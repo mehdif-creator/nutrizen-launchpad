@@ -24,11 +24,12 @@ import {
   Loader2,
   Rocket,
   ShieldCheck,
+  LogIn,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 interface Commission {
   id: string;
@@ -47,7 +48,7 @@ function anonymizeUserId(userId: string): string {
 type ProgramState = 'anonymous' | 'loading' | 'not_enrolled' | 'active' | 'inactive';
 
 export default function Affiliate() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [programState, setProgramState] = useState<ProgramState>('loading');
   const [affiliateCode, setAffiliateCode] = useState('');
@@ -60,12 +61,24 @@ export default function Affiliate() {
   const [commissions, setCommissions] = useState<Commission[]>([]);
 
   useEffect(() => {
+    // CRITICAL: wait for auth to fully resolve before deciding state
+    if (authLoading) {
+      setProgramState('loading');
+      return;
+    }
     if (!user) {
       setProgramState('anonymous');
+      // Reset any stale data from a previous session
+      setAffiliateCode('');
+      setActiveConversions(0);
+      setMonthlyCommission(0);
+      setTotalEarnings(0);
+      setPendingPayout(0);
+      setCommissions([]);
       return;
     }
     checkEnrollment();
-  }, [user]);
+  }, [user, authLoading]);
 
   const checkEnrollment = async () => {
     if (!user) return;
@@ -116,7 +129,6 @@ export default function Affiliate() {
 
       if (error) {
         if (error.code === '23505') {
-          // Duplicate — retry with new code
           let code2 = 'AFF';
           for (let i = 0; i < 8; i++) {
             code2 += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -208,6 +220,22 @@ export default function Affiliate() {
     <div className="min-h-screen flex flex-col">
       <Header onCtaClick={() => navigate('/auth/signup')} />
 
+      {/* Auth-aware banner for authenticated users */}
+      {user && (
+        <div className="bg-primary/10 border-b border-primary/20">
+          <div className="container px-4 py-2 flex items-center justify-between">
+            <p className="text-sm text-foreground">
+              Connecté en tant que <span className="font-medium">{user.email}</span>
+            </p>
+            <Link to="/app/dashboard">
+              <Button variant="ghost" size="sm" className="text-xs">
+                Mon espace →
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
+
       <main className="flex-1 py-12 md:py-20">
         <div className="container px-4">
           {/* Hero */}
@@ -219,19 +247,24 @@ export default function Affiliate() {
               Gagnez jusqu'à <span className="font-bold text-primary">20 % de commission récurrente</span> sur chaque abonnement payé
             </p>
 
-            {/* CTA based on state */}
+            {/* CTA based on state — ANONYMOUS */}
             {programState === 'anonymous' && (
               <div className="space-y-3">
                 <Button size="lg" onClick={() => navigate('/auth/signup')}>
                   <Rocket className="h-5 w-5 mr-2" />
                   Créer un compte pour rejoindre le programme
                 </Button>
-                <p className="text-sm text-muted-foreground">
-                  Inscription gratuite — activez le programme depuis votre espace
-                </p>
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <span>Déjà un compte ?</span>
+                  <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => navigate('/auth/login')}>
+                    <LogIn className="h-4 w-4 mr-1" />
+                    Se connecter
+                  </Button>
+                </div>
               </div>
             )}
 
+            {/* CTA — NOT ENROLLED */}
             {programState === 'not_enrolled' && (
               <div className="space-y-3">
                 <Button size="lg" onClick={handleActivate} disabled={activating}>
@@ -248,11 +281,12 @@ export default function Affiliate() {
                   )}
                 </Button>
                 <p className="text-sm text-muted-foreground">
-                  Vous recevrez votre lien unique immédiatement
+                  Vous recevrez votre lien unique immédiatement après activation
                 </p>
               </div>
             )}
 
+            {/* INACTIVE */}
             {programState === 'inactive' && (
               <Card className="max-w-md mx-auto p-6 bg-destructive/5 border-destructive/20">
                 <p className="text-sm text-destructive font-medium">
@@ -298,8 +332,8 @@ export default function Affiliate() {
             </Card>
           </div>
 
-          {/* Active dashboard */}
-          {programState === 'active' && (
+          {/* Active dashboard — ONLY for programState === 'active' */}
+          {programState === 'active' && affiliateCode && (
             <div className="max-w-4xl mx-auto space-y-6">
               {/* Affiliate Link */}
               <Card className="p-6">
@@ -462,14 +496,16 @@ export default function Affiliate() {
                             })}
                           </span>
                           <Badge
-                            variant={c.status === 'paid' ? 'default' : 'secondary'}
+                            variant={c.status === 'paid' ? 'default' : c.status === 'rejected' ? 'destructive' : 'secondary'}
                             className={
                               c.status === 'paid'
                                 ? 'bg-primary text-primary-foreground'
+                                : c.status === 'rejected'
+                                ? ''
                                 : 'bg-accent/10 text-accent border-accent/30'
                             }
                           >
-                            {c.status === 'paid' ? 'Payé' : 'En attente'}
+                            {c.status === 'paid' ? 'Payé' : c.status === 'rejected' ? 'Rejeté' : 'En attente'}
                           </Badge>
                         </div>
                         <div className="flex items-center justify-between">
