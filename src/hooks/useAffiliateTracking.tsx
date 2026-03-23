@@ -26,6 +26,8 @@ export function useAffiliateTracking() {
 
     if (refCode && refCode.startsWith('AFF')) {
       setCookie('nz_ref', refCode, 30);
+      // Also persist in sessionStorage as backup (survives SPA navigation, lost on tab close)
+      sessionStorage.setItem('nz_aff_code', refCode);
       logger.info('Affiliate code captured', { refCode });
     }
   }, [location]);
