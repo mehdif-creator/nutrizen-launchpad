@@ -3,26 +3,23 @@ import { AppFooter } from '@/components/app/AppFooter';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Copy, Share2, Users, Euro, TrendingUp, MousePointerClick, AlertCircle, Loader2, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useReferralStats } from '@/hooks/useReferralStats';
 
 export default function Referral() {
   const { user } = useAuth();
-  const { data: stats, isLoading: statsLoading, isError, refetch } = useReferralStats();
   const [copied, setCopied] = useState(false);
-  const [generating, setGenerating] = useState(false);
 
-  // Affiliate data
+  // Affiliate data (unified commission model)
   const [affiliateCode, setAffiliateCode] = useState<string | null>(null);
   const [affiliateLoading, setAffiliateLoading] = useState(true);
   const [affiliateActive, setAffiliateActive] = useState(false);
   const [activating, setActivating] = useState(false);
+  const [clicks, setClicks] = useState(0);
   const [commissionStats, setCommissionStats] = useState({
     conversions: 0,
     monthlyCommission: 0,
@@ -50,7 +47,14 @@ export default function Referral() {
         setAffiliateActive(existing.is_active);
 
         if (existing.is_active) {
-          // Load commission stats
+          // Load referral clicks
+          const { data: referralClicks } = await db
+            .from('affiliate_referrals')
+            .select('id')
+            .eq('affiliate_code', existing.affiliate_code);
+          setClicks(referralClicks?.length || 0);
+
+          // Load converted referrals
           const { data: referrals } = await db
             .from('affiliate_referrals')
             .select('id')
@@ -84,24 +88,6 @@ export default function Referral() {
       console.error('Error loading affiliate data:', error);
     } finally {
       setAffiliateLoading(false);
-    }
-  };
-
-  const handleGenerateCode = async () => {
-    if (!user) return;
-    setGenerating(true);
-    try {
-      const { error } = await supabase.rpc('generate_user_referral_code', {
-        p_user_id: user.id,
-      });
-      if (error) throw error;
-      toast.success('Code de recommandation créé !');
-      refetch();
-    } catch (error) {
-      console.error('Error generating referral code:', error);
-      toast.error('Impossible de générer le code');
-    } finally {
-      setGenerating(false);
     }
   };
 
@@ -144,8 +130,7 @@ export default function Referral() {
   };
 
   const getReferralUrl = (page: string = '') => {
-    const code = affiliateCode || stats?.referral_code || '';
-    return `${window.location.origin}${page}?ref=${code}`;
+    return `${window.location.origin}${page}?ref=${affiliateCode || ''}`;
   };
 
   const copyToClipboard = (url: string) => {
@@ -179,9 +164,9 @@ export default function Referral() {
     if (shareUrl) window.open(shareUrl, '_blank', 'width=600,height=400');
   };
 
-  const isLoading = statsLoading || affiliateLoading;
+  const hasAffiliateCode = !!affiliateCode && affiliateActive;
 
-  if (isLoading) {
+  if (affiliateLoading) {
     return (
       <div className="min-h-screen flex flex-col">
         <AppHeader />
@@ -197,30 +182,6 @@ export default function Referral() {
     );
   }
 
-  if (isError) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <AppHeader />
-        <main className="flex-1 container py-8">
-          <div className="max-w-4xl mx-auto">
-            <Card className="p-8 text-center space-y-4">
-              <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
-              <h2 className="text-xl font-semibold">Erreur de chargement</h2>
-              <p className="text-muted-foreground">Impossible de charger les données.</p>
-              <Button onClick={() => refetch()}>Réessayer</Button>
-            </Card>
-          </div>
-        </main>
-        <AppFooter />
-      </div>
-    );
-  }
-
-  // No referral code yet — activation needed
-  const hasReferralCode = stats?.has_code;
-  const hasAffiliateCode = !!affiliateCode && affiliateActive;
-  const effectiveCode = affiliateCode || stats?.referral_code || '';
-
   return (
     <div className="min-h-screen flex flex-col">
       <AppHeader />
@@ -234,45 +195,26 @@ export default function Referral() {
           </div>
 
           {/* Activation CTA if not enrolled */}
-          {!hasReferralCode && !hasAffiliateCode && (
+          {!hasAffiliateCode && (
             <Card className="p-8 text-center space-y-4">
               <Users className="h-12 w-12 text-primary mx-auto" />
               <h2 className="text-xl font-semibold">Activez votre programme de recommandation</h2>
               <p className="text-muted-foreground">
-                Générez votre lien unique pour commencer à gagner des commissions
+                Générez votre lien unique pour commencer à gagner des commissions de 20 % sur chaque abonnement payé via votre lien.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Button onClick={handleGenerateCode} disabled={generating} size="lg">
-                  {generating ? 'Activation...' : 'Activer le programme'}
-                </Button>
-              </div>
-            </Card>
-          )}
-
-          {/* Activate affiliate if only referral code exists */}
-          {hasReferralCode && !hasAffiliateCode && (
-            <Card className="p-6 bg-gradient-to-br from-primary/5 to-accent/5">
-              <div className="flex flex-col sm:flex-row items-center gap-4">
-                <div className="flex-1">
-                  <h3 className="font-semibold mb-1">Passez au programme de commission</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Activez votre programme d'affiliation pour gagner 20 % de commission récurrente en € sur chaque abonnement payé via votre lien.
-                  </p>
-                </div>
-                <Button onClick={handleActivateAffiliate} disabled={activating}>
-                  {activating ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Activation…
-                    </>
-                  ) : (
-                    <>
-                      <ShieldCheck className="h-4 w-4 mr-2" />
-                      Activer
-                    </>
-                  )}
-                </Button>
-              </div>
+              <Button onClick={handleActivateAffiliate} disabled={activating} size="lg">
+                {activating ? (
+                  <>
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    Activation…
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="h-5 w-5 mr-2" />
+                    Activer le programme
+                  </>
+                )}
+              </Button>
             </Card>
           )}
 
@@ -283,7 +225,7 @@ export default function Referral() {
                 <div className="flex items-center gap-2 md:gap-3">
                   <MousePointerClick className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground" />
                   <div>
-                    <p className="text-xl md:text-2xl font-bold">{stats?.clicks ?? 0}</p>
+                    <p className="text-xl md:text-2xl font-bold">{clicks}</p>
                     <p className="text-xs md:text-sm text-muted-foreground">Clics</p>
                   </div>
                 </div>
@@ -321,62 +263,8 @@ export default function Referral() {
             </div>
           )}
 
-          {/* Referral-only stats (when no affiliate yet) */}
-          {hasReferralCode && !hasAffiliateCode && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card className="p-4 md:p-6">
-                <div className="flex items-center gap-2 md:gap-3">
-                  <MousePointerClick className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground" />
-                  <div>
-                    <p className="text-xl md:text-2xl font-bold">{stats?.clicks ?? 0}</p>
-                    <p className="text-xs md:text-sm text-muted-foreground">Clics</p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-4 md:p-6">
-                <div className="flex items-center gap-2 md:gap-3">
-                  <Users className="h-6 w-6 md:h-8 md:w-8 text-primary" />
-                  <div>
-                    <p className="text-xl md:text-2xl font-bold">{stats?.signups ?? 0}</p>
-                    <p className="text-xs md:text-sm text-muted-foreground">Inscriptions</p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-4 md:p-6">
-                <div className="flex items-center gap-2 md:gap-3">
-                  <TrendingUp className="h-6 w-6 md:h-8 md:w-8 text-accent" />
-                  <div>
-                    <p className="text-xl md:text-2xl font-bold">{stats?.qualified ?? 0}</p>
-                    <p className="text-xs md:text-sm text-muted-foreground">Qualifiés</p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-4 md:p-6">
-                <div className="flex items-center gap-2 md:gap-3">
-                  <Euro className="h-6 w-6 md:h-8 md:w-8 text-primary" />
-                  <div>
-                    <p className="text-xl md:text-2xl font-bold text-primary">+{stats?.total_credits_earned ?? 0}</p>
-                    <p className="text-xs md:text-sm text-muted-foreground">Crédits gagnés</p>
-                  </div>
-                </div>
-              </Card>
-            </div>
-          )}
-
-          {/* Status context */}
-          {(stats?.clicks ?? 0) > 0 && (stats?.signups ?? 0) === 0 && (
-            <Card className="p-4 bg-accent/10">
-              <p className="text-sm text-accent-foreground">
-                ⏳ Des clics ont été enregistrés mais aucune inscription n'a encore abouti.
-              </p>
-            </Card>
-          )}
-
-          {/* Recommendation Links */}
-          {(hasReferralCode || hasAffiliateCode) && effectiveCode && (
+          {/* Recommendation Links — only for active participants */}
+          {hasAffiliateCode && affiliateCode && (
             <Card className="p-6">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                 <Share2 className="h-5 w-5" />
@@ -420,11 +308,11 @@ export default function Referral() {
             <ol className="space-y-3">
               <li className="flex gap-3">
                 <span className="font-bold text-primary">1.</span>
-                <span>Partagez votre lien de recommandation</span>
+                <span>Activez votre programme et partagez votre lien de recommandation</span>
               </li>
               <li className="flex gap-3">
                 <span className="font-bold text-primary">2.</span>
-                <span>Votre filleul s'inscrit et souscrit à un abonnement</span>
+                <span>Votre filleul s'inscrit et souscrit à un abonnement payé</span>
               </li>
               <li className="flex gap-3">
                 <span className="font-bold text-primary">3.</span>
