@@ -2421,13 +2421,13 @@ export type Database = {
           error_message: string | null
           event_type: string
           id: string
-          idempotency_key: string
+          idempotency_key: string | null
           metadata: Json
           reference_id: string | null
           reference_type: string | null
           referral_code: string | null
-          referred_user_id: string
-          referrer_user_id: string
+          referred_user_id: string | null
+          referrer_user_id: string | null
           status: string | null
           visitor_id: string | null
         }
@@ -2436,13 +2436,13 @@ export type Database = {
           error_message?: string | null
           event_type: string
           id?: string
-          idempotency_key: string
+          idempotency_key?: string | null
           metadata?: Json
           reference_id?: string | null
           reference_type?: string | null
           referral_code?: string | null
-          referred_user_id: string
-          referrer_user_id: string
+          referred_user_id?: string | null
+          referrer_user_id?: string | null
           status?: string | null
           visitor_id?: string | null
         }
@@ -2451,13 +2451,13 @@ export type Database = {
           error_message?: string | null
           event_type?: string
           id?: string
-          idempotency_key?: string
+          idempotency_key?: string | null
           metadata?: Json
           reference_id?: string | null
           reference_type?: string | null
           referral_code?: string | null
-          referred_user_id?: string
-          referrer_user_id?: string
+          referred_user_id?: string | null
+          referrer_user_id?: string | null
           status?: string | null
           visitor_id?: string | null
         }
@@ -3979,27 +3979,33 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          referral_code: string | null
           referred_email: string | null
           referred_user_id: string | null
           referrer_id: string
+          rewarded: boolean | null
           status: string
           updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
+          referral_code?: string | null
           referred_email?: string | null
           referred_user_id?: string | null
           referrer_id: string
+          rewarded?: boolean | null
           status?: string
           updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
+          referral_code?: string | null
           referred_email?: string | null
           referred_user_id?: string | null
           referrer_id?: string
+          rewarded?: boolean | null
           status?: string
           updated_at?: string
         }
