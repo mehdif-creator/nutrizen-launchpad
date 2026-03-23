@@ -278,10 +278,16 @@ Deno.serve(async (req) => {
     const successUrl = `${appBase}/post-checkout?token=${checkoutToken}`;
     const cancelUrl = `${getSafeOriginForCancel(origin)}/?canceled=true`;
 
-    // ── Referral / affiliate ────────────────────────────────────────────
+    // ── Referral / affiliate (from body OR URL params for backward compat) ──
     const url = new URL(req.url);
-    const referralCode = sanitizeString(url.searchParams.get("referral_code") || "").substring(0, 50);
-    const affiliateCode = sanitizeString(url.searchParams.get("affiliate_code") || "").substring(0, 50);
+    const referralCode = sanitizeString(
+      (typeof body.referral_code === "string" ? body.referral_code : "") ||
+      url.searchParams.get("referral_code") || ""
+    ).substring(0, 50);
+    const affiliateCode = sanitizeString(
+      (typeof body.affiliate_code === "string" ? body.affiliate_code : "") ||
+      url.searchParams.get("affiliate_code") || ""
+    ).substring(0, 50);
 
     // ── Plan metadata ───────────────────────────────────────────────────
     const meta = PLAN_META[planKey] || {};

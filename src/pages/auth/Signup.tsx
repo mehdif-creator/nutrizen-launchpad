@@ -45,8 +45,19 @@ export default function Signup() {
     }, 15_000);
 
     try {
+      // Propagate referral/affiliate codes from localStorage/cookie to checkout
+      const storedRefCode = localStorage.getItem('nutrizen_referral_code') || '';
+      const affCookieMatch = document.cookie.match(/(^| )nz_ref=([^;]+)/);
+      const storedAffCode = affCookieMatch ? decodeURIComponent(affCookieMatch[2]) : '';
+
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { plan, email: email.trim(), turnstile_token: '' },
+        body: {
+          plan,
+          email: email.trim(),
+          turnstile_token: '',
+          referral_code: storedRefCode,
+          affiliate_code: storedAffCode,
+        },
       });
 
       clearTimeout(timeoutId);
