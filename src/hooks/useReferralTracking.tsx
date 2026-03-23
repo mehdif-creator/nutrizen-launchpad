@@ -14,23 +14,29 @@ export function useReferralTracking() {
   const location = useLocation();
   const { user } = useAuth();
 
-  // Track referral code from URL
+  // Track referral code from URL — persist and distinguish from affiliate
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const refCode = searchParams.get('ref');
 
     if (refCode) {
-      // Store referral code in localStorage
-      localStorage.setItem('nutrizen_referral_code', refCode);
-      logger.info('Code captured', { refCode });
+      // Distinguish referral vs affiliate by prefix
+      const isAffiliate = refCode.startsWith('AFF');
 
-      // Track click (anonymous, non-blocking)
-      supabase.functions.invoke('referral-intake', {
-        body: { 
-          referralCode: refCode, 
-          action: 'track_click',
-        },
-      }).catch(err => logger.debug('Click tracking error', { error: String(err) }));
+      if (!isAffiliate) {
+        // Store referral code in localStorage (survives page navigation, signup, callback)
+        localStorage.setItem('nutrizen_referral_code', refCode);
+        logger.info('Referral code captured', { refCode });
+
+        // Track click (anonymous, non-blocking)
+        supabase.functions.invoke('referral-intake', {
+          body: { 
+            referralCode: refCode, 
+            action: 'track_click',
+          },
+        }).catch(err => logger.debug('Click tracking error', { error: String(err) }));
+      }
+      // Affiliate codes are handled by useAffiliateTracking
     }
   }, [location]);
 

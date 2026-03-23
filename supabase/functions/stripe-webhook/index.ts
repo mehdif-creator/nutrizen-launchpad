@@ -273,7 +273,44 @@ Deno.serve(async (req) => {
 
         // Handle referral reward on subscription checkout
         const referralCode = session.metadata?.referral_code;
+        const affiliateCodeFromCheckout = session.metadata?.affiliate_code;
         if (userId) {
+          // Log attribution source for traceability
+          if (referralCode) {
+            await supabaseAdmin.from('referral_events').insert({
+              referred_user_id: userId,
+              referral_code: referralCode,
+              event_type: 'checkout_attribution',
+              status: 'success',
+              source: 'checkout_metadata',
+              idempotency_key: `ref_checkout:${session.id}`,
+              metadata: { stripe_session_id: session.id, stripe_customer_id: customerId },
+            }).then(() => {}).catch(() => {});
+          }
+          if (affiliateCodeFromCheckout) {
+            await supabaseAdmin.from('affiliate_events').insert({
+              affiliate_code: affiliateCodeFromCheckout,
+              referred_user_id: userId,
+              event_type: 'checkout_attribution',
+              status: 'success',
+              source: 'checkout_metadata',
+              reference_type: 'checkout_session',
+              reference_id: session.id,
+              idempotency_key: `aff_checkout:${session.id}`,
+              metadata: { stripe_customer_id: customerId },
+            }).then(() => {}).catch(() => {});
+
+            // Create affiliate_referrals row if not exists (idempotent via unique referred_user_id)
+            await supabaseAdmin.from('affiliate_referrals').upsert({
+              affiliate_code: affiliateCodeFromCheckout,
+              referred_user_id: userId,
+              converted: false,
+              stripe_customer_id: customerId,
+            }, { onConflict: 'referred_user_id' }).then(() => {}).catch((err: any) => {
+              logStep("WARN: affiliate_referrals upsert from checkout", { error: String(err) });
+            });
+          }
+
           try {
             const { data: refResult, error: refError } = await supabaseAdmin.rpc('handle_referred_user_subscribed', {
               p_user_id: userId,
@@ -282,16 +319,15 @@ Deno.serve(async (req) => {
 
             if (refError) {
               logStep("Referral subscription reward error", { error: refError.message });
-              // Log to affiliate_events for observability
-              await supabaseAdmin.from('affiliate_events').insert({
+              await supabaseAdmin.from('referral_events').insert({
                 referred_user_id: userId,
-                event_type: 'referral_subscription_error',
+                referral_code: referralCode,
+                event_type: 'subscription_reward_error',
                 status: 'failed',
+                source: 'webhook',
                 error_message: refError.message,
-                reference_type: 'checkout_session',
-                reference_id: session.id,
                 idempotency_key: `ref_sub_err:${session.id}`,
-                metadata: { referral_code: referralCode },
+                metadata: { stripe_session_id: session.id },
               }).then(() => {}).catch(() => {});
             } else {
               logStep("Referral subscription reward result", { result: refResult });

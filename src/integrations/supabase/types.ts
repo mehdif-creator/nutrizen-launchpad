@@ -156,6 +156,7 @@ export type Database = {
           reference_id: string | null
           reference_type: string | null
           referred_user_id: string | null
+          source: string | null
           status: string
         }
         Insert: {
@@ -170,6 +171,7 @@ export type Database = {
           reference_id?: string | null
           reference_type?: string | null
           referred_user_id?: string | null
+          source?: string | null
           status?: string
         }
         Update: {
@@ -184,6 +186,7 @@ export type Database = {
           reference_id?: string | null
           reference_type?: string | null
           referred_user_id?: string | null
+          source?: string | null
           status?: string
         }
         Relationships: []
@@ -5439,6 +5442,10 @@ export type Database = {
       refresh_recipe_macros_from_ciqual: { Args: never; Returns: undefined }
       refresh_recipe_macros_mv2: { Args: never; Returns: undefined }
       refresh_some_recipes: { Args: { batch_size?: number }; Returns: number }
+      repair_affiliate_attribution: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
       repair_referral_attribution: {
         Args: { p_user_id: string }
         Returns: Json
