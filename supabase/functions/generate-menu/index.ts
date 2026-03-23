@@ -935,7 +935,7 @@ Deno.serve(async (req) => {
 
     // ── DEDUCT CREDITS ──
     console.log(`[generate-menu] Deducting ${menuCost} credits`);
-    const { data: creditsCheck, error: creditsError } = await supabaseAdmin.rpc('check_and_consume_credits', {
+    const { data: creditsCheck, error: creditsError } = await supabaseClient.rpc('check_and_consume_credits', {
       p_user_id: user.id,
       p_feature: menuFeatureKey,
       p_cost: menuCost,
