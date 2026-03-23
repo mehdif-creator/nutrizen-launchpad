@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface HeaderProps {
   onCtaClick: () => void;
@@ -12,6 +13,17 @@ interface HeaderProps {
 export const Header = ({ onCtaClick }: HeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handlePrimaryCta = () => {
+    if (user) {
+      setMobileMenuOpen(false);
+      navigate('/app/dashboard');
+      return;
+    }
+    onCtaClick();
+  };
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -71,22 +83,31 @@ export const Header = ({ onCtaClick }: HeaderProps) => {
           >
             {t('header.blog')}
           </Link>
-          <Link
-            to="/auth/login"
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-tech"
-          >
-            {t('header.login')}
-          </Link>
+          {user ? (
+            <Link
+              to="/app/dashboard"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-tech"
+            >
+              Mon espace
+            </Link>
+          ) : (
+            <Link
+              to="/auth/login"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-tech"
+            >
+              {t('header.login')}
+            </Link>
+          )}
         </nav>
 
         {/* CTA Button - Desktop */}
         <div className="hidden md:block">
           <Button
-            onClick={onCtaClick}
+            onClick={handlePrimaryCta}
             size="sm"
             className="bg-gradient-to-r from-primary to-accent text-white hover:scale-[1.02] active:scale-[0.99] transition-tech shadow-glow"
           >
-            Commencer gratuitement
+            {user ? 'Mon espace' : 'Commencer gratuitement'}
           </Button>
         </div>
 
@@ -134,18 +155,28 @@ export const Header = ({ onCtaClick }: HeaderProps) => {
             >
               {t('header.blog')}
             </Link>
-            <Link
-              to="/auth/login"
-              className="text-left text-base font-medium text-muted-foreground hover:text-foreground py-3 px-2 min-h-[48px] flex items-center border-b border-border/50"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {t('header.login')}
-            </Link>
+            {user ? (
+              <Link
+                to="/app/dashboard"
+                className="text-left text-base font-medium text-muted-foreground hover:text-foreground py-3 px-2 min-h-[48px] flex items-center border-b border-border/50"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Mon espace
+              </Link>
+            ) : (
+              <Link
+                to="/auth/login"
+                className="text-left text-base font-medium text-muted-foreground hover:text-foreground py-3 px-2 min-h-[48px] flex items-center border-b border-border/50"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {t('header.login')}
+              </Link>
+            )}
             <Button
-              onClick={onCtaClick}
+              onClick={handlePrimaryCta}
               className="w-full bg-gradient-to-r from-primary to-accent text-white mt-4 min-h-[52px] text-base"
             >
-              Commencer gratuitement
+              {user ? 'Mon espace' : 'Commencer gratuitement'}
             </Button>
           </nav>
         </div>,
