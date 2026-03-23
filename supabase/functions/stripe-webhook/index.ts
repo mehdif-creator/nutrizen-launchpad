@@ -275,21 +275,44 @@ Deno.serve(async (req) => {
         const referralCode = session.metadata?.referral_code;
         const affiliateCodeFromCheckout = session.metadata?.affiliate_code;
         if (userId) {
-          // Log attribution source for traceability
+          // Log attribution source for traceability — resolve referrer for full linkage
           if (referralCode) {
+            // Resolve referrer_user_id for complete attribution chain
+            let referrerUserId: string | null = null;
+            try {
+              const { data: codeRow } = await supabaseAdmin
+                .from('referral_codes')
+                .select('user_id')
+                .eq('code', referralCode.toUpperCase())
+                .maybeSingle();
+              referrerUserId = codeRow?.user_id || null;
+            } catch { /* non-blocking */ }
+
             await supabaseAdmin.from('referral_events').insert({
+              referrer_user_id: referrerUserId,
               referred_user_id: userId,
               referral_code: referralCode,
               event_type: 'checkout_attribution',
               status: 'success',
-              source: 'checkout_metadata',
+              metadata: { stripe_session_id: session.id, stripe_customer_id: customerId, source: 'checkout_metadata' },
               idempotency_key: `ref_checkout:${session.id}`,
-              metadata: { stripe_session_id: session.id, stripe_customer_id: customerId },
             }).then(() => {}).catch(() => {});
           }
           if (affiliateCodeFromCheckout) {
+            // Resolve affiliate_user_id for complete attribution chain
+            let affiliateUserId: string | null = null;
+            try {
+              const { data: affRow } = await supabaseAdmin
+                .from('affiliates')
+                .select('user_id')
+                .eq('affiliate_code', affiliateCodeFromCheckout)
+                .maybeSingle();
+              affiliateUserId = affRow?.user_id || null;
+            } catch { /* non-blocking */ }
+
             await supabaseAdmin.from('affiliate_events').insert({
               affiliate_code: affiliateCodeFromCheckout,
+              affiliate_user_id: affiliateUserId,
               referred_user_id: userId,
               event_type: 'checkout_attribution',
               status: 'success',
