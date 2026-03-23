@@ -73,7 +73,7 @@ export default function Gamification() {
                 : 'Votre Tableau de Bord'}
             </h1>
             <p className="text-muted-foreground">
-              Gagnez des points, montez de niveau et profitez de vos récompenses
+              Montez de niveau, gagnez des commissions et profitez de vos récompenses
             </p>
           </div>
 
