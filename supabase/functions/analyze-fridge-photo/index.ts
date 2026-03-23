@@ -196,7 +196,7 @@ Deno.serve(async (req) => {
 
     // ── SUCCESS: Now deduct credits atomically ──
     console.log('[analyze-fridge-photo] Deducting credits after successful analysis');
-    const { data: creditsCheck, error: creditsError } = await supabaseClient.rpc('check_and_consume_credits', {
+    const { data: creditsCheck, error: creditsError } = await supabaseAdmin.rpc('check_and_consume_credits', {
       p_user_id: user.id,
       p_feature: FEATURE_KEY,
       p_cost: FEATURE_COST,
