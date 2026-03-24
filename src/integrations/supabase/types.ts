@@ -1243,6 +1243,57 @@ export type Database = {
         }
         Relationships: []
       }
+      manual_social_posts: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          image_4x5_url: string | null
+          image_9x16_url: string | null
+          notes: string | null
+          platform_target: string | null
+          posted_at: string | null
+          queue_id: string | null
+          recipe_id: string | null
+          source_workflow: string | null
+          status: string | null
+          title: string | null
+          website_url: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_4x5_url?: string | null
+          image_9x16_url?: string | null
+          notes?: string | null
+          platform_target?: string | null
+          posted_at?: string | null
+          queue_id?: string | null
+          recipe_id?: string | null
+          source_workflow?: string | null
+          status?: string | null
+          title?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_4x5_url?: string | null
+          image_9x16_url?: string | null
+          notes?: string | null
+          platform_target?: string | null
+          posted_at?: string | null
+          queue_id?: string | null
+          recipe_id?: string | null
+          source_workflow?: string | null
+          status?: string | null
+          title?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       meal_plans: {
         Row: {
           created_at: string | null
