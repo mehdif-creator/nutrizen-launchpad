@@ -50,6 +50,7 @@ const AdminHealth = lazy(() => import('./pages/admin/AdminHealth'));
 const AutomationIndex = lazy(() => import('./pages/admin/AutomationIndex'));
 const AdminSeoFactory = lazy(() => import('./pages/admin/AdminSeoFactory'));
 const AdminAffiliations = lazy(() => import('./pages/admin/AdminAffiliations'));
+const ManualSocialPosts = lazy(() => import('./pages/admin/ManualSocialPosts'));
 
 // KPI Detail Pages
 const KpiMrr = lazy(() => import('./pages/admin/kpis/KpiMrr'));
