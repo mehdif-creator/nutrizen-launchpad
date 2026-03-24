@@ -155,6 +155,7 @@ const App = () => {
         <Route path="/admin/automation/*" element={<ProtectedRoute requireAdmin><AutomationIndex /></ProtectedRoute>} />
         <Route path="/admin/seo-factory" element={<ProtectedRoute requireAdmin><AdminSeoFactory /></ProtectedRoute>} />
         <Route path="/admin/affiliations" element={<ProtectedRoute requireAdmin><AdminAffiliations /></ProtectedRoute>} />
+        <Route path="/admin/posts-manu-rs" element={<ProtectedRoute requireAdmin><ManualSocialPosts /></ProtectedRoute>} />
 
         {/* Admin KPI Detail Pages */}
         <Route path="/admin/kpis/mrr" element={<ProtectedRoute requireAdmin><KpiMrr /></ProtectedRoute>} />

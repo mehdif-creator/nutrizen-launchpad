@@ -286,6 +286,7 @@ export default function AdminDashboard() {
               <Link to="/admin/automation"><Button variant="outline" className="w-full justify-start"><Zap className="mr-2 h-4 w-4" />NutriZen Automation</Button></Link>
               <Link to="/admin/seo-factory"><Button variant="outline" className="w-full justify-start"><FileText className="mr-2 h-4 w-4" />SEO Factory</Button></Link>
               <Button variant="outline" className="w-full justify-start" onClick={() => setMailingOpen(true)}><Mail className="mr-2 h-4 w-4" />Mailing</Button>
+              <Link to="/admin/posts-manu-rs"><Button variant="outline" className="w-full justify-start"><ImageIcon className="mr-2 h-4 w-4" />Posts manu RS</Button></Link>
             </div>
           </Card>
           {/* Configuration section hidden — kept for future use
