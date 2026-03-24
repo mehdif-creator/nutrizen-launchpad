@@ -2,9 +2,11 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search } from 'lucide-react';
 
+import type { PostStatus } from '@/hooks/useManualSocialPosts';
+
 interface Filters {
   search: string;
-  status: string;
+  status: PostStatus | 'all';
   platform: string;
 }
 
