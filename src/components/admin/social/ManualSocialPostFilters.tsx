@@ -27,7 +27,7 @@ export function ManualSocialPostFilters({ filters, onChange }: Props) {
           className="pl-9"
         />
       </div>
-      <Select value={filters.status} onValueChange={v => onChange({ ...filters, status: v })}>
+      <Select value={filters.status} onValueChange={v => onChange({ ...filters, status: v as PostStatus | 'all' })}>
         <SelectTrigger className="w-full sm:w-[160px]">
           <SelectValue placeholder="Statut" />
         </SelectTrigger>
