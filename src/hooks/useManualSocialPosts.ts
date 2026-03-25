@@ -39,7 +39,7 @@ interface Filters {
 }
 
 export function useManualSocialPosts() {
-  const [posts, setPosts] = useState<ManualSocialPost[]>([]);
+  const [allPosts, setAllPosts] = useState<ManualSocialPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>({ search: '', status: 'all', platform: 'all' });
@@ -50,35 +50,32 @@ export function useManualSocialPosts() {
     setLoading(true);
     setError(null);
     try {
-      let query = supabase
+      const { data, error: err } = await supabase
         .from('manual_social_posts' as any)
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (filters.status !== 'all') {
-        query = query.eq('status', filters.status);
-      }
-      if (filters.platform !== 'all') {
-        query = query.eq('platform_target', filters.platform);
-      }
-      if (filters.search.trim()) {
-        query = query.ilike('title', `%${filters.search.trim()}%`);
-      }
-
-      const { data, error: err } = await query;
       if (err) throw err;
-      setPosts((data as unknown as ManualSocialPost[]) || []);
+      setAllPosts((data as unknown as ManualSocialPost[]) || []);
     } catch (e: any) {
       setError(e.message || 'Erreur de chargement');
       toast({ title: 'Erreur', description: 'Impossible de charger les posts', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
-  }, [filters, toast]);
+  }, [toast]);
 
   useEffect(() => {
     fetchPosts();
   }, [fetchPosts]);
+
+  // Filter posts client-side so counters reflect global totals
+  const posts = allPosts.filter(p => {
+    if (filters.status !== 'all' && p.status !== filters.status) return false;
+    if (filters.platform !== 'all' && p.platform_target !== filters.platform) return false;
+    if (filters.search.trim() && !(p.title || '').toLowerCase().includes(filters.search.trim().toLowerCase())) return false;
+    return true;
+  });
 
   const updatePost = useCallback(async (id: string, updates: Partial<ManualSocialPost>) => {
     try {
@@ -87,7 +84,7 @@ export function useManualSocialPosts() {
         .update(updates as any)
         .eq('id', id);
       if (err) throw err;
-      setPosts(prev => prev.map(p => p.id === id ? { ...p, ...updates } as ManualSocialPost : p));
+      setAllPosts(prev => prev.map(p => p.id === id ? { ...p, ...updates } as ManualSocialPost : p));
       return true;
     } catch (e: any) {
       toast({ title: 'Erreur', description: e.message || 'Mise à jour échouée', variant: 'destructive' });
@@ -126,13 +123,14 @@ export function useManualSocialPosts() {
     return ok;
   }, [updatePost, toast]);
 
-  const selectedPost = posts.find(p => p.id === selectedId) || null;
+  const selectedPost = allPosts.find(p => p.id === selectedId) || null;
 
+  // Counters reflect global totals, not filtered results
   const counts = {
-    ready: posts.filter(p => p.status === 'ready').length,
-    posted: posts.filter(p => p.status === 'posted').length,
-    archived: posts.filter(p => p.status === 'archived').length,
-    total: posts.length,
+    ready: allPosts.filter(p => p.status === 'ready').length,
+    posted: allPosts.filter(p => p.status === 'posted').length,
+    archived: allPosts.filter(p => p.status === 'archived').length,
+    total: allPosts.length,
   };
 
   return {

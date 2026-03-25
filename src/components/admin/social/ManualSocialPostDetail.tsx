@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,13 +35,11 @@ export function ManualSocialPostDetail({
   const [notesDirty, setNotesDirty] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Sync notes when post changes
-  const [prevId, setPrevId] = useState<string | null>(null);
-  if (post && post.id !== prevId) {
-    setPrevId(post.id);
-    setNotes(post.notes || '');
+  // Sync notes when selected post changes
+  useEffect(() => {
+    setNotes(post?.notes || '');
     setNotesDirty(false);
-  }
+  }, [post?.id]);
 
   if (!post) {
     return (
