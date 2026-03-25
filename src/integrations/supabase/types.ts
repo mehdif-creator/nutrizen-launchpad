@@ -1245,7 +1245,11 @@ export type Database = {
       }
       manual_social_posts: {
         Row: {
+          board_name: string | null
+          board_priority: number | null
+          board_slug: string | null
           created_at: string | null
+          cuisine_type: string | null
           description: string | null
           id: string
           image_4x5_url: string | null
@@ -1261,7 +1265,11 @@ export type Database = {
           website_url: string | null
         }
         Insert: {
+          board_name?: string | null
+          board_priority?: number | null
+          board_slug?: string | null
           created_at?: string | null
+          cuisine_type?: string | null
           description?: string | null
           id?: string
           image_4x5_url?: string | null
@@ -1277,7 +1285,11 @@ export type Database = {
           website_url?: string | null
         }
         Update: {
+          board_name?: string | null
+          board_priority?: number | null
+          board_slug?: string | null
           created_at?: string | null
+          cuisine_type?: string | null
           description?: string | null
           id?: string
           image_4x5_url?: string | null
