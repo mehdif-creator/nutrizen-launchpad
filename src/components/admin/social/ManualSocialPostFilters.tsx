@@ -8,14 +8,21 @@ interface Filters {
   search: string;
   status: PostStatus | 'all';
   platform: string;
+  board: string;
+}
+
+interface BoardOption {
+  slug: string;
+  name: string;
 }
 
 interface Props {
   filters: Filters;
   onChange: (f: Filters) => void;
+  boards: BoardOption[];
 }
 
-export function ManualSocialPostFilters({ filters, onChange }: Props) {
+export function ManualSocialPostFilters({ filters, onChange, boards }: Props) {
   return (
     <div className="flex flex-col sm:flex-row gap-3">
       <div className="relative flex-1">
@@ -47,6 +54,17 @@ export function ManualSocialPostFilters({ filters, onChange }: Props) {
           <SelectItem value="both">Les deux</SelectItem>
           <SelectItem value="pinterest">Pinterest</SelectItem>
           <SelectItem value="instagram">Instagram</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select value={filters.board} onValueChange={v => onChange({ ...filters, board: v })}>
+        <SelectTrigger className="w-full sm:w-[180px]">
+          <SelectValue placeholder="Tableau" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Tous les tableaux</SelectItem>
+          {boards.map(b => (
+            <SelectItem key={b.slug} value={b.slug}>{b.name}</SelectItem>
+          ))}
         </SelectContent>
       </Select>
     </div>
