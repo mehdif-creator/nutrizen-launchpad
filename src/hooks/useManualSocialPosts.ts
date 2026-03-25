@@ -123,13 +123,14 @@ export function useManualSocialPosts() {
     return ok;
   }, [updatePost, toast]);
 
-  const selectedPost = posts.find(p => p.id === selectedId) || null;
+  const selectedPost = allPosts.find(p => p.id === selectedId) || null;
 
+  // Counters reflect global totals, not filtered results
   const counts = {
-    ready: posts.filter(p => p.status === 'ready').length,
-    posted: posts.filter(p => p.status === 'posted').length,
-    archived: posts.filter(p => p.status === 'archived').length,
-    total: posts.length,
+    ready: allPosts.filter(p => p.status === 'ready').length,
+    posted: allPosts.filter(p => p.status === 'posted').length,
+    archived: allPosts.filter(p => p.status === 'archived').length,
+    total: allPosts.length,
   };
 
   return {
