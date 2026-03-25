@@ -84,7 +84,7 @@ export function useManualSocialPosts() {
         .update(updates as any)
         .eq('id', id);
       if (err) throw err;
-      setPosts(prev => prev.map(p => p.id === id ? { ...p, ...updates } as ManualSocialPost : p));
+      setAllPosts(prev => prev.map(p => p.id === id ? { ...p, ...updates } as ManualSocialPost : p));
       return true;
     } catch (e: any) {
       toast({ title: 'Erreur', description: e.message || 'Mise à jour échouée', variant: 'destructive' });
