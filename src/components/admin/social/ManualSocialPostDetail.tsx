@@ -35,13 +35,11 @@ export function ManualSocialPostDetail({
   const [notesDirty, setNotesDirty] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Sync notes when post changes
-  const [prevId, setPrevId] = useState<string | null>(null);
-  if (post && post.id !== prevId) {
-    setPrevId(post.id);
-    setNotes(post.notes || '');
+  // Sync notes when selected post changes
+  useEffect(() => {
+    setNotes(post?.notes || '');
     setNotesDirty(false);
-  }
+  }, [post?.id]);
 
   if (!post) {
     return (
