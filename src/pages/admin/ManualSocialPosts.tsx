@@ -5,7 +5,9 @@ import { ManualSocialPostsList } from '@/components/admin/social/ManualSocialPos
 import { ManualSocialPostDetail } from '@/components/admin/social/ManualSocialPostDetail';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, ImageIcon } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { RefreshCw, ImageIcon, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function ManualSocialPosts() {
@@ -25,6 +27,10 @@ export default function ManualSocialPosts() {
     updateNotes,
     generateDefaultDescription,
     counts,
+    distinctBoards,
+    boardDistribution,
+    sortLeastFed,
+    setSortLeastFed,
   } = useManualSocialPosts();
 
   return (
@@ -65,8 +71,34 @@ export default function ManualSocialPosts() {
           </Badge>
         </div>
 
+        {/* Board distribution */}
+        {boardDistribution.length > 0 && (
+          <div className="mb-6 p-4 rounded-lg border bg-card">
+            <h2 className="text-sm font-semibold flex items-center gap-2 mb-3">
+              <BarChart3 className="h-4 w-4 text-primary" />
+              Répartition par tableau
+              <span className="text-xs text-muted-foreground font-normal">(posts prêts)</span>
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {boardDistribution.map(b => (
+                <Badge key={b.board_slug} variant="outline" className="text-xs px-2.5 py-1">
+                  {b.board_name} : {b.count}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Filters */}
-        <ManualSocialPostFilters filters={filters} onChange={setFilters} />
+        <ManualSocialPostFilters filters={filters} onChange={setFilters} boards={distinctBoards} />
+
+        {/* Sort toggle */}
+        <div className="flex items-center gap-2 mt-4">
+          <Switch id="sort-least-fed" checked={sortLeastFed} onCheckedChange={setSortLeastFed} />
+          <Label htmlFor="sort-least-fed" className="text-sm cursor-pointer">
+            Moins alimentés d'abord
+          </Label>
+        </div>
 
         {/* Main layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">

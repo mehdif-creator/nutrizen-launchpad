@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { ManualSocialPost } from '@/hooks/useManualSocialPosts';
-import { getEffectiveDescription } from '@/hooks/useManualSocialPosts';
+import { getEffectiveDescription, getBoardName } from '@/hooks/useManualSocialPosts';
 
 interface Props {
   post: ManualSocialPost | null;
@@ -35,7 +35,6 @@ export function ManualSocialPostDetail({
   const [notesDirty, setNotesDirty] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Sync notes when selected post changes
   useEffect(() => {
     setNotes(post?.notes || '');
     setNotesDirty(false);
@@ -108,7 +107,7 @@ export function ManualSocialPostDetail({
 
       <CardContent className="space-y-6">
         {/* Metadata */}
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
           <div>
             <span className="text-muted-foreground">Créé le</span>
             <p className="font-medium">
@@ -127,6 +126,14 @@ export function ManualSocialPostDetail({
               </p>
             </div>
           )}
+          <div>
+            <span className="text-muted-foreground">Tableau</span>
+            <p className="font-medium">{getBoardName(post)}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Type de cuisine</span>
+            <p className="font-medium">{post.cuisine_type || '—'}</p>
+          </div>
         </div>
 
         <Separator />

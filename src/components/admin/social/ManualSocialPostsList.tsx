@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertCircle, ImageIcon } from 'lucide-react';
 import type { ManualSocialPost } from '@/hooks/useManualSocialPosts';
+import { getBoardName } from '@/hooks/useManualSocialPosts';
 import { cn } from '@/lib/utils';
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
@@ -58,6 +59,7 @@ export function ManualSocialPostsList({ posts, loading, error, selectedId, onSel
         const thumb = post.image_4x5_url || post.image_9x16_url;
         const hasFormats = !!(post.image_9x16_url && post.image_4x5_url);
         const isSelected = selectedId === post.id;
+        const boardLabel = getBoardName(post);
 
         return (
           <Card
@@ -82,10 +84,11 @@ export function ManualSocialPostsList({ posts, loading, error, selectedId, onSel
               )}
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm truncate">{post.title || 'Sans titre'}</p>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
                   <Badge variant="outline" className={cn('text-xs', badge.className)}>
                     {badge.label}
                   </Badge>
+                  <span className="text-xs text-muted-foreground">{boardLabel}</span>
                   {post.platform_target && post.platform_target !== 'both' && (
                     <span className="text-xs text-muted-foreground capitalize">{post.platform_target}</span>
                   )}
