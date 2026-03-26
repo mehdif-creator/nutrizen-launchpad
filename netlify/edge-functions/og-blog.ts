@@ -1,11 +1,14 @@
 /**
- * Netlify Edge Function: server-side rendered blog articles for crawlers.
+ * Netlify Edge Function: social-media unfurl for /blog/:slug
  *
- * For search engine crawlers (Googlebot, Bingbot, etc.) AND social media bots,
- * this function fetches the article from Supabase and returns a full HTML page
- * with real article content, structured data, and proper OG/Twitter meta tags.
+ * ONLY intercepts social preview bots (Facebook, LinkedIn, X, Slack, etc.)
+ * to return article-specific OG/Twitter meta tags with full article content.
  *
- * Regular browser visitors pass through to the SPA unchanged.
+ * CRITICAL: Googlebot, Bingbot, and ALL search engine crawlers are NEVER
+ * intercepted — they pass through to the SPA unchanged. This function must
+ * NOT affect SEO indexing in any way.
+ *
+ * Regular browser visitors also pass through unchanged.
  */
 
 const SUPABASE_URL = 'https://pghdaozgxkbtsxwydemd.supabase.co';
@@ -17,18 +20,21 @@ const SITE_NAME = 'NutriZen';
 const FALLBACK_DESC =
   'Menus nutritionnels personnalisés adaptés à tes objectifs. Plan alimentaire sur-mesure, liste de courses automatique, recettes rapides.';
 
-const CRAWLER_UA_PATTERNS = [
-  'facebookexternalhit', 'Facebot', 'LinkedInBot', 'Twitterbot',
-  'Slackbot', 'WhatsApp', 'TelegramBot', 'Discordbot', 'Pinterestbot',
-  'Googlebot', 'bingbot', 'Applebot', 'Embedly', 'Iframely',
-  'vkShare', 'W3C_Validator', 'redditbot', 'Rogerbot',
-  'SemrushBot', 'AhrefsBot', 'YandexBot', 'DuckDuckBot',
-  'Baiduspider', 'Sogou', 'ia_archiver', 'archive.org_bot',
+// SOCIAL BOTS ONLY — no search engine crawlers
+const SOCIAL_BOT_PATTERNS = [
+  'facebookexternalhit',
+  'Facebot',
+  'LinkedInBot',
+  'Twitterbot',
+  'Slackbot',
+  'WhatsApp',
+  'TelegramBot',
+  'Discordbot',
 ];
 
-function isCrawler(ua: string): boolean {
+function isSocialBot(ua: string): boolean {
   const lower = ua.toLowerCase();
-  return CRAWLER_UA_PATTERNS.some((p) => lower.includes(p.toLowerCase()));
+  return SOCIAL_BOT_PATTERNS.some((p) => lower.includes(p.toLowerCase()));
 }
 
 function stripHtml(html: string): string {
