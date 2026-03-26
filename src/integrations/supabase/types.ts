@@ -2807,12 +2807,14 @@ export type Database = {
           cuisine_type: string | null
           destination_url: string | null
           error: string | null
+          error_message: string | null
           external_post_id: string | null
           external_post_url: string | null
           id: string
           image_path: string | null
           ingredients: Json | null
           instructions: Json | null
+          last_error_at: string | null
           locked_at: string | null
           pin_description: string | null
           pin_title: string | null
@@ -2842,12 +2844,14 @@ export type Database = {
           cuisine_type?: string | null
           destination_url?: string | null
           error?: string | null
+          error_message?: string | null
           external_post_id?: string | null
           external_post_url?: string | null
           id?: string
           image_path?: string | null
           ingredients?: Json | null
           instructions?: Json | null
+          last_error_at?: string | null
           locked_at?: string | null
           pin_description?: string | null
           pin_title?: string | null
@@ -2877,12 +2881,14 @@ export type Database = {
           cuisine_type?: string | null
           destination_url?: string | null
           error?: string | null
+          error_message?: string | null
           external_post_id?: string | null
           external_post_url?: string | null
           id?: string
           image_path?: string | null
           ingredients?: Json | null
           instructions?: Json | null
+          last_error_at?: string | null
           locked_at?: string | null
           pin_description?: string | null
           pin_title?: string | null
@@ -4611,6 +4617,60 @@ export type Database = {
         }
         Relationships: []
       }
+      v_manual_social_posts_admin: {
+        Row: {
+          board_name: string | null
+          board_slug: string | null
+          created_at: string | null
+          cuisine_type: string | null
+          description: string | null
+          id: string | null
+          image_4x5_url: string | null
+          image_9x16_url: string | null
+          platform_target: string | null
+          queue_id: string | null
+          recipe_id: string | null
+          source_workflow: string | null
+          status: string | null
+          title: string | null
+          website_url: string | null
+        }
+        Insert: {
+          board_name?: string | null
+          board_slug?: string | null
+          created_at?: string | null
+          cuisine_type?: string | null
+          description?: string | null
+          id?: string | null
+          image_4x5_url?: string | null
+          image_9x16_url?: string | null
+          platform_target?: string | null
+          queue_id?: string | null
+          recipe_id?: string | null
+          source_workflow?: string | null
+          status?: string | null
+          title?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          board_name?: string | null
+          board_slug?: string | null
+          created_at?: string | null
+          cuisine_type?: string | null
+          description?: string | null
+          id?: string | null
+          image_4x5_url?: string | null
+          image_9x16_url?: string | null
+          platform_target?: string | null
+          queue_id?: string | null
+          recipe_id?: string | null
+          source_workflow?: string | null
+          status?: string | null
+          title?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       v_menu_safety_violations: {
         Row: {
           day_of_week: number | null
@@ -4732,6 +4792,52 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: Json
       }
+      claim_social_queue_job: {
+        Args: never
+        Returns: {
+          alt_text: string | null
+          asset_4x5_path: string | null
+          asset_9x16_path: string | null
+          attempts: number
+          badges: Json | null
+          board_slug: string | null
+          calories_kcal: number | null
+          created_at: string
+          cuisine_type: string | null
+          destination_url: string | null
+          error: string | null
+          error_message: string | null
+          external_post_id: string | null
+          external_post_url: string | null
+          id: string
+          image_path: string | null
+          ingredients: Json | null
+          instructions: Json | null
+          last_error_at: string | null
+          locked_at: string | null
+          pin_description: string | null
+          pin_title: string | null
+          platform: string | null
+          posted_at: string | null
+          publish_error: string | null
+          published_at: string | null
+          recipe_id: string
+          rendered_at: string | null
+          scheduled_at: string | null
+          status: string
+          title: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "social_queue"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       cleanup_expired_tokens: { Args: never; Returns: undefined }
       cleanup_oauth_states: { Args: { p_ttl?: string }; Returns: number }
       cleanup_old_checkout_sessions: { Args: never; Returns: undefined }
@@ -4765,12 +4871,14 @@ export type Database = {
           cuisine_type: string | null
           destination_url: string | null
           error: string | null
+          error_message: string | null
           external_post_id: string | null
           external_post_url: string | null
           id: string
           image_path: string | null
           ingredients: Json | null
           instructions: Json | null
+          last_error_at: string | null
           locked_at: string | null
           pin_description: string | null
           pin_title: string | null
@@ -4809,12 +4917,14 @@ export type Database = {
           cuisine_type: string | null
           destination_url: string | null
           error: string | null
+          error_message: string | null
           external_post_id: string | null
           external_post_url: string | null
           id: string
           image_path: string | null
           ingredients: Json | null
           instructions: Json | null
+          last_error_at: string | null
           locked_at: string | null
           pin_description: string | null
           pin_title: string | null
