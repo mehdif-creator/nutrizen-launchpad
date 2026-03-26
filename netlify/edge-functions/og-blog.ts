@@ -1,15 +1,17 @@
 /**
- * Netlify Edge Function: social-media unfurl for /blog/:slug
+ * Netlify Edge Function: Server-side enrichment for /blog/:slug
  *
- * ONLY intercepts social preview bots (Facebook, LinkedIn, X, Slack, etc.)
- * to return article-specific OG/Twitter meta tags with full article content.
+ * Serves ALL visitors (browsers, social bots, search engines) with the same
+ * enriched HTML: the SPA shell + article-specific meta tags + article content.
  *
- * CRITICAL: Googlebot, Bingbot, and ALL search engine crawlers are NEVER
- * intercepted — they pass through to the SPA unchanged. This function must
- * NOT affect SEO indexing in any way.
+ * This is NOT cloaking — every visitor gets identical HTML.
+ * No bot-specific code paths. No X-Robots-Tag. No noindex.
  *
- * Regular browser visitors also pass through unchanged.
+ * The injected article content is visible on first paint and removed once
+ * React hydrates, so there is no visual duplication.
  */
+
+import type { Context } from 'https://edge.netlify.com';
 
 const SUPABASE_URL = 'https://pghdaozgxkbtsxwydemd.supabase.co';
 const SUPABASE_ANON_KEY =
@@ -20,22 +22,7 @@ const SITE_NAME = 'NutriZen';
 const FALLBACK_DESC =
   'Menus nutritionnels personnalisés adaptés à tes objectifs. Plan alimentaire sur-mesure, liste de courses automatique, recettes rapides.';
 
-// SOCIAL BOTS ONLY — no search engine crawlers
-const SOCIAL_BOT_PATTERNS = [
-  'facebookexternalhit',
-  'Facebot',
-  'LinkedInBot',
-  'Twitterbot',
-  'Slackbot',
-  'WhatsApp',
-  'TelegramBot',
-  'Discordbot',
-];
-
-function isSocialBot(ua: string): boolean {
-  const lower = ua.toLowerCase();
-  return SOCIAL_BOT_PATTERNS.some((p) => lower.includes(p.toLowerCase()));
-}
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
 function stripHtml(html: string): string {
   return html
@@ -57,7 +44,7 @@ function extractFirstParagraph(html: string): string | null {
   return text.length > 30 ? text : null;
 }
 
-function escapeHtml(str: string): string {
+function escapeAttr(str: string): string {
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -74,9 +61,9 @@ function truncateDesc(text: string, max = 160): string {
 }
 
 function resolveDescription(
-  seoDesc: string | null | undefined,
-  excerpt: string | null | undefined,
-  htmlContent: string | null | undefined
+  seoDesc?: string | null,
+  excerpt?: string | null,
+  htmlContent?: string | null,
 ): string {
   if (seoDesc && seoDesc.trim().length > 20) return truncateDesc(stripHtml(seoDesc));
   if (excerpt && excerpt.trim().length > 20) return truncateDesc(stripHtml(excerpt));
@@ -94,39 +81,21 @@ function toAbsoluteUrl(url: string): string {
   return `${SITE_URL}/${url}`;
 }
 
-interface ArticleData {
-  title: string;
-  h1: string;
-  description: string;
-  image: string;
-  canonical: string;
-  publishedTime: string | null;
-  author: string;
-  htmlContent: string;
-  tags: string[];
-  schemaJson: any | null;
-  readTimeMinutes: number;
-}
-
 function computeReadTime(html: string): number {
-  const text = stripHtml(html);
-  const words = text.split(/\s+/).filter(w => w.length > 0).length;
+  const words = stripHtml(html).split(/\s+/).filter((w) => w.length > 0).length;
   return Math.max(1, Math.round(words / 200));
 }
 
-/** Clean article HTML: strip image placeholders, fix CTA links */
 function cleanArticleHtml(html: string): string {
-  let cleaned = html;
-  cleaned = cleaned.replace(/\{\{IMAGE_\d+_URL\}\}/g, '');
-  cleaned = cleaned.replace(/\{\{IMAGE_\d+_ALT\}\}/g, '');
-  cleaned = cleaned.replace(/\{\{NUTRIZEN_CTA_URL\}\}/g, `${SITE_URL}/`);
-  // Remove empty figure/img tags from placeholder cleanup
-  cleaned = cleaned.replace(/<figure[^>]*>\s*<img[^>]*src=""[^>]*\/?>\s*(?:<figcaption[^>]*>.*?<\/figcaption>\s*)?<\/figure>/gi, '');
-  cleaned = cleaned.replace(/<img[^>]*src=""[^>]*\/?>/gi, '');
-  return cleaned;
+  let c = html;
+  c = c.replace(/\{\{IMAGE_\d+_URL\}\}/g, '');
+  c = c.replace(/\{\{IMAGE_\d+_ALT\}\}/g, '');
+  c = c.replace(/\{\{NUTRIZEN_CTA_URL\}\}/g, `${SITE_URL}/`);
+  c = c.replace(/<figure[^>]*>\s*<img[^>]*src=""[^>]*\/?>\s*(?:<figcaption[^>]*>.*?<\/figcaption>\s*)?<\/figure>/gi, '');
+  c = c.replace(/<img[^>]*src=""[^>]*\/?>/gi, '');
+  return c;
 }
 
-/** Replace image placeholders with real URLs */
 function resolveImagePlaceholders(html: string, images: any[]): string {
   let result = html;
   if (!images || images.length === 0) return result;
@@ -145,11 +114,40 @@ function resolveImagePlaceholders(html: string, images: any[]): string {
   return result;
 }
 
+function formatDateFr(dateStr: string | null): string {
+  if (!dateStr) return '';
+  try {
+    return new Date(dateStr).toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  } catch {
+    return '';
+  }
+}
+
+// ── Article data types & fetching ────────────────────────────────────────────
+
+interface ArticleData {
+  title: string;
+  h1: string;
+  description: string;
+  image: string;
+  canonical: string;
+  publishedTime: string | null;
+  author: string;
+  htmlContent: string;
+  tags: string[];
+  schemaJson: any | null;
+  readTimeMinutes: number;
+}
+
 async function fetchArticleBySlug(slug: string): Promise<ArticleData | null> {
-  // 1. Try blog_posts table
+  // 1. Try blog_posts by slug (direct indexed lookup)
   const manualRes = await fetch(
     `${SUPABASE_URL}/rest/v1/blog_posts?slug=eq.${encodeURIComponent(slug)}&select=*&limit=1`,
-    { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
+    { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } },
   );
 
   if (manualRes.ok) {
@@ -157,16 +155,12 @@ async function fetchArticleBySlug(slug: string): Promise<ArticleData | null> {
     if (rows.length > 0) {
       const p = rows[0];
       if (!p.published_at) return null;
-
-      const description = resolveDescription(p.excerpt, null, p.content);
-      const image = p.cover_url || FALLBACK_IMAGE;
       const content = p.content || '';
-
       return {
         title: p.title,
         h1: p.title,
-        description,
-        image: toAbsoluteUrl(image),
+        description: resolveDescription(p.excerpt, null, content),
+        image: toAbsoluteUrl(p.cover_url || ''),
         canonical: `${SITE_URL}/blog/${slug}`,
         publishedTime: p.published_at,
         author: p.author || SITE_NAME,
@@ -178,12 +172,11 @@ async function fetchArticleBySlug(slug: string): Promise<ArticleData | null> {
     }
   }
 
-  // 2. Try seo_articles table
+  // 2. Try seo_articles (need to match slug from outline or keyword)
   const seoRes = await fetch(
-    `${SUPABASE_URL}/rest/v1/seo_articles?status=eq.published&select=*`,
-    { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
+    `${SUPABASE_URL}/rest/v1/seo_articles?status=eq.published&select=id,keyword,outline,image_urls,draft_html,draft_meta,schema_json,cluster_context,updated_at,created_at`,
+    { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } },
   );
-
   if (!seoRes.ok) return null;
 
   const seoRows = await seoRes.json();
@@ -193,7 +186,6 @@ async function fetchArticleBySlug(slug: string): Promise<ArticleData | null> {
       o?.slug || a.keyword?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     return derivedSlug === slug;
   });
-
   if (!match) return null;
 
   const outline = match.outline as any;
@@ -203,7 +195,7 @@ async function fetchArticleBySlug(slug: string): Promise<ArticleData | null> {
   const h1 = outline?.h1 || outline?.title || match.keyword || slug;
   const description = resolveDescription(outline?.meta_description, outline?.excerpt, match.draft_html);
 
-  let image = FALLBACK_IMAGE;
+  let image = '';
   if (Array.isArray(images) && images.length > 0) {
     const first = images[0];
     const url = typeof first === 'string' ? first : first?.url;
@@ -211,9 +203,7 @@ async function fetchArticleBySlug(slug: string): Promise<ArticleData | null> {
   }
 
   let htmlContent = match.draft_html || '';
-  if (Array.isArray(images)) {
-    htmlContent = resolveImagePlaceholders(htmlContent, images);
-  }
+  if (Array.isArray(images)) htmlContent = resolveImagePlaceholders(htmlContent, images);
   htmlContent = cleanArticleHtml(htmlContent);
 
   return {
@@ -231,36 +221,23 @@ async function fetchArticleBySlug(slug: string): Promise<ArticleData | null> {
   };
 }
 
-function formatDateFr(dateStr: string | null): string {
-  if (!dateStr) return '';
-  try {
-    return new Date(dateStr).toLocaleDateString('fr-FR', {
-      day: 'numeric', month: 'long', year: 'numeric',
-    });
-  } catch { return ''; }
-}
+// ── HTML injection into SPA shell ────────────────────────────────────────────
 
-function buildFullHtml(article: ArticleData): string {
-  const t = escapeHtml(article.title);
-  const h1 = escapeHtml(article.h1);
-  const d = escapeHtml(article.description);
-  const img = escapeHtml(article.image);
-  const url = escapeHtml(article.canonical);
-  const author = escapeHtml(article.author);
-  const dateFr = formatDateFr(article.publishedTime);
-  const pub = article.publishedTime
-    ? `<meta property="article:published_time" content="${escapeHtml(article.publishedTime)}" />`
-    : '';
+function buildHeadInjection(a: ArticleData): string {
+  const t = escapeAttr(a.title);
+  const d = escapeAttr(a.description);
+  const img = escapeAttr(a.image);
+  const url = escapeAttr(a.canonical);
+  const author = escapeAttr(a.author);
 
-  // Build JSON-LD structured data
-  const jsonLd = article.schemaJson || {
+  const jsonLd = a.schemaJson || {
     '@context': 'https://schema.org',
     '@type': 'Article',
-    headline: article.h1,
-    description: article.description,
-    image: article.image,
-    url: article.canonical,
-    datePublished: article.publishedTime,
+    headline: a.h1,
+    description: a.description,
+    image: a.image,
+    url: a.canonical,
+    datePublished: a.publishedTime,
     author: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
     publisher: {
       '@type': 'Organization',
@@ -268,24 +245,17 @@ function buildFullHtml(article: ArticleData): string {
       url: SITE_URL,
       logo: { '@type': 'ImageObject', url: `${SITE_URL}/favicon.png` },
     },
-    mainEntityOfPage: { '@type': 'WebPage', '@id': article.canonical },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': a.canonical },
     inLanguage: 'fr',
   };
 
-  return `<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${t}</title>
+  return `
+  <!-- SSR article meta -->
   <meta name="description" content="${d}" />
   <meta name="author" content="${author}" />
   <meta name="robots" content="index, follow" />
   <link rel="canonical" href="${url}" />
-  <link rel="icon" href="${SITE_URL}/favicon.png" type="image/png" />
-  <link rel="sitemap" type="application/xml" href="${SITE_URL}/sitemap.xml" />
 
-  <!-- Open Graph -->
   <meta property="og:type" content="article" />
   <meta property="og:url" content="${url}" />
   <meta property="og:title" content="${t}" />
@@ -295,125 +265,170 @@ function buildFullHtml(article: ArticleData): string {
   <meta property="og:image:height" content="630" />
   <meta property="og:site_name" content="${SITE_NAME}" />
   <meta property="og:locale" content="fr_FR" />
-  ${pub}
+  ${a.publishedTime ? `<meta property="article:published_time" content="${escapeAttr(a.publishedTime)}" />` : ''}
   <meta property="article:author" content="${author}" />
 
-  <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@nutrizen_fr" />
   <meta name="twitter:title" content="${t}" />
   <meta name="twitter:description" content="${d}" />
   <meta name="twitter:image" content="${img}" />
 
-  <!-- JSON-LD Structured Data -->
   <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
+  <!-- /SSR article meta -->`;
+}
 
+function buildBodyInjection(a: ArticleData): string {
+  const h1 = escapeAttr(a.h1);
+  const author = escapeAttr(a.author);
+  const dateFr = formatDateFr(a.publishedTime);
+  const img = escapeAttr(a.image);
+
+  return `
+  <div id="ssr-article" style="max-width:768px;margin:0 auto;padding:32px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1a1a1a;line-height:1.7">
+    <nav style="font-size:0.875rem;color:#6b7280;margin-bottom:24px" aria-label="Fil d'Ariane">
+      <a href="/" style="color:#0D7377;text-decoration:none">Accueil</a> ›
+      <a href="/blog" style="color:#0D7377;text-decoration:none">Blog</a> ›
+      <span>${h1}</span>
+    </nav>
+    ${a.tags.length > 0 ? a.tags.map((tag) => `<span style="display:inline-block;background:#e5f7f7;color:#0D7377;padding:4px 12px;border-radius:999px;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px">${escapeAttr(tag)}</span>`).join(' ') : ''}
+    <h1 style="font-size:2rem;font-weight:800;line-height:1.2;margin-bottom:16px;color:#111">${h1}</h1>
+    <div style="display:flex;flex-wrap:wrap;gap:16px;font-size:0.875rem;color:#6b7280;margin-bottom:24px">
+      ${dateFr ? `<span>📅 ${dateFr}</span>` : ''}
+      <span>⏱ ${a.readTimeMinutes} min de lecture</span>
+      <span>✍️ ${author}</span>
+    </div>
+    ${a.image !== FALLBACK_IMAGE ? `<img src="${img}" alt="${h1}" style="width:100%;height:auto;border-radius:12px;margin-bottom:32px;max-height:400px;object-fit:cover" />` : ''}
+    <article style="font-size:1.05rem">${a.htmlContent}</article>
+  </div>
+  <script>
+    // Remove SSR content once React hydrates to avoid duplication
+    (function(){
+      var el = document.getElementById('ssr-article');
+      if (el) {
+        var observer = new MutationObserver(function() {
+          var root = document.getElementById('root');
+          if (root && root.children.length > 0) {
+            el.remove();
+            observer.disconnect();
+          }
+        });
+        observer.observe(document.getElementById('root'), { childList: true });
+        // Fallback: remove after 5s regardless
+        setTimeout(function() { if (el.parentNode) el.remove(); observer.disconnect(); }, 5000);
+      }
+    })();
+  </script>`;
+}
+
+function injectIntoHtml(originalHtml: string, article: ArticleData): string {
+  let html = originalHtml;
+
+  // 1. Replace <title>
+  html = html.replace(
+    /<title>[^<]*<\/title>/,
+    `<title>${escapeAttr(article.title)} — ${SITE_NAME}</title>`,
+  );
+
+  // 2. Remove existing generic meta tags that we'll replace
+  // Remove existing description
+  html = html.replace(/<meta\s+name="description"\s+content="[^"]*"\s*\/?>/g, '');
+  // Remove existing canonical
+  html = html.replace(/<link\s+rel="canonical"\s+href="[^"]*"\s*\/?>/g, '');
+  // Remove existing OG tags
+  html = html.replace(/<meta\s+property="og:[^"]*"\s+content="[^"]*"\s*\/?>/g, '');
+  // Remove existing twitter tags
+  html = html.replace(/<meta\s+name="twitter:[^"]*"\s+content="[^"]*"\s*\/?>/g, '');
+
+  // 3. Inject article-specific head tags before </head>
+  const headInjection = buildHeadInjection(article);
+  html = html.replace('</head>', `${headInjection}\n</head>`);
+
+  // 4. Inject article content before <div id="root">
+  const bodyInjection = buildBodyInjection(article);
+  html = html.replace('<div id="root"></div>', `${bodyInjection}\n    <div id="root"></div>`);
+
+  return html;
+}
+
+// ── 404 page ─────────────────────────────────────────────────────────────────
+
+function build404Html(): string {
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Article introuvable — ${SITE_NAME}</title>
+  <meta name="robots" content="noindex" />
+  <meta name="description" content="Cet article n'existe pas ou a été supprimé." />
+  <link rel="icon" href="${SITE_URL}/favicon.png" type="image/png" />
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1a1a1a; background: #fff; line-height: 1.7; }
-    .site-header { background: #0D7377; color: #fff; padding: 16px 24px; }
-    .site-header a { color: #fff; text-decoration: none; font-weight: 700; font-size: 1.25rem; }
-    .container { max-width: 768px; margin: 0 auto; padding: 32px 20px; }
-    .breadcrumb { font-size: 0.875rem; color: #6b7280; margin-bottom: 24px; }
-    .breadcrumb a { color: #0D7377; text-decoration: none; }
-    .article-meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.875rem; color: #6b7280; margin-bottom: 24px; }
-    .tag { display: inline-block; background: #e5f7f7; color: #0D7377; padding: 4px 12px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
-    h1 { font-size: 2rem; font-weight: 800; line-height: 1.2; margin-bottom: 16px; color: #111; }
-    .hero-img { width: 100%; height: auto; border-radius: 12px; margin-bottom: 32px; max-height: 400px; object-fit: cover; }
-    .article-body { font-size: 1.05rem; }
-    .article-body h2 { font-size: 1.5rem; font-weight: 700; margin: 32px 0 16px; color: #111; }
-    .article-body h3 { font-size: 1.25rem; font-weight: 600; margin: 24px 0 12px; color: #222; }
-    .article-body p { margin-bottom: 16px; }
-    .article-body ul, .article-body ol { margin-bottom: 16px; padding-left: 24px; }
-    .article-body li { margin-bottom: 8px; }
-    .article-body a { color: #0D7377; }
-    .article-body img { max-width: 100%; height: auto; border-radius: 8px; margin: 16px 0; }
-    .article-body blockquote { border-left: 4px solid #0D7377; padding: 12px 20px; margin: 16px 0; background: #f9fafb; font-style: italic; }
-    .article-body table { width: 100%; border-collapse: collapse; margin: 16px 0; }
-    .article-body th, .article-body td { border: 1px solid #e5e7eb; padding: 8px 12px; text-align: left; }
-    .article-body th { background: #f3f4f6; font-weight: 600; }
-    .article-body details { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; }
-    .article-body summary { cursor: pointer; font-weight: 600; }
-    .site-footer { background: #f9fafb; border-top: 1px solid #e5e7eb; padding: 24px; text-align: center; font-size: 0.875rem; color: #6b7280; margin-top: 48px; }
-    .site-footer a { color: #0D7377; text-decoration: none; }
-    @media (max-width: 640px) { h1 { font-size: 1.5rem; } .container { padding: 20px 16px; } }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f9fafb; color: #1a1a1a; }
+    .box { text-align: center; max-width: 480px; padding: 48px 24px; }
+    h1 { font-size: 3rem; font-weight: 800; color: #0D7377; margin-bottom: 16px; }
+    p { font-size: 1.125rem; color: #6b7280; margin-bottom: 24px; }
+    a { display: inline-block; background: #0D7377; color: #fff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; }
+    a:hover { background: #0a5c5f; }
   </style>
 </head>
 <body>
-  <header class="site-header">
-    <a href="${SITE_URL}/">${SITE_NAME}</a>
-  </header>
-
-  <main class="container">
-    <nav class="breadcrumb" aria-label="Fil d'Ariane">
-      <a href="${SITE_URL}/">Accueil</a> &rsaquo;
-      <a href="${SITE_URL}/blog">Blog</a> &rsaquo;
-      <span>${h1}</span>
-    </nav>
-
-    ${article.tags.length > 0 ? article.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join(' ') : ''}
-
-    <h1>${h1}</h1>
-
-    <div class="article-meta">
-      ${dateFr ? `<span>📅 ${dateFr}</span>` : ''}
-      <span>⏱ ${article.readTimeMinutes} min de lecture</span>
-      <span>✍️ ${author}</span>
-    </div>
-
-    ${article.image !== FALLBACK_IMAGE ? `<img class="hero-img" src="${img}" alt="${h1}" />` : ''}
-
-    <article class="article-body">
-      ${article.htmlContent}
-    </article>
-  </main>
-
-  <footer class="site-footer">
-    <p>&copy; ${new Date().getFullYear()} <a href="${SITE_URL}/">${SITE_NAME}</a> — Menus nutritionnels personnalisés</p>
-    <p><a href="${SITE_URL}/blog">Tous les articles</a></p>
-  </footer>
+  <div class="box">
+    <h1>404</h1>
+    <p>Cet article n'existe pas ou a été supprimé.</p>
+    <a href="${SITE_URL}/blog">Voir tous les articles</a>
+  </div>
 </body>
 </html>`;
 }
 
-export default async function handler(request: Request) {
-  const ua = request.headers.get('user-agent') || '';
+// ── Main handler ─────────────────────────────────────────────────────────────
 
-  // CRITICAL: Only intercept social preview bots.
-  // Googlebot, Bingbot, and all search engine crawlers pass through untouched.
-  if (!isSocialBot(ua)) {
-    return; // pass through to SPA — search engines see the normal page
-  }
-
+export default async function handler(request: Request, context: Context) {
   const url = new URL(request.url);
   const pathParts = url.pathname.split('/').filter(Boolean);
 
+  // Only handle /blog/:slug — let /blog pass through to SPA
   if (pathParts.length < 2 || pathParts[0] !== 'blog') {
-    return;
+    return context.next();
   }
 
-  const slug = pathParts[1];
+  const slug = decodeURIComponent(pathParts[1]);
+
+  // Skip asset requests
+  if (slug.includes('.') && !slug.endsWith('.html')) {
+    return context.next();
+  }
 
   try {
     const article = await fetchArticleBySlug(slug);
 
     if (!article) {
-      return; // pass through to SPA 404
+      // Real 404 for unknown slugs
+      return new Response(build404Html(), {
+        status: 404,
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      });
     }
 
-    const html = buildFullHtml(article);
+    // Get the original SPA HTML from Netlify
+    const originalResponse = await context.next();
+    const originalHtml = await originalResponse.text();
 
-    return new Response(html, {
+    // Inject article-specific meta + content into the SPA shell
+    const enrichedHtml = injectIntoHtml(originalHtml, article);
+
+    return new Response(enrichedHtml, {
       status: 200,
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
-        // Short cache for social unfurl — NO X-Robots-Tag header
-        'Cache-Control': 'public, max-age=300, s-maxage=600',
+        'Cache-Control': 'public, max-age=300, s-maxage=3600',
       },
     });
   } catch (err) {
-    console.error('[og-blog] Error:', err);
-    return; // fail open
+    console.error('[og-blog] Error enriching article:', err);
+    // Fail open: serve the normal SPA
+    return context.next();
   }
 }
 
