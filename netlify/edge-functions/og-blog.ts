@@ -379,8 +379,10 @@ function buildFullHtml(article: ArticleData): string {
 export default async function handler(request: Request) {
   const ua = request.headers.get('user-agent') || '';
 
-  if (!isCrawler(ua)) {
-    return; // pass through to SPA
+  // CRITICAL: Only intercept social preview bots.
+  // Googlebot, Bingbot, and all search engine crawlers pass through untouched.
+  if (!isSocialBot(ua)) {
+    return; // pass through to SPA — search engines see the normal page
   }
 
   const url = new URL(request.url);
@@ -405,7 +407,8 @@ export default async function handler(request: Request) {
       status: 200,
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
-        'Cache-Control': 'public, max-age=3600, s-maxage=86400',
+        // Short cache for social unfurl — NO X-Robots-Tag header
+        'Cache-Control': 'public, max-age=300, s-maxage=600',
       },
     });
   } catch (err) {
