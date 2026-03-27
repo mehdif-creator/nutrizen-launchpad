@@ -62,7 +62,7 @@ export const AppHeader = () => {
           <nav className="hidden xl:flex items-center gap-0.5">
             {[
               { to: "/app", label: "Tableau de bord", icon: Home },
-              
+              { to: "/app/credits", label: "Crédits", icon: Sparkles },
               { to: "/app/scan-repas", label: "ScanRepas", icon: Camera },
               { to: "/app/scan-barcode", label: "CodeBarres", icon: ScanBarcode },
               { to: "/app/inspi-frigo", label: "InspiFrigo", icon: Camera },

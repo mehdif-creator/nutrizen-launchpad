@@ -192,7 +192,7 @@ export function ZenCreditsDisplay({
               {showBuyButton && (
                 <Button
                   size={size === 'lg' ? 'default' : 'sm'}
-                  onClick={() => navigate('/app')}
+                  onClick={() => navigate('/app/credits')}
                   className="gap-2"
                 >
                   <Plus className="h-4 w-4" />

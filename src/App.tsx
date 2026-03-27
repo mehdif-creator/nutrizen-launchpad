@@ -141,6 +141,7 @@ const App = () => {
         <Route path="/app/famille-plus" element={<Navigate to="/app" replace />} />
         <Route path="/app/day-menu/:date" element={<ProtectedRoute><DayMenu /></ProtectedRoute>} />
         <Route path="/app/scan-barcode" element={<ProtectedRoute><ErrorBoundary><ScanBarcode /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="/app/credits" element={<ProtectedRoute><Credits /></ProtectedRoute>} />
         <Route path="/pricing" element={<Navigate to="/" replace />} />
 
         {/* Admin (Protected + Admin Only) */}
