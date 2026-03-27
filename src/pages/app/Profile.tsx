@@ -56,6 +56,7 @@ function HouseholdBanner() {
 
 export default function Profile() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
