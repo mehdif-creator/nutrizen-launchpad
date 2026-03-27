@@ -26,8 +26,8 @@ interface Recipe {
 
 interface DayCardWithRecipesProps {
   day: string;
-  date?: string; // YYYY-MM-DD format for linking to day menu
-  dayIndex?: number; // 0-6 day index for swap
+  date?: string;
+  dayIndex?: number;
   lunchRecipe?: Recipe | null;
   dinnerRecipe?: Recipe | null;
   onValidate?: (recipeId: string, mealType: 'lunch' | 'dinner') => void;
@@ -36,6 +36,7 @@ interface DayCardWithRecipesProps {
   swapsRemaining?: number;
   householdAdults?: number;
   householdChildren?: number;
+  effectivePortions?: number;
   'data-onboarding-target'?: string;
 }
 
