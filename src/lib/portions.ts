@@ -9,9 +9,22 @@ export interface HouseholdInfo {
 }
 
 /**
- * Child portion ratio (children count as 0.7 of an adult)
+ * Child portion ratio — LEGACY flat value (0.7).
+ * Prefer age-based childPortionCoeff() when child ages are known.
+ * @deprecated Use childPortionCoeff(age) instead when ages are available.
  */
 export const CHILD_PORTION_RATIO = 0.7;
+
+/**
+ * Age-based child portion coefficient — single source of truth.
+ * Must match rpc_get_effective_portions in the database.
+ */
+export function childPortionCoeff(age: number): number {
+  if (age <= 3) return 0.3;
+  if (age <= 8) return 0.5;
+  if (age <= 13) return 0.7;
+  return 1.0;
+}
 
 /**
  * Calculate effective household size (total portions needed)
