@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 interface RecipePortionBadgeProps {
   adults: number;
   children: number;
+  effectivePortions?: number;
   className?: string;
 }
 
