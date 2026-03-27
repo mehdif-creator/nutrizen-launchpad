@@ -47,7 +47,7 @@ export function MealCard({
   'data-onboarding-target': dataOnboardingTarget
 }: MealCardProps) {
   const [imageFailed, setImageFailed] = useState(false);
-  const effectiveSize = effectivePortions?.toFixed(1) ?? (householdAdults + householdChildren * 0.7).toFixed(1);
+  const effectiveSize = effectivePortions != null ? effectivePortions.toFixed(1) : null;
   
   const displayImageUrl = getRecipeImageUrl({ image_url: imageUrl, image_path: imagePath });
   
