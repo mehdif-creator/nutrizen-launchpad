@@ -11,9 +11,10 @@ interface RecipePortionBadgeProps {
 export function RecipePortionBadge({ 
   adults, 
   children,
+  effectivePortions,
   className 
 }: RecipePortionBadgeProps) {
-  const effectiveSize = (adults + children * 0.7).toFixed(1);
+  const effectiveSize = effectivePortions?.toFixed(1) ?? (adults + children * 0.7).toFixed(1);
   
   if (adults === 1 && children === 0) {
     return (
