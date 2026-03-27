@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { AppHeader } from '@/components/app/AppHeader';
 import { AppFooter } from '@/components/app/AppFooter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -55,6 +56,7 @@ function HouseholdBanner() {
 
 export default function Profile() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -536,6 +538,11 @@ export default function Profile() {
           meals_per_day: mealsPerDay,
         }).eq('id', user.id),
       ]);
+
+      // Invalidate cached portions so dashboard picks up the new values immediately
+      queryClient.invalidateQueries({ queryKey: ['effectivePortions'] });
+      queryClient.invalidateQueries({ queryKey: ['weeklyRecipesByDay'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
 
       toast({
         title: '✅ Vos préférences ont bien été enregistrées !',
