@@ -142,7 +142,8 @@ export function MobileDayCarousel({
   if (!selectedDay) return null;
 
   const today = new Date().toISOString().split('T')[0];
-  const effectiveSize = (householdAdults + householdChildren * 0.7).toFixed(1);
+  // effectivePortions is now passed as a prop from the dashboard (single source of truth)
+  const effectiveSize = effectivePortions?.toFixed(1) ?? (householdAdults + householdChildren * 0.7).toFixed(1);
   const showHousehold = householdAdults > 1 || householdChildren > 0;
 
   return (
