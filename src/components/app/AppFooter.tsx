@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Shield, Lock, CreditCard } from "lucide-react";
+import { Shield, Lock, CreditCard, ExternalLink } from "lucide-react";
 
 export const AppFooter = () => {
   return (

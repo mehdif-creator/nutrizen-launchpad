@@ -1,4 +1,4 @@
-import { Shield, Lock, CreditCard, Cookie } from 'lucide-react';
+import { Shield, Lock, CreditCard, Cookie, ExternalLink } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { openCookieSettings } from '@/components/common/CookieConsent';
 
