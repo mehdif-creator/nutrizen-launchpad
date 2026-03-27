@@ -36,6 +36,7 @@ const SupabaseDebug = lazy(() => import('./pages/app/SupabaseDebug'));
 
 const DayMenu = lazy(() => import('./pages/app/DayMenu'));
 const ScanBarcode = lazy(() => import('./pages/app/ScanBarcode'));
+const Credits = lazy(() => import('./pages/app/Credits'));
 
 // Admin
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
