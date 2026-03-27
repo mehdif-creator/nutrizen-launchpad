@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { AppHeader } from '@/components/app/AppHeader';
 import { AppFooter } from '@/components/app/AppFooter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
