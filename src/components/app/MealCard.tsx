@@ -82,7 +82,7 @@ export function MealCard({
         <div className="font-semibold leading-tight line-clamp-2">{title}</div>
         
         {/* Household portions badge */}
-        {(householdAdults > 1 || householdChildren > 0) && (
+        {effectiveSize != null && (householdAdults > 1 || householdChildren > 0) && (
           <Badge variant="secondary" className="text-xs">
             <Users className="h-3 w-3 mr-1" />
             {householdAdults > 0 && `${householdAdults} adulte${householdAdults > 1 ? 's' : ''}`}

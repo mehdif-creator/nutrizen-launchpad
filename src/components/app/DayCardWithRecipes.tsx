@@ -201,7 +201,7 @@ export function DayCardWithRecipes({
       {/* Header */}
       <div className="p-4 pb-2 flex items-center justify-between border-b border-border">
         <div className="font-semibold">{day}</div>
-        {(householdAdults > 1 || householdChildren > 0) && (
+        {effectiveSize != null && (householdAdults > 1 || householdChildren > 0) && (
           <Badge variant="secondary" className="text-xs">
             <Users className="h-3 w-3 mr-1" />
             {householdAdults > 0 && `${householdAdults} adulte${householdAdults > 1 ? 's' : ''}`}
