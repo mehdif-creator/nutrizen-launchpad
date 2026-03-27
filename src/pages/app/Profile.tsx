@@ -539,6 +539,11 @@ export default function Profile() {
         }).eq('id', user.id),
       ]);
 
+      // Invalidate cached portions so dashboard picks up the new values immediately
+      queryClient.invalidateQueries({ queryKey: ['effectivePortions'] });
+      queryClient.invalidateQueries({ queryKey: ['weeklyRecipesByDay'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
+
       toast({
         title: '✅ Vos préférences ont bien été enregistrées !',
         description: 'Votre menu se régénère avec vos nouvelles préférences...',
