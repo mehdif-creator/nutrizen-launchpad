@@ -18,6 +18,7 @@ interface MealCardProps {
   swapsRemaining?: number;
   householdAdults?: number;
   householdChildren?: number;
+  effectivePortions?: number;
   proteins?: number;
   carbs?: number;
   fats?: number;
