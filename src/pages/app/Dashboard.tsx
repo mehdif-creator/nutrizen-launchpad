@@ -745,7 +745,7 @@ export default function Dashboard() {
 
             {/* Credits Display & Purchase */}
             <div className="space-y-4" id="credits">
-              <ZenCreditsDisplay userId={user?.id} showBuyButton={false} size="md" />
+              <ZenCreditsDisplay userId={user?.id} showBuyButton={true} size="md" />
             </div>
 
             {/* Liste de courses */}
