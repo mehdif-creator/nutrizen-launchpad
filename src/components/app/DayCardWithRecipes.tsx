@@ -187,7 +187,8 @@ export function DayCardWithRecipes({
   'data-onboarding-target': dataOnboardingTarget,
 }: DayCardWithRecipesProps & { swapping?: boolean }) {
   const navigate = useNavigate();
-  const effectiveSize = effectivePortions?.toFixed(1) ?? (householdAdults + householdChildren * 0.7).toFixed(1);
+  // Single source of truth: only display when effectivePortions is available
+  const effectiveSize = effectivePortions != null ? effectivePortions.toFixed(1) : null;
 
   // Both meals empty → full placeholder card
   const hasMeals = lunchRecipe || dinnerRecipe;
