@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Users, User, Baby } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { CHILD_PORTION_RATIO } from '@/lib/portions';
 
 interface HouseholdSizeSectionProps {
   userId: string;
@@ -67,7 +68,10 @@ export function HouseholdSizeSection({ userId }: HouseholdSizeSectionProps) {
     }
   };
 
-  const effectiveSize = adults + children * 0.7;
+  // Use canonical age-based logic — but this component has no per-child ages,
+  // so we fall back to the legacy flat ratio. The real source of truth is
+  // useEffectivePortions which reads from the DB RPC.
+  const effectiveSize = adults + children * CHILD_PORTION_RATIO;
   const hasChanges = true; // Could track if values changed from DB
 
   if (loading) {
