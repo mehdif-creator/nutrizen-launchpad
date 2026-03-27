@@ -47,7 +47,7 @@ export function MealCard({
   'data-onboarding-target': dataOnboardingTarget
 }: MealCardProps) {
   const [imageFailed, setImageFailed] = useState(false);
-  const effectiveSize = effectivePortions?.toFixed(1) ?? (householdAdults + householdChildren * 0.7).toFixed(1);
+  const effectiveSize = effectivePortions != null ? effectivePortions.toFixed(1) : null;
   
   const displayImageUrl = getRecipeImageUrl({ image_url: imageUrl, image_path: imagePath });
   
@@ -82,7 +82,7 @@ export function MealCard({
         <div className="font-semibold leading-tight line-clamp-2">{title}</div>
         
         {/* Household portions badge */}
-        {(householdAdults > 1 || householdChildren > 0) && (
+        {effectiveSize != null && (householdAdults > 1 || householdChildren > 0) && (
           <Badge variant="secondary" className="text-xs">
             <Users className="h-3 w-3 mr-1" />
             {householdAdults > 0 && `${householdAdults} adulte${householdAdults > 1 ? 's' : ''}`}

@@ -14,7 +14,9 @@ export function RecipePortionBadge({
   effectivePortions,
   className 
 }: RecipePortionBadgeProps) {
-  const effectiveSize = effectivePortions?.toFixed(1) ?? (adults + children * 0.7).toFixed(1);
+  // Single source of truth: only use effectivePortions from the hook, never recalculate
+  if (effectivePortions == null) return null;
+  const effectiveSize = effectivePortions.toFixed(1);
   
   if (adults === 1 && children === 0) {
     return (
