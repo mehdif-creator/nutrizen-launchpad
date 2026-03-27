@@ -10,6 +10,7 @@ export interface RecipeInfo {
   recipe_id: string;
   title: string;
   image_url: string | null;
+  image_path?: string | null;
   prep_min: number;
   total_min: number;
   calories: number;

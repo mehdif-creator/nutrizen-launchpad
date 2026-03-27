@@ -17,6 +17,7 @@ interface MobileDayCarouselProps {
   swapping?: boolean;
   householdAdults: number;
   householdChildren: number;
+  effectivePortions?: number;
 }
 
 const SHORT_DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
@@ -41,7 +42,7 @@ function MobileMealCard({
   swapping?: boolean;
 }) {
   const navigate = useNavigate();
-  const imageUrl = getRecipeImageUrl({ image_url: recipe.image_url });
+  const imageUrl = getRecipeImageUrl({ image_url: recipe.image_url, image_path: recipe.image_path });
 
   return (
     <Card className="rounded-2xl border shadow-sm overflow-hidden">
@@ -117,6 +118,7 @@ export function MobileDayCarousel({
   swapping,
   householdAdults,
   householdChildren,
+  effectivePortions,
 }: MobileDayCarouselProps) {
   // Determine today's index
   const todayIndex = useMemo(() => {
@@ -142,7 +144,8 @@ export function MobileDayCarousel({
   if (!selectedDay) return null;
 
   const today = new Date().toISOString().split('T')[0];
-  const effectiveSize = (householdAdults + householdChildren * 0.7).toFixed(1);
+  // effectivePortions is now passed as a prop from the dashboard (single source of truth)
+  const effectiveSize = effectivePortions?.toFixed(1) ?? (householdAdults + householdChildren * 0.7).toFixed(1);
   const showHousehold = householdAdults > 1 || householdChildren > 0;
 
   return (
