@@ -112,7 +112,7 @@ export default function Credits() {
                       </Badge>
                     )}
                     {isBestValue && (
-                      <Badge className="absolute -top-3 right-3 bg-emerald-500 text-white">
+                      <Badge className="absolute -top-3 right-3 bg-primary/80 text-primary-foreground">
                         Meilleur prix
                       </Badge>
                     )}
