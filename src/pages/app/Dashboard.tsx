@@ -729,6 +729,7 @@ export default function Dashboard() {
                       swapping={swapping}
                       householdAdults={householdAdults}
                       householdChildren={householdChildren}
+                      effectivePortions={portions?.effective_servings_per_meal}
                       data-onboarding-target={i === 0 ? "meal-card" : undefined}
                     />
                   ))}
