@@ -17,6 +17,7 @@ interface MobileDayCarouselProps {
   swapping?: boolean;
   householdAdults: number;
   householdChildren: number;
+  effectivePortions?: number;
 }
 
 const SHORT_DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
