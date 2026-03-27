@@ -41,7 +41,7 @@ function MobileMealCard({
   swapping?: boolean;
 }) {
   const navigate = useNavigate();
-  const imageUrl = getRecipeImageUrl({ image_url: recipe.image_url });
+  const imageUrl = getRecipeImageUrl({ image_url: recipe.image_url, image_path: recipe.image_path });
 
   return (
     <Card className="rounded-2xl border shadow-sm overflow-hidden">
