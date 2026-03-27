@@ -39,7 +39,7 @@ export function InsufficientCreditsModal({
 
   const handleBuyCredits = () => {
     onOpenChange(false);
-    navigate('/app');
+    navigate('/app/credits');
   };
 
   const missing = required - currentBalance;
