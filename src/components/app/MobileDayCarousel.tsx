@@ -118,6 +118,7 @@ export function MobileDayCarousel({
   swapping,
   householdAdults,
   householdChildren,
+  effectivePortions,
 }: MobileDayCarouselProps) {
   // Determine today's index
   const todayIndex = useMemo(() => {
