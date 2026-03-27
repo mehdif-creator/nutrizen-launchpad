@@ -539,6 +539,11 @@ export default function Dashboard() {
           />
         </section>
 
+        {/* ═══ MOBILE: Crédits Zen ═══ */}
+        <section className="md:hidden px-4 mb-4">
+          <ZenCreditsDisplay userId={user?.id} showBuyButton={true} size="sm" />
+        </section>
+
         {/* Quick Links — hidden on mobile */}
         <section className="hidden md:block px-4 sm:px-6 lg:px-10 mb-6 md:mb-8">
           <h3 className="text-base md:text-lg font-semibold mb-3">Accès rapide</h3>
