@@ -237,9 +237,15 @@ export function ManualSocialPostDetail({
           )}
         </div>
 
-        <Separator />
+        {/* Recipe details */}
+        {hasRecipeData(post) && (
+          <>
+            <Separator />
+            <RecipeSection post={post} onCopy={copyToClipboard} />
+          </>
+        )}
 
-        {/* Notes */}
+        <Separator />
         <div>
           <h3 className="text-sm font-medium mb-2">Notes internes</h3>
           <Textarea
