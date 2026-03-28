@@ -5,13 +5,19 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Copy, ExternalLink, Download, CheckCircle2, Archive, RotateCcw,
-  FileText, ImageIcon, Globe, Sparkles, ClipboardCopy,
+  FileText, ImageIcon, Globe, Sparkles, ClipboardCopy, ChefHat, ChevronDown,
+  UtensilsCrossed, ListOrdered, Video,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { ManualSocialPost } from '@/hooks/useManualSocialPosts';
 import { getEffectiveDescription, getBoardName } from '@/hooks/useManualSocialPosts';
+import {
+  getIngredients, getPreparationSteps, hasRecipeData,
+  formatIngredientsText, formatPreparationText, buildTikTokScript,
+} from '@/lib/recipePostHelpers';
 
 interface Props {
   post: ManualSocialPost | null;
