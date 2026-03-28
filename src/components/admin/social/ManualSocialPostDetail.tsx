@@ -349,9 +349,10 @@ function RecipeSection({
 }) {
   const ingredients = getIngredients(post);
   const steps = getPreparationSteps(post);
+  const recipeExists = ingredients.length > 0 || steps.length > 0;
 
   return (
-    <Collapsible defaultOpen={false}>
+    <Collapsible defaultOpen={recipeExists}>
       <CollapsibleTrigger className="flex items-center gap-2 w-full text-left group">
         <ChefHat className="h-4 w-4 text-primary" />
         <span className="text-sm font-medium flex-1">Recette</span>
