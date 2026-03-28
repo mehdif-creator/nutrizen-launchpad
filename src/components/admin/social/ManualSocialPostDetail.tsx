@@ -414,6 +414,7 @@ function RecipeSection({
           ) : (
             <p className="text-sm text-muted-foreground italic bg-muted/50 rounded-md px-3 py-2">Aucune préparation disponible</p>
           )}
+        </div>
 
         {/* TikTok script */}
         <Button
