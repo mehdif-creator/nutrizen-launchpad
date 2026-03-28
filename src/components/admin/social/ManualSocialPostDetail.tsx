@@ -238,12 +238,8 @@ export function ManualSocialPostDetail({
         </div>
 
         {/* Recipe details */}
-        {hasRecipeData(post) && (
-          <>
-            <Separator />
-            <RecipeSection post={post} onCopy={copyToClipboard} />
-          </>
-        )}
+        <Separator />
+        <RecipeSection post={post} onCopy={copyToClipboard} />
 
         <Separator />
         <div>
