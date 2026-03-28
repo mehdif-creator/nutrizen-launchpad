@@ -359,13 +359,13 @@ function RecipeSection({
       </CollapsibleTrigger>
       <CollapsibleContent className="pt-3 space-y-4">
         {/* Ingredients */}
-        {ingredients.length > 0 && (
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-sm font-medium flex items-center gap-1.5">
-                <UtensilsCrossed className="h-3.5 w-3.5" />
-                Ingrédients
-              </span>
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-sm font-medium flex items-center gap-1.5">
+              <UtensilsCrossed className="h-3.5 w-3.5" />
+              Ingrédients
+            </span>
+            {ingredients.length > 0 && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -374,23 +374,27 @@ function RecipeSection({
                 <Copy className="mr-1.5 h-3.5 w-3.5" />
                 Copier les ingrédients
               </Button>
-            </div>
+            )}
+          </div>
+          {ingredients.length > 0 ? (
             <ul className="text-sm bg-muted rounded-md px-4 py-2.5 space-y-1 list-disc list-inside">
               {ingredients.map((item, i) => (
                 <li key={i}>{item}</li>
               ))}
             </ul>
-          </div>
-        )}
+          ) : (
+            <p className="text-sm text-muted-foreground italic bg-muted/50 rounded-md px-3 py-2">Aucun ingrédient disponible</p>
+          )}
+        </div>
 
         {/* Preparation */}
-        {steps.length > 0 && (
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-sm font-medium flex items-center gap-1.5">
-                <ListOrdered className="h-3.5 w-3.5" />
-                Préparation
-              </span>
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-sm font-medium flex items-center gap-1.5">
+              <ListOrdered className="h-3.5 w-3.5" />
+              Préparation
+            </span>
+            {steps.length > 0 && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -399,14 +403,17 @@ function RecipeSection({
                 <Copy className="mr-1.5 h-3.5 w-3.5" />
                 Copier la préparation
               </Button>
-            </div>
+            )}
+          </div>
+          {steps.length > 0 ? (
             <ol className="text-sm bg-muted rounded-md px-4 py-2.5 space-y-1 list-decimal list-inside">
               {steps.map((step, i) => (
                 <li key={i}>{step}</li>
               ))}
             </ol>
-          </div>
-        )}
+          ) : (
+            <p className="text-sm text-muted-foreground italic bg-muted/50 rounded-md px-3 py-2">Aucune préparation disponible</p>
+          )}
 
         {/* TikTok script */}
         <Button
