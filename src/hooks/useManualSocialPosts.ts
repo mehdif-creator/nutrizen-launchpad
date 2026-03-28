@@ -23,6 +23,10 @@ export interface ManualSocialPost {
   board_name: string | null;
   cuisine_type: string | null;
   board_priority: number | null;
+  ingredients_json: unknown | null;
+  ingredients_text: string | null;
+  preparation_steps_json: unknown | null;
+  preparation_steps_text: string | null;
 }
 
 export function getBoardName(post: ManualSocialPost): string {

@@ -5,13 +5,19 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Copy, ExternalLink, Download, CheckCircle2, Archive, RotateCcw,
-  FileText, ImageIcon, Globe, Sparkles, ClipboardCopy,
+  FileText, ImageIcon, Globe, Sparkles, ClipboardCopy, ChefHat, ChevronDown,
+  UtensilsCrossed, ListOrdered, Video,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { ManualSocialPost } from '@/hooks/useManualSocialPosts';
 import { getEffectiveDescription, getBoardName } from '@/hooks/useManualSocialPosts';
+import {
+  getIngredients, getPreparationSteps, hasRecipeData,
+  formatIngredientsText, formatPreparationText, buildTikTokScript,
+} from '@/lib/recipePostHelpers';
 
 interface Props {
   post: ManualSocialPost | null;
@@ -231,9 +237,15 @@ export function ManualSocialPostDetail({
           )}
         </div>
 
-        <Separator />
+        {/* Recipe details */}
+        {hasRecipeData(post) && (
+          <>
+            <Separator />
+            <RecipeSection post={post} onCopy={copyToClipboard} />
+          </>
+        )}
 
-        {/* Notes */}
+        <Separator />
         <div>
           <h3 className="text-sm font-medium mb-2">Notes internes</h3>
           <Textarea
@@ -329,5 +341,88 @@ function ImagePreview({
         </Button>
       </div>
     </div>
+  );
+}
+
+function RecipeSection({
+  post,
+  onCopy,
+}: {
+  post: ManualSocialPost;
+  onCopy: (text: string, label: string) => Promise<void>;
+}) {
+  const ingredients = getIngredients(post);
+  const steps = getPreparationSteps(post);
+
+  return (
+    <Collapsible defaultOpen={false}>
+      <CollapsibleTrigger className="flex items-center gap-2 w-full text-left group">
+        <ChefHat className="h-4 w-4 text-primary" />
+        <span className="text-sm font-medium flex-1">Recette</span>
+        <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="pt-3 space-y-4">
+        {/* Ingredients */}
+        {ingredients.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-sm font-medium flex items-center gap-1.5">
+                <UtensilsCrossed className="h-3.5 w-3.5" />
+                Ingrédients
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onCopy(formatIngredientsText(post), 'Ingrédients')}
+              >
+                <Copy className="mr-1.5 h-3.5 w-3.5" />
+                Copier les ingrédients
+              </Button>
+            </div>
+            <ul className="text-sm bg-muted rounded-md px-4 py-2.5 space-y-1 list-disc list-inside">
+              {ingredients.map((item, i) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Preparation */}
+        {steps.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-sm font-medium flex items-center gap-1.5">
+                <ListOrdered className="h-3.5 w-3.5" />
+                Préparation
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onCopy(formatPreparationText(post), 'Préparation')}
+              >
+                <Copy className="mr-1.5 h-3.5 w-3.5" />
+                Copier la préparation
+              </Button>
+            </div>
+            <ol className="text-sm bg-muted rounded-md px-4 py-2.5 space-y-1 list-decimal list-inside">
+              {steps.map((step, i) => (
+                <li key={i}>{step}</li>
+              ))}
+            </ol>
+          </div>
+        )}
+
+        {/* TikTok script */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full"
+          onClick={() => onCopy(buildTikTokScript(post), 'Script TikTok')}
+        >
+          <Video className="mr-1.5 h-4 w-4" />
+          Copier script TikTok
+        </Button>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }

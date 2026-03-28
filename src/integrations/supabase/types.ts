@@ -1254,9 +1254,13 @@ export type Database = {
           id: string
           image_4x5_url: string | null
           image_9x16_url: string | null
+          ingredients_json: Json | null
+          ingredients_text: string | null
           notes: string | null
           platform_target: string | null
           posted_at: string | null
+          preparation_steps_json: Json | null
+          preparation_steps_text: string | null
           queue_id: string | null
           recipe_id: string | null
           source_workflow: string | null
@@ -1274,9 +1278,13 @@ export type Database = {
           id?: string
           image_4x5_url?: string | null
           image_9x16_url?: string | null
+          ingredients_json?: Json | null
+          ingredients_text?: string | null
           notes?: string | null
           platform_target?: string | null
           posted_at?: string | null
+          preparation_steps_json?: Json | null
+          preparation_steps_text?: string | null
           queue_id?: string | null
           recipe_id?: string | null
           source_workflow?: string | null
@@ -1294,9 +1302,13 @@ export type Database = {
           id?: string
           image_4x5_url?: string | null
           image_9x16_url?: string | null
+          ingredients_json?: Json | null
+          ingredients_text?: string | null
           notes?: string | null
           platform_target?: string | null
           posted_at?: string | null
+          preparation_steps_json?: Json | null
+          preparation_steps_text?: string | null
           queue_id?: string | null
           recipe_id?: string | null
           source_workflow?: string | null
