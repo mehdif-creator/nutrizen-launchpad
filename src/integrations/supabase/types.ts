@@ -2697,6 +2697,7 @@ export type Database = {
           related_keywords: string[] | null
           schema_json: Json | null
           serp_snapshot: Json | null
+          slug: string | null
           status: string
           updated_at: string
         }
@@ -2723,6 +2724,7 @@ export type Database = {
           related_keywords?: string[] | null
           schema_json?: Json | null
           serp_snapshot?: Json | null
+          slug?: string | null
           status?: string
           updated_at?: string
         }
@@ -2749,6 +2751,7 @@ export type Database = {
           related_keywords?: string[] | null
           schema_json?: Json | null
           serp_snapshot?: Json | null
+          slug?: string | null
           status?: string
           updated_at?: string
         }

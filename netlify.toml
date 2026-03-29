@@ -9,3 +9,8 @@
 [[edge_functions]]
   function = "og-blog"
   path = "/blog/*"
+
+[[headers]]
+  for = "/blog/*"
+  [headers.values]
+    X-Robots-Tag = "index, follow"
