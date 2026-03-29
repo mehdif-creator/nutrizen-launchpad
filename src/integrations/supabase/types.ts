@@ -1318,6 +1318,81 @@ export type Database = {
         }
         Relationships: []
       }
+      manual_social_posts_backup_20260328: {
+        Row: {
+          board_name: string | null
+          board_priority: number | null
+          board_slug: string | null
+          created_at: string | null
+          cuisine_type: string | null
+          description: string | null
+          id: string | null
+          image_4x5_url: string | null
+          image_9x16_url: string | null
+          ingredients_json: Json | null
+          ingredients_text: string | null
+          notes: string | null
+          platform_target: string | null
+          posted_at: string | null
+          preparation_steps_json: Json | null
+          preparation_steps_text: string | null
+          queue_id: string | null
+          recipe_id: string | null
+          source_workflow: string | null
+          status: string | null
+          title: string | null
+          website_url: string | null
+        }
+        Insert: {
+          board_name?: string | null
+          board_priority?: number | null
+          board_slug?: string | null
+          created_at?: string | null
+          cuisine_type?: string | null
+          description?: string | null
+          id?: string | null
+          image_4x5_url?: string | null
+          image_9x16_url?: string | null
+          ingredients_json?: Json | null
+          ingredients_text?: string | null
+          notes?: string | null
+          platform_target?: string | null
+          posted_at?: string | null
+          preparation_steps_json?: Json | null
+          preparation_steps_text?: string | null
+          queue_id?: string | null
+          recipe_id?: string | null
+          source_workflow?: string | null
+          status?: string | null
+          title?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          board_name?: string | null
+          board_priority?: number | null
+          board_slug?: string | null
+          created_at?: string | null
+          cuisine_type?: string | null
+          description?: string | null
+          id?: string | null
+          image_4x5_url?: string | null
+          image_9x16_url?: string | null
+          ingredients_json?: Json | null
+          ingredients_text?: string | null
+          notes?: string | null
+          platform_target?: string | null
+          posted_at?: string | null
+          preparation_steps_json?: Json | null
+          preparation_steps_text?: string | null
+          queue_id?: string | null
+          recipe_id?: string | null
+          source_workflow?: string | null
+          status?: string | null
+          title?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       meal_plans: {
         Row: {
           created_at: string | null
