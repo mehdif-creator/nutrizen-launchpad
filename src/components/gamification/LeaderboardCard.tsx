@@ -22,11 +22,7 @@ export function LeaderboardCard() {
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ['gamification-leaderboard'],
     queryFn: async (): Promise<LeaderboardEntry[]> => {
-      const { data, error } = await supabase
-        .from('gamification_leaderboard' as any)
-        .select('*')
-        .order('rank', { ascending: true })
-        .limit(20);
+      const { data, error } = await supabase.rpc('get_leaderboard', { p_limit: 20 });
 
       if (error) throw error;
       return (data ?? []) as unknown as LeaderboardEntry[];
