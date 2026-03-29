@@ -12,5 +12,9 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /app/
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /oauth/
 
 Sitemap: https://mynutrizen.fr/sitemap.xml

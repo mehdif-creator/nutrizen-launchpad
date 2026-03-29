@@ -4,4 +4,8 @@
 
 [[edge_functions]]
   function = "og-blog"
+  path = "/blog"
+
+[[edge_functions]]
+  function = "og-blog"
   path = "/blog/*"

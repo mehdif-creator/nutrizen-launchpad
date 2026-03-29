@@ -1,14 +1,14 @@
 /**
- * Netlify Edge Function: Server-side enrichment for /blog/:slug
+ * Netlify Edge Function: Server-side enrichment for /blog/:slug AND /blog hub
  *
  * Serves ALL visitors (browsers, social bots, search engines) with the same
  * enriched HTML: the SPA shell + article-specific meta tags + article content.
  *
- * This is NOT cloaking — every visitor gets identical HTML.
- * No bot-specific code paths. No X-Robots-Tag. No noindex.
+ * For /blog (hub): injects a list of all published articles as crawlable links.
+ * For /blog/:slug: injects full article content + metadata.
  *
- * The injected article content is visible on first paint and removed once
- * React hydrates, so there is no visual duplication.
+ * This is NOT cloaking — every visitor gets identical HTML.
+ * No bot-specific code paths. No X-Robots-Tag. No noindex on published content.
  */
 
 import type { Context } from 'https://edge.netlify.com';
@@ -127,6 +127,17 @@ function formatDateFr(dateStr: string | null): string {
   }
 }
 
+function toSlug(keyword: string): string {
+  return keyword
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
 // ── Article data types & fetching ────────────────────────────────────────────
 
 interface ArticleData {
@@ -143,47 +154,53 @@ interface ArticleData {
   readTimeMinutes: number;
 }
 
-async function fetchArticleBySlug(slug: string): Promise<ArticleData | null> {
-  // 1. Try blog_posts by slug (direct indexed lookup)
-  const manualRes = await fetch(
-    `${SUPABASE_URL}/rest/v1/blog_posts?slug=eq.${encodeURIComponent(slug)}&select=*&limit=1`,
-    { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } },
-  );
+interface ArticleSummary {
+  slug: string;
+  title: string;
+  excerpt: string;
+  image: string;
+  date: string;
+  category: string;
+}
 
-  if (manualRes.ok) {
-    const rows = await manualRes.json();
-    if (rows.length > 0) {
-      const p = rows[0];
-      if (!p.published_at) return null;
-      const content = p.content || '';
-      return {
-        title: p.title,
-        h1: p.title,
-        description: resolveDescription(p.excerpt, null, content),
-        image: toAbsoluteUrl(p.cover_url || ''),
-        canonical: `${SITE_URL}/blog/${slug}`,
-        publishedTime: p.published_at,
-        author: p.author || SITE_NAME,
-        htmlContent: cleanArticleHtml(content),
-        tags: p.tags || [],
-        schemaJson: null,
-        readTimeMinutes: computeReadTime(content),
-      };
-    }
+async function supabaseFetch(path: string): Promise<any[]> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+  });
+  if (!res.ok) return [];
+  return res.json();
+}
+
+async function fetchArticleBySlug(slug: string): Promise<ArticleData | null> {
+  // 1. Try blog_posts by slug
+  const rows = await supabaseFetch(`blog_posts?slug=eq.${encodeURIComponent(slug)}&select=*&limit=1`);
+  if (rows.length > 0) {
+    const p = rows[0];
+    if (!p.published_at) return null;
+    const content = p.content || '';
+    return {
+      title: p.title,
+      h1: p.title,
+      description: resolveDescription(p.excerpt, null, content),
+      image: toAbsoluteUrl(p.cover_url || ''),
+      canonical: `${SITE_URL}/blog/${slug}`,
+      publishedTime: p.published_at,
+      author: p.author || SITE_NAME,
+      htmlContent: cleanArticleHtml(content),
+      tags: p.tags || [],
+      schemaJson: null,
+      readTimeMinutes: computeReadTime(content),
+    };
   }
 
-  // 2. Try seo_articles (need to match slug from outline or keyword)
-  const seoRes = await fetch(
-    `${SUPABASE_URL}/rest/v1/seo_articles?status=eq.published&select=id,keyword,outline,image_urls,draft_html,draft_meta,schema_json,cluster_context,updated_at,created_at`,
-    { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } },
+  // 2. Try seo_articles
+  const seoRows = await supabaseFetch(
+    `seo_articles?status=eq.published&select=id,keyword,outline,image_urls,draft_html,draft_meta,schema_json,cluster_context,updated_at,created_at`,
   );
-  if (!seoRes.ok) return null;
 
-  const seoRows = await seoRes.json();
   const match = seoRows.find((a: any) => {
     const o = a.outline as any;
-    const derivedSlug =
-      o?.slug || a.keyword?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const derivedSlug = o?.slug || toSlug(a.keyword || '');
     return derivedSlug === slug;
   });
   if (!match) return null;
@@ -221,9 +238,63 @@ async function fetchArticleBySlug(slug: string): Promise<ArticleData | null> {
   };
 }
 
-// ── HTML injection into SPA shell ────────────────────────────────────────────
+async function fetchAllArticleSummaries(): Promise<ArticleSummary[]> {
+  const results: ArticleSummary[] = [];
 
-function buildHeadInjection(a: ArticleData): string {
+  // Fetch seo_articles
+  const seoRows = await supabaseFetch(
+    `seo_articles?status=eq.published&select=keyword,outline,image_urls,cluster_context,updated_at,created_at&order=updated_at.desc`,
+  );
+
+  const seenSlugs = new Set<string>();
+
+  for (const a of seoRows) {
+    const o = a.outline as any;
+    const slug = o?.slug || toSlug(a.keyword || '');
+    if (!slug || seenSlugs.has(slug)) continue;
+    seenSlugs.add(slug);
+
+    const images = a.image_urls as any[];
+    let img = '';
+    if (Array.isArray(images) && images.length > 0) {
+      const first = images[0];
+      img = typeof first === 'string' ? first : first?.url || '';
+    }
+
+    results.push({
+      slug,
+      title: o?.title || o?.h1 || a.keyword || slug,
+      excerpt: o?.excerpt || o?.meta_description || '',
+      image: img,
+      date: (a.updated_at || a.created_at || '').substring(0, 10),
+      category: a.cluster_context || '',
+    });
+  }
+
+  // Fetch blog_posts
+  const blogRows = await supabaseFetch(
+    `blog_posts?published_at=not.is.null&select=slug,title,excerpt,cover_url,published_at,tags&order=published_at.desc`,
+  );
+
+  for (const p of blogRows) {
+    if (!p.slug || seenSlugs.has(p.slug)) continue;
+    seenSlugs.add(p.slug);
+    results.push({
+      slug: p.slug,
+      title: p.title,
+      excerpt: p.excerpt || '',
+      image: p.cover_url || '',
+      date: (p.published_at || '').substring(0, 10),
+      category: p.tags?.[0] || '',
+    });
+  }
+
+  return results;
+}
+
+// ── HTML injection ───────────────────────────────────────────────────────────
+
+function buildArticleHeadInjection(a: ArticleData): string {
   const t = escapeAttr(a.title);
   const d = escapeAttr(a.description);
   const img = escapeAttr(a.image);
@@ -278,7 +349,7 @@ function buildHeadInjection(a: ArticleData): string {
   <!-- /SSR article meta -->`;
 }
 
-function buildBodyInjection(a: ArticleData): string {
+function buildArticleBodyInjection(a: ArticleData): string {
   const h1 = escapeAttr(a.h1);
   const author = escapeAttr(a.author);
   const dateFr = formatDateFr(a.publishedTime);
@@ -300,53 +371,99 @@ function buildBodyInjection(a: ArticleData): string {
     </div>
     ${a.image !== FALLBACK_IMAGE ? `<img src="${img}" alt="${h1}" style="width:100%;height:auto;border-radius:12px;margin-bottom:32px;max-height:400px;object-fit:cover" />` : ''}
     <article style="font-size:1.05rem">${a.htmlContent}</article>
-  </div>
-  <script>
-    // Remove SSR content once React hydrates to avoid duplication
-    (function(){
-      var el = document.getElementById('ssr-article');
-      if (el) {
-        var observer = new MutationObserver(function() {
-          var root = document.getElementById('root');
-          if (root && root.children.length > 0) {
-            el.remove();
-            observer.disconnect();
-          }
-        });
-        observer.observe(document.getElementById('root'), { childList: true });
-        // Fallback: remove after 5s regardless
-        setTimeout(function() { if (el.parentNode) el.remove(); observer.disconnect(); }, 5000);
-      }
-    })();
-  </script>`;
+  </div>`;
 }
 
-function injectIntoHtml(originalHtml: string, article: ArticleData): string {
-  let html = originalHtml;
+function buildBlogHubHeadInjection(articleCount: number): string {
+  const title = 'Blog NutriZen — Conseils nutrition & recettes healthy';
+  const desc = `Découvrez nos ${articleCount} articles nutrition, astuces cuisine et guides pratiques pour manger sainement au quotidien.`;
+  const canonical = `${SITE_URL}/blog`;
 
-  // 1. Replace <title>
-  html = html.replace(
-    /<title>[^<]*<\/title>/,
-    `<title>${escapeAttr(article.title)} — ${SITE_NAME}</title>`,
-  );
+  return `
+  <!-- SSR blog hub meta -->
+  <meta name="description" content="${escapeAttr(desc)}" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="${canonical}" />
 
-  // 2. Remove existing generic meta tags that we'll replace
-  // Remove existing description
-  html = html.replace(/<meta\s+name="description"\s+content="[^"]*"\s*\/?>/g, '');
-  // Remove existing canonical
-  html = html.replace(/<link\s+rel="canonical"\s+href="[^"]*"\s*\/?>/g, '');
-  // Remove existing OG tags
-  html = html.replace(/<meta\s+property="og:[^"]*"\s+content="[^"]*"\s*\/?>/g, '');
-  // Remove existing twitter tags
-  html = html.replace(/<meta\s+name="twitter:[^"]*"\s+content="[^"]*"\s*\/?>/g, '');
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="${canonical}" />
+  <meta property="og:title" content="${escapeAttr(title)}" />
+  <meta property="og:description" content="${escapeAttr(desc)}" />
+  <meta property="og:image" content="${FALLBACK_IMAGE}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:site_name" content="${SITE_NAME}" />
+  <meta property="og:locale" content="fr_FR" />
 
-  // 3. Inject article-specific head tags before </head>
-  const headInjection = buildHeadInjection(article);
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@nutrizen_fr" />
+  <meta name="twitter:title" content="${escapeAttr(title)}" />
+  <meta name="twitter:description" content="${escapeAttr(desc)}" />
+  <meta name="twitter:image" content="${FALLBACK_IMAGE}" />
+  <!-- /SSR blog hub meta -->`;
+}
+
+function buildBlogHubBodyInjection(articles: ArticleSummary[]): string {
+  const articleLinks = articles.map((a) => {
+    const title = escapeAttr(a.title);
+    const excerpt = escapeAttr(truncateDesc(stripHtml(a.excerpt) || a.title, 120));
+    return `<li style="margin-bottom:16px"><a href="/blog/${a.slug}" style="color:#0D7377;font-weight:600;text-decoration:none;font-size:1.05rem">${title}</a><br/><span style="color:#6b7280;font-size:0.875rem">${excerpt}</span></li>`;
+  }).join('');
+
+  return `
+  <div id="ssr-blog-hub" style="max-width:768px;margin:0 auto;padding:32px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1a1a1a;line-height:1.7">
+    <nav style="font-size:0.875rem;color:#6b7280;margin-bottom:24px" aria-label="Fil d'Ariane">
+      <a href="/" style="color:#0D7377;text-decoration:none">Accueil</a> ›
+      <span>Blog</span>
+    </nav>
+    <h1 style="font-size:2rem;font-weight:800;margin-bottom:8px;color:#111">Blog NutriZen</h1>
+    <p style="color:#6b7280;margin-bottom:24px">Conseils nutrition, astuces cuisine et guides pratiques — ${articles.length} articles</p>
+    <ul style="list-style:none;padding:0">${articleLinks}</ul>
+  </div>`;
+}
+
+const SSR_REMOVAL_SCRIPT = `<script>
+(function(){
+  var ids = ['ssr-article', 'ssr-blog-hub'];
+  ids.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var observer = new MutationObserver(function() {
+      var root = document.getElementById('root');
+      if (root && root.children.length > 0) {
+        el.remove();
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.getElementById('root'), { childList: true });
+    setTimeout(function() { if (el.parentNode) el.remove(); observer.disconnect(); }, 5000);
+  });
+})();
+</script>`;
+
+function stripExistingMeta(html: string): string {
+  let h = html;
+  h = h.replace(/<meta\s+name="description"\s+content="[^"]*"\s*\/?>/g, '');
+  h = h.replace(/<link\s+rel="canonical"\s+href="[^"]*"\s*\/?>/g, '');
+  h = h.replace(/<meta\s+property="og:[^"]*"\s+content="[^"]*"\s*\/?>/g, '');
+  h = h.replace(/<meta\s+name="twitter:[^"]*"\s+content="[^"]*"\s*\/?>/g, '');
+  return h;
+}
+
+function injectIntoHtml(originalHtml: string, headInjection: string, bodyInjection: string, title: string): string {
+  let html = stripExistingMeta(originalHtml);
+
+  // Replace <title>
+  html = html.replace(/<title>[^<]*<\/title>/, `<title>${escapeAttr(title)}</title>`);
+
+  // Inject head tags
   html = html.replace('</head>', `${headInjection}\n</head>`);
 
-  // 4. Inject article content before <div id="root">
-  const bodyInjection = buildBodyInjection(article);
-  html = html.replace('<div id="root"></div>', `${bodyInjection}\n    <div id="root"></div>`);
+  // Inject body content + removal script before <div id="root">
+  html = html.replace(
+    '<div id="root"></div>',
+    `${bodyInjection}\n    ${SSR_REMOVAL_SCRIPT}\n    <div id="root"></div>`,
+  );
 
   return html;
 }
@@ -386,37 +503,68 @@ function build404Html(): string {
 
 export default async function handler(request: Request, context: Context) {
   const url = new URL(request.url);
-  const pathParts = url.pathname.split('/').filter(Boolean);
+  const path = url.pathname.replace(/\/+$/, '') || '/'; // normalize trailing slashes
 
-  // Only handle /blog/:slug — let /blog pass through to SPA
-  if (pathParts.length < 2 || pathParts[0] !== 'blog') {
+  // Only handle /blog and /blog/:slug
+  if (!path.startsWith('/blog')) {
     return context.next();
   }
 
-  const slug = decodeURIComponent(pathParts[1]);
+  const pathParts = path.split('/').filter(Boolean); // ['blog'] or ['blog', 'slug']
 
   // Skip asset requests
-  if (slug.includes('.') && !slug.endsWith('.html')) {
+  if (pathParts.length >= 2 && pathParts[1].includes('.') && !pathParts[1].endsWith('.html')) {
     return context.next();
   }
 
   try {
+    // ── /blog (hub page) ──
+    if (pathParts.length === 1) {
+      const articles = await fetchAllArticleSummaries();
+
+      const originalResponse = await context.next();
+      const originalHtml = await originalResponse.text();
+
+      const headInjection = buildBlogHubHeadInjection(articles.length);
+      const bodyInjection = buildBlogHubBodyInjection(articles);
+      const enrichedHtml = injectIntoHtml(
+        originalHtml,
+        headInjection,
+        bodyInjection,
+        `Blog NutriZen — Conseils nutrition & recettes healthy`,
+      );
+
+      return new Response(enrichedHtml, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'public, max-age=300, s-maxage=3600',
+        },
+      });
+    }
+
+    // ── /blog/:slug (article page) ──
+    const slug = decodeURIComponent(pathParts[1]);
     const article = await fetchArticleBySlug(slug);
 
     if (!article) {
-      // Real 404 for unknown slugs
       return new Response(build404Html(), {
         status: 404,
         headers: { 'Content-Type': 'text/html; charset=utf-8' },
       });
     }
 
-    // Get the original SPA HTML from Netlify
     const originalResponse = await context.next();
     const originalHtml = await originalResponse.text();
 
-    // Inject article-specific meta + content into the SPA shell
-    const enrichedHtml = injectIntoHtml(originalHtml, article);
+    const headInjection = buildArticleHeadInjection(article);
+    const bodyInjection = buildArticleBodyInjection(article);
+    const enrichedHtml = injectIntoHtml(
+      originalHtml,
+      headInjection,
+      bodyInjection,
+      `${article.title} — ${SITE_NAME}`,
+    );
 
     return new Response(enrichedHtml, {
       status: 200,
@@ -426,8 +574,7 @@ export default async function handler(request: Request, context: Context) {
       },
     });
   } catch (err) {
-    console.error('[og-blog] Error enriching article:', err);
-    // Fail open: serve the normal SPA
+    console.error('[og-blog] Error:', err);
     return context.next();
   }
 }
