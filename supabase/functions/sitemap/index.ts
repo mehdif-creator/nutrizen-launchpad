@@ -9,6 +9,7 @@ const STATIC_PAGES = [
   { path: '/pro',                     lastmod: '2025-01-15', changefreq: 'monthly',  priority: '0.8' },
   { path: '/contact',                 lastmod: '2025-01-15', changefreq: 'monthly',  priority: '0.7' },
   { path: '/blog',                    lastmod: '2025-01-15', changefreq: 'weekly',   priority: '0.7' },
+  { path: '/a-propos',                lastmod: '2025-01-15', changefreq: 'yearly',   priority: '0.5' },
   { path: '/legal/mentions',          lastmod: '2025-01-15', changefreq: 'yearly',   priority: '0.3' },
   { path: '/legal/cgv',              lastmod: '2025-01-15', changefreq: 'yearly',   priority: '0.3' },
   { path: '/legal/confidentialite',  lastmod: '2025-01-15', changefreq: 'yearly',   priority: '0.3' },
@@ -28,87 +29,94 @@ function urlEntry(loc: string, lastmod: string, changefreq: string, priority: st
   </url>`;
 }
 
+function toSlug(keyword: string): string {
+  return keyword
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
 Deno.serve(async (_req) => {
+  const entries: string[] = [];
+
+  // Static pages
+  for (const p of STATIC_PAGES) {
+    entries.push(urlEntry(`${SITE}${p.path}`, p.lastmod, p.changefreq, p.priority));
+  }
+
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const admin = createClient(supabaseUrl, serviceKey);
 
-    // Fetch published blog posts
-    const { data: blogPosts } = await admin
-      .from('blog_posts')
-      .select('slug, published_at, created_at')
-      .not('slug', 'is', null)
-      .order('created_at', { ascending: false });
-
-    // Fetch published seo_articles (SEO Factory)
-    const { data: seoArticles } = await admin
+    // 1. Fetch published seo_articles
+    const { data: seoArticles, error: seoErr } = await admin
       .from('seo_articles')
       .select('id, keyword, outline, updated_at, created_at, blog_post_id')
       .eq('status', 'published');
 
-    // Build a set of blog_post_ids that seo_articles link to, to avoid duplicates
-    const linkedBlogPostIds = new Set(
-      (seoArticles || []).filter(a => a.blog_post_id).map(a => a.blog_post_id)
-    );
-
-    // Build XML
-    const entries: string[] = [];
-
-    // Static pages
-    for (const p of STATIC_PAGES) {
-      entries.push(urlEntry(`${SITE}${p.path}`, p.lastmod, p.changefreq, p.priority));
+    if (seoErr) {
+      console.error('[sitemap] seo_articles error:', seoErr.message);
     }
 
-    // Manual blog posts (skip if also linked from a seo_article to avoid dupes)
-    if (blogPosts) {
-      for (const post of blogPosts) {
-        if (!post.slug) continue;
-        if (linkedBlogPostIds.has(post.id)) continue;
-        const date = (post.published_at || post.created_at || '2025-01-15').substring(0, 10);
-        entries.push(urlEntry(`${SITE}/blog/${post.slug}`, date, 'monthly', '0.6'));
-      }
-    }
+    // Track slugs we've already added to avoid duplicates
+    const addedSlugs = new Set<string>();
 
-    // SEO Factory articles
-    if (seoArticles) {
+    if (seoArticles && seoArticles.length > 0) {
+      console.log(`[sitemap] Found ${seoArticles.length} published seo_articles`);
       for (const article of seoArticles) {
-        const outline = article.outline as any;
-        const slug = outline?.slug
-          || article.keyword?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-          || null;
+        const outline = article.outline as Record<string, unknown> | null;
+        const slug = (outline?.slug as string) || toSlug(article.keyword || '');
         if (!slug) continue;
-        const date = (article.updated_at || article.created_at || '2025-01-15').substring(0, 10);
+        if (addedSlugs.has(slug)) continue;
+        addedSlugs.add(slug);
+        const date = ((article.updated_at || article.created_at || '2025-01-15') as string).substring(0, 10);
         entries.push(urlEntry(`${SITE}/blog/${slug}`, date, 'weekly', '0.6'));
       }
     }
 
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+    // 2. Fetch published blog_posts (manual posts)
+    const { data: blogPosts, error: blogErr } = await admin
+      .from('blog_posts')
+      .select('slug, published_at, created_at')
+      .not('published_at', 'is', null)
+      .not('slug', 'is', null);
+
+    if (blogErr) {
+      console.error('[sitemap] blog_posts error:', blogErr.message);
+    }
+
+    if (blogPosts && blogPosts.length > 0) {
+      console.log(`[sitemap] Found ${blogPosts.length} published blog_posts`);
+      for (const post of blogPosts) {
+        if (!post.slug || addedSlugs.has(post.slug)) continue;
+        addedSlugs.add(post.slug);
+        const date = ((post.published_at || post.created_at || '2025-01-15') as string).substring(0, 10);
+        entries.push(urlEntry(`${SITE}/blog/${post.slug}`, date, 'monthly', '0.6'));
+      }
+    }
+
+    console.log(`[sitemap] Total URLs: ${entries.length} (${STATIC_PAGES.length} static + ${addedSlugs.size} blog)`);
+  } catch (err) {
+    console.error('[sitemap] Error fetching articles:', err);
+    // Continue with static-only entries already added
+  }
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${entries.join('\n')}
 </urlset>`;
 
-    return new Response(xml, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/xml; charset=utf-8',
-        'Cache-Control': 'public, max-age=86400, s-maxage=86400',
-        'CDN-Cache-Control': 'public, max-age=86400',
-      },
-    });
-  } catch (err) {
-    console.error('[sitemap] Error:', err);
-    // Fallback: return static-only sitemap
-    const entries = STATIC_PAGES.map(p =>
-      urlEntry(`${SITE}${p.path}`, p.lastmod, p.changefreq, p.priority)
-    );
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${entries.join('\n')}
-</urlset>`;
-    return new Response(xml, {
-      status: 200,
-      headers: { 'Content-Type': 'application/xml; charset=utf-8' },
-    });
-  }
+  return new Response(xml, {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/xml; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600, s-maxage=3600',
+      'CDN-Cache-Control': 'public, max-age=3600',
+    },
+  });
 });
