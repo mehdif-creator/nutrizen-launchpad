@@ -5503,6 +5503,18 @@ export type Database = {
           total_users: number
         }[]
       }
+      get_leaderboard: {
+        Args: { p_limit?: number }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          level: number
+          rank: number
+          streak_days: number
+          total_points: number
+          user_id: string
+        }[]
+      }
       get_menu_household:
         | {
             Args: {
