@@ -27,7 +27,7 @@ function mapSeoArticle(a: any): BlogArticle {
   const images = a.image_urls as any[];
   return {
     id: a.id,
-    slug: outline?.slug || a.keyword?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || a.id,
+    slug: a.slug || outline?.slug || a.keyword?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || a.id,
     title: outline?.title || outline?.h1 || a.keyword,
     excerpt: outline?.excerpt || null,
     cover_url: images?.[0]?.url || images?.[0] || null,
