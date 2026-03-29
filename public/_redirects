@@ -1,2 +1,11 @@
+# Canonical blog redirects — 301 to /blog/*
+/fr/blog              /blog              301
+/fr/blog/             /blog              301
+/fr/blog/*            /blog/:splat       301
+/blog/                /blog              301
+
+# Sitemap proxy
 /sitemap.xml  https://pghdaozgxkbtsxwydemd.supabase.co/functions/v1/sitemap  200
+
+# SPA fallback
 /*  /index.html  200

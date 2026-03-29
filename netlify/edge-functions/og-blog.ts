@@ -1,14 +1,11 @@
 /**
- * Netlify Edge Function: Server-side enrichment for /blog/:slug AND /blog hub
+ * Netlify Edge Function: Server-side enrichment for /blog and /blog/:slug
  *
- * Serves ALL visitors (browsers, social bots, search engines) with the same
- * enriched HTML: the SPA shell + article-specific meta tags + article content.
+ * Serves ALL visitors with identical enriched HTML.
+ * For /blog (hub): injects crawlable article links.
+ * For /blog/:slug: injects full article + related articles + prev/next.
  *
- * For /blog (hub): injects a list of all published articles as crawlable links.
- * For /blog/:slug: injects full article content + metadata.
- *
- * This is NOT cloaking — every visitor gets identical HTML.
- * No bot-specific code paths. No X-Robots-Tag. No noindex on published content.
+ * Uses direct slug column lookup (O(1)) instead of fetching all articles.
  */
 
 import type { Context } from 'https://edge.netlify.com';
@@ -25,16 +22,9 @@ const FALLBACK_DESC =
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function stripHtml(html: string): string {
-  return html
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'")
-    .replace(/\s+/g, ' ')
-    .trim();
+  return html.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'").replace(/\s+/g, ' ').trim();
 }
 
 function extractFirstParagraph(html: string): string | null {
@@ -45,26 +35,18 @@ function extractFirstParagraph(html: string): string | null {
 }
 
 function escapeAttr(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
 
 function truncateDesc(text: string, max = 160): string {
   if (text.length <= max) return text;
-  const truncated = text.slice(0, max);
-  const lastSpace = truncated.lastIndexOf(' ');
-  return (lastSpace > 80 ? truncated.slice(0, lastSpace) : truncated) + '…';
+  const t = text.slice(0, max);
+  const ls = t.lastIndexOf(' ');
+  return (ls > 80 ? t.slice(0, ls) : t) + '…';
 }
 
-function resolveDescription(
-  seoDesc?: string | null,
-  excerpt?: string | null,
-  htmlContent?: string | null,
-): string {
+function resolveDescription(seoDesc?: string | null, excerpt?: string | null, htmlContent?: string | null): string {
   if (seoDesc && seoDesc.trim().length > 20) return truncateDesc(stripHtml(seoDesc));
   if (excerpt && excerpt.trim().length > 20) return truncateDesc(stripHtml(excerpt));
   if (htmlContent) {
@@ -117,28 +99,11 @@ function resolveImagePlaceholders(html: string, images: any[]): string {
 function formatDateFr(dateStr: string | null): string {
   if (!dateStr) return '';
   try {
-    return new Date(dateStr).toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  } catch {
-    return '';
-  }
+    return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  } catch { return ''; }
 }
 
-function toSlug(keyword: string): string {
-  return keyword
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-}
-
-// ── Article data types & fetching ────────────────────────────────────────────
+// ── Data types ───────────────────────────────────────────────────────────────
 
 interface ArticleData {
   title: string;
@@ -150,6 +115,7 @@ interface ArticleData {
   author: string;
   htmlContent: string;
   tags: string[];
+  clusterContext: string | null;
   schemaJson: any | null;
   readTimeMinutes: number;
 }
@@ -163,6 +129,8 @@ interface ArticleSummary {
   category: string;
 }
 
+// ── Supabase fetch helpers ───────────────────────────────────────────────────
+
 async function supabaseFetch(path: string): Promise<any[]> {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
     headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
@@ -171,16 +139,16 @@ async function supabaseFetch(path: string): Promise<any[]> {
   return res.json();
 }
 
+/** O(1) slug lookup — uses the indexed slug column */
 async function fetchArticleBySlug(slug: string): Promise<ArticleData | null> {
-  // 1. Try blog_posts by slug
-  const rows = await supabaseFetch(`blog_posts?slug=eq.${encodeURIComponent(slug)}&select=*&limit=1`);
-  if (rows.length > 0) {
-    const p = rows[0];
+  // 1. Try blog_posts
+  const blogRows = await supabaseFetch(`blog_posts?slug=eq.${encodeURIComponent(slug)}&select=*&limit=1`);
+  if (blogRows.length > 0) {
+    const p = blogRows[0];
     if (!p.published_at) return null;
     const content = p.content || '';
     return {
-      title: p.title,
-      h1: p.title,
+      title: p.title, h1: p.title,
       description: resolveDescription(p.excerpt, null, content),
       image: toAbsoluteUrl(p.cover_url || ''),
       canonical: `${SITE_URL}/blog/${slug}`,
@@ -188,23 +156,19 @@ async function fetchArticleBySlug(slug: string): Promise<ArticleData | null> {
       author: p.author || SITE_NAME,
       htmlContent: cleanArticleHtml(content),
       tags: p.tags || [],
+      clusterContext: p.tags?.[0] || null,
       schemaJson: null,
       readTimeMinutes: computeReadTime(content),
     };
   }
 
-  // 2. Try seo_articles
+  // 2. Try seo_articles by slug column (indexed)
   const seoRows = await supabaseFetch(
-    `seo_articles?status=eq.published&select=id,keyword,outline,image_urls,draft_html,draft_meta,schema_json,cluster_context,updated_at,created_at`,
+    `seo_articles?slug=eq.${encodeURIComponent(slug)}&status=eq.published&select=id,keyword,slug,outline,image_urls,draft_html,draft_meta,schema_json,cluster_context,updated_at,created_at&limit=1`,
   );
+  if (seoRows.length === 0) return null;
 
-  const match = seoRows.find((a: any) => {
-    const o = a.outline as any;
-    const derivedSlug = o?.slug || toSlug(a.keyword || '');
-    return derivedSlug === slug;
-  });
-  if (!match) return null;
-
+  const match = seoRows[0];
   const outline = match.outline as any;
   const images = match.image_urls as any[];
 
@@ -215,8 +179,7 @@ async function fetchArticleBySlug(slug: string): Promise<ArticleData | null> {
   let image = '';
   if (Array.isArray(images) && images.length > 0) {
     const first = images[0];
-    const url = typeof first === 'string' ? first : first?.url;
-    if (url && url.trim()) image = url.trim();
+    image = (typeof first === 'string' ? first : first?.url) || '';
   }
 
   let htmlContent = match.draft_html || '';
@@ -224,72 +187,80 @@ async function fetchArticleBySlug(slug: string): Promise<ArticleData | null> {
   htmlContent = cleanArticleHtml(htmlContent);
 
   return {
-    title,
-    h1,
-    description,
+    title, h1, description,
     image: toAbsoluteUrl(image),
     canonical: `${SITE_URL}/blog/${slug}`,
     publishedTime: match.updated_at || match.created_at || null,
     author: SITE_NAME,
-    htmlContent,
-    tags: match.cluster_context ? [match.cluster_context] : [],
+    htmlContent, tags: match.cluster_context ? [match.cluster_context] : [],
+    clusterContext: match.cluster_context || null,
     schemaJson: match.schema_json || null,
     readTimeMinutes: computeReadTime(htmlContent),
   };
 }
 
+/** Fetch all published article summaries (for hub + related) */
 async function fetchAllArticleSummaries(): Promise<ArticleSummary[]> {
   const results: ArticleSummary[] = [];
-
-  // Fetch seo_articles
-  const seoRows = await supabaseFetch(
-    `seo_articles?status=eq.published&select=keyword,outline,image_urls,cluster_context,updated_at,created_at&order=updated_at.desc`,
-  );
-
   const seenSlugs = new Set<string>();
 
+  const seoRows = await supabaseFetch(
+    `seo_articles?status=eq.published&select=slug,keyword,outline,image_urls,cluster_context,updated_at,created_at&order=updated_at.desc`,
+  );
+
   for (const a of seoRows) {
-    const o = a.outline as any;
-    const slug = o?.slug || toSlug(a.keyword || '');
+    const slug = a.slug || '';
     if (!slug || seenSlugs.has(slug)) continue;
     seenSlugs.add(slug);
-
+    const o = a.outline as any;
     const images = a.image_urls as any[];
     let img = '';
     if (Array.isArray(images) && images.length > 0) {
       const first = images[0];
-      img = typeof first === 'string' ? first : first?.url || '';
+      img = (typeof first === 'string' ? first : first?.url) || '';
     }
-
     results.push({
-      slug,
-      title: o?.title || o?.h1 || a.keyword || slug,
+      slug, title: o?.title || o?.h1 || a.keyword || slug,
       excerpt: o?.excerpt || o?.meta_description || '',
-      image: img,
-      date: (a.updated_at || a.created_at || '').substring(0, 10),
+      image: img, date: (a.updated_at || a.created_at || '').substring(0, 10),
       category: a.cluster_context || '',
     });
   }
 
-  // Fetch blog_posts
   const blogRows = await supabaseFetch(
     `blog_posts?published_at=not.is.null&select=slug,title,excerpt,cover_url,published_at,tags&order=published_at.desc`,
   );
-
   for (const p of blogRows) {
     if (!p.slug || seenSlugs.has(p.slug)) continue;
     seenSlugs.add(p.slug);
     results.push({
-      slug: p.slug,
-      title: p.title,
-      excerpt: p.excerpt || '',
-      image: p.cover_url || '',
-      date: (p.published_at || '').substring(0, 10),
+      slug: p.slug, title: p.title, excerpt: p.excerpt || '',
+      image: p.cover_url || '', date: (p.published_at || '').substring(0, 10),
       category: p.tags?.[0] || '',
     });
   }
 
   return results;
+}
+
+/** Find related articles: same cluster first, then most recent */
+function findRelated(allArticles: ArticleSummary[], currentSlug: string, currentCluster: string | null, count = 3): ArticleSummary[] {
+  const others = allArticles.filter(a => a.slug !== currentSlug);
+  if (!currentCluster) return others.slice(0, count);
+
+  const sameCluster = others.filter(a => a.category === currentCluster);
+  const different = others.filter(a => a.category !== currentCluster);
+  return [...sameCluster, ...different].slice(0, count);
+}
+
+/** Find prev/next articles in chronological order */
+function findPrevNext(allArticles: ArticleSummary[], currentSlug: string): { prev: ArticleSummary | null; next: ArticleSummary | null } {
+  const idx = allArticles.findIndex(a => a.slug === currentSlug);
+  if (idx === -1) return { prev: null, next: null };
+  return {
+    prev: idx < allArticles.length - 1 ? allArticles[idx + 1] : null, // older
+    next: idx > 0 ? allArticles[idx - 1] : null, // newer
+  };
 }
 
 // ── HTML injection ───────────────────────────────────────────────────────────
@@ -302,22 +273,22 @@ function buildArticleHeadInjection(a: ArticleData): string {
   const author = escapeAttr(a.author);
 
   const jsonLd = a.schemaJson || {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: a.h1,
-    description: a.description,
-    image: a.image,
-    url: a.canonical,
+    '@context': 'https://schema.org', '@type': 'Article',
+    headline: a.h1, description: a.description, image: a.image, url: a.canonical,
     datePublished: a.publishedTime,
     author: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
-    publisher: {
-      '@type': 'Organization',
-      name: SITE_NAME,
-      url: SITE_URL,
-      logo: { '@type': 'ImageObject', url: `${SITE_URL}/favicon.png` },
-    },
+    publisher: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL, logo: { '@type': 'ImageObject', url: `${SITE_URL}/favicon.png` } },
     mainEntityOfPage: { '@type': 'WebPage', '@id': a.canonical },
     inLanguage: 'fr',
+  };
+
+  const breadcrumbLd = {
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Accueil', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Blog', item: `${SITE_URL}/blog` },
+      { '@type': 'ListItem', position: 3, name: a.h1, item: a.canonical },
+    ],
   };
 
   return `
@@ -346,10 +317,48 @@ function buildArticleHeadInjection(a: ArticleData): string {
   <meta name="twitter:image" content="${img}" />
 
   <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
+  <script type="application/ld+json">${JSON.stringify(breadcrumbLd)}</script>
   <!-- /SSR article meta -->`;
 }
 
-function buildArticleBodyInjection(a: ArticleData): string {
+function buildRelatedArticlesHtml(related: ArticleSummary[]): string {
+  if (related.length === 0) return '';
+  const items = related.map(a => {
+    const t = escapeAttr(a.title);
+    const e = escapeAttr(truncateDesc(stripHtml(a.excerpt) || a.title, 100));
+    const img = a.image ? `<img src="${escapeAttr(toAbsoluteUrl(a.image))}" alt="${t}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy" />` : '';
+    return `<a href="/blog/${a.slug}" style="display:flex;gap:12px;padding:12px;border:1px solid #e5e7eb;border-radius:12px;text-decoration:none;color:inherit;transition:box-shadow 0.2s" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
+      ${img}
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:0.95rem;color:#111;line-height:1.3;margin-bottom:4px">${t}</div>
+        <div style="font-size:0.8rem;color:#6b7280;line-height:1.4">${e}</div>
+        ${a.category ? `<span style="display:inline-block;background:#e5f7f7;color:#0D7377;padding:2px 8px;border-radius:999px;font-size:0.7rem;font-weight:600;text-transform:uppercase;margin-top:4px">${escapeAttr(a.category)}</span>` : ''}
+      </div>
+    </a>`;
+  }).join('');
+
+  return `<section style="margin-top:48px;padding-top:32px;border-top:1px solid #e5e7eb">
+    <h2 style="font-size:1.5rem;font-weight:700;margin-bottom:20px;color:#111">📚 Articles similaires</h2>
+    <div style="display:grid;gap:12px">${items}</div>
+  </section>`;
+}
+
+function buildPrevNextHtml(prev: ArticleSummary | null, next: ArticleSummary | null): string {
+  if (!prev && !next) return '';
+  const linkStyle = 'display:flex;flex-direction:column;padding:16px;border:1px solid #e5e7eb;border-radius:12px;text-decoration:none;color:inherit;flex:1;transition:background 0.2s';
+  return `<nav style="display:flex;gap:12px;margin-top:24px" aria-label="Articles adjacents">
+    ${prev ? `<a href="/blog/${prev.slug}" style="${linkStyle}" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='transparent'">
+      <span style="font-size:0.75rem;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em">← Article précédent</span>
+      <span style="font-weight:600;font-size:0.9rem;color:#111;margin-top:4px">${escapeAttr(prev.title)}</span>
+    </a>` : '<div style="flex:1"></div>'}
+    ${next ? `<a href="/blog/${next.slug}" style="${linkStyle};text-align:right" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='transparent'">
+      <span style="font-size:0.75rem;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em">Article suivant →</span>
+      <span style="font-weight:600;font-size:0.9rem;color:#111;margin-top:4px">${escapeAttr(next.title)}</span>
+    </a>` : '<div style="flex:1"></div>'}
+  </nav>`;
+}
+
+function buildArticleBodyInjection(a: ArticleData, related: ArticleSummary[], prev: ArticleSummary | null, next: ArticleSummary | null): string {
   const h1 = escapeAttr(a.h1);
   const author = escapeAttr(a.author);
   const dateFr = formatDateFr(a.publishedTime);
@@ -371,6 +380,8 @@ function buildArticleBodyInjection(a: ArticleData): string {
     </div>
     ${a.image !== FALLBACK_IMAGE ? `<img src="${img}" alt="${h1}" style="width:100%;height:auto;border-radius:12px;margin-bottom:32px;max-height:400px;object-fit:cover" />` : ''}
     <article style="font-size:1.05rem">${a.htmlContent}</article>
+    ${buildRelatedArticlesHtml(related)}
+    ${buildPrevNextHtml(prev, next)}
   </div>`;
 }
 
@@ -407,7 +418,8 @@ function buildBlogHubBodyInjection(articles: ArticleSummary[]): string {
   const articleLinks = articles.map((a) => {
     const title = escapeAttr(a.title);
     const excerpt = escapeAttr(truncateDesc(stripHtml(a.excerpt) || a.title, 120));
-    return `<li style="margin-bottom:16px"><a href="/blog/${a.slug}" style="color:#0D7377;font-weight:600;text-decoration:none;font-size:1.05rem">${title}</a><br/><span style="color:#6b7280;font-size:0.875rem">${excerpt}</span></li>`;
+    const cat = a.category ? `<span style="display:inline-block;background:#e5f7f7;color:#0D7377;padding:2px 8px;border-radius:999px;font-size:0.7rem;font-weight:600;text-transform:uppercase;margin-right:8px">${escapeAttr(a.category)}</span>` : '';
+    return `<li style="margin-bottom:16px">${cat}<a href="/blog/${a.slug}" style="color:#0D7377;font-weight:600;text-decoration:none;font-size:1.05rem">${title}</a><br/><span style="color:#6b7280;font-size:0.875rem">${excerpt}</span></li>`;
   }).join('');
 
   return `
@@ -452,23 +464,13 @@ function stripExistingMeta(html: string): string {
 
 function injectIntoHtml(originalHtml: string, headInjection: string, bodyInjection: string, title: string): string {
   let html = stripExistingMeta(originalHtml);
-
-  // Replace <title>
   html = html.replace(/<title>[^<]*<\/title>/, `<title>${escapeAttr(title)}</title>`);
-
-  // Inject head tags
   html = html.replace('</head>', `${headInjection}\n</head>`);
-
-  // Inject body content + removal script before <div id="root">
-  html = html.replace(
-    '<div id="root"></div>',
-    `${bodyInjection}\n    ${SSR_REMOVAL_SCRIPT}\n    <div id="root"></div>`,
-  );
-
+  html = html.replace('<div id="root"></div>', `${bodyInjection}\n    ${SSR_REMOVAL_SCRIPT}\n    <div id="root"></div>`);
   return html;
 }
 
-// ── 404 page ─────────────────────────────────────────────────────────────────
+// ── 404 ──────────────────────────────────────────────────────────────────────
 
 function build404Html(): string {
   return `<!DOCTYPE html>
@@ -503,14 +505,11 @@ function build404Html(): string {
 
 export default async function handler(request: Request, context: Context) {
   const url = new URL(request.url);
-  const path = url.pathname.replace(/\/+$/, '') || '/'; // normalize trailing slashes
+  const path = url.pathname.replace(/\/+$/, '') || '/';
 
-  // Only handle /blog and /blog/:slug
-  if (!path.startsWith('/blog')) {
-    return context.next();
-  }
+  if (!path.startsWith('/blog')) return context.next();
 
-  const pathParts = path.split('/').filter(Boolean); // ['blog'] or ['blog', 'slug']
+  const pathParts = path.split('/').filter(Boolean);
 
   // Skip asset requests
   if (pathParts.length >= 2 && pathParts[1].includes('.') && !pathParts[1].endsWith('.html')) {
@@ -518,34 +517,31 @@ export default async function handler(request: Request, context: Context) {
   }
 
   try {
-    // ── /blog (hub page) ──
+    // ── /blog (hub) ──
     if (pathParts.length === 1) {
       const articles = await fetchAllArticleSummaries();
-
       const originalResponse = await context.next();
       const originalHtml = await originalResponse.text();
-
-      const headInjection = buildBlogHubHeadInjection(articles.length);
-      const bodyInjection = buildBlogHubBodyInjection(articles);
       const enrichedHtml = injectIntoHtml(
         originalHtml,
-        headInjection,
-        bodyInjection,
-        `Blog NutriZen — Conseils nutrition & recettes healthy`,
+        buildBlogHubHeadInjection(articles.length),
+        buildBlogHubBodyInjection(articles),
+        'Blog NutriZen — Conseils nutrition & recettes healthy',
       );
-
       return new Response(enrichedHtml, {
         status: 200,
-        headers: {
-          'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'public, max-age=300, s-maxage=3600',
-        },
+        headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=300, s-maxage=3600' },
       });
     }
 
-    // ── /blog/:slug (article page) ──
+    // ── /blog/:slug ──
     const slug = decodeURIComponent(pathParts[1]);
-    const article = await fetchArticleBySlug(slug);
+
+    // Fetch article + all summaries in parallel
+    const [article, allArticles] = await Promise.all([
+      fetchArticleBySlug(slug),
+      fetchAllArticleSummaries(),
+    ]);
 
     if (!article) {
       return new Response(build404Html(), {
@@ -554,24 +550,22 @@ export default async function handler(request: Request, context: Context) {
       });
     }
 
+    const related = findRelated(allArticles, slug, article.clusterContext);
+    const { prev, next } = findPrevNext(allArticles, slug);
+
     const originalResponse = await context.next();
     const originalHtml = await originalResponse.text();
 
-    const headInjection = buildArticleHeadInjection(article);
-    const bodyInjection = buildArticleBodyInjection(article);
     const enrichedHtml = injectIntoHtml(
       originalHtml,
-      headInjection,
-      bodyInjection,
+      buildArticleHeadInjection(article),
+      buildArticleBodyInjection(article, related, prev, next),
       `${article.title} — ${SITE_NAME}`,
     );
 
     return new Response(enrichedHtml, {
       status: 200,
-      headers: {
-        'Content-Type': 'text/html; charset=utf-8',
-        'Cache-Control': 'public, max-age=300, s-maxage=3600',
-      },
+      headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=300, s-maxage=3600' },
     });
   } catch (err) {
     console.error('[og-blog] Error:', err);
@@ -580,5 +574,5 @@ export default async function handler(request: Request, context: Context) {
 }
 
 export const config = {
-  path: '/blog/*',
+  path: ['/blog', '/blog/*'],
 };
