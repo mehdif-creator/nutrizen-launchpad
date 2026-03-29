@@ -116,20 +116,16 @@ export function useBlogArticleBySlug(slug: string | undefined) {
       if (manual) {
         setArticle(mapBlogPost(manual));
       } else {
-        // Try seo_articles - match by outline->slug or keyword-derived slug
-        const { data: seoList } = await supabase
+        // Try seo_articles by slug column (indexed O(1) lookup)
+        const { data: seoMatch } = await supabase
           .from('seo_articles')
           .select('*')
-          .eq('status', 'published');
+          .eq('status', 'published')
+          .eq('slug', slug)
+          .maybeSingle();
 
-        const match = (seoList || []).find((a: any) => {
-          const o = a.outline as any;
-          const derivedSlug = o?.slug || a.keyword?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-          return derivedSlug === slug;
-        });
-
-        if (match) {
-          setArticle(mapSeoArticle(match));
+        if (seoMatch) {
+          setArticle(mapSeoArticle(seoMatch));
         }
       }
 
