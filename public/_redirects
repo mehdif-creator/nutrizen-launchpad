@@ -4,8 +4,8 @@
 /fr/blog/*            /blog/:splat       301
 /blog/                /blog              301
 
-# Sitemap proxy
-/sitemap.xml  https://pghdaozgxkbtsxwydemd.supabase.co/functions/v1/sitemap  200
+# Sitemap proxy (forced so it wins even if a file exists)
+/sitemap.xml  https://pghdaozgxkbtsxwydemd.supabase.co/functions/v1/sitemap  200!
 
 # SPA fallback
 /*  /index.html  200
