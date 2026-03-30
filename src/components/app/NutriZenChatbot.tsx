@@ -122,11 +122,9 @@ export function NutriZenChatbot() {
     };
     fetchCredits();
 
-    const channel = supabase
-      .channel(`chatbot_credits_${user.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_wallets', filter: `user_id=eq.${user.id}` }, () => fetchCredits())
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    // Poll for wallet changes (user_wallets removed from Realtime for security)
+    const pollInterval = window.setInterval(fetchCredits, 15_000);
+    return () => { window.clearInterval(pollInterval); };
   }, [user?.id]);
 
   // Welcome message
