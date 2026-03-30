@@ -188,17 +188,20 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchStats();
 
+    // Poll for changes (sensitive tables removed from Realtime for security)
+    const pollInterval = window.setInterval(() => {
+      fetchStats();
+    }, 30_000);
+
+    // Keep Realtime only for tables still published
     const channel = supabase
       .channel('admin_dashboard_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, scheduleRefresh)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'subscriptions' }, scheduleRefresh)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'meal_plans' }, scheduleRefresh)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'meal_ratings' }, scheduleRefresh)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, scheduleRefresh)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_points' }, scheduleRefresh)
       .subscribe();
 
     return () => {
+      window.clearInterval(pollInterval);
       if (refreshTimerRef.current) window.clearTimeout(refreshTimerRef.current);
       supabase.removeChannel(channel);
     };
