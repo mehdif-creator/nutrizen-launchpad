@@ -331,6 +331,17 @@ export default function Dashboard() {
   const handleRegenWeek = async () => {
     if (!user || generating) return;
 
+    // Gate: profile must be complete before menu generation
+    if (!portions?.profile_complete) {
+      toast({
+        title: "Profil incomplet",
+        description: "Complete ton profil avant de générer tes menus personnalisés.",
+        variant: "destructive",
+      });
+      navigate('/app/profile');
+      return;
+    }
+
     setGenerating(true);
     console.log("[handleRegenWeek] ── START ── userId:", user.id);
 
