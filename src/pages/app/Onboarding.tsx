@@ -10,8 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { Check, ChevronRight, Users, Target, Utensils, AlertCircle } from 'lucide-react';
  import { completeOnboarding, updateOnboardingStatus, useOnboardingPageGuard } from '@/hooks/useOnboardingGuard';
-import { MenuGenerationProgress } from '@/components/app/MenuGenerationProgress';
-import { useAutoMenuGeneration } from '@/hooks/useAutoMenuGeneration';
+// MenuGenerationProgress and useAutoMenuGeneration removed — menu generation no longer auto-triggered after onboarding
 import { queryClient } from '@/lib/queryClient';
 
 const TOTAL_STEPS = 4;
@@ -31,7 +30,7 @@ export default function Onboarding() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const menuGeneration = useAutoMenuGeneration();
+  // Auto menu generation removed — menu only generated after manual profile completion
    
    // Use the page guard - redirects to dashboard if already completed
    const { state: onboardingState } = useOnboardingPageGuard(user?.id);
@@ -39,7 +38,7 @@ export default function Onboarding() {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showMenuGeneration, setShowMenuGeneration] = useState(false);
+  // showMenuGeneration state removed — no longer needed
   
   const [profileData, setProfileData] = useState<ProfileData>({
     household_adults: 1,
@@ -218,23 +217,14 @@ export default function Onboarding() {
 
       toast({
         title: '🎉 Parfait, tout est prêt !',
-        description: 'On génère ta première semaine de menus...',
+        description: 'Complete ton profil pour générer tes menus personnalisés.',
       });
 
-      // Show menu generation progress and start generation
-      setShowMenuGeneration(true);
-      const menuSuccess = await menuGeneration.generateMenu();
-      
-      // Invalidate dashboard queries so they refetch after navigation
+      // Navigate to dashboard — menu generation will only happen after manual profile completion
       queryClient.invalidateQueries({ queryKey: ['userDashboard'] });
       queryClient.invalidateQueries({ queryKey: ['weeklyRecipesByDay'] });
       
-      // Wait a moment to show success state before navigating
-      if (menuSuccess) {
-        setTimeout(() => {
-          navigate('/app/dashboard', { replace: true });
-        }, 2000);
-      }
+      navigate('/app/dashboard', { replace: true });
     } catch (error) {
       console.error('[Onboarding] Complete error:', error);
       toast({
@@ -242,39 +232,10 @@ export default function Onboarding() {
         title: 'Erreur',
         description: 'Impossible de finaliser. Réessaie.',
       });
-      setShowMenuGeneration(false);
     } finally {
       setSaving(false);
     }
   };
-
-  // Handle menu generation retry
-  const handleRetry = async () => {
-    menuGeneration.reset();
-    const success = await menuGeneration.generateMenu();
-    if (success) {
-      setTimeout(() => {
-        navigate('/app/dashboard', { replace: true });
-      }, 2000);
-    }
-  };
-
-  // Skip menu generation and go to dashboard
-  const handleSkip = () => {
-    navigate('/app/dashboard', { replace: true });
-  };
-
-  // Show menu generation progress screen
-  if (showMenuGeneration) {
-    return (
-      <MenuGenerationProgress
-        status={menuGeneration.status}
-        errorMessage={menuGeneration.errorMessage}
-        onRetry={handleRetry}
-        onSkip={handleSkip}
-      />
-    );
-  }
 
    // If guard says onboarded, show redirect message briefly
    if (onboardingState === 'onboarded') {
