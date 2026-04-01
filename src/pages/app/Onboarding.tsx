@@ -232,39 +232,10 @@ export default function Onboarding() {
         title: 'Erreur',
         description: 'Impossible de finaliser. Réessaie.',
       });
-      setShowMenuGeneration(false);
     } finally {
       setSaving(false);
     }
   };
-
-  // Handle menu generation retry
-  const handleRetry = async () => {
-    menuGeneration.reset();
-    const success = await menuGeneration.generateMenu();
-    if (success) {
-      setTimeout(() => {
-        navigate('/app/dashboard', { replace: true });
-      }, 2000);
-    }
-  };
-
-  // Skip menu generation and go to dashboard
-  const handleSkip = () => {
-    navigate('/app/dashboard', { replace: true });
-  };
-
-  // Show menu generation progress screen
-  if (showMenuGeneration) {
-    return (
-      <MenuGenerationProgress
-        status={menuGeneration.status}
-        errorMessage={menuGeneration.errorMessage}
-        onRetry={handleRetry}
-        onSkip={handleSkip}
-      />
-    );
-  }
 
    // If guard says onboarded, show redirect message briefly
    if (onboardingState === 'onboarded') {
