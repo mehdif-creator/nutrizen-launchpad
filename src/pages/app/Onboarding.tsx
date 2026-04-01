@@ -30,7 +30,7 @@ export default function Onboarding() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const menuGeneration = useAutoMenuGeneration();
+  // Auto menu generation removed — menu only generated after manual profile completion
    
    // Use the page guard - redirects to dashboard if already completed
    const { state: onboardingState } = useOnboardingPageGuard(user?.id);
