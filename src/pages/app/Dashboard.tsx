@@ -385,6 +385,14 @@ export default function Dashboard() {
         console.log("[handleRegenWeek] ✅ Success:", data);
         toast({ title: "Menus générés avec succès ✅" });
         invalidateAll();
+      } else if (data?.error === 'PROFILE_INCOMPLETE') {
+        // Server-side profile gate — redirect to profile
+        toast({
+          title: "Profil incomplet",
+          description: data.message || "Complete ton profil avant de générer tes menus.",
+          variant: "destructive",
+        });
+        navigate('/app/profile');
       } else {
         console.warn("[handleRegenWeek] Non-success response:", data);
         toast({
