@@ -10,8 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { Check, ChevronRight, Users, Target, Utensils, AlertCircle } from 'lucide-react';
  import { completeOnboarding, updateOnboardingStatus, useOnboardingPageGuard } from '@/hooks/useOnboardingGuard';
-import { MenuGenerationProgress } from '@/components/app/MenuGenerationProgress';
-import { useAutoMenuGeneration } from '@/hooks/useAutoMenuGeneration';
+// MenuGenerationProgress and useAutoMenuGeneration removed — menu generation no longer auto-triggered after onboarding
 import { queryClient } from '@/lib/queryClient';
 
 const TOTAL_STEPS = 4;
