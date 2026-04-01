@@ -520,8 +520,8 @@ export default function Dashboard() {
         {/* ═══ MOBILE: Generate button + Tonight card ═══ */}
         <section className="md:hidden px-4 space-y-3 mb-4">
           <div className="flex gap-2">
-            <Button onClick={handleRegenWeek} size="sm" disabled={generating} className="flex-1">
-              {generating ? "Génération..." : "Régénérer la semaine"}
+            <Button onClick={handleRegenWeek} size="sm" disabled={generating || profileLoading || !profileComplete} className="flex-1">
+              {generating ? "Génération..." : !profileComplete && !profileLoading ? "Profil à compléter" : "Régénérer la semaine"}
             </Button>
             {hasDays && (
               <Button
