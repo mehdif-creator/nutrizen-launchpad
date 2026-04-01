@@ -328,11 +328,14 @@ export default function Dashboard() {
     }
   };
 
+  const profileComplete = portions?.profile_complete === true;
+  const profileLoading = !portions;
+
   const handleRegenWeek = async () => {
-    if (!user || generating) return;
+    if (!user || generating || profileLoading) return;
 
     // Gate: profile must be complete before menu generation
-    if (!portions?.profile_complete) {
+    if (!profileComplete) {
       toast({
         title: "Profil incomplet",
         description: "Complete ton profil avant de générer tes menus personnalisés.",
@@ -385,6 +388,14 @@ export default function Dashboard() {
         console.log("[handleRegenWeek] ✅ Success:", data);
         toast({ title: "Menus générés avec succès ✅" });
         invalidateAll();
+      } else if (data?.error === 'PROFILE_INCOMPLETE') {
+        // Server-side profile gate — redirect to profile
+        toast({
+          title: "Profil incomplet",
+          description: data.message || "Complete ton profil avant de générer tes menus.",
+          variant: "destructive",
+        });
+        navigate('/app/profile');
       } else {
         console.warn("[handleRegenWeek] Non-success response:", data);
         toast({
@@ -463,8 +474,9 @@ export default function Dashboard() {
               <p className="text-sm md:text-base text-muted-foreground">Voici ton tableau de bord NutriZen</p>
             </div>
             <div className="flex flex-wrap items-center gap-2" data-onboarding-target="generate-menu">
-              <Button onClick={handleRegenWeek} size="sm" disabled={generating}>
-                {generating ? "Génération..." : "Régénérer la semaine"}
+              <Button onClick={handleRegenWeek} size="sm" disabled={generating || profileLoading || !profileComplete}
+                title={!profileComplete && !profileLoading ? "Complete ton profil d'abord" : undefined}>
+                {generating ? "Génération..." : !profileComplete && !profileLoading ? "Profil à compléter" : "Régénérer la semaine"}
               </Button>
               {hasDays && (
                 <Button
@@ -508,8 +520,8 @@ export default function Dashboard() {
         {/* ═══ MOBILE: Generate button + Tonight card ═══ */}
         <section className="md:hidden px-4 space-y-3 mb-4">
           <div className="flex gap-2">
-            <Button onClick={handleRegenWeek} size="sm" disabled={generating} className="flex-1">
-              {generating ? "Génération..." : "Régénérer la semaine"}
+            <Button onClick={handleRegenWeek} size="sm" disabled={generating || profileLoading || !profileComplete} className="flex-1">
+              {generating ? "Génération..." : !profileComplete && !profileLoading ? "Profil à compléter" : "Régénérer la semaine"}
             </Button>
             {hasDays && (
               <Button
