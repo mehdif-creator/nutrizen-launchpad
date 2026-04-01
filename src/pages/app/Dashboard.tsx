@@ -328,11 +328,14 @@ export default function Dashboard() {
     }
   };
 
+  const profileComplete = portions?.profile_complete === true;
+  const profileLoading = !portions;
+
   const handleRegenWeek = async () => {
-    if (!user || generating) return;
+    if (!user || generating || profileLoading) return;
 
     // Gate: profile must be complete before menu generation
-    if (!portions?.profile_complete) {
+    if (!profileComplete) {
       toast({
         title: "Profil incomplet",
         description: "Complete ton profil avant de générer tes menus personnalisés.",
