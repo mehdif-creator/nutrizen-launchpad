@@ -474,8 +474,9 @@ export default function Dashboard() {
               <p className="text-sm md:text-base text-muted-foreground">Voici ton tableau de bord NutriZen</p>
             </div>
             <div className="flex flex-wrap items-center gap-2" data-onboarding-target="generate-menu">
-              <Button onClick={handleRegenWeek} size="sm" disabled={generating}>
-                {generating ? "Génération..." : "Régénérer la semaine"}
+              <Button onClick={handleRegenWeek} size="sm" disabled={generating || profileLoading || !profileComplete}
+                title={!profileComplete && !profileLoading ? "Complete ton profil d'abord" : undefined}>
+                {generating ? "Génération..." : !profileComplete && !profileLoading ? "Profil à compléter" : "Régénérer la semaine"}
               </Button>
               {hasDays && (
                 <Button
