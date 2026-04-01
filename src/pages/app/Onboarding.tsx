@@ -218,23 +218,14 @@ export default function Onboarding() {
 
       toast({
         title: '🎉 Parfait, tout est prêt !',
-        description: 'On génère ta première semaine de menus...',
+        description: 'Complete ton profil pour générer tes menus personnalisés.',
       });
 
-      // Show menu generation progress and start generation
-      setShowMenuGeneration(true);
-      const menuSuccess = await menuGeneration.generateMenu();
-      
-      // Invalidate dashboard queries so they refetch after navigation
+      // Navigate to dashboard — menu generation will only happen after manual profile completion
       queryClient.invalidateQueries({ queryKey: ['userDashboard'] });
       queryClient.invalidateQueries({ queryKey: ['weeklyRecipesByDay'] });
       
-      // Wait a moment to show success state before navigating
-      if (menuSuccess) {
-        setTimeout(() => {
-          navigate('/app/dashboard', { replace: true });
-        }, 2000);
-      }
+      navigate('/app/dashboard', { replace: true });
     } catch (error) {
       console.error('[Onboarding] Complete error:', error);
       toast({
