@@ -38,7 +38,7 @@ export default function Onboarding() {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showMenuGeneration, setShowMenuGeneration] = useState(false);
+  // showMenuGeneration state removed — no longer needed
   
   const [profileData, setProfileData] = useState<ProfileData>({
     household_adults: 1,
