@@ -513,6 +513,26 @@ Deno.serve(async (req) => {
       return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
     }
 
+    // ── PROFILE COMPLETENESS GATE ──
+    // Reject menu generation if user has not manually completed their profile
+    const { data: profileRow } = await supabaseClient
+      .from('profiles')
+      .select('required_fields_ok')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!profileRow?.required_fields_ok) {
+      console.log(`[generate-menu] BLOCKED — profile incomplete for user=${redactId(user.id)}`);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'PROFILE_INCOMPLETE',
+          message: 'Complete ton profil avant de générer tes menus personnalisés.',
+        }),
+        { status: 200, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Parse input
     const body = await req.json().catch(() => ({}));
     const validatedInput = GenerateMenuSchema.parse(body);
