@@ -46,6 +46,7 @@ export const STATUS_ORDER: Record<string, number> = {
   draft_done: 5,
   qa_done: 6,
   published: 7,
+  retired: -2,
   failed: -1,
 };
 
