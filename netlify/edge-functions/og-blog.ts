@@ -505,7 +505,16 @@ function build404Html(): string {
 
 export default async function handler(request: Request, context: Context) {
   const url = new URL(request.url);
-  const path = url.pathname.replace(/\/+$/, '') || '/';
+  const rawPath = url.pathname;
+  const path = rawPath.replace(/\/+$/, '') || '/';
+
+  // Redirect trailing slash on article URLs: /blog/slug/ → /blog/slug
+  if (rawPath !== path && path.startsWith('/blog/') && path.split('/').filter(Boolean).length === 2) {
+    return new Response(null, {
+      status: 301,
+      headers: { Location: `${SITE_URL}${path}` },
+    });
+  }
 
   if (!path.startsWith('/blog')) return context.next();
 
