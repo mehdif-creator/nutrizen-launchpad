@@ -58,6 +58,7 @@ export const STATUS_LABELS: Record<string, { label: string; variant: 'default' |
   draft_done: { label: 'Brouillon prêt', variant: 'default', className: 'bg-orange-500' },
   qa_done: { label: 'QA Validé', variant: 'default', className: 'bg-green-600' },
   published: { label: 'Publié', variant: 'default', className: 'bg-green-800' },
+  retired: { label: 'Retiré', variant: 'secondary', className: 'bg-gray-500' },
   failed: { label: 'Erreur', variant: 'destructive' },
 };
 
