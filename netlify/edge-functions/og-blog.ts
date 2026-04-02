@@ -505,7 +505,16 @@ function build404Html(): string {
 
 export default async function handler(request: Request, context: Context) {
   const url = new URL(request.url);
-  const path = url.pathname.replace(/\/+$/, '') || '/';
+  const rawPath = url.pathname;
+  const path = rawPath.replace(/\/+$/, '') || '/';
+
+  // Redirect trailing slash on article URLs: /blog/slug/ → /blog/slug
+  if (rawPath !== path && path.startsWith('/blog/') && path.split('/').filter(Boolean).length === 2) {
+    return new Response(null, {
+      status: 301,
+      headers: { Location: `${SITE_URL}${path}` },
+    });
+  }
 
   if (!path.startsWith('/blog')) return context.next();
 
@@ -536,6 +545,17 @@ export default async function handler(request: Request, context: Context) {
 
     // ── /blog/:slug ──
     const slug = decodeURIComponent(pathParts[1]);
+
+    // Check if this slug is a retired duplicate that should redirect
+    const retiredRows = await supabaseFetch(
+      `seo_articles?slug=eq.${encodeURIComponent(slug)}&status=eq.retired&select=redirect_to_slug&limit=1`,
+    );
+    if (retiredRows.length > 0 && retiredRows[0].redirect_to_slug) {
+      return new Response(null, {
+        status: 301,
+        headers: { Location: `${SITE_URL}/blog/${retiredRows[0].redirect_to_slug}` },
+      });
+    }
 
     // Fetch article + all summaries in parallel
     const [article, allArticles] = await Promise.all([

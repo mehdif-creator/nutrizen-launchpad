@@ -2694,6 +2694,7 @@ export type Database = {
           qa_result: Json | null
           qa_score: number | null
           quality_flags: Json | null
+          redirect_to_slug: string | null
           related_keywords: string[] | null
           schema_json: Json | null
           serp_snapshot: Json | null
@@ -2721,6 +2722,7 @@ export type Database = {
           qa_result?: Json | null
           qa_score?: number | null
           quality_flags?: Json | null
+          redirect_to_slug?: string | null
           related_keywords?: string[] | null
           schema_json?: Json | null
           serp_snapshot?: Json | null
@@ -2748,6 +2750,7 @@ export type Database = {
           qa_result?: Json | null
           qa_score?: number | null
           quality_flags?: Json | null
+          redirect_to_slug?: string | null
           related_keywords?: string[] | null
           schema_json?: Json | null
           serp_snapshot?: Json | null
