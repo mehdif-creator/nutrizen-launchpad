@@ -173,9 +173,9 @@ export const AppHeader = () => {
                 </>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={async () => {
-                await signOut();
-                window.location.href = '/';
+              <DropdownMenuItem onSelect={(e) => {
+                e.preventDefault();
+                signOut();
               }}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Déconnexion
