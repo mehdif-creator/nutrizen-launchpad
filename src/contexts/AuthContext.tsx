@@ -148,81 +148,77 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     let mounted = true;
+    // Track whether the listener already resolved auth so getSession doesn't double-fire
+    let resolvedByListener = false;
 
     const loadingTimeout = setTimeout(() => {
       if (mounted) {
         logger.warn('Auth loading timeout, forcing loading=false');
         setLoading(false);
+        setAdminLoading(false);
       }
     }, 10000);
 
-    // Register listener FIRST so we never miss INITIAL_SESSION with PKCE
-    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
-        if (!mounted) return;
-        clearTimeout(loadingTimeout);
-
-        console.log('[AuthContext] Event:', event, 'User:', newSession?.user?.email);
-
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        setLoading(false);
-
-        if (newSession?.user && newSession?.access_token) {
-          // Delegate admin check to checkAdminRole which handles caching and errors
-          // Use a small delay to ensure the JWT token is propagated to RLS
-          setTimeout(() => {
-            if (mounted && newSession?.user) {
-              checkAdminRole(newSession.user.id);
-            }
-          }, 500);
-
-          if (mounted && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
-            runInitialSetupOnce(newSession);
-          }
-        } else {
-          setIsAdmin(false);
-          setAdminLoading(false);
-          setSubscription(null);
-        }
-      }
-    );
-
-    // Then check for existing session
-    supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
+    const handleSession = async (
+      newSession: Session | null,
+      event: string,
+      source: string,
+    ) => {
       if (!mounted) return;
-      clearTimeout(loadingTimeout); // Cancel timeout as soon as session is checked
+      clearTimeout(loadingTimeout);
 
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
+      console.log(`[AuthContext] ${source} event:`, event, 'User:', newSession?.user?.email);
 
-      if (currentSession?.user) {
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
+
+      if (newSession?.user && newSession?.access_token) {
         try {
-          await checkAdminRole(currentSession.user.id);
+          await checkAdminRole(newSession.user.id);
         } catch (e) {
           logger.error('Admin check failed', e instanceof Error ? e : new Error(String(e)));
           setAdminLoading(false);
         }
-        if (mounted) {
-          runInitialSetupOnce(currentSession);
+
+        if (mounted && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
+          runInitialSetupOnce(newSession);
         }
       } else {
-        // No session → admin check not needed, stop loading
+        setIsAdmin(false);
         setAdminLoading(false);
+        setSubscription(null);
       }
 
       if (mounted) setLoading(false);
-    }).catch((err) => {
-      logger.error('getSession failed', err instanceof Error ? err : new Error(String(err)));
-      if (mounted) {
-        setLoading(false);
-        setAdminLoading(false);
+    };
+
+    // Register listener FIRST so we never miss INITIAL_SESSION with PKCE
+    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(
+      async (event, newSession) => {
+        resolvedByListener = true;
+        await handleSession(newSession, event, 'listener');
       }
-    });
+    );
+
+    // Fallback: if the listener hasn't fired after a short delay, use getSession
+    const fallbackTimer = setTimeout(() => {
+      if (resolvedByListener || !mounted) return;
+      supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
+        if (resolvedByListener || !mounted) return;
+        await handleSession(currentSession, 'FALLBACK', 'getSession');
+      }).catch((err) => {
+        logger.error('getSession failed', err instanceof Error ? err : new Error(String(err)));
+        if (mounted) {
+          setLoading(false);
+          setAdminLoading(false);
+        }
+      });
+    }, 1000);
 
     return () => {
       mounted = false;
       clearTimeout(loadingTimeout);
+      clearTimeout(fallbackTimer);
       authSub.unsubscribe();
     };
   }, []); // EMPTY deps — runs once

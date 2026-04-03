@@ -43,7 +43,9 @@ export default function Callback() {
     const doRedirect = () => {
       if (redirected) return;
       redirected = true;
-      window.location.replace(getDestination());
+      const dest = getDestination();
+      console.log('[AuthCallback] Navigating to:', dest);
+      navigate(dest, { replace: true });
     };
 
     // Let Supabase handle the PKCE exchange automatically.
