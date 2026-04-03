@@ -174,6 +174,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (newSession?.user && newSession?.access_token) {
         try {
+          // Wait for JWT to propagate to PostgREST before querying RLS-protected tables
+          if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+            await new Promise((r) => setTimeout(r, 500));
+          }
+          if (!mounted) return;
           await checkAdminRole(newSession.user.id);
         } catch (e) {
           logger.error('Admin check failed', e instanceof Error ? e : new Error(String(e)));
