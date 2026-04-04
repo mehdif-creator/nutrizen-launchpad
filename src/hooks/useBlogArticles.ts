@@ -74,21 +74,28 @@ export function useBlogArticles() {
 
   useEffect(() => {
     async function fetch() {
-      const [manualRes, seoRes] = await Promise.all([
-        supabase.from('blog_posts').select('*').not('published_at', 'is', null),
-        supabase.from('seo_articles').select('*').eq('status', 'published'),
-      ]);
+      try {
+        const [manualRes, seoRes] = await Promise.all([
+          supabase.from('blog_posts').select('*').not('published_at', 'is', null),
+          supabase.from('seo_articles').select('*').eq('status', 'published'),
+        ]);
 
-      if (manualRes.error) console.error('[Blog] blog_posts error:', manualRes.error);
-      if (seoRes.error) console.error('[Blog] seo_articles error:', seoRes.error);
+        if (manualRes.error) console.error('[Blog] blog_posts error:', manualRes.error);
+        if (seoRes.error) console.error('[Blog] seo_articles error:', seoRes.error);
 
-      const manual = (manualRes.data || []).map(mapBlogPost);
-      const seo = (seoRes.data || []).map(mapSeoArticle);
-      const all = [...manual, ...seo].sort(
-        (a, b) => new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime()
-      );
-      setArticles(all);
-      setLoading(false);
+        const manual = (manualRes.data || []).map(mapBlogPost);
+        const seo = (seoRes.data || []).map(mapSeoArticle);
+        const all = [...manual, ...seo].sort(
+          (a, b) => new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime()
+        );
+
+        setArticles(all);
+      } catch (error) {
+        console.error('[Blog] Unexpected fetch error:', error);
+        setArticles([]);
+      } finally {
+        setLoading(false);
+      }
     }
     fetch();
   }, []);
@@ -106,60 +113,68 @@ export function useBlogArticleBySlug(slug: string | undefined) {
     if (!slug) return;
 
     async function fetch() {
-      // Try blog_posts first
-      const { data: manual } = await supabase
-        .from('blog_posts')
-        .select('*')
-        .eq('slug', slug)
-        .maybeSingle();
-
-      if (manual) {
-        setArticle(mapBlogPost(manual));
-      } else {
-        // Try seo_articles by slug column (indexed O(1) lookup)
-        const { data: seoMatch } = await supabase
-          .from('seo_articles')
+      try {
+        // Try blog_posts first
+        const { data: manual } = await supabase
+          .from('blog_posts')
           .select('*')
-          .eq('status', 'published')
           .eq('slug', slug)
           .maybeSingle();
 
-        if (seoMatch) {
-          setArticle(mapSeoArticle(seoMatch));
+        if (manual) {
+          setArticle(mapBlogPost(manual));
+        } else {
+          // Try seo_articles by slug column (indexed O(1) lookup)
+          const { data: seoMatch } = await supabase
+            .from('seo_articles')
+            .select('*')
+            .eq('status', 'published')
+            .eq('slug', slug)
+            .maybeSingle();
+
+          if (seoMatch) {
+            setArticle(mapSeoArticle(seoMatch));
+          }
         }
+
+        // Fetch related articles (3 most recent published SEO articles, excluding current)
+        const { data: relatedSeo } = await supabase
+          .from('seo_articles')
+          .select('*')
+          .eq('status', 'published')
+          .order('updated_at', { ascending: false })
+          .limit(10);
+
+        const { data: relatedManual } = await supabase
+          .from('blog_posts')
+          .select('*')
+          .not('published_at', 'is', null)
+          .order('published_at', { ascending: false })
+          .limit(10);
+
+        const allMapped = [
+          ...(relatedManual || []).map(mapBlogPost),
+          ...(relatedSeo || []).map(mapSeoArticle),
+        ];
+
+        // Build set of all valid published slugs
+        const slugSet = new Set(allMapped.map(a => a.slug).filter(Boolean));
+        setValidSlugs(slugSet);
+
+        const allRelated = allMapped
+          .filter(a => a.slug !== slug)
+          .sort((a, b) => new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime())
+          .slice(0, 3);
+
+        setRelatedArticles(allRelated);
+      } catch (error) {
+        console.error('[Blog] Unexpected article fetch error:', error);
+        setArticle(null);
+        setRelatedArticles([]);
+        setValidSlugs(new Set());
+      } finally {
+        setLoading(false);
       }
-
-      // Fetch related articles (3 most recent published SEO articles, excluding current)
-      const { data: relatedSeo } = await supabase
-        .from('seo_articles')
-        .select('*')
-        .eq('status', 'published')
-        .order('updated_at', { ascending: false })
-        .limit(10);
-
-      const { data: relatedManual } = await supabase
-        .from('blog_posts')
-        .select('*')
-        .not('published_at', 'is', null)
-        .order('published_at', { ascending: false })
-        .limit(10);
-
-      const allMapped = [
-        ...(relatedManual || []).map(mapBlogPost),
-        ...(relatedSeo || []).map(mapSeoArticle),
-      ];
-
-      // Build set of all valid published slugs
-      const slugSet = new Set(allMapped.map(a => a.slug).filter(Boolean));
-      setValidSlugs(slugSet);
-
-      const allRelated = allMapped
-        .filter(a => a.slug !== slug)
-        .sort((a, b) => new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime())
-        .slice(0, 3);
-
-      setRelatedArticles(allRelated);
-      setLoading(false);
     }
     fetch();
   }, [slug]);
