@@ -113,14 +113,15 @@ export function SeoArticleCard({ article, onRefresh, onDelete, onOpenDetail }: P
   const handlePublish = async () => {
     setBusy('publish');
     try {
-      await supabase
+      const { error } = await supabase
         .from('seo_articles')
         .update({ status: 'published' } as any)
         .eq('id', article.id);
+      if (error) throw new Error(error.message);
       toast({ title: 'Article publié ✓' });
       onRefresh();
     } catch (e: any) {
-      toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
+      toast({ title: 'Erreur de publication', description: e.message, variant: 'destructive' });
     } finally {
       setBusy(null);
     }
