@@ -48,6 +48,21 @@ export default function Callback() {
       navigate(dest, { replace: true });
     };
 
+    const checkExistingSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          console.log('[AuthCallback] Session already available, redirecting...');
+          doRedirect();
+          return true;
+        }
+      } catch (e) {
+        console.warn('[AuthCallback] Immediate session check error:', e);
+      }
+
+      return false;
+    };
+
     // Let Supabase handle the PKCE exchange automatically.
     // We just listen for the session to be established.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -61,6 +76,8 @@ export default function Callback() {
         }
       },
     );
+
+    void checkExistingSession();
 
     // Also poll getSession every 2s as a safety net (PKCE exchange may complete
     // before the listener is registered, or the event may be missed)

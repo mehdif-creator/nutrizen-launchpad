@@ -199,9 +199,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Register listener FIRST so we never miss INITIAL_SESSION with PKCE
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
+      (event, newSession) => {
+        if (!mounted) return;
+
+        // PKCE/session restore can briefly emit INITIAL_SESSION with no session yet.
+        // Do not resolve auth from that placeholder event; let fallback getSession confirm.
+        if (event === 'INITIAL_SESSION' && !newSession) {
+          logger.warn('INITIAL_SESSION arrived without session, waiting for fallback getSession');
+          return;
+        }
+
         resolvedByListener = true;
-        await handleSession(newSession, event, 'listener');
+
+        window.setTimeout(() => {
+          if (!mounted) return;
+          void handleSession(newSession, event, 'listener');
+        }, 0);
       }
     );
 
