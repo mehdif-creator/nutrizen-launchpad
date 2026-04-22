@@ -22,11 +22,12 @@ const QUEUE_STATUS_ORDER: Record<string, number> = {
   pending: 1,
   error: 2,
   done: 3,
+  duplicate: 4,
 };
 
 type QueueSortBy = 'queue' | 'status' | 'priority' | 'created_at';
 type SortDir = 'asc' | 'desc';
-type QueueFilterStatus = 'all' | 'pending' | 'processing' | 'error' | 'done';
+type QueueFilterStatus = 'actionable' | 'all' | 'pending' | 'processing' | 'error' | 'done' | 'duplicate';
 
 const CATEGORIES = [
   { value: '', label: 'Aucune' },
@@ -57,7 +58,7 @@ export function SeoQueueTab() {
   const [sortBy, setSortBy] = useState<QueueSortBy>('queue');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [searchFilter, setSearchFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState<QueueFilterStatus>('all');
+  const [statusFilter, setStatusFilter] = useState<QueueFilterStatus>('actionable');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   const topicCount = useMemo(() => {
@@ -73,7 +74,8 @@ export function SeoQueueTab() {
     const normalizedSearch = normalizeText(searchFilter);
 
     return items.filter((item) => {
-      if (statusFilter !== 'all' && item.status !== statusFilter) return false;
+      if (statusFilter === 'actionable' && !['pending', 'processing', 'error'].includes(item.status)) return false;
+      if (!['all', 'actionable'].includes(statusFilter) && item.status !== statusFilter) return false;
       if (categoryFilter !== 'all' && (item.category ?? '') !== categoryFilter) return false;
 
       if (!normalizedSearch) return true;
@@ -118,7 +120,7 @@ export function SeoQueueTab() {
 
   const resetFilters = () => {
     setSearchFilter('');
-    setStatusFilter('all');
+    setStatusFilter('actionable');
     setCategoryFilter('all');
   };
 
@@ -298,9 +300,11 @@ export function SeoQueueTab() {
           <Button variant="outline" size="sm" onClick={() => fetchItems()} title="Actualiser">
             <RefreshCw className="h-3.5 w-3.5 mr-1" /> Actualiser
           </Button>
-          <Badge variant="secondary">{stats.pending} en attente</Badge>
+          <Badge variant="secondary">{stats.actionable} à traiter</Badge>
+          <Badge variant="outline">{stats.pending} en attente</Badge>
           <Badge variant="default" className="bg-blue-600">{stats.processing} en cours</Badge>
           <Badge variant="default" className="bg-green-600">{stats.done} terminé{stats.done !== 1 ? 's' : ''}</Badge>
+          {stats.duplicate > 0 && <Badge variant="outline">{stats.duplicate} doublon{stats.duplicate !== 1 ? 's' : ''}</Badge>}
           {stats.error > 0 && <Badge variant="destructive">{stats.error} erreur{stats.error !== 1 ? 's' : ''}</Badge>}
           {stats.done > 0 && (
             <Button variant="outline" size="sm" onClick={clearDone}>
@@ -336,11 +340,13 @@ export function SeoQueueTab() {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as QueueFilterStatus)}
             >
-              <option value="all">Tous</option>
+              <option value="actionable">À traiter</option>
+              <option value="all">Tous les statuts</option>
               <option value="pending">En attente</option>
               <option value="processing">En cours</option>
               <option value="error">Erreur</option>
               <option value="done">Terminé</option>
+              <option value="duplicate">Doublon</option>
             </select>
           </div>
           <div className="w-full lg:w-56">
@@ -429,6 +435,12 @@ export function SeoQueueTab() {
                         <span className="truncate">{item.error_message}</span>
                       </div>
                     )}
+                    {item.resolved_reason === 'published_article' && (
+                      <div className="mt-1 text-xs text-muted-foreground">Déjà publié — retiré de la file active</div>
+                    )}
+                    {item.resolved_reason === 'duplicate_queue_item' && (
+                      <div className="mt-1 text-xs text-muted-foreground">Doublon résolu — non actionnable</div>
+                    )}
                   </TableCell>
                   <TableCell className="text-sm">{item.category || '—'}</TableCell>
                   <TableCell className="text-sm font-mono">{item.priority}</TableCell>
@@ -494,6 +506,8 @@ function StatusBadge({ status, articleId: _articleId }: { status: string; articl
       return <Badge variant="default" className="bg-green-600 text-white">Terminé</Badge>;
     case 'error':
       return <Badge variant="destructive">Erreur</Badge>;
+    case 'duplicate':
+      return <Badge variant="outline">Doublon</Badge>;
     default:
       return <Badge variant="outline">{status}</Badge>;
   }

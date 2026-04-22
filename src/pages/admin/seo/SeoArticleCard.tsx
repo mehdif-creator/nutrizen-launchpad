@@ -15,11 +15,12 @@ import { cn } from '@/lib/utils';
 interface Props {
   article: SeoArticle;
   onRefresh: () => void;
+  onQueueRefresh?: () => void;
   onDelete: (id: string) => void;
   onOpenDetail: (article: SeoArticle) => void;
 }
 
-export function SeoArticleCard({ article, onRefresh, onDelete, onOpenDetail }: Props) {
+export function SeoArticleCard({ article, onRefresh, onQueueRefresh, onDelete, onOpenDetail }: Props) {
   const [busy, setBusy] = useState<string | null>(null); // edge fn name currently running
   const [autoPipeline, setAutoPipeline] = useState(false);
   const [autoStep, setAutoStep] = useState('');
@@ -119,7 +120,9 @@ export function SeoArticleCard({ article, onRefresh, onDelete, onOpenDetail }: P
         .eq('id', article.id);
       if (error) throw new Error(error.message);
       toast({ title: 'Article publié ✓' });
+      await (supabase.rpc as any)('sync_article_queue_state');
       onRefresh();
+      onQueueRefresh?.();
     } catch (e: any) {
       toast({ title: 'Erreur de publication', description: e.message, variant: 'destructive' });
     } finally {
