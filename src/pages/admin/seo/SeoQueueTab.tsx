@@ -75,7 +75,7 @@ export function SeoQueueTab() {
 
     return items.filter((item) => {
       if (statusFilter === 'actionable' && !['pending', 'processing', 'error'].includes(item.status)) return false;
-      if (statusFilter !== 'all' && item.status !== statusFilter) return false;
+      if (!['all', 'actionable'].includes(statusFilter) && item.status !== statusFilter) return false;
       if (categoryFilter !== 'all' && (item.category ?? '') !== categoryFilter) return false;
 
       if (!normalizedSearch) return true;
@@ -300,9 +300,11 @@ export function SeoQueueTab() {
           <Button variant="outline" size="sm" onClick={() => fetchItems()} title="Actualiser">
             <RefreshCw className="h-3.5 w-3.5 mr-1" /> Actualiser
           </Button>
-          <Badge variant="secondary">{stats.pending} en attente</Badge>
+          <Badge variant="secondary">{stats.actionable} à traiter</Badge>
+          <Badge variant="outline">{stats.pending} en attente</Badge>
           <Badge variant="default" className="bg-blue-600">{stats.processing} en cours</Badge>
           <Badge variant="default" className="bg-green-600">{stats.done} terminé{stats.done !== 1 ? 's' : ''}</Badge>
+          {stats.duplicate > 0 && <Badge variant="outline">{stats.duplicate} doublon{stats.duplicate !== 1 ? 's' : ''}</Badge>}
           {stats.error > 0 && <Badge variant="destructive">{stats.error} erreur{stats.error !== 1 ? 's' : ''}</Badge>}
           {stats.done > 0 && (
             <Button variant="outline" size="sm" onClick={clearDone}>
@@ -338,11 +340,13 @@ export function SeoQueueTab() {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as QueueFilterStatus)}
             >
-              <option value="all">Tous</option>
+              <option value="actionable">À traiter</option>
+              <option value="all">Tous les statuts</option>
               <option value="pending">En attente</option>
               <option value="processing">En cours</option>
               <option value="error">Erreur</option>
               <option value="done">Terminé</option>
+              <option value="duplicate">Doublon</option>
             </select>
           </div>
           <div className="w-full lg:w-56">
