@@ -289,9 +289,11 @@ export type Database = {
           category: string | null
           completed_at: string | null
           created_at: string | null
+          duplicate_of_queue_id: string | null
           error_message: string | null
           id: string
           priority: number | null
+          resolved_reason: string | null
           started_at: string | null
           status: string
           target_keyword: string | null
@@ -302,9 +304,11 @@ export type Database = {
           category?: string | null
           completed_at?: string | null
           created_at?: string | null
+          duplicate_of_queue_id?: string | null
           error_message?: string | null
           id?: string
           priority?: number | null
+          resolved_reason?: string | null
           started_at?: string | null
           status?: string
           target_keyword?: string | null
@@ -315,9 +319,11 @@ export type Database = {
           category?: string | null
           completed_at?: string | null
           created_at?: string | null
+          duplicate_of_queue_id?: string | null
           error_message?: string | null
           id?: string
           priority?: number | null
+          resolved_reason?: string | null
           started_at?: string | null
           status?: string
           target_keyword?: string | null
@@ -329,6 +335,13 @@ export type Database = {
             columns: ["article_id"]
             isOneToOne: false
             referencedRelation: "seo_articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "article_queue_duplicate_of_queue_id_fkey"
+            columns: ["duplicate_of_queue_id"]
+            isOneToOne: false
+            referencedRelation: "article_queue"
             referencedColumns: ["id"]
           },
         ]
@@ -2699,6 +2712,7 @@ export type Database = {
           schema_json: Json | null
           serp_snapshot: Json | null
           slug: string | null
+          source_queue_id: string | null
           status: string
           updated_at: string
         }
@@ -2727,6 +2741,7 @@ export type Database = {
           schema_json?: Json | null
           serp_snapshot?: Json | null
           slug?: string | null
+          source_queue_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -2755,6 +2770,7 @@ export type Database = {
           schema_json?: Json | null
           serp_snapshot?: Json | null
           slug?: string | null
+          source_queue_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -2764,6 +2780,13 @@ export type Database = {
             columns: ["blog_post_id"]
             isOneToOne: false
             referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seo_articles_source_queue_id_fkey"
+            columns: ["source_queue_id"]
+            isOneToOne: false
+            referencedRelation: "article_queue"
             referencedColumns: ["id"]
           },
         ]
@@ -5811,6 +5834,8 @@ export type Database = {
         }
         Returns: Json
       }
+      seo_normalize_key: { Args: { _value: string }; Returns: string }
+      sync_article_queue_state: { Args: never; Returns: Json }
       to_num: { Args: { input_text: string }; Returns: number }
       to_number_fr: { Args: { p: string }; Returns: number }
       trunc_to_granularity: {
