@@ -18,6 +18,8 @@ import { useQueueProcessor } from './seo/useQueueProcessor';
 import type { SeoArticle } from './seo/types';
 import { STATUS_LABELS, STATUS_ORDER } from './seo/types';
 
+const COMPLETED_STATUSES = new Set(['published', 'retired']);
+
 function normalizeText(value: string): string {
   return value
     .toLowerCase()
@@ -117,6 +119,7 @@ export default function AdminSeoFactory() {
   }, [articles, search, statusFilter, sortBy]);
 
   const allStatuses = Object.keys(STATUS_LABELS);
+  const completedCount = articles.filter(a => COMPLETED_STATUSES.has(a.status)).length;
 
   const toggleStatus = (s: string) => {
     setStatusFilter(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
@@ -166,8 +169,9 @@ export default function AdminSeoFactory() {
         {/* Main tabs */}
         <Tabs defaultValue="articles" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="articles">Articles</TabsTrigger>
-            <TabsTrigger value="queue">File d'attente</TabsTrigger>
+            <TabsTrigger value="articles">Articles ({articles.length})</TabsTrigger>
+            <TabsTrigger value="queue">File d'attente ({stats.actionable})</TabsTrigger>
+            <TabsTrigger value="completed">Publié / terminé ({completedCount})</TabsTrigger>
           </TabsList>
 
           {/* Articles tab */}
@@ -225,6 +229,7 @@ export default function AdminSeoFactory() {
                     key={a.id}
                     article={a}
                     onRefresh={refetch}
+                    onQueueRefresh={fetchQueueItems}
                     onDelete={deleteArticle}
                     onOpenDetail={setDetailArticle}
                   />
@@ -236,6 +241,19 @@ export default function AdminSeoFactory() {
           {/* Queue tab */}
           <TabsContent value="queue">
             <SeoQueueTab />
+          </TabsContent>
+
+          <TabsContent value="completed" className="space-y-3">
+            {filteredArticles.filter(a => COMPLETED_STATUSES.has(a.status)).map(a => (
+              <SeoArticleCard
+                key={a.id}
+                article={a}
+                onRefresh={refetch}
+                onQueueRefresh={fetchQueueItems}
+                onDelete={deleteArticle}
+                onOpenDetail={setDetailArticle}
+              />
+            ))}
           </TabsContent>
         </Tabs>
       </main>

@@ -435,6 +435,12 @@ export function SeoQueueTab() {
                         <span className="truncate">{item.error_message}</span>
                       </div>
                     )}
+                    {item.resolved_reason === 'published_article' && (
+                      <div className="mt-1 text-xs text-muted-foreground">Déjà publié — retiré de la file active</div>
+                    )}
+                    {item.resolved_reason === 'duplicate_queue_item' && (
+                      <div className="mt-1 text-xs text-muted-foreground">Doublon résolu — non actionnable</div>
+                    )}
                   </TableCell>
                   <TableCell className="text-sm">{item.category || '—'}</TableCell>
                   <TableCell className="text-sm font-mono">{item.priority}</TableCell>
@@ -500,6 +506,8 @@ function StatusBadge({ status, articleId: _articleId }: { status: string; articl
       return <Badge variant="default" className="bg-green-600 text-white">Terminé</Badge>;
     case 'error':
       return <Badge variant="destructive">Erreur</Badge>;
+    case 'duplicate':
+      return <Badge variant="outline">Doublon</Badge>;
     default:
       return <Badge variant="outline">{status}</Badge>;
   }
