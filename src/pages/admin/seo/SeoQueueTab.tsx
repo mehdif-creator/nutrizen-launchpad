@@ -22,11 +22,12 @@ const QUEUE_STATUS_ORDER: Record<string, number> = {
   pending: 1,
   error: 2,
   done: 3,
+  duplicate: 4,
 };
 
 type QueueSortBy = 'queue' | 'status' | 'priority' | 'created_at';
 type SortDir = 'asc' | 'desc';
-type QueueFilterStatus = 'all' | 'pending' | 'processing' | 'error' | 'done';
+type QueueFilterStatus = 'actionable' | 'all' | 'pending' | 'processing' | 'error' | 'done' | 'duplicate';
 
 const CATEGORIES = [
   { value: '', label: 'Aucune' },
@@ -57,7 +58,7 @@ export function SeoQueueTab() {
   const [sortBy, setSortBy] = useState<QueueSortBy>('queue');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [searchFilter, setSearchFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState<QueueFilterStatus>('all');
+  const [statusFilter, setStatusFilter] = useState<QueueFilterStatus>('actionable');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   const topicCount = useMemo(() => {
@@ -73,6 +74,7 @@ export function SeoQueueTab() {
     const normalizedSearch = normalizeText(searchFilter);
 
     return items.filter((item) => {
+      if (statusFilter === 'actionable' && !['pending', 'processing', 'error'].includes(item.status)) return false;
       if (statusFilter !== 'all' && item.status !== statusFilter) return false;
       if (categoryFilter !== 'all' && (item.category ?? '') !== categoryFilter) return false;
 
@@ -118,7 +120,7 @@ export function SeoQueueTab() {
 
   const resetFilters = () => {
     setSearchFilter('');
-    setStatusFilter('all');
+    setStatusFilter('actionable');
     setCategoryFilter('all');
   };
 
