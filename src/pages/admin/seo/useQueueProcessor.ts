@@ -88,7 +88,7 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
     const cleanCategory = item.category ? getCategoryLabel(item.category) : null;
     const { data: articleRow, error: insertErr } = await supabase
       .from('seo_articles')
-      .insert({ keyword: item.topic, cluster_context: cleanCategory })
+      .insert({ keyword: item.topic, cluster_context: cleanCategory, source_queue_id: item.id } as any)
       .select('id')
       .single();
 
@@ -152,6 +152,8 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
       .from('article_queue' as any)
       .update({ status: 'done', completed_at: new Date().toISOString() } as any)
       .eq('id', item.id);
+
+    await (supabase.rpc as any)('sync_article_queue_state');
   }, []);
 
   const runQueue = useCallback(async () => {
