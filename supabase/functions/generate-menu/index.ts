@@ -882,29 +882,66 @@ Deno.serve(async (req) => {
     const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
     const recipesToStore: { recipe_name: string; meal_type: string }[] = [];
 
+    // Pool of safe recipes to swap in if the AI picks an unsafe one
+    const usedRecipeIds = new Set<string>();
+    const safePool = [...filteredCandidates];
+    const pickSafeReplacement = (mealType: string): any | null => {
+      for (let i = 0; i < safePool.length; i++) {
+        const r = safePool[i];
+        if (usedRecipeIds.has(r.id)) continue;
+        if (Array.isArray(r.allowed_meals) && r.allowed_meals.length > 0
+            && !r.allowed_meals.includes(mealType)) continue;
+        return r;
+      }
+      return safePool.find((r: any) => !usedRecipeIds.has(r.id)) || null;
+    };
+
+    let rejectedBySafetyGate = 0;
+
     const days = aiResponse.menu.map((day: any, index: number) => {
       const entry: any = { day: weekdays[index] || `Jour ${day.jour}` };
 
       for (const selection of (day.repas || [])) {
-        // Look up the recipe from DB by ID or title
-        const dbRecipe = recipeMap[selection.recipe_id] || recipeMap[selection.nom];
+        let dbRecipe = recipeMap[selection.recipe_id] || recipeMap[selection.nom];
 
         if (!dbRecipe) {
           console.warn(`[generate-menu] Recipe not found in DB: id=${selection.recipe_id}, nom=${selection.nom}`);
-          continue;
+          // Try to substitute with a safe pick rather than skipping
+          const replacement = pickSafeReplacement(selection.type);
+          if (!replacement) continue;
+          dbRecipe = replacement;
         }
+
+        // ── HARD SAFETY GATE: re-validate AI's pick against user constraints ──
+        const safety = checkRecipeSafety(dbRecipe);
+        if (!safety.ok) {
+          rejectedBySafetyGate++;
+          console.warn(`[generate-menu] AI picked unsafe recipe "${dbRecipe.title}" (${safety.reason}) — replacing`);
+          const replacement = pickSafeReplacement(selection.type);
+          if (!replacement) {
+            console.error(`[generate-menu] No safe replacement for ${selection.type} on day ${index + 1}`);
+            continue;
+          }
+          dbRecipe = replacement;
+        }
+        usedRecipeIds.add(dbRecipe.id);
 
         const portions = selection.portions || defaultPortions;
         const baseServings = dbRecipe.base_servings || 1;
         const portionFactor = portions / baseServings;
 
-        // Parse ingredients from DB recipe
+        // Parse ingredients (handles both string[] and object[])
         const ingredients = Array.isArray(dbRecipe.ingredients)
-          ? dbRecipe.ingredients.map((ing: any) => ({
-              nom: ing.name || ing.nom || '',
-              quantite: String(Math.round(((parseFloat(ing.quantity || ing.quantite) || 0) * portionFactor) * 100) / 100),
-              unite: ing.unit || ing.unite || '',
-            }))
+          ? dbRecipe.ingredients.map((ing: any) => {
+              if (typeof ing === 'string') {
+                return { nom: ing, quantite: '', unite: '' };
+              }
+              return {
+                nom: ing.name || ing.nom || '',
+                quantite: String(Math.round(((parseFloat(ing.quantity || ing.quantite) || 0) * portionFactor) * 100) / 100),
+                unite: ing.unit || ing.unite || '',
+              };
+            })
           : [];
 
         const mealEntry = {
@@ -944,7 +981,19 @@ Deno.serve(async (req) => {
       return entry;
     });
 
-    console.log(`[generate-menu] Built ${days.length} days with ${recipesToStore.length} recipes from DB`);
+    console.log(`[generate-menu] Built ${days.length} days with ${recipesToStore.length} recipes from DB. Safety gate rejected ${rejectedBySafetyGate} AI picks.`);
+
+    // Fail-safe: if every slot ended up empty, return a clear error
+    if (recipesToStore.length === 0) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'SAFETY_VALIDATION_FAILED',
+          message: "Impossible de générer un menu compatible avec vos contraintes. Vérifiez votre profil (allergies, équipement).",
+        }),
+        { status: 200, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
+      );
+    }
 
     // ── SAVE MENU ──
     const householdAdults = ctx.household?.adults_count ?? ctx.legacyProfile?.household_adults ?? 1;
