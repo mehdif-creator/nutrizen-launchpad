@@ -675,7 +675,7 @@ Deno.serve(async (req) => {
 
     const { data: candidateRecipes, error: candidateError } = await supabaseClient
       .from('recipes')
-      .select('id, title, image_url, image_path, ingredients, calories_kcal, prep_time_min, proteins_g, carbs_g, fats_g, base_servings, allergens, cuisine_type, allowed_meals')
+      .select('id, title, image_url, image_path, ingredients, ingredients_text, calories_kcal, prep_time_min, proteins_g, carbs_g, fats_g, base_servings, allergens, appliances, cuisine_type, allowed_meals')
       .in('diet_type', dietTypes)
       .eq('published', true)
       .not('image_path', 'is', null)
@@ -686,44 +686,154 @@ Deno.serve(async (req) => {
       throw new Error('Aucune recette disponible dans la base de données');
     }
 
-    // Filter out recent recipes and those with conflicting allergens
-    const userAllergens = (Array.isArray(ctx.allergies?.allergies)
-      ? ctx.allergies.allergies.map((a: AllergyEntry) => a.name.toLowerCase())
-      : (ctx.legacyPreferences?.allergies || []).map((a: string) => a.toLowerCase()));
+    // ── HARD CONSTRAINTS — normalize user data ──
+    const stripAccents = (s: string) =>
+      (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 
-    // Build set of user's available appliances (normalized)
-    const userAppliances = new Set(
-      (ctx.habits?.available_tools || ctx.legacyPreferences?.appliances_owned || [])
-        .map((a: string) => (a || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim())
-        .filter((a: string) => a.length > 0)
-    );
+    // Allergen synonyms (handles plural / variants between user input and recipe tags)
+    const ALLERGEN_SYNONYMS: Record<string, string[]> = {
+      'oeuf': ['oeuf', 'oeufs', 'œuf', 'œufs', 'jaune d\'oeuf', 'blanc d\'oeuf', 'omelette'],
+      'oeufs': ['oeuf', 'oeufs', 'œuf', 'œufs', 'jaune d\'oeuf', 'blanc d\'oeuf', 'omelette'],
+      'gluten': ['gluten', 'ble', 'blé', 'farine', 'pain', 'pates', 'pâtes', 'pasta', 'tortilla', 'wrap', 'baguette', 'semoule', 'couscous', 'boulgour', 'orge', 'seigle', 'epeautre', 'épeautre'],
+      'lait': ['lait', 'laitier', 'lactose', 'fromage', 'beurre', 'creme', 'crème', 'yaourt', 'mozzarella', 'parmesan', 'ricotta', 'feta', 'cheddar'],
+      'lactose': ['lait', 'laitier', 'lactose', 'fromage', 'beurre', 'creme', 'crème', 'yaourt'],
+      'arachide': ['arachide', 'arachides', 'cacahuete', 'cacahuète', 'cacahuetes', 'cacahuètes', 'peanut'],
+      'fruits a coque': ['amande', 'noix', 'noisette', 'pistache', 'cajou', 'pecan', 'pécan', 'macadamia'],
+      'soja': ['soja', 'tofu', 'tempeh', 'edamame', 'sauce soja', 'tamari', 'miso'],
+      'poisson': ['poisson', 'saumon', 'thon', 'cabillaud', 'colin', 'merlu', 'sardine', 'maquereau', 'truite', 'bar', 'dorade', 'lieu', 'anchois'],
+      'crustaces': ['crevette', 'crevettes', 'crabe', 'homard', 'langoustine', 'gambas', 'écrevisse', 'ecrevisse'],
+      'crustacés': ['crevette', 'crevettes', 'crabe', 'homard', 'langoustine', 'gambas'],
+      'mollusques': ['moule', 'huitre', 'huître', 'palourde', 'calamar', 'calmar', 'poulpe', 'seiche', 'escargot'],
+      'sesame': ['sesame', 'sésame', 'tahini', 'tahin'],
+      'sésame': ['sesame', 'sésame', 'tahini', 'tahin'],
+      'celeri': ['celeri', 'céleri'],
+      'moutarde': ['moutarde'],
+      'sulfites': ['sulfite', 'sulfites', 'vin'],
+    };
 
-    const filteredCandidates = candidateRecipes.filter((r: any) => {
-      if (recentRecipeNames.includes(r.title)) return false;
-      if (userAllergens.length > 0 && r.allergens) {
-        const recipeAllergens = (r.allergens as string[]).map((a: string) => a.toLowerCase());
-        if (userAllergens.some((ua: string) => recipeAllergens.includes(ua))) return false;
+    const expandAllergen = (raw: string): string[] => {
+      const norm = stripAccents(raw);
+      const syn = ALLERGEN_SYNONYMS[norm] || ALLERGEN_SYNONYMS[raw.toLowerCase().trim()];
+      const list = new Set<string>([norm]);
+      if (syn) syn.forEach(s => list.add(stripAccents(s)));
+      return [...list].filter(Boolean);
+    };
+
+    const userAllergyEntries: AllergyEntry[] = Array.isArray(ctx.allergies?.allergies)
+      ? ctx.allergies.allergies
+      : (ctx.legacyPreferences?.allergies || []).map((n: string) => ({ name: n, type: 'allergie', traces_ok: false }));
+
+    // Add free-text "other_allergies"
+    const otherAllergiesText: string = ctx.allergies?.other_allergies || ctx.legacyPreferences?.autres_allergies || '';
+    if (otherAllergiesText) {
+      otherAllergiesText.split(/[,;\n]/).map(s => s.trim()).filter(Boolean).forEach((n: string) => {
+        userAllergyEntries.push({ name: n, type: 'allergie', traces_ok: false });
+      });
+    }
+
+    const userForbiddenTokens = new Set<string>();
+    const userAllergenLabels = new Set<string>();
+    for (const a of userAllergyEntries) {
+      if (!a?.name) continue;
+      userAllergenLabels.add(stripAccents(a.name));
+      expandAllergen(a.name).forEach(t => userForbiddenTokens.add(t));
+    }
+
+    // ── Equipment normalization ──
+    // Map user-friendly tool labels to recipe `appliances` tags.
+    const TOOL_TO_APPLIANCE: Record<string, string> = {
+      'air fryer': 'airfryer',
+      'airfryer': 'airfryer',
+      'friteuse a air': 'airfryer',
+      'friteuse à air': 'airfryer',
+      'thermomix': 'thermomix',
+      'cookeo': 'cookeo',
+      'autocuiseur': 'autocuiseur',
+      'cocotte minute': 'autocuiseur',
+      'wok': 'wok',
+      'plancha': 'plancha',
+      'barbecue': 'barbecue',
+    };
+
+    const userToolsRaw: string[] = ctx.habits?.available_tools || ctx.legacyPreferences?.appliances_owned || [];
+    const userTools = userToolsRaw.map(t => stripAccents(t)).filter(Boolean);
+    const userAppliances = new Set<string>();
+    for (const t of userTools) {
+      userAppliances.add(t);
+      if (TOOL_TO_APPLIANCE[t]) userAppliances.add(TOOL_TO_APPLIANCE[t]);
+    }
+    const toolsConfigured = userTools.length > 0;
+
+    // Build searchable ingredient text for a recipe (handles both string[] and object[])
+    const buildIngredientText = (r: any): string => {
+      if (typeof r.ingredients_text === 'string' && r.ingredients_text.length > 0) {
+        return stripAccents(r.ingredients_text);
       }
-      // Filter by required appliances: if recipe specifies required_appliances, user must have them
-      if (r.required_appliances && Array.isArray(r.required_appliances) && r.required_appliances.length > 0 && userAppliances.size > 0) {
-        const missingAppliance = r.required_appliances.some((appliance: string) => {
-          const normalized = (appliance || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-          return !userAppliances.has(normalized);
-        });
-        if (missingAppliance) return false;
+      const ings = r.ingredients;
+      if (Array.isArray(ings)) {
+        return stripAccents(
+          ings.map((i: any) => typeof i === 'string' ? i : (i?.name || i?.nom || '')).join(' ')
+        );
       }
-      // Also check recipe title/tags for common appliance keywords not in user's list
-      if (userAppliances.size > 0) {
-        const titleLower = (r.title || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        const applianceKeywords = ['airfryer', 'air fryer', 'thermomix', 'cookeo', 'autocuiseur', 'wok', 'plancha', 'barbecue'];
-        for (const keyword of applianceKeywords) {
-          if (titleLower.includes(keyword) && !userAppliances.has(keyword)) {
-            return false;
+      return '';
+    };
+
+    // Hard safety check used both for pre-filter and post-AI gate
+    const checkRecipeSafety = (r: any): { ok: boolean; reason?: string } => {
+      // 1) Allergen tag check
+      if (Array.isArray(r.allergens) && r.allergens.length > 0) {
+        const recipeAllergens = (r.allergens as string[]).map(stripAccents);
+        for (const ua of userAllergenLabels) {
+          if (recipeAllergens.includes(ua)) {
+            return { ok: false, reason: `tag allergène "${ua}"` };
           }
         }
       }
+      // 2) Ingredient-text check (synonyms)
+      if (userForbiddenTokens.size > 0) {
+        const ingText = buildIngredientText(r);
+        const titleNorm = stripAccents(r.title || '');
+        const haystack = ingText + ' ' + titleNorm;
+        for (const tok of userForbiddenTokens) {
+          if (!tok || tok.length < 3) continue;
+          // word-boundary-ish check: ensure surrounded by non-letters
+          const re = new RegExp(`(^|[^a-z])${tok.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-z]|$)`);
+          if (re.test(haystack)) {
+            return { ok: false, reason: `ingrédient interdit "${tok}"` };
+          }
+        }
+      }
+      // 3) Equipment feasibility — only if user actually configured tools
+      if (toolsConfigured && Array.isArray(r.appliances) && r.appliances.length > 0) {
+        for (const app of r.appliances) {
+          const a = stripAccents(app);
+          if (!a) continue;
+          if (!userAppliances.has(a) && !userAppliances.has(TOOL_TO_APPLIANCE[a] || a)) {
+            return { ok: false, reason: `équipement manquant "${a}"` };
+          }
+        }
+      }
+      return { ok: true };
+    };
+
+    const filteredCandidates = candidateRecipes.filter((r: any) => {
+      if (recentRecipeNames.includes(r.title)) return false;
+      const safety = checkRecipeSafety(r);
+      if (!safety.ok) return false;
       return true;
     });
+
+    if (filteredCandidates.length === 0) {
+      console.warn('[generate-menu] No safe candidates after constraint filtering');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'NO_SAFE_RECIPES',
+          message: "Aucune recette compatible avec vos contraintes (allergies, équipement, régime). Élargissez vos préférences ou vérifiez votre profil.",
+        }),
+        { status: 200, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
+      );
+    }
 
     const finalCandidates = filteredCandidates.slice(0, 100);
     console.log(`[generate-menu] ${candidateRecipes.length} total → ${filteredCandidates.length} filtered → ${finalCandidates.length} candidates for AI`);
