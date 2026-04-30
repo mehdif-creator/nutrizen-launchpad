@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
           .maybeSingle();
 
         if (!hasBadge) {
-          await supabaseClient
+          await supabaseAdmin
             .from('user_badges')
             .insert({ user_id: user.id, badge_code: 'FAST_COOK' });
           
