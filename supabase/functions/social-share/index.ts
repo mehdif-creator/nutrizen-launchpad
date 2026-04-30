@@ -23,6 +23,12 @@ Deno.serve(async (req) => {
       }
     );
 
+    // Service-role client for privileged writes (badge grants).
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    );
+
     const {
       data: { user },
       error: userError,
@@ -71,7 +77,7 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (!hasBadge) {
-        await supabaseClient
+        await supabaseAdmin
           .from('user_badges')
           .insert({ user_id: user.id, badge_code: 'VIRAL_SHARER' });
         
