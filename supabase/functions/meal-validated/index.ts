@@ -22,6 +22,13 @@ Deno.serve(async (req) => {
       }
     );
 
+    // Service-role client for privileged writes (badge grants).
+    // user_badges INSERT is restricted to service role to prevent self-grant abuse.
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    );
+
     const {
       data: { user },
       error: userError,
