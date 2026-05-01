@@ -436,26 +436,34 @@ export default function Profile() {
           favorite_ingredients: favoriteIngredients.length > 0 ? favoriteIngredients : null,
           favorite_cuisines: favoriteCuisines.length > 0 ? favoriteCuisines : null,
           spice_level: spiceLevel || null,
-          cooking_method: cookingMethod.length > 0 ? cookingMethod[0] : null,
+          cooking_method: cookingMethod.length > 0 ? cookingMethod : null,
           prefer_organic: preferOrganic,
           reduce_sugar: reduceSugar,
           prefer_seasonal: preferSeasonal,
           bio_local: bioLocal || null,
+          salt_level: saltLevel || null,
           updated_at: now,
-        }, { onConflict: 'user_id' }),
+        } as any, { onConflict: 'user_id' }),
 
         supabase.from('user_nutrition_goals').upsert({
           user_id: user.id,
           caloric_goal: caloricGoal || null,
           target_kcal: targetKcal,
           macros_custom: macrosCustom,
-          macro_protein_pct: 30,
-          macro_carbs_pct: 45,
-          macro_fat_pct: 25,
+          macro_protein_pct: macrosCustom
+            ? (macroDistribution === 'high_protein' ? 40 : macroDistribution === 'keto' ? 25 : macroDistribution === 'high_carbs' ? 20 : 30)
+            : 30,
+          macro_carbs_pct: macrosCustom
+            ? (macroDistribution === 'high_protein' ? 30 : macroDistribution === 'keto' ? 25 : macroDistribution === 'high_carbs' ? 60 : 45)
+            : 45,
+          macro_fat_pct: macrosCustom
+            ? (macroDistribution === 'high_protein' ? 30 : macroDistribution === 'keto' ? 50 : macroDistribution === 'high_carbs' ? 20 : 25)
+            : 25,
+          protein_g_per_kg: proteinGPerKg,
           dairy_preference: dairyPreference || null,
           track_fiber: trackFiber,
           updated_at: now,
-        }, { onConflict: 'user_id' }),
+        } as any, { onConflict: 'user_id' }),
 
         supabase.from('user_household').upsert({
           user_id: user.id,
