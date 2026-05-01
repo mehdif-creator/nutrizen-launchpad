@@ -675,11 +675,11 @@ Deno.serve(async (req) => {
 
     const { data: candidateRecipes, error: candidateError } = await supabaseClient
       .from('recipes')
-      .select('id, title, image_url, image_path, ingredients, ingredients_text, calories_kcal, prep_time_min, proteins_g, carbs_g, fats_g, base_servings, allergens, appliances, cuisine_type, allowed_meals')
+      .select('id, title, image_url, image_path, ingredients, ingredients_text, calories_kcal, prep_time_min, total_time_min, proteins_g, carbs_g, fats_g, fibers_g, base_servings, allergens, appliances, cuisine_type, allowed_meals, cooking_method, spice_level, salt_level, sugar_level, batch_cooking_friendly, equipment_needed, main_ingredients, excluded_ingredients, ingredient_keywords, goal_tags, calorie_target, difficulty_level, budget_per_serving, meal_type')
       .in('diet_type', dietTypes)
       .eq('published', true)
       .not('image_path', 'is', null)
-      .limit(200);
+      .limit(400);
 
     if (candidateError || !candidateRecipes || candidateRecipes.length === 0) {
       console.error('[generate-menu] Failed to fetch candidate recipes:', candidateError);
