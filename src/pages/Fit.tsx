@@ -1,7 +1,7 @@
 import { AnnouncementBar } from '@/components/landing/AnnouncementBar';
 import { PreHeader } from '@/components/landing/PreHeader';
 import { Header } from '@/components/landing/Header';
-import { Hero } from '@/components/landing/Hero';
+import { FitHero } from '@/components/landing/FitHero';
 import { FitMadeForYou } from '@/components/landing/FitMadeForYou';
 import { Benefits } from '@/components/landing/Benefits';
 import { HowItWorks } from '@/components/landing/HowItWorks';
@@ -139,7 +139,7 @@ const Fit = () => {
       <AnnouncementBar />
       <PreHeader />
       <Header onCtaClick={handleCtaClick} />
-      <Hero onCtaClick={handleCtaClick} onExampleClick={handleExampleClick} copy={fitCopy.hero} />
+      <FitHero onCtaClick={handleCtaClick} />
       <FitMadeForYou />
       <Benefits copy={fitCopy.benefits} />
       <HowItWorks copy={fitCopy.howItWorks} />
