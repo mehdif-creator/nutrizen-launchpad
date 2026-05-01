@@ -1155,7 +1155,7 @@ Deno.serve(async (req) => {
 
     // Pool of safe recipes to swap in if the AI picks an unsafe one
     const usedRecipeIds = new Set<string>();
-    const safePool = [...filteredCandidates];
+    const safePool = [...workingPool];
     const pickSafeReplacement = (mealType: string): any | null => {
       for (let i = 0; i < safePool.length; i++) {
         const r = safePool[i];
