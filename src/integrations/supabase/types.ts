@@ -3548,7 +3548,7 @@ export type Database = {
       user_food_style: {
         Row: {
           bio_local: string | null
-          cooking_method: string | null
+          cooking_method: string[] | null
           diet_type: string | null
           favorite_cuisines: string[] | null
           favorite_ingredients: string[] | null
@@ -3557,13 +3557,14 @@ export type Database = {
           prefer_organic: boolean | null
           prefer_seasonal: boolean | null
           reduce_sugar: boolean | null
+          salt_level: string | null
           spice_level: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
           bio_local?: string | null
-          cooking_method?: string | null
+          cooking_method?: string[] | null
           diet_type?: string | null
           favorite_cuisines?: string[] | null
           favorite_ingredients?: string[] | null
@@ -3572,13 +3573,14 @@ export type Database = {
           prefer_organic?: boolean | null
           prefer_seasonal?: boolean | null
           reduce_sugar?: boolean | null
+          salt_level?: string | null
           spice_level?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
           bio_local?: string | null
-          cooking_method?: string | null
+          cooking_method?: string[] | null
           diet_type?: string | null
           favorite_cuisines?: string[] | null
           favorite_ingredients?: string[] | null
@@ -3587,6 +3589,7 @@ export type Database = {
           prefer_organic?: boolean | null
           prefer_seasonal?: boolean | null
           reduce_sugar?: boolean | null
+          salt_level?: string | null
           spice_level?: string | null
           updated_at?: string | null
           user_id?: string
@@ -3861,6 +3864,7 @@ export type Database = {
           macros_custom: boolean | null
           portion_size: string | null
           protein_g_per_day: number | null
+          protein_g_per_kg: number | null
           target_kcal: number | null
           track_fiber: boolean | null
           updated_at: string | null
@@ -3875,6 +3879,7 @@ export type Database = {
           macros_custom?: boolean | null
           portion_size?: string | null
           protein_g_per_day?: number | null
+          protein_g_per_kg?: number | null
           target_kcal?: number | null
           track_fiber?: boolean | null
           updated_at?: string | null
@@ -3889,6 +3894,7 @@ export type Database = {
           macros_custom?: boolean | null
           portion_size?: string | null
           protein_g_per_day?: number | null
+          protein_g_per_kg?: number | null
           target_kcal?: number | null
           track_fiber?: boolean | null
           updated_at?: string | null

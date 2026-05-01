@@ -262,11 +262,12 @@ export default function Profile() {
         setFavoriteIngredients(Array.isArray(foodStyle.favorite_ingredients) ? foodStyle.favorite_ingredients : []);
         setFavoriteCuisines(Array.isArray(foodStyle.favorite_cuisines) ? foodStyle.favorite_cuisines : []);
         setSpiceLevel(foodStyle.spice_level ?? '');
-        setCookingMethod(Array.isArray(foodStyle.cooking_method) ? foodStyle.cooking_method : foodStyle.cooking_method ? [foodStyle.cooking_method] : []);
+        setCookingMethod(Array.isArray(foodStyle.cooking_method) ? foodStyle.cooking_method : foodStyle.cooking_method ? [foodStyle.cooking_method as unknown as string] : []);
         setPreferOrganic(foodStyle.prefer_organic ?? false);
         setReduceSugar(foodStyle.reduce_sugar ?? false);
         setPreferSeasonal(foodStyle.prefer_seasonal ?? false);
         setBioLocal(foodStyle.bio_local ?? '');
+        setSaltLevel((foodStyle as any).salt_level ?? '');
       }
 
       // Section 6
@@ -274,7 +275,17 @@ export default function Profile() {
         setCaloricGoal(nutrition.caloric_goal ?? '');
         setTargetKcal(nutrition.target_kcal ?? null);
         setMacrosCustom(nutrition.macros_custom ?? false);
-        setProteinGPerKg(null); // derived field
+        setProteinGPerKg((nutrition as any).protein_g_per_kg != null ? Number((nutrition as any).protein_g_per_kg) : null);
+        // Reverse-derive macroDistribution from saved pcts so the UI reflects persisted values
+        const pP = nutrition.macro_protein_pct ?? 30;
+        const pC = nutrition.macro_carbs_pct ?? 45;
+        const pF = nutrition.macro_fat_pct ?? 25;
+        if (nutrition.macros_custom) {
+          if (pP === 40 && pC === 30 && pF === 30) setMacroDistribution('high_protein');
+          else if (pP === 25 && pC === 25 && pF === 50) setMacroDistribution('keto');
+          else if (pP === 20 && pC === 60 && pF === 20) setMacroDistribution('high_carbs');
+          else setMacroDistribution('equilibre');
+        }
         setTrackFiber(nutrition.track_fiber ?? false);
         setDairyPreference(nutrition.dairy_preference ?? '');
       }
@@ -425,26 +436,34 @@ export default function Profile() {
           favorite_ingredients: favoriteIngredients.length > 0 ? favoriteIngredients : null,
           favorite_cuisines: favoriteCuisines.length > 0 ? favoriteCuisines : null,
           spice_level: spiceLevel || null,
-          cooking_method: cookingMethod.length > 0 ? cookingMethod[0] : null,
+          cooking_method: cookingMethod.length > 0 ? cookingMethod : null,
           prefer_organic: preferOrganic,
           reduce_sugar: reduceSugar,
           prefer_seasonal: preferSeasonal,
           bio_local: bioLocal || null,
+          salt_level: saltLevel || null,
           updated_at: now,
-        }, { onConflict: 'user_id' }),
+        } as any, { onConflict: 'user_id' }),
 
         supabase.from('user_nutrition_goals').upsert({
           user_id: user.id,
           caloric_goal: caloricGoal || null,
           target_kcal: targetKcal,
           macros_custom: macrosCustom,
-          macro_protein_pct: 30,
-          macro_carbs_pct: 45,
-          macro_fat_pct: 25,
+          macro_protein_pct: macrosCustom
+            ? (macroDistribution === 'high_protein' ? 40 : macroDistribution === 'keto' ? 25 : macroDistribution === 'high_carbs' ? 20 : 30)
+            : 30,
+          macro_carbs_pct: macrosCustom
+            ? (macroDistribution === 'high_protein' ? 30 : macroDistribution === 'keto' ? 25 : macroDistribution === 'high_carbs' ? 60 : 45)
+            : 45,
+          macro_fat_pct: macrosCustom
+            ? (macroDistribution === 'high_protein' ? 30 : macroDistribution === 'keto' ? 50 : macroDistribution === 'high_carbs' ? 20 : 25)
+            : 25,
+          protein_g_per_kg: proteinGPerKg,
           dairy_preference: dairyPreference || null,
           track_fiber: trackFiber,
           updated_at: now,
-        }, { onConflict: 'user_id' }),
+        } as any, { onConflict: 'user_id' }),
 
         supabase.from('user_household').upsert({
           user_id: user.id,
