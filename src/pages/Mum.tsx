@@ -1,7 +1,7 @@
 import { AnnouncementBar } from '@/components/landing/AnnouncementBar';
 import { PreHeader } from '@/components/landing/PreHeader';
 import { Header } from '@/components/landing/Header';
-import { Hero } from '@/components/landing/Hero';
+import { MumHero } from '@/components/landing/MumHero';
 import { MumMadeForYou } from '@/components/landing/MumMadeForYou';
 import { Benefits } from '@/components/landing/Benefits';
 import { HowItWorks } from '@/components/landing/HowItWorks';
@@ -139,7 +139,7 @@ const Mum = () => {
       <AnnouncementBar />
       <PreHeader />
       <Header onCtaClick={handleCtaClick} />
-      <Hero onCtaClick={handleCtaClick} onExampleClick={handleExampleClick} copy={mumCopy.hero} />
+      <MumHero onCtaClick={handleCtaClick} />
       <MumMadeForYou />
       <Benefits copy={mumCopy.benefits} />
       <HowItWorks copy={mumCopy.howItWorks} />
