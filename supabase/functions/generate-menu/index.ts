@@ -686,7 +686,9 @@ Deno.serve(async (req) => {
       throw new Error('Aucune recette disponible dans la base de données');
     }
 
-    // ── HARD CONSTRAINTS — normalize user data ──
+    // ══════════════════════════════════════════════════════════════
+    // HARD CONSTRAINTS + SOFT SCORING — normalize user data
+    // ══════════════════════════════════════════════════════════════
     const stripAccents = (s: string) =>
       (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 
@@ -719,11 +721,11 @@ Deno.serve(async (req) => {
       return [...list].filter(Boolean);
     };
 
+    // ── Allergens (selected + free-text) ──
     const userAllergyEntries: AllergyEntry[] = Array.isArray(ctx.allergies?.allergies)
       ? ctx.allergies.allergies
       : (ctx.legacyPreferences?.allergies || []).map((n: string) => ({ name: n, type: 'allergie', traces_ok: false }));
 
-    // Add free-text "other_allergies"
     const otherAllergiesText: string = ctx.allergies?.other_allergies || ctx.legacyPreferences?.autres_allergies || '';
     if (otherAllergiesText) {
       otherAllergiesText.split(/[,;\n]/).map(s => s.trim()).filter(Boolean).forEach((n: string) => {
@@ -739,30 +741,71 @@ Deno.serve(async (req) => {
       expandAllergen(a.name).forEach(t => userForbiddenTokens.add(t));
     }
 
+    // ── Foods to avoid (hard) ──
+    const foodsToAvoidRaw: string[] = ctx.foodStyle?.foods_to_avoid || ctx.legacyPreferences?.aliments_eviter || [];
+    const userAvoidTokens = new Set<string>();
+    for (const f of foodsToAvoidRaw) {
+      const t = stripAccents(f);
+      if (t && t.length >= 3) userAvoidTokens.add(t);
+    }
+
+    // ── Family allergies free-text (hard) ──
+    const familyAllergiesText: string = ctx.household?.family_allergies || '';
+    if (familyAllergiesText) {
+      familyAllergiesText.split(/[,;\n]/).map(s => s.trim()).filter(Boolean).forEach((n: string) => {
+        userAllergenLabels.add(stripAccents(n));
+        expandAllergen(n).forEach(t => userForbiddenTokens.add(t));
+      });
+    }
+
     // ── Equipment normalization ──
-    // Map user-friendly tool labels to recipe `appliances` tags.
     const TOOL_TO_APPLIANCE: Record<string, string> = {
-      'air fryer': 'airfryer',
-      'airfryer': 'airfryer',
-      'friteuse a air': 'airfryer',
-      'friteuse à air': 'airfryer',
-      'thermomix': 'thermomix',
-      'cookeo': 'cookeo',
-      'autocuiseur': 'autocuiseur',
-      'cocotte minute': 'autocuiseur',
-      'wok': 'wok',
-      'plancha': 'plancha',
-      'barbecue': 'barbecue',
+      'air fryer': 'airfryer', 'airfryer': 'airfryer',
+      'friteuse a air': 'airfryer', 'friteuse à air': 'airfryer',
+      'thermomix': 'thermomix', 'cookeo': 'cookeo',
+      'autocuiseur': 'autocuiseur', 'cocotte minute': 'autocuiseur',
+      'wok': 'wok', 'plancha': 'plancha', 'barbecue': 'barbecue',
     };
 
     const userToolsRaw: string[] = ctx.habits?.available_tools || ctx.legacyPreferences?.appliances_owned || [];
-    const userTools = userToolsRaw.map(t => stripAccents(t)).filter(Boolean);
+    const userTools = userToolsRaw.map((t: string) => stripAccents(t)).filter(Boolean);
     const userAppliances = new Set<string>();
     for (const t of userTools) {
       userAppliances.add(t);
       if (TOOL_TO_APPLIANCE[t]) userAppliances.add(TOOL_TO_APPLIANCE[t]);
     }
     const toolsConfigured = userTools.length > 0;
+
+    // ── Prep-time hard cap (soft fallback if no candidates) ──
+    const prepTimes: string[] = ctx.habits?.prep_time || [];
+    const maxPrepTimeMin = prepTimes.includes('45min_plus') ? 999
+      : prepTimes.includes('30_45min') ? 45
+      : prepTimes.includes('15_30min') ? 30
+      : prepTimes.includes('15min') ? 20 // small slack for 15-min users
+      : 999;
+
+    // ── Medical conditions deterministic exclusions (ingredient-token level) ──
+    const MEDICAL_EXCLUSIONS_TOKENS: Record<string, string[]> = {
+      'diabete_2': ['sucre', 'sirop', 'confiture', 'soda', 'farine blanche', 'pain blanc', 'patisserie', 'pâtisserie'],
+      'hypertension': ['charcuterie', 'saucisson', 'jambon cru', 'sauce soja', 'bouillon cube'],
+      'cholesterol': ['friture', 'saindoux', 'charcuterie'],
+      'hypothyroidie': [],
+    };
+    const medicalConditions: string[] = ctx.profile?.medical_conditions || [];
+    const medicalForbiddenTokens = new Set<string>();
+    for (const cond of medicalConditions) {
+      (MEDICAL_EXCLUSIONS_TOKENS[cond] || []).forEach(t => medicalForbiddenTokens.add(stripAccents(t)));
+    }
+
+    // ── Diet exclusions (token-level) ──
+    const DIET_EXCLUSIONS: Record<string, string[]> = {
+      'vegan': ['viande', 'poulet', 'boeuf', 'bœuf', 'porc', 'agneau', 'canard', 'dinde', 'poisson', 'saumon', 'thon', 'crevette', 'crabe', 'homard', 'fruits de mer', 'oeuf', 'œuf', 'lait', 'creme', 'crème', 'beurre', 'fromage', 'yaourt', 'miel', 'gelatine', 'gélatine'],
+      'vegetarien': ['viande', 'poulet', 'boeuf', 'bœuf', 'porc', 'agneau', 'canard', 'dinde', 'poisson', 'saumon', 'thon', 'crevette', 'crabe', 'homard', 'fruits de mer', 'gelatine', 'gélatine'],
+      'pescetarien': ['viande', 'poulet', 'boeuf', 'bœuf', 'porc', 'agneau', 'canard', 'dinde'],
+      'halal': ['porc', 'jambon', 'bacon', 'lard', 'saucisson', 'chorizo', 'vin', 'biere', 'bière', 'alcool', 'rhum', 'cognac'],
+      'casher': ['porc', 'jambon', 'bacon', 'lard', 'saucisson', 'chorizo', 'crevette', 'crabe', 'homard', 'fruits de mer'],
+    };
+    const dietForbiddenTokens = (DIET_EXCLUSIONS[dietType] || []).map(stripAccents);
 
     // Build searchable ingredient text for a recipe (handles both string[] and object[])
     const buildIngredientText = (r: any): string => {
@@ -778,32 +821,50 @@ Deno.serve(async (req) => {
       return '';
     };
 
-    // Hard safety check used both for pre-filter and post-AI gate
+    // Word-boundary token matcher
+    const tokenInHaystack = (haystack: string, tok: string): boolean => {
+      if (!tok || tok.length < 3) return false;
+      const re = new RegExp(`(^|[^a-z])${tok.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-z]|$)`);
+      return re.test(haystack);
+    };
+
+    // ══════════════════════════════════════════════════════════════
+    // UNIFIED HARD SAFETY GATE (pre-filter AND post-AI)
+    // ══════════════════════════════════════════════════════════════
     const checkRecipeSafety = (r: any): { ok: boolean; reason?: string } => {
-      // 1) Allergen tag check
+      // 1) Allergen tag
       if (Array.isArray(r.allergens) && r.allergens.length > 0) {
         const recipeAllergens = (r.allergens as string[]).map(stripAccents);
         for (const ua of userAllergenLabels) {
-          if (recipeAllergens.includes(ua)) {
-            return { ok: false, reason: `tag allergène "${ua}"` };
-          }
+          if (recipeAllergens.includes(ua)) return { ok: false, reason: `allergène-tag "${ua}"` };
         }
       }
-      // 2) Ingredient-text check (synonyms)
-      if (userForbiddenTokens.size > 0) {
-        const ingText = buildIngredientText(r);
-        const titleNorm = stripAccents(r.title || '');
-        const haystack = ingText + ' ' + titleNorm;
-        for (const tok of userForbiddenTokens) {
-          if (!tok || tok.length < 3) continue;
-          // word-boundary-ish check: ensure surrounded by non-letters
-          const re = new RegExp(`(^|[^a-z])${tok.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-z]|$)`);
-          if (re.test(haystack)) {
-            return { ok: false, reason: `ingrédient interdit "${tok}"` };
-          }
-        }
+
+      const ingText = buildIngredientText(r);
+      const titleNorm = stripAccents(r.title || '');
+      const haystack = ingText + ' ' + titleNorm;
+
+      // 2) Allergen ingredient-token check (synonyms)
+      for (const tok of userForbiddenTokens) {
+        if (tokenInHaystack(haystack, tok)) return { ok: false, reason: `allergène "${tok}"` };
       }
-      // 3) Equipment feasibility — only if user actually configured tools
+
+      // 3) Foods to avoid (HARD)
+      for (const tok of userAvoidTokens) {
+        if (tokenInHaystack(haystack, tok)) return { ok: false, reason: `aliment évité "${tok}"` };
+      }
+
+      // 4) Diet exclusions (deterministic, even though candidate query already pre-filtered)
+      for (const tok of dietForbiddenTokens) {
+        if (tokenInHaystack(haystack, tok)) return { ok: false, reason: `régime ${dietType} interdit "${tok}"` };
+      }
+
+      // 5) Medical conditions deterministic exclusions
+      for (const tok of medicalForbiddenTokens) {
+        if (tokenInHaystack(haystack, tok)) return { ok: false, reason: `condition médicale interdit "${tok}"` };
+      }
+
+      // 6) Equipment feasibility — only if user actually configured tools
       if (toolsConfigured && Array.isArray(r.appliances) && r.appliances.length > 0) {
         for (const app of r.appliances) {
           const a = stripAccents(app);
@@ -813,30 +874,240 @@ Deno.serve(async (req) => {
           }
         }
       }
+
+      // 7) Prep-time hard cap
+      const recipePrep = Number(r.total_time_min ?? r.prep_time_min ?? 0);
+      if (maxPrepTimeMin < 999 && recipePrep > 0 && recipePrep > maxPrepTimeMin + 10) {
+        return { ok: false, reason: `temps prep ${recipePrep}min > ${maxPrepTimeMin}min` };
+      }
+
       return { ok: true };
     };
 
-    const filteredCandidates = candidateRecipes.filter((r: any) => {
-      if (recentRecipeNames.includes(r.title)) return false;
-      const safety = checkRecipeSafety(r);
-      if (!safety.ok) return false;
-      return true;
-    });
+    // ══════════════════════════════════════════════════════════════
+    // SOFT PERSONALIZATION SCORING
+    // ══════════════════════════════════════════════════════════════
+    const favCuisines: string[] = (ctx.foodStyle?.favorite_cuisines || ctx.legacyPreferences?.cuisine_preferee || [])
+      .map((c: string) => stripAccents(c)).filter((c: string) => c && c !== 'all' && c !== 'toutes');
+    const favIngredients: string[] = (ctx.foodStyle?.favorite_ingredients || ctx.legacyPreferences?.ingredients_favoris || [])
+      .map((c: string) => stripAccents(c)).filter(Boolean);
+    const userCookingMethods: string[] = (Array.isArray(ctx.foodStyle?.cooking_method) ? ctx.foodStyle.cooking_method : (ctx.foodStyle?.cooking_method ? [ctx.foodStyle.cooking_method] : []))
+      .map((c: string) => stripAccents(c)).filter(Boolean);
+    const userSpiceLevel: string = stripAccents(ctx.foodStyle?.spice_level || '');
+    const userSaltLevel: string = stripAccents(ctx.foodStyle?.salt_level || '');
+    const wantsSeasonal: boolean = !!ctx.foodStyle?.prefer_seasonal;
+    const reduceSugar: boolean = !!(ctx.foodStyle?.reduce_sugar ?? ctx.legacyPreferences?.limiter_sucre);
+    const userBatchPref: string = stripAccents(ctx.habits?.batch_cooking || ctx.legacyPreferences?.batch_cooking || '');
+    const wantsBatch = userBatchPref === 'oui' || userBatchPref === 'souvent' || userBatchPref === 'parfois';
+    const cookingLevel: string = stripAccents(ctx.habits?.cooking_level || ctx.legacyPreferences?.niveau_cuisine || '');
+    const targetKcalDay: number | null = ctx.nutrition?.target_kcal ?? null;
+    const mainGoal: string = stripAccents(ctx.objectives?.main_goal || ctx.legacyPreferences?.objectif_principal || '');
+    const weeklyBudget: string = stripAccents(ctx.lifestyle?.weekly_budget_food || '');
 
-    if (filteredCandidates.length === 0) {
+    // Per-meal calorie target (split: lunch 45% / dinner 55% if 2 meals)
+    const perMealKcalTarget = targetKcalDay
+      ? (mealSlots.length === 2 ? targetKcalDay * 0.5 : targetKcalDay / Math.max(1, mealSlots.length))
+      : null;
+
+    const SPICE_SCALE: Record<string, number> = { 'sans': 0, 'doux': 1, 'moyen': 2, 'epice': 3, 'épicé': 3, 'tres epice': 4 };
+    const SALT_SCALE: Record<string, number> = { 'sans sel': 0, 'peu sale': 1, 'peu salé': 1, 'normal': 2, 'sale': 3, 'salé': 3 };
+
+    const currentSeason = (() => {
+      const m = new Date().getMonth() + 1;
+      if (m >= 3 && m <= 5) return 'printemps';
+      if (m >= 6 && m <= 8) return 'ete';
+      if (m >= 9 && m <= 11) return 'automne';
+      return 'hiver';
+    })();
+
+    const scoreRecipe = (r: any): { score: number; breakdown: Record<string, number> } => {
+      const breakdown: Record<string, number> = {};
+      let score = 0;
+
+      const recipeCuisine = stripAccents(r.cuisine_type || '');
+      const recipeMethods: string[] = (Array.isArray(r.cooking_method) ? r.cooking_method : []).map((c: string) => stripAccents(c));
+      const recipeMain: string[] = (Array.isArray(r.main_ingredients) ? r.main_ingredients : []).map((c: string) => stripAccents(c));
+      const recipeKeywords: string[] = (Array.isArray(r.ingredient_keywords) ? r.ingredient_keywords : []).map((c: string) => stripAccents(c));
+      const recipeGoals: string[] = (Array.isArray(r.goal_tags) ? r.goal_tags : []).map((c: string) => stripAccents(c));
+      const recipeBadges: string[] = (Array.isArray(r.badges) ? r.badges : []).map((c: string) => stripAccents(c));
+
+      // Favorite cuisines (+8 / match)
+      if (favCuisines.length > 0 && recipeCuisine && favCuisines.includes(recipeCuisine)) {
+        breakdown.fav_cuisine = 8; score += 8;
+      }
+
+      // Favorite ingredients (+3 per match, cap +12)
+      if (favIngredients.length > 0) {
+        const ingHaystack = buildIngredientText(r) + ' ' + recipeMain.join(' ') + ' ' + recipeKeywords.join(' ');
+        let hits = 0;
+        for (const fi of favIngredients) if (tokenInHaystack(ingHaystack, fi)) hits++;
+        if (hits > 0) {
+          const v = Math.min(12, hits * 3);
+          breakdown.fav_ingredients = v; score += v;
+        }
+      }
+
+      // Cooking method match (+5)
+      if (userCookingMethods.length > 0 && recipeMethods.length > 0) {
+        if (recipeMethods.some(m => userCookingMethods.includes(m))) {
+          breakdown.cooking_method = 5; score += 5;
+        }
+      }
+
+      // Spice level proximity (closer = better; 0..-6)
+      if (userSpiceLevel && r.spice_level) {
+        const us = SPICE_SCALE[userSpiceLevel] ?? 2;
+        const rs = SPICE_SCALE[stripAccents(r.spice_level)] ?? 2;
+        const diff = Math.abs(us - rs);
+        const v = -diff * 2;
+        if (v !== 0) { breakdown.spice = v; score += v; }
+      }
+
+      // Salt level proximity (closer = better; 0..-4)
+      if (userSaltLevel && r.salt_level) {
+        const us = SALT_SCALE[userSaltLevel] ?? 2;
+        const rs = SALT_SCALE[stripAccents(r.salt_level)] ?? 2;
+        const diff = Math.abs(us - rs);
+        const v = -diff * 1.5;
+        if (v !== 0) { breakdown.salt = v; score += v; }
+      }
+
+      // Reduce sugar (penalize sweet/dessert sugar levels)
+      if (reduceSugar && r.sugar_level) {
+        const sl = stripAccents(r.sugar_level);
+        if (sl === 'sucre' || sl === 'sucré' || sl === 'tres sucre' || sl === 'très sucré') {
+          breakdown.sugar = -6; score -= 6;
+        }
+      }
+
+      // Batch-cooking preference
+      if (wantsBatch && r.batch_cooking_friendly === true) {
+        breakdown.batch = 4; score += 4;
+      }
+
+      // Cooking level vs difficulty
+      if (cookingLevel && r.difficulty_level) {
+        const diff = stripAccents(r.difficulty_level);
+        if (cookingLevel === 'debutant' && diff === 'difficile') { breakdown.difficulty = -5; score -= 5; }
+        else if (cookingLevel === 'expert' && diff === 'facile') { breakdown.difficulty = -1; score -= 1; }
+      }
+
+      // Calorie proximity to per-meal target (±20% tolerance band)
+      if (perMealKcalTarget && r.calories_kcal) {
+        const c = Number(r.calories_kcal);
+        const diff = Math.abs(c - perMealKcalTarget) / perMealKcalTarget;
+        if (diff <= 0.15) { breakdown.kcal = 6; score += 6; }
+        else if (diff <= 0.30) { breakdown.kcal = 2; score += 2; }
+        else if (diff > 0.50) { breakdown.kcal = -4; score -= 4; }
+      }
+
+      // Goal alignment via goal_tags (+4)
+      if (mainGoal && recipeGoals.length > 0) {
+        const goalKey = mainGoal === 'perte_poids' ? 'perte_poids'
+          : mainGoal === 'prise_muscle' ? 'prise_muscle'
+          : mainGoal === 'energie' ? 'energie' : '';
+        if (goalKey && recipeGoals.includes(goalKey)) { breakdown.goal = 4; score += 4; }
+      }
+
+      // Seasonal bonus (badge or tag containing current season)
+      if (wantsSeasonal && (recipeBadges.includes(currentSeason) || recipeKeywords.includes(currentSeason))) {
+        breakdown.season = 3; score += 3;
+      }
+
+      // Budget alignment
+      if (weeklyBudget && r.budget_per_serving != null) {
+        const b = Number(r.budget_per_serving);
+        if ((weeklyBudget === 'serre' || weeklyBudget === 'petit') && b > 0 && b <= 3) { breakdown.budget = 3; score += 3; }
+        else if ((weeklyBudget === 'serre' || weeklyBudget === 'petit') && b > 6) { breakdown.budget = -3; score -= 3; }
+      }
+
+      return { score, breakdown };
+    };
+
+    // ══════════════════════════════════════════════════════════════
+    // FILTER + SCORE + RANK
+    // ══════════════════════════════════════════════════════════════
+    const rejectionStats: Record<string, number> = {};
+    const filteredCandidates: any[] = [];
+    for (const r of candidateRecipes) {
+      if (recentRecipeNames.includes(r.title)) {
+        rejectionStats['recent'] = (rejectionStats['recent'] || 0) + 1;
+        continue;
+      }
+      const safety = checkRecipeSafety(r);
+      if (!safety.ok) {
+        const key = (safety.reason || 'other').split(' ')[0];
+        rejectionStats[key] = (rejectionStats[key] || 0) + 1;
+        continue;
+      }
+      filteredCandidates.push(r);
+    }
+
+    console.log(`[generate-menu] Hard filter: ${candidateRecipes.length} → ${filteredCandidates.length}. Rejections:`, JSON.stringify(rejectionStats));
+
+    // Soft fallback: if no candidates passed AND prep-time was the dominant blocker, relax it
+    let usedRelaxedPrepTime = false;
+    let workingPool = filteredCandidates;
+    if (workingPool.length === 0 && (rejectionStats['temps'] || 0) > 0) {
+      console.warn('[generate-menu] No candidates after hard filter — relaxing prep-time');
+      usedRelaxedPrepTime = true;
+      const originalCap = maxPrepTimeMin;
+      // Re-scan, ignoring prep-time gate
+      for (const r of candidateRecipes) {
+        if (recentRecipeNames.includes(r.title)) continue;
+        const recipePrep = Number(r.total_time_min ?? r.prep_time_min ?? 0);
+        // Save by temporarily skipping prep check
+        const safetyNoPrep = (() => {
+          // Inline the same gate but skip step 7
+          if (Array.isArray(r.allergens)) {
+            const ra = (r.allergens as string[]).map(stripAccents);
+            for (const ua of userAllergenLabels) if (ra.includes(ua)) return false;
+          }
+          const ingText = buildIngredientText(r);
+          const haystack = ingText + ' ' + stripAccents(r.title || '');
+          for (const t of userForbiddenTokens) if (tokenInHaystack(haystack, t)) return false;
+          for (const t of userAvoidTokens) if (tokenInHaystack(haystack, t)) return false;
+          for (const t of dietForbiddenTokens) if (tokenInHaystack(haystack, t)) return false;
+          for (const t of medicalForbiddenTokens) if (tokenInHaystack(haystack, t)) return false;
+          if (toolsConfigured && Array.isArray(r.appliances)) {
+            for (const app of r.appliances) {
+              const a = stripAccents(app);
+              if (a && !userAppliances.has(a) && !userAppliances.has(TOOL_TO_APPLIANCE[a] || a)) return false;
+            }
+          }
+          return true;
+        })();
+        if (safetyNoPrep) workingPool.push(r);
+      }
+      console.log(`[generate-menu] Relaxed prep-time pool: ${workingPool.length} (was cap=${originalCap}min)`);
+    }
+
+    if (workingPool.length === 0) {
       console.warn('[generate-menu] No safe candidates after constraint filtering');
       return new Response(
         JSON.stringify({
           success: false,
           error: 'NO_SAFE_RECIPES',
-          message: "Aucune recette compatible avec vos contraintes (allergies, équipement, régime). Élargissez vos préférences ou vérifiez votre profil.",
+          message: "Aucune recette compatible avec vos contraintes (allergies, équipement, régime, conditions médicales). Élargissez vos préférences ou vérifiez votre profil.",
+          debug: { rejection_stats: rejectionStats },
         }),
         { status: 200, headers: { ...corsHeaders, ...getSecurityHeaders(), 'Content-Type': 'application/json' } }
       );
     }
 
-    const finalCandidates = filteredCandidates.slice(0, 100);
-    console.log(`[generate-menu] ${candidateRecipes.length} total → ${filteredCandidates.length} filtered → ${finalCandidates.length} candidates for AI`);
+    // Score & rank
+    const scoredPool = workingPool.map((r: any) => {
+      const { score, breakdown } = scoreRecipe(r);
+      return { r, score, breakdown };
+    });
+    scoredPool.sort((a, b) => b.score - a.score);
+
+    // Log top 5 for explainability
+    console.log(`[generate-menu] Top 5 scored candidates:`,
+      scoredPool.slice(0, 5).map(s => `"${s.r.title}" score=${s.score.toFixed(1)} [${Object.entries(s.breakdown).map(([k, v]) => `${k}:${v}`).join(',')}]`).join(' | '));
+
+    const finalCandidates = scoredPool.slice(0, 100).map(s => s.r);
+    console.log(`[generate-menu] ${candidateRecipes.length} total → ${filteredCandidates.length} hard-filtered → ${finalCandidates.length} ranked candidates for AI${usedRelaxedPrepTime ? ' (prep-time relaxed)' : ''}`);
 
     // Build recipe lookup map
     const recipeMap: Record<string, any> = {};
