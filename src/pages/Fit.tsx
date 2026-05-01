@@ -139,7 +139,7 @@ const Fit = () => {
       <AnnouncementBar />
       <PreHeader />
       <Header onCtaClick={handleCtaClick} />
-      <Hero onCtaClick={handleCtaClick} onExampleClick={handleExampleClick} copy={fitCopy.hero} />
+      <FitHero onCtaClick={handleCtaClick} />
       <FitMadeForYou />
       <Benefits copy={fitCopy.benefits} />
       <HowItWorks copy={fitCopy.howItWorks} />
