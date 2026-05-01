@@ -8,7 +8,7 @@ import { mainCopy } from '@/config/marketingCopy';
 import { AnnouncementBar } from '@/components/landing/AnnouncementBar';
 import { PreHeader } from '@/components/landing/PreHeader';
 import { Header } from '@/components/landing/Header';
-import { Hero } from '@/components/landing/Hero';
+import { HomeHero } from '@/components/landing/HomeHero';
 import { MadeForYou } from '@/components/landing/MadeForYou';
 import { Benefits } from '@/components/landing/Benefits';
 
@@ -93,7 +93,7 @@ const Index = () => {
       <AnnouncementBar />
       <PreHeader />
       <Header onCtaClick={handleCtaClick} />
-      <Hero onCtaClick={handleCtaClick} onExampleClick={handleExampleClick} copy={mainCopy.hero} />
+      <HomeHero onCtaClick={handleCtaClick} />
       <MadeForYou />
       <Benefits copy={mainCopy.benefits} />
 
