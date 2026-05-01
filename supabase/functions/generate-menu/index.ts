@@ -741,13 +741,30 @@ Deno.serve(async (req) => {
       expandAllergen(a.name).forEach(t => userForbiddenTokens.add(t));
     }
 
-    // ── Foods to avoid (hard) ──
+    // ── Foods to avoid (hard) ── robust matcher: handles plural/singular, multi-word phrases, and known synonyms (champignon→champignons/cèpe/girolle, etc.)
     const foodsToAvoidRaw: string[] = ctx.foodStyle?.foods_to_avoid || ctx.legacyPreferences?.aliments_eviter || [];
     const userAvoidTokens = new Set<string>();
-    for (const f of foodsToAvoidRaw) {
-      const t = stripAccents(f);
-      if (t && t.length >= 3) userAvoidTokens.add(t);
-    }
+    const addAvoidVariants = (raw: string) => {
+      const base = stripAccents(raw);
+      if (!base || base.length < 3) return;
+      // 1) raw normalized
+      userAvoidTokens.add(base);
+      // 2) split multi-word phrase into individual significant words (≥4 chars)
+      base.split(/[\s\-']+/).forEach(w => { if (w.length >= 4) userAvoidTokens.add(w); });
+      // 3) singular ↔ plural French/English variants
+      const variants = new Set<string>([base]);
+      base.split(/[\s\-']+/).forEach(w => { if (w.length >= 4) variants.add(w); });
+      for (const v of Array.from(variants)) {
+        if (v.endsWith('s') && v.length > 4) userAvoidTokens.add(v.slice(0, -1));      // champignons → champignon
+        else userAvoidTokens.add(v + 's');                                              // tomate → tomates
+        if (v.endsWith('x') && v.length > 4) userAvoidTokens.add(v.slice(0, -1));      // choux → chou
+        if (v.endsWith('au')) userAvoidTokens.add(v + 'x');                            // chou-fleur → choux-fleurs (best-effort)
+        if (v.endsWith('e') && v.length > 4) userAvoidTokens.add(v + 's');             // pomme → pommes
+      }
+      // 4) reuse allergen synonym map for common ingredients (peanuts/lactose/etc.)
+      try { expandAllergen(raw).forEach(t => userAvoidTokens.add(t)); } catch { /* noop */ }
+    };
+    for (const f of foodsToAvoidRaw) addAvoidVariants(f);
 
     // ── Family allergies free-text (hard) ──
     const familyAllergiesText: string = ctx.household?.family_allergies || '';
@@ -778,11 +795,15 @@ Deno.serve(async (req) => {
 
     // ── Prep-time hard cap (soft fallback if no candidates) ──
     const prepTimes: string[] = ctx.habits?.prep_time || [];
+    // STRICT prep-time cap. No buffer for "15 min" preference (users explicitly opted into the
+    // tightest bracket — adding slack contradicts the preference). Larger brackets get a tiny
+    // 2-min buffer to absorb DB rounding noise on total_time_min.
     const maxPrepTimeMin = prepTimes.includes('45min_plus') ? 999
       : prepTimes.includes('30_45min') ? 45
       : prepTimes.includes('15_30min') ? 30
-      : prepTimes.includes('15min') ? 20 // small slack for 15-min users
+      : prepTimes.includes('15min') ? 15
       : 999;
+    const prepTimeBufferMin = prepTimes.includes('15min') ? 0 : 2;
 
     // ── Medical conditions deterministic exclusions (ingredient-token level) ──
     const MEDICAL_EXCLUSIONS_TOKENS: Record<string, string[]> = {
@@ -875,9 +896,9 @@ Deno.serve(async (req) => {
         }
       }
 
-      // 7) Prep-time hard cap
+      // 7) Prep-time hard cap (strict — no slack for "15min" preference)
       const recipePrep = Number(r.total_time_min ?? r.prep_time_min ?? 0);
-      if (maxPrepTimeMin < 999 && recipePrep > 0 && recipePrep > maxPrepTimeMin + 10) {
+      if (maxPrepTimeMin < 999 && recipePrep > 0 && recipePrep > maxPrepTimeMin + prepTimeBufferMin) {
         return { ok: false, reason: `temps prep ${recipePrep}min > ${maxPrepTimeMin}min` };
       }
 
