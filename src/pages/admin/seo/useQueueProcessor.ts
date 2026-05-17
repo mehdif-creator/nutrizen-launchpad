@@ -32,7 +32,7 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
 
   const toggleAutoMode = useCallback((on: boolean) => {
     setAutoMode(on);
-    try { localStorage.setItem(LS_KEY, String(on)); } catch {}
+    try { localStorage.setItem(LS_KEY, String(on)); } catch { /* localStorage may be unavailable (private mode) */ }
     if (!on) abortRef.current = true;
   }, []);
 
