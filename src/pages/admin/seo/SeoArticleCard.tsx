@@ -135,7 +135,7 @@ export function SeoArticleCard({ article, onRefresh, onQueueRefresh, onDelete, o
     const statusToSeqIdx: Record<string, number> = {
       pending: 0, serp_done: 1, brief_done: 2, outline_done: 3, images_done: 4, draft_done: 5,
     };
-    let startIdx = statusToSeqIdx[article.status] ?? 0;
+    const startIdx = statusToSeqIdx[article.status] ?? 0;
 
     try {
       for (let i = startIdx; i < AUTO_PIPELINE_SEQUENCE.length; i++) {

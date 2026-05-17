@@ -446,7 +446,7 @@ export function mergeShoppingItems(raw: RawShoppingItem[]): MergedShoppingItem[]
 
     // Check if this is juice that should merge into whole fruit
     const fruitBase = isJuiceOf(norm);
-    let effectiveNorm = fruitBase ?? norm;
+    const effectiveNorm = fruitBase ?? norm;
     let effectiveQty = item.total_quantity;
     let effectiveUnit = canonicalizeUnit(item.unit ?? '');
 
