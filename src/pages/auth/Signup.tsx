@@ -191,7 +191,7 @@ export default function Signup() {
               <div className="text-center mb-8">
                 <div className="inline-block px-4 py-1.5 bg-accent/10 rounded-full mb-4">
                   <span className="text-sm font-semibold text-accent">
-                    {PLAN_INFO[plan].label} — {PLAN_INFO[plan].price}
+                    {planInfo?.label} — {planInfo?.price}
                   </span>
                 </div>
                 <h1 className="text-2xl font-bold mb-1">Finalise ton inscription</h1>
