@@ -110,7 +110,7 @@ Apply the scoring rubric strictly. Output only the QA JSON object.
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-5-20250929",
+        model: "claude-sonnet-4-6",
         max_tokens: 2000,
         temperature: 0.2,
         messages: [
