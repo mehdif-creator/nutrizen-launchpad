@@ -36,7 +36,7 @@ export const PIPELINE_CONFIG = {
     max_tokens: 4000,
   },
   qa: {
-    model: 'claude-sonnet-4-5-20250929',
+    model: 'claude-sonnet-4-6',
     temperature: 0.2,
     max_tokens: 2000,
   },
