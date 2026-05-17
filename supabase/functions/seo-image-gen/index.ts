@@ -116,11 +116,11 @@ Deno.serve(async (req) => {
         const imgResponse = await fetch(tempUrl);
         if (!imgResponse.ok) throw new Error(`Download failed: ${imgResponse.status}`);
         const imgBuffer = await imgResponse.arrayBuffer();
-        const fileName = `seo-${article_id}-${imgIndex}-${Date.now()}.jpg`;
+        const fileName = `seo-${article_id}-${imgIndex}-${Date.now()}.png`;
         const { error: uploadError } = await adminClient.storage
           .from("seo-images")
           .upload(fileName, imgBuffer, {
-            contentType: "image/jpeg",
+            contentType: "image/png",
             upsert: false,
             cacheControl: "31536000",
           });
