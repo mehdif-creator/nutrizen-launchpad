@@ -41,22 +41,25 @@ export function SummaryTile({
         <div className="flex-1">
           <p className="text-sm text-muted-foreground mb-1">{title}</p>
           <p className="text-2xl font-bold">
-            {typeof value === 'number' ? value.toLocaleString('fr-FR', { maximumFractionDigits: 2 }) : value}
+            {typeof value === 'number'
+              ? value.toLocaleString('fr-FR', { maximumFractionDigits: 2 })
+              : value}
           </p>
-          {subtitle && (
-            <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
-          )}
+          {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
           {trend && (
-            <p className={cn(
-              "text-xs mt-1 font-medium",
-              trend.value >= 0 ? "text-green-500" : "text-red-500"
-            )}>
-              {trend.value >= 0 ? '+' : ''}{trend.value.toFixed(1)}%
+            <p
+              className={cn(
+                'text-xs mt-1 font-medium',
+                trend.value >= 0 ? 'text-green-500' : 'text-red-500'
+              )}
+            >
+              {trend.value >= 0 ? '+' : ''}
+              {trend.value.toFixed(1)}%
               {trend.label && <span className="text-muted-foreground ml-1">{trend.label}</span>}
             </p>
           )}
         </div>
-        {Icon && <Icon className={cn("h-8 w-8", iconColor)} />}
+        {Icon && <Icon className={cn('h-8 w-8', iconColor)} />}
       </div>
     </Card>
   );
@@ -64,8 +67,6 @@ export function SummaryTile({
 
 export function SummaryTilesGrid({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-      {children}
-    </div>
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">{children}</div>
   );
 }

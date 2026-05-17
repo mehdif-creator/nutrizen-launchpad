@@ -26,7 +26,7 @@ export function useMacrosPage(options: UseMacrosPageOptions = {}): UseMacrosPage
   const { limit = 25, enabled = true } = options;
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const [items, setItems] = useState<RecipeMacro[]>([]);
   const [lastRecipeId, setLastRecipeId] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
@@ -53,7 +53,7 @@ export function useMacrosPage(options: UseMacrosPageOptions = {}): UseMacrosPage
     setIsLoadingMore(true);
     try {
       const result = await fetchRecipeMacrosPage(lastRecipeId, limit);
-      setItems(prev => [...prev, ...result.data]);
+      setItems((prev) => [...prev, ...result.data]);
       setLastRecipeId(result.lastRecipeId);
       setHasMore(result.hasMore);
     } catch (err) {

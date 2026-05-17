@@ -92,7 +92,10 @@ function MealSlot({
   }
 
   // Recipe display
-  const imageUrl = getRecipeImageUrl({ image_url: recipe.image_url, image_path: recipe.image_path });
+  const imageUrl = getRecipeImageUrl({
+    image_url: recipe.image_url,
+    image_path: recipe.image_path,
+  });
 
   return (
     <div className="space-y-3 p-3 rounded-lg bg-muted/20 border border-transparent hover:border-muted-foreground/20 transition-colors">
@@ -153,11 +156,12 @@ function MealSlot({
       </div>
       <Button
         onClick={() => {
-          const servingsParam = recipe.servings && recipe.servings > 0
-            ? `?portions=${recipe.servings}`
-            : (recipe.portion_factor && recipe.portion_factor > 0
-              ? `?portions=${recipe.portion_factor.toFixed(2)}`
-              : '');
+          const servingsParam =
+            recipe.servings && recipe.servings > 0
+              ? `?portions=${recipe.servings}`
+              : recipe.portion_factor && recipe.portion_factor > 0
+                ? `?portions=${recipe.portion_factor.toFixed(2)}`
+                : '';
           navigate(`/app/recipes/${recipe.recipe_id}${servingsParam}`);
         }}
         size="sm"
@@ -206,7 +210,8 @@ export function DayCardWithRecipes({
             <Users className="h-3 w-3 mr-1" />
             {householdAdults > 0 && `${householdAdults} adulte${householdAdults > 1 ? 's' : ''}`}
             {householdAdults > 0 && householdChildren > 0 && ' + '}
-            {householdChildren > 0 && `${householdChildren} enfant${householdChildren > 1 ? 's' : ''}`}
+            {householdChildren > 0 &&
+              `${householdChildren} enfant${householdChildren > 1 ? 's' : ''}`}
             <span className="ml-1 opacity-70">(≈ {effectiveSize})</span>
           </Badge>
         )}
@@ -215,9 +220,9 @@ export function DayCardWithRecipes({
       {/* Day Menu CTA */}
       {date && (
         <div className="px-4 pb-4">
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             className="w-full text-xs"
             onClick={() => navigate(`/app/day-menu/${date}`)}
           >

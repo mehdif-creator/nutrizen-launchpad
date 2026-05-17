@@ -25,17 +25,29 @@ export default function KpiUsersTotal() {
   const { from, to } = getDateRange(dateRange);
   const filters = { dateFrom: from, dateTo: to, granularity };
 
-  const { data: summary, isLoading: loadingSummary, refetch: refetchSummary } = useQuery({
+  const {
+    data: summary,
+    isLoading: loadingSummary,
+    refetch: refetchSummary,
+  } = useQuery({
     queryKey: ['kpi-users-summary', from, to],
     queryFn: () => fetchUsersSummary(filters),
   });
 
-  const { data: timeseries, isLoading: loadingTimeseries, refetch: refetchTimeseries } = useQuery({
+  const {
+    data: timeseries,
+    isLoading: loadingTimeseries,
+    refetch: refetchTimeseries,
+  } = useQuery({
     queryKey: ['kpi-users-timeseries', from, to, granularity],
     queryFn: () => fetchUsersTimeseries(filters),
   });
 
-  const { data: breakdown, isLoading: loadingBreakdown, refetch: refetchBreakdown } = useQuery({
+  const {
+    data: breakdown,
+    isLoading: loadingBreakdown,
+    refetch: refetchBreakdown,
+  } = useQuery({
     queryKey: ['kpi-users-breakdown', from, to],
     queryFn: () => fetchUsersBreakdown(filters),
   });
@@ -133,8 +145,8 @@ export default function KpiUsersTotal() {
         columns={[
           { key: 'segment', label: 'Segment', sortable: true },
           { key: 'value', label: 'Utilisateurs', sortable: true, align: 'right' },
-          { 
-            key: 'percentage', 
+          {
+            key: 'percentage',
             label: '% du total',
             format: (v) => `${(v || 0).toFixed(1)}%`,
             sortable: true,

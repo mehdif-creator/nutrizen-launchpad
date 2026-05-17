@@ -52,7 +52,7 @@ export function getCurrentWeekStart(): string {
 
 async function fetchWeeklyMenu(userId: string): Promise<WeeklyMenu | null> {
   const weekStart = getCurrentWeekStart();
-  
+
   logger.debug('Fetching menu', { userId, weekStart });
 
   const { data, error } = await supabase
@@ -73,7 +73,7 @@ async function fetchWeeklyMenu(userId: string): Promise<WeeklyMenu | null> {
   }
 
   // Type cast payload to extract days and household
-  const payload = data.payload as { 
+  const payload = data.payload as {
     days?: WeeklyMenuDay[];
     household?: {
       adults: number;
@@ -86,7 +86,7 @@ async function fetchWeeklyMenu(userId: string): Promise<WeeklyMenu | null> {
     menu_id: data.menu_id,
     day_count: payload?.days?.length,
     used_fallback: data.used_fallback,
-    household: payload?.household
+    household: payload?.household,
   });
 
   return {
@@ -117,7 +117,7 @@ export function useWeeklyMenu(userId: string | undefined) {
     if (!userId) return;
 
     logger.debug('Setting up realtime subscription', { userId });
-    
+
     const channel = supabase
       .channel(`user_weekly_menus_changes_${userId}`)
       .on(
@@ -126,7 +126,7 @@ export function useWeeklyMenu(userId: string | undefined) {
           event: '*',
           schema: 'public',
           table: 'user_weekly_menus',
-          filter: `user_id=eq.${userId}`
+          filter: `user_id=eq.${userId}`,
         },
         (payload) => {
           logger.debug('Received realtime update', { eventType: payload.eventType });

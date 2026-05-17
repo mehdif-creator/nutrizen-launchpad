@@ -23,9 +23,24 @@ export const HowItWorks = ({ copy }: HowItWorksProps) => {
         description: step.description,
       }))
     : [
-        { icon: Target, number: '1', title: t('howItWorks.step1.title'), description: t('howItWorks.step1.description') },
-        { icon: Sparkles, number: '2', title: t('howItWorks.step2.title'), description: t('howItWorks.step2.description') },
-        { icon: ShoppingCart, number: '3', title: t('howItWorks.step3.title'), description: t('howItWorks.step3.description') },
+        {
+          icon: Target,
+          number: '1',
+          title: t('howItWorks.step1.title'),
+          description: t('howItWorks.step1.description'),
+        },
+        {
+          icon: Sparkles,
+          number: '2',
+          title: t('howItWorks.step2.title'),
+          description: t('howItWorks.step2.description'),
+        },
+        {
+          icon: ShoppingCart,
+          number: '3',
+          title: t('howItWorks.step3.title'),
+          description: t('howItWorks.step3.description'),
+        },
       ];
 
   return (
@@ -53,7 +68,9 @@ export const HowItWorks = ({ copy }: HowItWorksProps) => {
                     <Icon className="w-6 h-6 text-white" />
                   </div>
                   <h3 className="text-xl font-bold">{step.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {step.description}
+                  </p>
                 </div>
               </Card>
             );

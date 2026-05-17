@@ -19,7 +19,7 @@ export function ShareWeekCard({ weekStart, hasMenu }: ShareWeekCardProps) {
     if (!weekStart || !hasMenu) {
       toast({
         title: 'Aucun menu',
-        description: 'Génère d\'abord ton menu pour le partager.',
+        description: "Génère d'abord ton menu pour le partager.",
         variant: 'destructive',
       });
       return;

@@ -27,22 +27,38 @@ export default function KpiTicketsOpen() {
   const { from, to } = getDateRange(dateRange);
   const filters = { dateFrom: from, dateTo: to, granularity };
 
-  const { data: summary, isLoading: loadingSummary, refetch: refetchSummary } = useQuery({
+  const {
+    data: summary,
+    isLoading: loadingSummary,
+    refetch: refetchSummary,
+  } = useQuery({
     queryKey: ['kpi-tickets-summary', from, to],
     queryFn: () => fetchTicketsSummary(filters),
   });
 
-  const { data: timeseries, isLoading: loadingTimeseries, refetch: refetchTimeseries } = useQuery({
+  const {
+    data: timeseries,
+    isLoading: loadingTimeseries,
+    refetch: refetchTimeseries,
+  } = useQuery({
     queryKey: ['kpi-tickets-timeseries', from, to, granularity],
     queryFn: () => fetchTicketsTimeseries(filters),
   });
 
-  const { data: byCategory, isLoading: loadingByCategory, refetch: refetchByCategory } = useQuery({
+  const {
+    data: byCategory,
+    isLoading: loadingByCategory,
+    refetch: refetchByCategory,
+  } = useQuery({
     queryKey: ['kpi-tickets-by-category', from, to],
     queryFn: () => fetchTicketsByCategory(filters),
   });
 
-  const { data: ticketList, isLoading: loadingList, refetch: refetchList } = useQuery({
+  const {
+    data: ticketList,
+    isLoading: loadingList,
+    refetch: refetchList,
+  } = useQuery({
     queryKey: ['kpi-tickets-list', from, to],
     queryFn: () => fetchTicketList(filters, undefined, 20, 'open'),
   });
@@ -133,19 +149,15 @@ export default function KpiTicketsOpen() {
         exportFilename="open_tickets"
         columns={[
           { key: 'subject', label: 'Sujet', sortable: true },
-          { 
-            key: 'status', 
+          {
+            key: 'status',
             label: 'Statut',
-            format: (v) => (
-              <Badge variant={v === 'open' ? 'destructive' : 'secondary'}>
-                {v}
-              </Badge>
-            ),
+            format: (v) => <Badge variant={v === 'open' ? 'destructive' : 'secondary'}>{v}</Badge>,
           },
           { key: 'priority', label: 'Priorité' },
           { key: 'category', label: 'Catégorie' },
-          { 
-            key: 'created_at', 
+          {
+            key: 'created_at',
             label: 'Créé le',
             format: (v) => new Date(v).toLocaleDateString('fr-FR'),
             sortable: true,

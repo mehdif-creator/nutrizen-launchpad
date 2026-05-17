@@ -36,20 +36,38 @@ export interface DiagnosticsRunResponse {
 }
 
 export const AVAILABLE_TESTS = [
-  { key: 'storage_images', label: 'Images Stockage', description: 'Vérifie l\'accessibilité des images de recettes' },
-  { key: 'profile_upsert', label: 'Profil Utilisateur', description: 'Teste l\'écriture et lecture du profil' },
+  {
+    key: 'storage_images',
+    label: 'Images Stockage',
+    description: "Vérifie l'accessibilité des images de recettes",
+  },
+  {
+    key: 'profile_upsert',
+    label: 'Profil Utilisateur',
+    description: "Teste l'écriture et lecture du profil",
+  },
   { key: 'advice_of_day', label: 'Conseil du Jour', description: 'Vérifie la table daily_advice' },
-  { key: 'dashboard_rpc', label: 'Dashboard RPC', description: 'Valide le contrat rpc_get_user_dashboard' },
-  { key: 'week_structure', label: 'Structure Semaine', description: 'Vérifie les créneaux déjeuner/dîner' },
-  { key: 'realtime_refresh', label: 'Rafraîchissement', description: 'Teste la mise à jour automatique' },
+  {
+    key: 'dashboard_rpc',
+    label: 'Dashboard RPC',
+    description: 'Valide le contrat rpc_get_user_dashboard',
+  },
+  {
+    key: 'week_structure',
+    label: 'Structure Semaine',
+    description: 'Vérifie les créneaux déjeuner/dîner',
+  },
+  {
+    key: 'realtime_refresh',
+    label: 'Rafraîchissement',
+    description: 'Teste la mise à jour automatique',
+  },
 ] as const;
 
 export function useDiagnostics() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedTests, setSelectedTests] = useState<string[]>(
-    AVAILABLE_TESTS.map((t) => t.key)
-  );
+  const [selectedTests, setSelectedTests] = useState<string[]>(AVAILABLE_TESTS.map((t) => t.key));
 
   // Fetch run history
   const historyQuery = useQuery({
@@ -109,7 +127,7 @@ export function useDiagnostics() {
     onError: (error: Error) => {
       toast({
         title: 'Erreur',
-        description: error.message || 'Impossible d\'exécuter les tests.',
+        description: error.message || "Impossible d'exécuter les tests.",
         variant: 'destructive',
       });
     },
@@ -117,9 +135,7 @@ export function useDiagnostics() {
 
   const toggleTest = (testKey: string) => {
     setSelectedTests((prev) =>
-      prev.includes(testKey)
-        ? prev.filter((t) => t !== testKey)
-        : [...prev, testKey]
+      prev.includes(testKey) ? prev.filter((t) => t !== testKey) : [...prev, testKey]
     );
   };
 

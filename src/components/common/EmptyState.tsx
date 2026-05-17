@@ -21,9 +21,7 @@ export function EmptyState({ icon: Icon, title, description, action }: EmptyStat
         </div>
       )}
       <h3 className="text-lg font-semibold mb-2">{title}</h3>
-      <p className="text-sm text-muted-foreground mb-4 max-w-sm">
-        {description}
-      </p>
+      <p className="text-sm text-muted-foreground mb-4 max-w-sm">{description}</p>
       {action && (
         <Button onClick={action.onClick} disabled={action.loading}>
           {action.loading ? 'Chargement...' : action.label}

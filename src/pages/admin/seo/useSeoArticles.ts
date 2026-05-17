@@ -22,11 +22,13 @@ export function useSeoArticles() {
   // Start/stop polling based on whether any article is in-progress
   useEffect(() => {
     fetch();
-    return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
   }, [fetch]);
 
   useEffect(() => {
-    const hasInProgress = articles.some(a => !FINAL_STATUSES.has(a.status));
+    const hasInProgress = articles.some((a) => !FINAL_STATUSES.has(a.status));
     if (hasInProgress && !pollingRef.current) {
       pollingRef.current = setInterval(fetch, 5000);
     } else if (!hasInProgress && pollingRef.current) {
@@ -37,7 +39,7 @@ export function useSeoArticles() {
 
   const deleteArticle = useCallback(async (id: string) => {
     await supabase.from('seo_articles').delete().eq('id', id);
-    setArticles(prev => prev.filter(a => a.id !== id));
+    setArticles((prev) => prev.filter((a) => a.id !== id));
   }, []);
 
   return { articles, loading, refetch: fetch, deleteArticle };

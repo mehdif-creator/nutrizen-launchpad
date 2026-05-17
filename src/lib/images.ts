@@ -30,12 +30,12 @@ function normalizeImagePath(imagePath: string): string {
 
   // Remove leading slashes
   path = path.replace(/^\/+/, '');
-  
+
   // Strip bucket prefix (handles recipe-images/recipe-images/... too)
   while (path.startsWith('recipe-images/')) {
     path = path.slice('recipe-images/'.length);
   }
-  
+
   return path;
 }
 
@@ -60,29 +60,29 @@ async function getSignedUrl(imagePath: string): Promise<string | null> {
   const normalizedPath = normalizeImagePath(imagePath);
   const now = Date.now();
   const cached = signedUrlCache.get(normalizedPath);
-  
+
   // Return cached URL if still valid (with buffer)
   if (cached && cached.expiresAt > now + CACHE_BUFFER_SECONDS * 1000) {
     return cached.url;
   }
-  
+
   // Generate new signed URL
   try {
     const { data, error } = await supabase.storage
       .from(RECIPE_IMAGES_BUCKET)
       .createSignedUrl(normalizedPath, SIGNED_URL_DURATION_SECONDS);
-    
+
     if (error || !data?.signedUrl) {
       console.warn('Failed to create signed URL:', error?.message);
       return null;
     }
-    
+
     // Cache the signed URL
     signedUrlCache.set(normalizedPath, {
       url: data.signedUrl,
       expiresAt: now + SIGNED_URL_DURATION_SECONDS * 1000,
     });
-    
+
     return data.signedUrl;
   } catch (err) {
     console.warn('Error creating signed URL:', err);
@@ -102,7 +102,7 @@ function getPublicUrl(imagePath: string): string | null {
  * Get the display URL for a recipe image with fallback handling (synchronous).
  * For public buckets, returns immediately.
  * For private buckets, returns cached URL or placeholder (use getRecipeImageUrlAsync for fresh signed URLs).
- * 
+ *
  * Priority:
  * 1. image_path (Supabase Storage path) - preferred, stable
  * 2. image_url (legacy full URL) - fallback for old records
@@ -170,11 +170,11 @@ export async function getRecipeImageUrlAsync(recipe: {
  * Batch fetch image URLs for multiple recipes (efficient for lists)
  * Returns a Map of recipe id/index to image URL
  */
-export async function getRecipeImageUrls<T extends { id?: string; image_url?: string | null; image_path?: string | null }>(
-  recipes: T[]
-): Promise<Map<string, string>> {
+export async function getRecipeImageUrls<
+  T extends { id?: string; image_url?: string | null; image_path?: string | null },
+>(recipes: T[]): Promise<Map<string, string>> {
   const urlMap = new Map<string, string>();
-  
+
   if (IS_BUCKET_PUBLIC) {
     // Public bucket - synchronous
     recipes.forEach((recipe, index) => {
@@ -188,13 +188,13 @@ export async function getRecipeImageUrls<T extends { id?: string; image_url?: st
       const url = await getRecipeImageUrlAsync(recipe);
       return { key, url };
     });
-    
+
     const results = await Promise.all(promises);
     results.forEach(({ key, url }) => {
       urlMap.set(key, url);
     });
   }
-  
+
   return urlMap;
 }
 

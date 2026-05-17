@@ -1,6 +1,6 @@
 /**
  * Recipe Macros Table with cursor-based pagination
- * 
+ *
  * Uses the useMacrosPage hook for efficient data loading without OFFSET.
  */
 
@@ -24,15 +24,9 @@ interface RecipeMacrosTableProps {
 }
 
 export function RecipeMacrosTable({ limit = 25 }: RecipeMacrosTableProps) {
-  const {
-    items,
-    isLoading,
-    isLoadingMore,
-    hasMore,
-    error,
-    loadMore,
-    refresh,
-  } = useMacrosPage({ limit });
+  const { items, isLoading, isLoadingMore, hasMore, error, loadMore, refresh } = useMacrosPage({
+    limit,
+  });
 
   if (error) {
     return (
@@ -108,12 +102,24 @@ export function RecipeMacrosTable({ limit = 25 }: RecipeMacrosTableProps) {
                 // Loading skeleton rows
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={`skeleton-${i}`}>
-                    <TableCell><Skeleton className="h-4 w-48" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-48" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-16 ml-auto" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-16 ml-auto" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-16 ml-auto" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-16 ml-auto" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-16 ml-auto" />
+                    </TableCell>
                   </TableRow>
                 ))
               ) : items.length === 0 ? (
@@ -125,9 +131,7 @@ export function RecipeMacrosTable({ limit = 25 }: RecipeMacrosTableProps) {
               ) : (
                 items.map((item) => (
                   <TableRow key={item.recipe_id}>
-                    <TableCell className="font-mono text-xs">
-                      {item.recipe_id}
-                    </TableCell>
+                    <TableCell className="font-mono text-xs">{item.recipe_id}</TableCell>
                     <TableCell className="text-right tabular-nums">
                       {formatMacroValue(item.calories_kcal, 0)} kcal
                     </TableCell>
@@ -153,11 +157,7 @@ export function RecipeMacrosTable({ limit = 25 }: RecipeMacrosTableProps) {
         {/* Load More Button */}
         {hasMore && !isLoading && (
           <div className="flex justify-center mt-4">
-            <Button
-              onClick={loadMore}
-              disabled={isLoadingMore}
-              variant="outline"
-            >
+            <Button onClick={loadMore} disabled={isLoadingMore} variant="outline">
               {isLoadingMore ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />

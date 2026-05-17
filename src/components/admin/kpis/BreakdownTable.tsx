@@ -72,16 +72,15 @@ export function BreakdownTable<T extends Record<string, any>>({
   });
 
   // If not using cursor pagination, use local pagination
-  const paginatedData = cursor !== undefined 
-    ? sortedData 
-    : sortedData.slice(page * pageSize, (page + 1) * pageSize);
+  const paginatedData =
+    cursor !== undefined ? sortedData : sortedData.slice(page * pageSize, (page + 1) * pageSize);
 
   const totalPages = Math.ceil(data.length / pageSize);
 
   const handleExport = () => {
-    const exportData = sortedData.map(row => {
+    const exportData = sortedData.map((row) => {
       const obj: Record<string, any> = {};
-      columns.forEach(col => {
+      columns.forEach((col) => {
         const key = String(col.key);
         obj[col.label] = row[key];
       });
@@ -124,9 +123,7 @@ export function BreakdownTable<T extends Record<string, any>>({
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (
-          <div className="py-8 text-center text-muted-foreground">
-            {emptyMessage}
-          </div>
+          <div className="py-8 text-center text-muted-foreground">{emptyMessage}</div>
         ) : (
           <>
             <div className="rounded-md border overflow-x-auto">
@@ -134,7 +131,7 @@ export function BreakdownTable<T extends Record<string, any>>({
                 <TableHeader>
                   <TableRow>
                     {columns.map((col) => (
-                      <TableHead 
+                      <TableHead
                         key={String(col.key)}
                         className={cn(
                           col.align === 'right' && 'text-right',
@@ -146,10 +143,9 @@ export function BreakdownTable<T extends Record<string, any>>({
                         <div className="flex items-center gap-2">
                           {col.label}
                           {col.sortable && (
-                            <ArrowUpDown className={cn(
-                              "h-4 w-4",
-                              sortKey === col.key && "text-primary"
-                            )} />
+                            <ArrowUpDown
+                              className={cn('h-4 w-4', sortKey === col.key && 'text-primary')}
+                            />
                           )}
                         </div>
                       </TableHead>
@@ -160,17 +156,16 @@ export function BreakdownTable<T extends Record<string, any>>({
                   {paginatedData.map((row, rowIndex) => (
                     <TableRow key={rowIndex}>
                       {columns.map((col) => (
-                        <TableCell 
+                        <TableCell
                           key={String(col.key)}
                           className={cn(
                             col.align === 'right' && 'text-right',
                             col.align === 'center' && 'text-center'
                           )}
                         >
-                          {col.format 
+                          {col.format
                             ? col.format(row[String(col.key)], row)
-                            : row[String(col.key)] ?? '—'
-                          }
+                            : (row[String(col.key)] ?? '—')}
                         </TableCell>
                       ))}
                     </TableRow>
@@ -180,43 +175,41 @@ export function BreakdownTable<T extends Record<string, any>>({
             </div>
 
             {/* Pagination controls */}
-            {cursor !== undefined ? (
-              // Cursor-based pagination
-              hasMore && (
-                <div className="mt-4 flex justify-center">
-                  <Button variant="outline" onClick={onLoadMore}>
-                    Charger plus
-                  </Button>
-                </div>
-              )
-            ) : (
-              // Local pagination
-              totalPages > 1 && (
-                <div className="mt-4 flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
-                    Page {page + 1} sur {totalPages}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage(p => Math.max(0, p - 1))}
-                      disabled={page === 0}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-                      disabled={page >= totalPages - 1}
-                    >
-                      <ChevronRight className="h-4 w-4" />
+            {cursor !== undefined
+              ? // Cursor-based pagination
+                hasMore && (
+                  <div className="mt-4 flex justify-center">
+                    <Button variant="outline" onClick={onLoadMore}>
+                      Charger plus
                     </Button>
                   </div>
-                </div>
-              )
-            )}
+                )
+              : // Local pagination
+                totalPages > 1 && (
+                  <div className="mt-4 flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">
+                      Page {page + 1} sur {totalPages}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage((p) => Math.max(0, p - 1))}
+                        disabled={page === 0}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                        disabled={page >= totalPages - 1}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
           </>
         )}
       </CardContent>

@@ -45,9 +45,9 @@ export function useMenuGeneration() {
           restrictions: data.restrictions || [],
           message: data.message,
         };
-        
+
         setLastError(errorResult);
-        
+
         // Show appropriate toast based on error type
         if (data.error === 'NO_SAFE_RECIPES') {
           toast({
@@ -68,7 +68,7 @@ export function useMenuGeneration() {
             variant: 'destructive',
           });
         }
-        
+
         return errorResult;
       }
 
@@ -86,16 +86,19 @@ export function useMenuGeneration() {
 
       return { success: true };
     } catch (error) {
-      logger.error('Failed to generate menu', error instanceof Error ? error : new Error(String(error)));
-      
+      logger.error(
+        'Failed to generate menu',
+        error instanceof Error ? error : new Error(String(error))
+      );
+
       const errorResult: MenuGenerationResult = {
         success: false,
         errorType: 'UNKNOWN',
         message: error instanceof Error ? error.message : 'Unknown error',
       };
-      
+
       setLastError(errorResult);
-      
+
       toast({
         title: t('menu.error'),
         description: t('menu.errorDesc'),

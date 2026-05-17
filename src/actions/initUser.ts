@@ -17,7 +17,7 @@ export async function initUserRows(userId: string): Promise<InitUserResult> {
   try {
     // Get current session
     const { data: session } = await supabase.auth.getSession();
-    
+
     if (!session.session) {
       throw new Error('No active session');
     }
@@ -58,10 +58,10 @@ export async function initUserRows(userId: string): Promise<InitUserResult> {
  */
 export async function initializeNewUser(userId: string) {
   const result = await initUserRows(userId);
-  
+
   if (!result.success) {
     logger.error('Failed to initialize user', new Error(result.message || 'Unknown'));
   }
-  
+
   return result;
 }

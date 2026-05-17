@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
-import { Star, Check, Shield, ArrowRight, TrendingDown, Leaf } from "lucide-react";
-import fitHeroImage from "@/assets/fit-hero.jpg";
+import { Button } from '@/components/ui/button';
+import { Star, Check, Shield, ArrowRight, TrendingDown, Leaf } from 'lucide-react';
+import fitHeroImage from '@/assets/fit-hero.jpg';
 
 interface FitHeroProps {
   onCtaClick: () => void;
@@ -26,7 +26,7 @@ export const FitHero = ({ onCtaClick }: FitHeroProps) => {
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(90deg, #0d1f1a 0%, #0d1f1a 35%, rgba(13,31,26,0.85) 50%, rgba(13,31,26,0.2) 70%, rgba(13,31,26,0) 100%)",
+              'linear-gradient(90deg, #0d1f1a 0%, #0d1f1a 35%, rgba(13,31,26,0.85) 50%, rgba(13,31,26,0.2) 70%, rgba(13,31,26,0) 100%)',
           }}
         />
         {/* Mobile bottom fade */}
@@ -54,7 +54,7 @@ export const FitHero = ({ onCtaClick }: FitHeroProps) => {
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.05] tracking-tight">
-              Mange pour{" "}
+              Mange pour{' '}
               <span className="relative text-emerald-400">
                 performer
                 <svg
@@ -84,10 +84,13 @@ export const FitHero = ({ onCtaClick }: FitHeroProps) => {
 
             <ul className="space-y-3 pt-2">
               {[
-                { bold: "Objectifs sur mesure", text: ": perte de poids, prise de muscle, maintien" },
-                { bold: "Plans & recettes adaptés", text: " à tes goûts et ton emploi du temps" },
-                { bold: "Suivi intelligent", text: ": calories, macros, progression, habitudes" },
-                { bold: "Coaching IA", text: " qui s'ajuste à tes résultats" },
+                {
+                  bold: 'Objectifs sur mesure',
+                  text: ': perte de poids, prise de muscle, maintien',
+                },
+                { bold: 'Plans & recettes adaptés', text: ' à tes goûts et ton emploi du temps' },
+                { bold: 'Suivi intelligent', text: ': calories, macros, progression, habitudes' },
+                { bold: 'Coaching IA', text: " qui s'ajuste à tes résultats" },
               ].map((item, i) => (
                 <li key={i} className="flex items-start gap-3 text-sm md:text-base">
                   <span className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
@@ -130,7 +133,8 @@ export const FitHero = ({ onCtaClick }: FitHeroProps) => {
                 <span className="text-white/60 text-sm">sur Trustpilot</span>
               </div>
               <p className="text-xs md:text-sm text-white/50">
-                +2 000 utilisateurs accompagnés • Résultats concrets • N°1 en nutrition personnalisée
+                +2 000 utilisateurs accompagnés • Résultats concrets • N°1 en nutrition
+                personnalisée
               </p>
             </div>
           </div>
@@ -152,7 +156,11 @@ export const FitHero = ({ onCtaClick }: FitHeroProps) => {
             <div className="absolute bottom-4 left-1/4 bg-[#0d1f1a]/90 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl animate-fade-in">
               <div className="text-center">
                 <div className="text-3xl font-bold text-orange-400">156g</div>
-                <div className="text-xs text-white/70 mt-0.5">Protéines<br />aujourd'hui</div>
+                <div className="text-xs text-white/70 mt-0.5">
+                  Protéines
+                  <br />
+                  aujourd'hui
+                </div>
                 <div className="mt-2 h-1 w-20 bg-white/10 rounded-full overflow-hidden">
                   <div className="h-full w-3/4 bg-gradient-to-r from-emerald-500 to-orange-500" />
                 </div>

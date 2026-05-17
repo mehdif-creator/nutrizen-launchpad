@@ -9,12 +9,7 @@ interface InfoBannerProps {
   className?: string;
 }
 
-export function InfoBanner({ 
-  message, 
-  variant = 'info', 
-  onDismiss,
-  className 
-}: InfoBannerProps) {
+export function InfoBanner({ message, variant = 'info', onDismiss, className }: InfoBannerProps) {
   const variants = {
     info: 'bg-primary/10 border-primary/20 text-primary',
     warning: 'bg-orange-500/10 border-orange-500/20 text-orange-700 dark:text-orange-400',
@@ -22,7 +17,7 @@ export function InfoBanner({
   };
 
   return (
-    <div 
+    <div
       className={cn(
         'relative flex items-center gap-3 p-4 rounded-xl border text-sm',
         variants[variant],

@@ -32,9 +32,9 @@ export const GuaranteeCard = () => {
 
           {/* Body */}
           <p className="mx-auto mt-5 max-w-[500px] text-base text-muted-foreground leading-[1.7]">
-            Si NutriZen ne simplifie pas votre quotidien dans les 30&nbsp;premiers jours,
-            nous vous remboursons intégralement. Un email suffit. Pas de formulaire.
-            Pas de délai. Pas de justification demandée.
+            Si NutriZen ne simplifie pas votre quotidien dans les 30&nbsp;premiers jours, nous vous
+            remboursons intégralement. Un email suffit. Pas de formulaire. Pas de délai. Pas de
+            justification demandée.
           </p>
 
           {/* Trust pill */}

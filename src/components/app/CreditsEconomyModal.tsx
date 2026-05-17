@@ -86,7 +86,10 @@ export function CreditsEconomyModal({
             </h3>
             <div className="space-y-2">
               {PREMIUM_FEATURES.map((feature, idx) => (
-                <div key={idx} className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded-lg">
+                <div
+                  key={idx}
+                  className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded-lg"
+                >
                   <div className="flex items-center gap-3">
                     <feature.icon className="h-4 w-4 text-primary" />
                     <span>{feature.label}</span>

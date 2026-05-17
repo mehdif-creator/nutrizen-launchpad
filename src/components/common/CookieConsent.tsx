@@ -28,7 +28,7 @@ export function CookieConsent({ className }: CookieConsentProps) {
     if (!hasConsentBeenGiven()) {
       setVisible(true);
     }
-    
+
     // Load existing preferences for customization
     const existing = getConsent();
     if (existing) {
@@ -113,7 +113,8 @@ export function CookieConsent({ className }: CookieConsentProps) {
         {!showCustomize ? (
           <>
             <p className="text-sm text-muted-foreground mb-4">
-              Nous utilisons des cookies pour améliorer votre expérience et analyser l'utilisation du site.{' '}
+              Nous utilisons des cookies pour améliorer votre expérience et analyser l'utilisation
+              du site.{' '}
               <a
                 href="/legal/confidentialite"
                 className="underline hover:text-foreground transition-colors"
@@ -124,19 +125,10 @@ export function CookieConsent({ className }: CookieConsentProps) {
 
             {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-2">
-              <Button
-                onClick={handleAcceptAll}
-                size="sm"
-                className="flex-1"
-              >
+              <Button onClick={handleAcceptAll} size="sm" className="flex-1">
                 Tout accepter
               </Button>
-              <Button
-                onClick={handleRejectAll}
-                variant="outline"
-                size="sm"
-                className="flex-1"
-              >
+              <Button onClick={handleRejectAll} variant="outline" size="sm" className="flex-1">
                 Tout refuser
               </Button>
               <Button
@@ -212,18 +204,10 @@ export function CookieConsent({ className }: CookieConsentProps) {
 
             {/* Save buttons */}
             <div className="flex gap-2">
-              <Button
-                onClick={handleSaveCustom}
-                size="sm"
-                className="flex-1"
-              >
+              <Button onClick={handleSaveCustom} size="sm" className="flex-1">
                 Enregistrer mes choix
               </Button>
-              <Button
-                onClick={() => setShowCustomize(false)}
-                variant="ghost"
-                size="sm"
-              >
+              <Button onClick={() => setShowCustomize(false)} variant="ghost" size="sm">
                 Retour
               </Button>
             </div>

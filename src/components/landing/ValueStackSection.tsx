@@ -34,8 +34,8 @@ const defaultItems: ValueItem[] = [
     value: 'valeur : ~50€/mois',
   },
   {
-    feature: 'Substitutions d\'ingrédients intelligentes',
-    description: 'Remplacez n\'importe quel ingrédient sans casser l\'équilibre',
+    feature: "Substitutions d'ingrédients intelligentes",
+    description: "Remplacez n'importe quel ingrédient sans casser l'équilibre",
     value: 'valeur : ~30€/mois',
   },
   {
@@ -79,8 +79,7 @@ export const ValueStackSection = ({
         <div className="border-t border-border mt-8 pt-6 text-center">
           <p className="text-lg">
             Valeur totale estimée :{' '}
-            <span className="line-through text-muted-foreground">{totalValue}</span>{' '}
-            → Votre prix :{' '}
+            <span className="line-through text-muted-foreground">{totalValue}</span> → Votre prix :{' '}
             <span className="text-2xl font-bold text-accent">{price}</span>
           </p>
         </div>

@@ -159,7 +159,6 @@ export default function PostCheckout() {
       <div className="w-full max-w-2xl">
         <div className="bg-card rounded-2xl shadow-card p-8 md:p-12">
           <div className="text-center space-y-6">
-
             {/* Status Icon */}
             <div className="flex justify-center">
               {status === 'error' ? (
@@ -179,9 +178,7 @@ export default function PostCheckout() {
               <h1 className="text-3xl md:text-4xl font-bold text-foreground">
                 🎉 Paiement confirmé !
               </h1>
-              <p className="text-xl text-muted-foreground">
-                Bienvenue dans la famille NutriZen
-              </p>
+              <p className="text-xl text-muted-foreground">Bienvenue dans la famille NutriZen</p>
             </div>
 
             {/* Status Message */}
@@ -192,7 +189,8 @@ export default function PostCheckout() {
                   <h3 className="font-semibold text-lg">Vérification en cours...</h3>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Nous vérifions ton paiement et préparons ton compte. Cela prend généralement quelques secondes.
+                  Nous vérifions ton paiement et préparons ton compte. Cela prend généralement
+                  quelques secondes.
                 </p>
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -219,7 +217,8 @@ export default function PostCheckout() {
                   {errorMessage || 'Une erreur est survenue.'}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Pas d'inquiétude ! Ton paiement a bien été enregistré. Connecte-toi avec l'email utilisé lors du paiement.
+                  Pas d'inquiétude ! Ton paiement a bien été enregistré. Connecte-toi avec l'email
+                  utilisé lors du paiement.
                 </p>
               </div>
             )}
@@ -231,9 +230,7 @@ export default function PostCheckout() {
                   <span className="w-full border-t" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">
-                    Ou connexion rapide
-                  </span>
+                  <span className="bg-card px-2 text-muted-foreground">Ou connexion rapide</span>
                 </div>
               </div>
 

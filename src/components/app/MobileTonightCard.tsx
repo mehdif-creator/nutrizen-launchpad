@@ -11,7 +11,12 @@ interface MobileTonightCardProps {
   swapsRemaining: number;
 }
 
-export function MobileTonightCard({ todayData, onValidate, onSwap, swapsRemaining }: MobileTonightCardProps) {
+export function MobileTonightCard({
+  todayData,
+  onValidate,
+  onSwap,
+  swapsRemaining,
+}: MobileTonightCardProps) {
   if (!todayData) return null;
 
   const hour = new Date().getHours();
@@ -22,7 +27,10 @@ export function MobileTonightCard({ todayData, onValidate, onSwap, swapsRemainin
 
   if (!meal) return null;
 
-  const imageUrl = getRecipeImageUrl({ image_url: meal.image_url, image_path: (meal as any).image_path });
+  const imageUrl = getRecipeImageUrl({
+    image_url: meal.image_url,
+    image_path: (meal as any).image_path,
+  });
 
   return (
     <Card className="rounded-2xl border shadow-sm overflow-hidden md:hidden">
@@ -54,11 +62,7 @@ export function MobileTonightCard({ todayData, onValidate, onSwap, swapsRemainin
             {Math.round(meal.calories)} kcal
           </span>
         </div>
-        <Button
-          className="w-full"
-          size="sm"
-          onClick={() => onValidate?.(meal.recipe_id, mealType)}
-        >
+        <Button className="w-full" size="sm" onClick={() => onValidate?.(meal.recipe_id, mealType)}>
           <Check className="h-4 w-4 mr-1" />
           Valider
         </Button>

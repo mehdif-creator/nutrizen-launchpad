@@ -39,12 +39,8 @@ export default function Verify() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center space-y-4">
           <h1 className="text-2xl font-bold">Lien invalide ou expiré</h1>
-          <p className="text-muted-foreground">
-            Le lien de vérification n'est plus valide.
-          </p>
-          <Button onClick={() => navigate('/auth/login')}>
-            Retour à la connexion
-          </Button>
+          <p className="text-muted-foreground">Le lien de vérification n'est plus valide.</p>
+          <Button onClick={() => navigate('/auth/login')}>Retour à la connexion</Button>
         </div>
       </div>
     );
@@ -55,9 +51,7 @@ export default function Verify() {
       <div className="text-center space-y-4">
         <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
         <h1 className="text-2xl font-bold">Compte vérifié !</h1>
-        <p className="text-muted-foreground">
-          Redirection vers ton tableau de bord...
-        </p>
+        <p className="text-muted-foreground">Redirection vers ton tableau de bord...</p>
       </div>
     </div>
   );

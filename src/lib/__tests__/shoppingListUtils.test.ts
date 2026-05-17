@@ -5,7 +5,12 @@ describe('mergeShoppingItems', () => {
   it('merges ingredient variants (frais / en fines tranches) into one line', () => {
     const raw: RawShoppingItem[] = [
       { ingredient_name: 'concombre', total_quantity: 38, unit: 'g', formatted_display: '' },
-      { ingredient_name: 'concombre en fines tranches', total_quantity: 38, unit: 'g', formatted_display: '' },
+      {
+        ingredient_name: 'concombre en fines tranches',
+        total_quantity: 38,
+        unit: 'g',
+        formatted_display: '',
+      },
       { ingredient_name: 'concombre frais', total_quantity: 38, unit: 'g', formatted_display: '' },
     ];
 
@@ -29,7 +34,7 @@ describe('mergeShoppingItems', () => {
     const merged = mergeShoppingItems(raw);
 
     expect(merged).toHaveLength(1);
-    expect(merged[0].displayName.toLowerCase()).toContain("huile de sésame");
+    expect(merged[0].displayName.toLowerCase()).toContain('huile de sésame');
     expect(merged[0].displayQty).toContain('c. à café');
     expect(merged[0].displayQty).not.toContain('piece');
   });
@@ -53,7 +58,7 @@ describe('mergeShoppingItems', () => {
   it('formats tiny spoon quantities as pinch', () => {
     const raw: RawShoppingItem[] = [
       {
-        ingredient_name: "huile de sésame",
+        ingredient_name: 'huile de sésame',
         total_quantity: 0.05,
         unit: 'tsp',
         formatted_display: '',

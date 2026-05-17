@@ -44,14 +44,18 @@ export function AdminDebugPanel({ userId }: { userId: string }) {
         // Fetch wallet
         const { data: wallet } = await supabase
           .from('user_wallets')
-          .select('balance_purchased, balance_allowance, reset_cadence, last_reset_at, next_reset_at, allowance_amount')
+          .select(
+            'balance_purchased, balance_allowance, reset_cadence, last_reset_at, next_reset_at, allowance_amount'
+          )
           .eq('user_id', userId)
           .single();
 
         // Fetch profile
         const { data: profile } = await supabase
           .from('profiles')
-          .select('onboarding_status, onboarding_step, required_fields_ok, household_adults, household_children, kid_portion_ratio, portion_strategy')
+          .select(
+            'onboarding_status, onboarding_step, required_fields_ok, household_adults, household_children, kid_portion_ratio, portion_strategy'
+          )
           .eq('id', userId)
           .single();
 
@@ -100,14 +104,26 @@ export function AdminDebugPanel({ userId }: { userId: string }) {
                 <div>
                   <div className="font-medium mb-2 flex items-center gap-2">
                     Crédits Reset
-                    <Badge variant="outline" className="text-xs">{data.wallet?.reset_cadence || 'N/A'}</Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {data.wallet?.reset_cadence || 'N/A'}
+                    </Badge>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-muted-foreground">
                     <div>Achetés: {data.wallet?.balance_purchased ?? 'N/A'}</div>
                     <div>Allowance: {data.wallet?.balance_allowance ?? 'N/A'}</div>
                     <div>Montant: {data.wallet?.allowance_amount ?? 'N/A'}</div>
-                    <div>Dernier reset: {data.wallet?.last_reset_at ? new Date(data.wallet.last_reset_at).toLocaleDateString() : 'Jamais'}</div>
-                    <div className="col-span-2">Prochain: {data.wallet?.next_reset_at ? new Date(data.wallet.next_reset_at).toLocaleDateString() : 'N/A'}</div>
+                    <div>
+                      Dernier reset:{' '}
+                      {data.wallet?.last_reset_at
+                        ? new Date(data.wallet.last_reset_at).toLocaleDateString()
+                        : 'Jamais'}
+                    </div>
+                    <div className="col-span-2">
+                      Prochain:{' '}
+                      {data.wallet?.next_reset_at
+                        ? new Date(data.wallet.next_reset_at).toLocaleDateString()
+                        : 'N/A'}
+                    </div>
                   </div>
                 </div>
 
@@ -115,8 +131,10 @@ export function AdminDebugPanel({ userId }: { userId: string }) {
                 <div>
                   <div className="font-medium mb-2 flex items-center gap-2">
                     Onboarding
-                    <Badge 
-                      variant={data.profile?.onboarding_status === 'completed' ? 'default' : 'secondary'}
+                    <Badge
+                      variant={
+                        data.profile?.onboarding_status === 'completed' ? 'default' : 'secondary'
+                      }
                       className="text-xs"
                     >
                       {data.profile?.onboarding_status || 'N/A'}
@@ -132,14 +150,21 @@ export function AdminDebugPanel({ userId }: { userId: string }) {
                 <div>
                   <div className="font-medium mb-2 flex items-center gap-2">
                     Portions
-                    <Badge variant="outline" className="text-xs">{data.profile?.portion_strategy || 'household'}</Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {data.profile?.portion_strategy || 'household'}
+                    </Badge>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-muted-foreground">
                     <div>Adultes: {data.profile?.household_adults ?? 1}</div>
                     <div>Enfants: {data.profile?.household_children ?? 0}</div>
                     <div>Ratio enfant: {data.profile?.kid_portion_ratio ?? 0.6}</div>
-                    <div>Effectif: {(data.portions as any)?.effective_servings_per_meal?.toFixed(1) ?? 'N/A'}</div>
-                    <div className="col-span-2">Arrondi: {(data.portions as any)?.rounded_servings ?? 'N/A'} portions</div>
+                    <div>
+                      Effectif:{' '}
+                      {(data.portions as any)?.effective_servings_per_meal?.toFixed(1) ?? 'N/A'}
+                    </div>
+                    <div className="col-span-2">
+                      Arrondi: {(data.portions as any)?.rounded_servings ?? 'N/A'} portions
+                    </div>
                   </div>
                 </div>
               </>

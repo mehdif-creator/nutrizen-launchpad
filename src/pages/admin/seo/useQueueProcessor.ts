@@ -20,10 +20,17 @@ export type QueueStatus = 'running' | 'stopped' | 'empty';
 
 export function useQueueProcessor(refetchQueue: () => Promise<any>) {
   const [autoMode, setAutoMode] = useState(() => {
-    try { return localStorage.getItem(LS_KEY) === 'true'; } catch { return false; }
+    try {
+      return localStorage.getItem(LS_KEY) === 'true';
+    } catch {
+      return false;
+    }
   });
   const [processing, setProcessing] = useState<ProcessingState>({
-    item: null, stepIndex: -1, stepLabel: '', startedAt: null,
+    item: null,
+    stepIndex: -1,
+    stepLabel: '',
+    startedAt: null,
   });
   const abortRef = useRef(false);
   const runningRef = useRef(false);
@@ -32,7 +39,11 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
 
   const toggleAutoMode = useCallback((on: boolean) => {
     setAutoMode(on);
-    try { localStorage.setItem(LS_KEY, String(on)); } catch {}
+    try {
+      localStorage.setItem(LS_KEY, String(on));
+    } catch {
+      /* localStorage may be unavailable (private mode) */
+    }
     if (!on) abortRef.current = true;
   }, []);
 
@@ -50,7 +61,8 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
       .eq('id', item.id)
       .maybeSingle();
 
-    const articleId = (queueRow as { article_id?: string | null } | null)?.article_id ?? item.article_id;
+    const articleId =
+      (queueRow as { article_id?: string | null } | null)?.article_id ?? item.article_id;
 
     if (articleId) {
       const { data: articleRow } = await supabase
@@ -62,7 +74,11 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
       if ((articleRow as { status?: string } | null)?.status === 'published') {
         await supabase
           .from('article_queue' as any)
-          .update({ status: 'done', error_message: null, completed_at: new Date().toISOString() } as any)
+          .update({
+            status: 'done',
+            error_message: null,
+            completed_at: new Date().toISOString(),
+          } as any)
           .eq('id', item.id);
         return 'done';
       }
@@ -88,7 +104,11 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
     const cleanCategory = item.category ? getCategoryLabel(item.category) : null;
     const { data: articleRow, error: insertErr } = await supabase
       .from('seo_articles')
-      .insert({ keyword: item.topic, cluster_context: cleanCategory, source_queue_id: item.id } as any)
+      .insert({
+        keyword: item.topic,
+        cluster_context: cleanCategory,
+        source_queue_id: item.id,
+      } as any)
       .select('id')
       .single();
 
@@ -111,7 +131,7 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
       const fn = AUTO_PIPELINE_SEQUENCE[i];
       const label = AUTO_PIPELINE_LABELS[i];
 
-      setProcessing(prev => ({
+      setProcessing((prev) => ({
         ...prev,
         stepIndex: i,
         stepLabel: label,
@@ -132,7 +152,7 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
       if (fn === 'seo-qa' && result && (result as any).pass_fail === 'fail') {
         for (let attempt = 1; attempt <= 3; attempt++) {
           if (abortRef.current) throw new Error('Queue processing stopped');
-          setProcessing(prev => ({ ...prev, stepLabel: `Amélioration (${attempt}/3)` }));
+          setProcessing((prev) => ({ ...prev, stepLabel: `Amélioration (${attempt}/3)` }));
           await callEdgeFunction('seo-improve', { article_id: articleId });
           const qaResult = await callEdgeFunction('seo-qa', { article_id: articleId });
           if ((qaResult as any).pass_fail === 'pass') break;
@@ -141,7 +161,7 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
     }
 
     // Publish
-    setProcessing(prev => ({ ...prev, stepLabel: 'Publication' }));
+    setProcessing((prev) => ({ ...prev, stepLabel: 'Publication' }));
     await supabase
       .from('seo_articles')
       .update({ status: 'published' } as any)
@@ -198,9 +218,10 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
               : 0;
 
             toast({
-              title: settledState === 'done'
-                ? `✅ « ${nextItem.topic} » publié — file stoppée (${pendingCount} en attente)`
-                : `⏹ Génération stoppée — ${pendingCount} article(s) restant(s) en attente`,
+              title:
+                settledState === 'done'
+                  ? `✅ « ${nextItem.topic} » publié — file stoppée (${pendingCount} en attente)`
+                  : `⏹ Génération stoppée — ${pendingCount} article(s) restant(s) en attente`,
             });
             break;
           }
@@ -220,7 +241,7 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
 
         // Wait 30s between items
         if (!abortRef.current) {
-          await new Promise(r => setTimeout(r, DELAY_BETWEEN_ITEMS_MS));
+          await new Promise((r) => setTimeout(r, DELAY_BETWEEN_ITEMS_MS));
         }
       }
     } finally {
@@ -241,40 +262,44 @@ export function useQueueProcessor(refetchQueue: () => Promise<any>) {
   }, [autoMode, runQueue]);
 
   // Process single item manually
-  const processItem = useCallback(async (item: QueueItem) => {
-    setProcessing({
-      item,
-      stepIndex: 0,
-      stepLabel: AUTO_PIPELINE_LABELS[0],
-      startedAt: new Date(),
-    });
-    try {
-      await processOneItem(item);
-      toast({ title: `✅ « ${item.topic} » terminé` });
-    } catch (err: any) {
-      if (err.message === 'Queue processing stopped') {
-        const settledState = await settleStoppedItem(item);
-        toast({
-          title: settledState === 'done'
-            ? `✅ « ${item.topic} » publié`
-            : `⏹ Génération stoppée — « ${item.topic} » remis en attente`,
-        });
-      } else {
-        await supabase
-          .from('article_queue' as any)
-          .update({ status: 'error', error_message: err.message?.slice(0, 500) } as any)
-          .eq('id', item.id);
-        toast({
-          title: `❌ Erreur : ${item.topic}`,
-          description: err.message?.slice(0, 100),
-          variant: 'destructive',
-        });
+  const processItem = useCallback(
+    async (item: QueueItem) => {
+      setProcessing({
+        item,
+        stepIndex: 0,
+        stepLabel: AUTO_PIPELINE_LABELS[0],
+        startedAt: new Date(),
+      });
+      try {
+        await processOneItem(item);
+        toast({ title: `✅ « ${item.topic} » terminé` });
+      } catch (err: any) {
+        if (err.message === 'Queue processing stopped') {
+          const settledState = await settleStoppedItem(item);
+          toast({
+            title:
+              settledState === 'done'
+                ? `✅ « ${item.topic} » publié`
+                : `⏹ Génération stoppée — « ${item.topic} » remis en attente`,
+          });
+        } else {
+          await supabase
+            .from('article_queue' as any)
+            .update({ status: 'error', error_message: err.message?.slice(0, 500) } as any)
+            .eq('id', item.id);
+          toast({
+            title: `❌ Erreur : ${item.topic}`,
+            description: err.message?.slice(0, 100),
+            variant: 'destructive',
+          });
+        }
+      } finally {
+        setProcessing({ item: null, stepIndex: -1, stepLabel: '', startedAt: null });
+        await refetchQueue();
       }
-    } finally {
-      setProcessing({ item: null, stepIndex: -1, stepLabel: '', startedAt: null });
-      await refetchQueue();
-    }
-  }, [processOneItem, refetchQueue, settleStoppedItem, toast]);
+    },
+    [processOneItem, refetchQueue, settleStoppedItem, toast]
+  );
 
   return { autoMode, toggleAutoMode, processing, processItem, isRunning, stopProcessing };
 }

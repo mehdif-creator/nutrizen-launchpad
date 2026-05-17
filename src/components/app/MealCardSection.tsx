@@ -141,7 +141,14 @@ function MealCard({
       default:
         return 1;
     }
-  }, [meal.quiMange, meal.membresSelectionnes, meal.portionsOverride, householdMembers, adults, childrenAges]);
+  }, [
+    meal.quiMange,
+    meal.membresSelectionnes,
+    meal.portionsOverride,
+    householdMembers,
+    adults,
+    childrenAges,
+  ]);
 
   const hasChildren =
     meal.quiMange === 'enfants' ||
@@ -149,17 +156,14 @@ function MealCard({
     (meal.quiMange === 'personnalise' &&
       meal.membresSelectionnes.some((id) => id.startsWith('enfant_')));
 
-  const showNoRecipeNote =
-    meal.lieu === 'ecole' || meal.lieu === 'restaurant';
+  const showNoRecipeNote = meal.lieu === 'ecole' || meal.lieu === 'restaurant';
 
   const lieuOptions = [
     { value: 'maison', label: 'À la maison' },
     { value: 'bureau', label: 'Au bureau' },
     { value: 'lunchbox', label: 'Lunch box' },
     { value: 'restaurant', label: 'Restaurant / Extérieur' },
-    ...(hasChildren && childrenAges.length > 0
-      ? [{ value: 'ecole', label: "À l'école" }]
-      : []),
+    ...(hasChildren && childrenAges.length > 0 ? [{ value: 'ecole', label: "À l'école" }] : []),
   ];
 
   return (
@@ -242,17 +246,13 @@ function MealCard({
                 max={20}
                 step={0.5}
                 value={meal.portionsOverride ?? computedPortions}
-                onChange={(e) =>
-                  onChange({ portionsOverride: parseFloat(e.target.value) || null })
-                }
+                onChange={(e) => onChange({ portionsOverride: parseFloat(e.target.value) || null })}
                 className="w-24"
               />
             ) : (
               <div className="flex items-center gap-1.5">
                 <Lock className="h-3 w-3 text-muted-foreground" />
-                <span className="text-sm font-medium">
-                  {computedPortions.toFixed(1)} portions
-                </span>
+                <span className="text-sm font-medium">{computedPortions.toFixed(1)} portions</span>
               </div>
             )}
             <Button
@@ -304,7 +304,9 @@ function MealCard({
       {!showNoRecipeNote && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor={`batch_${meal.type}`} className="text-sm">Batch cooking pour ce repas ?</Label>
+            <Label htmlFor={`batch_${meal.type}`} className="text-sm">
+              Batch cooking pour ce repas ?
+            </Label>
             <Switch
               id={`batch_${meal.type}`}
               checked={meal.batchCooking}
@@ -313,7 +315,8 @@ function MealCard({
           </div>
           {meal.batchCooking && (
             <p className="text-xs text-primary/80">
-              Les recettes de ce repas seront adaptées pour être préparées en grande quantité et conservées 3-4 jours.
+              Les recettes de ce repas seront adaptées pour être préparées en grande quantité et
+              conservées 3-4 jours.
             </p>
           )}
         </div>

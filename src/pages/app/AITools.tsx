@@ -33,7 +33,7 @@ export default function AITools() {
       });
 
       const { data, error } = await supabase.functions.invoke('analyze-food-photo', {
-        body: { image: base64Image }
+        body: { image: base64Image },
       });
 
       if (error) {
@@ -54,7 +54,7 @@ export default function AITools() {
       console.error('Error analyzing photo:', error);
       toast({
         title: 'Erreur',
-        description: error instanceof Error ? error.message : 'Impossible d\'analyser la photo',
+        description: error instanceof Error ? error.message : "Impossible d'analyser la photo",
         variant: 'destructive',
       });
     } finally {
@@ -75,7 +75,7 @@ export default function AITools() {
       });
 
       const { data, error } = await supabase.functions.invoke('analyze-fridge-photo', {
-        body: { image: base64Image }
+        body: { image: base64Image },
       });
 
       if (error) {
@@ -96,7 +96,7 @@ export default function AITools() {
       console.error('Error analyzing fridge:', error);
       toast({
         title: 'Erreur',
-        description: error instanceof Error ? error.message : 'Impossible d\'analyser le frigo',
+        description: error instanceof Error ? error.message : "Impossible d'analyser le frigo",
         variant: 'destructive',
       });
     } finally {
@@ -115,7 +115,8 @@ export default function AITools() {
               <Badge className="bg-gradient-to-r from-primary to-accent">Premium</Badge>
             </div>
             <p className="text-muted-foreground">
-              Utilise l'intelligence artificielle pour analyser tes plats et créer des recettes personnalisées
+              Utilise l'intelligence artificielle pour analyser tes plats et créer des recettes
+              personnalisées
             </p>
           </div>
 
@@ -128,7 +129,8 @@ export default function AITools() {
               <div className="flex-1">
                 <h2 className="text-xl font-semibold mb-2">Photo → Macros</h2>
                 <p className="text-muted-foreground mb-4">
-                  Prends une photo de ton plat et obtiens instantanément les valeurs nutritionnelles : calories, protéines, glucides, lipides.
+                  Prends une photo de ton plat et obtiens instantanément les valeurs nutritionnelles
+                  : calories, protéines, glucides, lipides.
                 </p>
 
                 <div className="space-y-4">
@@ -138,16 +140,16 @@ export default function AITools() {
                       <p className="text-sm text-muted-foreground mb-4">
                         Cette fonctionnalité est réservée aux abonnés Premium
                       </p>
-                      <Button onClick={() => navigate('/app/settings')}>
-                        Passer Premium
-                      </Button>
+                      <Button onClick={() => navigate('/app/settings')}>Passer Premium</Button>
                     </div>
                   ) : (
                     <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center">
                       <input
                         type="file"
                         accept="image/*"
-                        onChange={(e) => e.target.files?.[0] && handlePhotoToMacros(e.target.files[0])}
+                        onChange={(e) =>
+                          e.target.files?.[0] && handlePhotoToMacros(e.target.files[0])
+                        }
                         className="hidden"
                         id="photo-macros-input"
                         disabled={loading}
@@ -174,31 +176,41 @@ export default function AITools() {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {photoMacrosResult.calories && (
                           <div className="text-center">
-                            <p className="text-2xl font-bold text-primary">{photoMacrosResult.calories}</p>
+                            <p className="text-2xl font-bold text-primary">
+                              {photoMacrosResult.calories}
+                            </p>
                             <p className="text-sm text-muted-foreground">Calories</p>
                           </div>
                         )}
                         {photoMacrosResult.protein && (
                           <div className="text-center">
-                            <p className="text-2xl font-bold text-blue-500">{photoMacrosResult.protein}g</p>
+                            <p className="text-2xl font-bold text-blue-500">
+                              {photoMacrosResult.protein}g
+                            </p>
                             <p className="text-sm text-muted-foreground">Protéines</p>
                           </div>
                         )}
                         {photoMacrosResult.carbs && (
                           <div className="text-center">
-                            <p className="text-2xl font-bold text-orange-500">{photoMacrosResult.carbs}g</p>
+                            <p className="text-2xl font-bold text-orange-500">
+                              {photoMacrosResult.carbs}g
+                            </p>
                             <p className="text-sm text-muted-foreground">Glucides</p>
                           </div>
                         )}
                         {photoMacrosResult.fats && (
                           <div className="text-center">
-                            <p className="text-2xl font-bold text-yellow-500">{photoMacrosResult.fats}g</p>
+                            <p className="text-2xl font-bold text-yellow-500">
+                              {photoMacrosResult.fats}g
+                            </p>
                             <p className="text-sm text-muted-foreground">Lipides</p>
                           </div>
                         )}
                       </div>
                       {photoMacrosResult.description && (
-                        <p className="text-sm text-muted-foreground">{photoMacrosResult.description}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {photoMacrosResult.description}
+                        </p>
                       )}
                     </div>
                   )}
@@ -216,7 +228,8 @@ export default function AITools() {
               <div className="flex-1">
                 <h2 className="text-xl font-semibold mb-2">Frigo → Recettes</h2>
                 <p className="text-muted-foreground mb-4">
-                  Prends une photo de ton frigo ou liste tes ingrédients disponibles. L'IA te propose des recettes adaptées !
+                  Prends une photo de ton frigo ou liste tes ingrédients disponibles. L'IA te
+                  propose des recettes adaptées !
                 </p>
 
                 <div className="space-y-4">
@@ -226,16 +239,16 @@ export default function AITools() {
                       <p className="text-sm text-muted-foreground mb-4">
                         Cette fonctionnalité est réservée aux abonnés Premium
                       </p>
-                      <Button onClick={() => navigate('/app/settings')}>
-                        Passer Premium
-                      </Button>
+                      <Button onClick={() => navigate('/app/settings')}>Passer Premium</Button>
                     </div>
                   ) : (
                     <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center">
                       <input
                         type="file"
                         accept="image/*"
-                        onChange={(e) => e.target.files?.[0] && handleFridgeToRecipes(e.target.files[0])}
+                        onChange={(e) =>
+                          e.target.files?.[0] && handleFridgeToRecipes(e.target.files[0])
+                        }
                         className="hidden"
                         id="fridge-recipes-input"
                         disabled={loading}

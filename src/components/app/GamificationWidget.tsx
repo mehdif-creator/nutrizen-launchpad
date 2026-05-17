@@ -61,13 +61,21 @@ export function GamificationWidget() {
     Platinum: Infinity,
   };
 
-  const currentThreshold = levelThresholds[points.current_level as keyof typeof levelThresholds] || 50;
-  const nextLevel = points.current_level === 'Platinum' ? 'Platinum' : 
-    points.current_level === 'Gold' ? 'Platinum' :
-    points.current_level === 'Silver' ? 'Gold' : 'Silver';
-  
-  const progressPercent = points.current_level === 'Platinum' ? 100 :
-    Math.min((points.total_points / currentThreshold) * 100, 100);
+  const currentThreshold =
+    levelThresholds[points.current_level as keyof typeof levelThresholds] || 50;
+  const nextLevel =
+    points.current_level === 'Platinum'
+      ? 'Platinum'
+      : points.current_level === 'Gold'
+        ? 'Platinum'
+        : points.current_level === 'Silver'
+          ? 'Gold'
+          : 'Silver';
+
+  const progressPercent =
+    points.current_level === 'Platinum'
+      ? 100
+      : Math.min((points.total_points / currentThreshold) * 100, 100);
 
   const levelColors = {
     Bronze: 'text-amber-700',
@@ -82,13 +90,15 @@ export function GamificationWidget() {
         <div>
           <h3 className="font-semibold text-lg mb-1">Ma Progression</h3>
           <div className="flex items-center gap-2">
-            <Trophy className={`h-5 w-5 ${levelColors[points.current_level as keyof typeof levelColors]}`} />
-            <span className={`font-bold ${levelColors[points.current_level as keyof typeof levelColors]}`}>
+            <Trophy
+              className={`h-5 w-5 ${levelColors[points.current_level as keyof typeof levelColors]}`}
+            />
+            <span
+              className={`font-bold ${levelColors[points.current_level as keyof typeof levelColors]}`}
+            >
               {points.current_level}
             </span>
-            <span className="text-sm text-muted-foreground">
-              ({points.total_points} points)
-            </span>
+            <span className="text-sm text-muted-foreground">({points.total_points} points)</span>
           </div>
         </div>
         {points.login_streak > 0 && (
@@ -102,10 +112,14 @@ export function GamificationWidget() {
       <div className="space-y-2 mb-4">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">
-            {points.current_level === 'Platinum' ? 'Niveau maximum atteint!' : `Prochain niveau: ${nextLevel}`}
+            {points.current_level === 'Platinum'
+              ? 'Niveau maximum atteint!'
+              : `Prochain niveau: ${nextLevel}`}
           </span>
           {points.current_level !== 'Platinum' && (
-            <span className="font-medium">{currentThreshold - points.total_points} points restants</span>
+            <span className="font-medium">
+              {currentThreshold - points.total_points} points restants
+            </span>
           )}
         </div>
         <Progress value={progressPercent} className="h-2" />
@@ -115,7 +129,8 @@ export function GamificationWidget() {
         <div className="flex items-center gap-2 text-sm bg-primary/10 rounded-lg p-3">
           <TrendingUp className="h-4 w-4 text-primary" />
           <span className="text-foreground">
-            Tu es sur une série de {points.login_streak} jours ! Continue comme ça pour débloquer ton prochain bonus !
+            Tu es sur une série de {points.login_streak} jours ! Continue comme ça pour débloquer
+            ton prochain bonus !
           </span>
         </div>
       )}

@@ -22,7 +22,7 @@ export function ReferralCard({ referral, isLoading, userId, onRefresh }: Referra
 
   const handleCopy = async () => {
     if (!referral?.code) return;
-    
+
     const url = `${window.location.origin}?ref=${referral.code}`;
     try {
       await navigator.clipboard.writeText(url);
@@ -36,7 +36,7 @@ export function ReferralCard({ referral, isLoading, userId, onRefresh }: Referra
 
   const handleGenerateCode = async () => {
     if (!userId) return;
-    
+
     setGenerating(true);
     try {
       const { error } = await supabase.rpc('generate_user_referral_code', {
@@ -112,22 +112,9 @@ export function ReferralCard({ referral, isLoading, userId, onRefresh }: Referra
       <div className="space-y-2 mb-4">
         <label className="text-xs text-muted-foreground">Votre lien :</label>
         <div className="flex gap-2">
-          <Input
-            value={referralUrl}
-            readOnly
-            className="font-mono text-xs h-9"
-          />
-          <Button
-            onClick={handleCopy}
-            size="sm"
-            variant="outline"
-            className="flex-shrink-0 h-9"
-          >
-            {copied ? (
-              <Check className="h-4 w-4 text-green-500" />
-            ) : (
-              <Copy className="h-4 w-4" />
-            )}
+          <Input value={referralUrl} readOnly className="font-mono text-xs h-9" />
+          <Button onClick={handleCopy} size="sm" variant="outline" className="flex-shrink-0 h-9">
+            {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
           </Button>
         </div>
       </div>
@@ -160,7 +147,8 @@ export function ReferralCard({ referral, isLoading, userId, onRefresh }: Referra
 
       {/* Commission explanation */}
       <p className="text-xs text-muted-foreground mt-3">
-        Chaque abonnement payé via votre lien vous rapporte <span className="text-primary font-medium">20 % de commission récurrente</span>.
+        Chaque abonnement payé via votre lien vous rapporte{' '}
+        <span className="text-primary font-medium">20 % de commission récurrente</span>.
       </p>
     </Card>
   );

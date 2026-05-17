@@ -2,16 +2,16 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { 
-  ChevronRight, 
-  ChevronLeft, 
-  Users, 
-  Clock, 
-  AlertTriangle, 
-  Utensils, 
-  Target, 
+import {
+  ChevronRight,
+  ChevronLeft,
+  Users,
+  Clock,
+  AlertTriangle,
+  Utensils,
+  Target,
   Frown,
-  Sparkles
+  Sparkles,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -70,7 +70,7 @@ const questions: QuizQuestion[] = [
     options: [
       { id: 'beginner', label: 'Débutant(e)', emoji: '🥄' },
       { id: 'intermediate', label: 'Je me débrouille', emoji: '🍴' },
-      { id: 'advanced', label: 'À l\'aise', emoji: '🔪' },
+      { id: 'advanced', label: "À l'aise", emoji: '🔪' },
       { id: 'expert', label: 'Passionné(e)', emoji: '⭐' },
     ],
   },
@@ -128,7 +128,7 @@ const profileResults: Record<ProfileType, Omit<ProfileResult, 'score'>> = {
     description: 'Tu veux bien faire pour ta famille, mais ça te pèse.',
     tips: [
       'Autorise-toi des repas simples sans culpabilité',
-      'Planifier à l\'avance réduit 80% du stress',
+      "Planifier à l'avance réduit 80% du stress",
       'NutriZen génère des menus équilibrés ET réalistes',
     ],
   },
@@ -136,7 +136,7 @@ const profileResults: Record<ProfileType, Omit<ProfileResult, 'score'>> = {
     type: 'juggler',
     title: 'La Multi-Contraintes',
     emoji: '🎪',
-    description: 'Entre allergies, goûts et emplois du temps, c\'est le casse-tête.',
+    description: "Entre allergies, goûts et emplois du temps, c'est le casse-tête.",
     tips: [
       'Les filtres personnalisés sont tes meilleurs amis',
       'NutriZen mémorise toutes les contraintes de ta famille',
@@ -145,9 +145,9 @@ const profileResults: Record<ProfileType, Omit<ProfileResult, 'score'>> = {
   },
   explorer: {
     type: 'explorer',
-    title: 'L\'Exploratrice Culinaire',
+    title: "L'Exploratrice Culinaire",
     emoji: '🌍',
-    description: 'Tu aimes la variété mais tu manques d\'inspiration.',
+    description: "Tu aimes la variété mais tu manques d'inspiration.",
     tips: [
       'Découvre de nouvelles cuisines chaque semaine',
       'NutriZen propose +500 recettes variées',
@@ -160,7 +160,7 @@ function calculateProfile(answers: Record<string, string>): ProfileResult {
   // Simple scoring logic based on answers
   let score = 65; // Base score
   let type: ProfileType = 'juggler';
-  
+
   // Time-constrained + decide pain = express
   if ((answers.time === '15' || answers.time === '30') && answers.pain === 'decide') {
     type = 'express';
@@ -177,18 +177,21 @@ function calculateProfile(answers: Record<string, string>): ProfileResult {
     score = 58;
   }
   // Variety goal + advanced skill = explorer
-  else if (answers.goal === 'variety' && (answers.skill === 'advanced' || answers.skill === 'expert')) {
+  else if (
+    answers.goal === 'variety' &&
+    (answers.skill === 'advanced' || answers.skill === 'expert')
+  ) {
     type = 'explorer';
     score = 75;
   }
-  
+
   // Adjust score based on time available
   if (answers.time === '15') score -= 10;
   if (answers.time === '60+') score += 8;
-  
+
   // Large family = harder
   if (answers.household === '5+') score -= 5;
-  
+
   return {
     ...profileResults[type],
     score: Math.max(30, Math.min(90, score)),
@@ -201,14 +204,14 @@ export const ProfileQuiz = () => {
   const [showResult, setShowResult] = useState(false);
   const [result, setResult] = useState<ProfileResult | null>(null);
   const navigate = useNavigate();
-  
+
   const progress = ((currentStep + 1) / questions.length) * 100;
   const currentQuestion = questions[currentStep];
-  
+
   const handleAnswer = (optionId: string) => {
     const newAnswers = { ...answers, [currentQuestion.id]: optionId };
     setAnswers(newAnswers);
-    
+
     if (currentStep < questions.length - 1) {
       setTimeout(() => setCurrentStep(currentStep + 1), 300);
     } else {
@@ -218,20 +221,23 @@ export const ProfileQuiz = () => {
       setTimeout(() => setShowResult(true), 300);
     }
   };
-  
+
   const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
   };
-  
+
   const handleGetMenu = () => {
     navigate('/auth/signup');
   };
-  
+
   if (showResult && result) {
     return (
-      <section id="quiz-profil" className="py-16 bg-gradient-to-br from-primary/5 via-background to-accent/5">
+      <section
+        id="quiz-profil"
+        className="py-16 bg-gradient-to-br from-primary/5 via-background to-accent/5"
+      >
         <div className="container">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -241,14 +247,10 @@ export const ProfileQuiz = () => {
             <Card className="max-w-2xl mx-auto p-8 md:p-12 shadow-glow border-primary/20">
               <div className="text-center mb-8">
                 <div className="text-6xl mb-4">{result.emoji}</div>
-                <h2 className="text-2xl md:text-3xl font-bold mb-2">
-                  Tu es : {result.title}
-                </h2>
-                <p className="text-muted-foreground text-lg">
-                  {result.description}
-                </p>
+                <h2 className="text-2xl md:text-3xl font-bold mb-2">Tu es : {result.title}</h2>
+                <p className="text-muted-foreground text-lg">{result.description}</p>
               </div>
-              
+
               {/* Score Zen */}
               <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-2xl p-6 mb-8">
                 <div className="flex items-center justify-between mb-4">
@@ -258,11 +260,13 @@ export const ProfileQuiz = () => {
                 <Progress value={result.score} className="h-3" />
                 <p className="text-sm text-muted-foreground mt-3">
                   {result.score < 50 && "🔴 Niveau critique — NutriZen peut vraiment t'aider !"}
-                  {result.score >= 50 && result.score < 70 && "🟠 Marge d'amélioration — tu mérites plus de sérénité."}
-                  {result.score >= 70 && "🟢 Pas mal ! Mais on peut encore optimiser."}
+                  {result.score >= 50 &&
+                    result.score < 70 &&
+                    "🟠 Marge d'amélioration — tu mérites plus de sérénité."}
+                  {result.score >= 70 && '🟢 Pas mal ! Mais on peut encore optimiser.'}
                 </p>
               </div>
-              
+
               {/* Tips */}
               <div className="space-y-3 mb-8">
                 <h3 className="font-semibold flex items-center gap-2">
@@ -276,7 +280,7 @@ export const ProfileQuiz = () => {
                   </div>
                 ))}
               </div>
-              
+
               {/* CTA */}
               <div className="space-y-4">
                 <Button
@@ -297,9 +301,12 @@ export const ProfileQuiz = () => {
       </section>
     );
   }
-  
+
   return (
-    <section id="quiz-profil" className="py-16 bg-gradient-to-br from-primary/5 via-background to-accent/5">
+    <section
+      id="quiz-profil"
+      className="py-16 bg-gradient-to-br from-primary/5 via-background to-accent/5"
+    >
       <div className="container">
         <Card className="max-w-2xl mx-auto p-6 md:p-10 shadow-glow border-primary/10">
           {/* Header */}
@@ -315,16 +322,18 @@ export const ProfileQuiz = () => {
               Comprends pourquoi les repas te stressent — et comment en sortir.
             </p>
           </div>
-          
+
           {/* Progress */}
           <div className="mb-8">
             <div className="flex justify-between text-sm text-muted-foreground mb-2">
-              <span>Question {currentStep + 1}/{questions.length}</span>
+              <span>
+                Question {currentStep + 1}/{questions.length}
+              </span>
               <span>{Math.round(progress)}%</span>
             </div>
             <Progress value={progress} className="h-2" />
           </div>
-          
+
           {/* Question */}
           <AnimatePresence mode="wait">
             <motion.div
@@ -340,7 +349,7 @@ export const ProfileQuiz = () => {
                 </div>
                 <h3 className="text-xl font-semibold">{currentQuestion.question}</h3>
               </div>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {currentQuestion.options.map((option) => (
                   <button
@@ -349,9 +358,10 @@ export const ProfileQuiz = () => {
                     className={`
                       p-4 rounded-xl border-2 text-left transition-all
                       hover:border-primary hover:bg-primary/5 hover:scale-[1.02]
-                      ${answers[currentQuestion.id] === option.id 
-                        ? 'border-primary bg-primary/10' 
-                        : 'border-border'
+                      ${
+                        answers[currentQuestion.id] === option.id
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border'
                       }
                     `}
                   >
@@ -364,15 +374,11 @@ export const ProfileQuiz = () => {
               </div>
             </motion.div>
           </AnimatePresence>
-          
+
           {/* Navigation */}
           {currentStep > 0 && (
             <div className="mt-6 pt-6 border-t">
-              <Button
-                variant="ghost"
-                onClick={handleBack}
-                className="text-muted-foreground"
-              >
+              <Button variant="ghost" onClick={handleBack} className="text-muted-foreground">
                 <ChevronLeft className="w-4 h-4 mr-1" />
                 Question précédente
               </Button>

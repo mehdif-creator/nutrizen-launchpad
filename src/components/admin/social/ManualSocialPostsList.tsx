@@ -21,7 +21,14 @@ interface Props {
   onRetry: () => void;
 }
 
-export function ManualSocialPostsList({ posts, loading, error, selectedId, onSelect, onRetry }: Props) {
+export function ManualSocialPostsList({
+  posts,
+  loading,
+  error,
+  selectedId,
+  onSelect,
+  onRetry,
+}: Props) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -37,7 +44,9 @@ export function ManualSocialPostsList({ posts, loading, error, selectedId, onSel
         <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-2" />
         <p className="text-destructive font-medium mb-3">Erreur de chargement</p>
         <p className="text-sm text-muted-foreground mb-4">{error}</p>
-        <Button variant="outline" size="sm" onClick={onRetry}>Réessayer</Button>
+        <Button variant="outline" size="sm" onClick={onRetry}>
+          Réessayer
+        </Button>
       </Card>
     );
   }
@@ -47,14 +56,16 @@ export function ManualSocialPostsList({ posts, loading, error, selectedId, onSel
       <Card className="p-8 text-center">
         <ImageIcon className="h-10 w-10 text-muted-foreground/50 mx-auto mb-3" />
         <p className="text-muted-foreground font-medium">Aucun post disponible</p>
-        <p className="text-sm text-muted-foreground mt-1">Les posts apparaîtront ici une fois générés.</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          Les posts apparaîtront ici une fois générés.
+        </p>
       </Card>
     );
   }
 
   return (
     <div className="space-y-2 max-h-[calc(100vh-320px)] overflow-y-auto pr-1">
-      {posts.map(post => {
+      {posts.map((post) => {
         const badge = STATUS_BADGE[post.status] || STATUS_BADGE.ready;
         const thumb = post.image_4x5_url || post.image_9x16_url;
         const hasFormats = !!(post.image_9x16_url && post.image_4x5_url);
@@ -90,11 +101,11 @@ export function ManualSocialPostsList({ posts, loading, error, selectedId, onSel
                   </Badge>
                   <span className="text-xs text-muted-foreground">{boardLabel}</span>
                   {post.platform_target && post.platform_target !== 'both' && (
-                    <span className="text-xs text-muted-foreground capitalize">{post.platform_target}</span>
+                    <span className="text-xs text-muted-foreground capitalize">
+                      {post.platform_target}
+                    </span>
                   )}
-                  {hasFormats && (
-                    <span className="text-xs text-muted-foreground">2 formats</span>
-                  )}
+                  {hasFormats && <span className="text-xs text-muted-foreground">2 formats</span>}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {new Date(post.created_at).toLocaleDateString('fr-FR', {

@@ -4,7 +4,17 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Copy, Share2, Users, Euro, TrendingUp, MousePointerClick, AlertCircle, Loader2, ShieldCheck } from 'lucide-react';
+import {
+  Copy,
+  Share2,
+  Users,
+  Euro,
+  TrendingUp,
+  MousePointerClick,
+  AlertCircle,
+  Loader2,
+  ShieldCheck,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
@@ -67,21 +77,32 @@ export default function Referral() {
             .eq('affiliate_code', existing.affiliate_code);
 
           const conversions = referrals?.length || 0;
-          let monthly = 0, total = 0, pending = 0;
+          let monthly = 0,
+            total = 0,
+            pending = 0;
 
           if (allCommissions) {
             const now = new Date();
             const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-            monthly = allCommissions
-              .filter((c: any) => c.status === 'pending' && c.created_at >= monthStart)
-              .reduce((sum: number, c: any) => sum + c.commission_amount_cents, 0) / 100;
-            total = allCommissions.reduce((sum: number, c: any) => sum + c.commission_amount_cents, 0) / 100;
-            pending = allCommissions
-              .filter((c: any) => c.status === 'pending')
-              .reduce((sum: number, c: any) => sum + c.commission_amount_cents, 0) / 100;
+            monthly =
+              allCommissions
+                .filter((c: any) => c.status === 'pending' && c.created_at >= monthStart)
+                .reduce((sum: number, c: any) => sum + c.commission_amount_cents, 0) / 100;
+            total =
+              allCommissions.reduce((sum: number, c: any) => sum + c.commission_amount_cents, 0) /
+              100;
+            pending =
+              allCommissions
+                .filter((c: any) => c.status === 'pending')
+                .reduce((sum: number, c: any) => sum + c.commission_amount_cents, 0) / 100;
           }
 
-          setCommissionStats({ conversions, monthlyCommission: monthly, totalEarnings: total, pendingPayout: pending });
+          setCommissionStats({
+            conversions,
+            monthlyCommission: monthly,
+            totalEarnings: total,
+            pendingPayout: pending,
+          });
         }
       }
     } catch (error) {
@@ -134,17 +155,20 @@ export default function Referral() {
   };
 
   const copyToClipboard = (url: string) => {
-    navigator.clipboard.writeText(url).then(() => {
-      setCopied(true);
-      toast.success('Lien copié !');
-      setTimeout(() => setCopied(false), 2000);
-    }).catch(() => toast.error('Erreur lors de la copie'));
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        setCopied(true);
+        toast.success('Lien copié !');
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => toast.error('Erreur lors de la copie'));
   };
 
   const shareOnSocial = (platform: string) => {
     const url = getReferralUrl();
     const text = "Découvrez NutriZen, l'assistant qui organise vos repas en 30 secondes ! 🥗";
-    
+
     let shareUrl = '';
     switch (platform) {
       case 'twitter':
@@ -200,7 +224,8 @@ export default function Referral() {
               <Users className="h-12 w-12 text-primary mx-auto" />
               <h2 className="text-xl font-semibold">Activez votre programme de recommandation</h2>
               <p className="text-muted-foreground">
-                Générez votre lien unique pour commencer à gagner des commissions de 20 % sur chaque abonnement payé via votre lien.
+                Générez votre lien unique pour commencer à gagner des commissions de 20 % sur chaque
+                abonnement payé via votre lien.
               </p>
               <Button onClick={handleActivateAffiliate} disabled={activating} size="lg">
                 {activating ? (
@@ -245,7 +270,9 @@ export default function Referral() {
                 <div className="flex items-center gap-2 md:gap-3">
                   <Euro className="h-6 w-6 md:h-8 md:w-8 text-primary" />
                   <div>
-                    <p className="text-xl md:text-2xl font-bold text-primary">{commissionStats.totalEarnings.toFixed(2)} €</p>
+                    <p className="text-xl md:text-2xl font-bold text-primary">
+                      {commissionStats.totalEarnings.toFixed(2)} €
+                    </p>
                     <p className="text-xs md:text-sm text-muted-foreground">Gains totaux</p>
                   </div>
                 </div>
@@ -255,7 +282,9 @@ export default function Referral() {
                 <div className="flex items-center gap-2 md:gap-3">
                   <TrendingUp className="h-6 w-6 md:h-8 md:w-8 text-accent" />
                   <div>
-                    <p className="text-xl md:text-2xl font-bold text-accent">{commissionStats.pendingPayout.toFixed(2)} €</p>
+                    <p className="text-xl md:text-2xl font-bold text-accent">
+                      {commissionStats.pendingPayout.toFixed(2)} €
+                    </p>
                     <p className="text-xs md:text-sm text-muted-foreground">En attente</p>
                   </div>
                 </div>
@@ -273,7 +302,8 @@ export default function Referral() {
 
               <div className="space-y-4">
                 {['', '/fit', '/mum'].map((page) => {
-                  const label = page === '' ? 'Page principale' : page === '/fit' ? 'Page Fit' : 'Page Mum';
+                  const label =
+                    page === '' ? 'Page principale' : page === '/fit' ? 'Page Fit' : 'Page Mum';
                   const url = getReferralUrl(page);
                   return (
                     <div key={page}>
@@ -316,7 +346,9 @@ export default function Referral() {
               </li>
               <li className="flex gap-3">
                 <span className="font-bold text-primary">3.</span>
-                <span>Vous gagnez <strong>20 % de commission récurrente</strong> sur chaque paiement</span>
+                <span>
+                  Vous gagnez <strong>20 % de commission récurrente</strong> sur chaque paiement
+                </span>
               </li>
             </ol>
           </Card>

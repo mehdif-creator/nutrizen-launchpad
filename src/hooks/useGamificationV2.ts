@@ -169,14 +169,11 @@ export function useEmitGamificationEvent() {
       meta?: Record<string, unknown>;
       idempotencyKey?: string;
     }): Promise<EmitResult> => {
-      const { data, error } = await (supabase.rpc as Function)(
-        'fn_emit_gamification_event',
-        {
-          p_event_type: eventType,
-          p_meta: meta,
-          p_idempotency_key: idempotencyKey ?? null,
-        }
-      );
+      const { data, error } = await (supabase.rpc as Function)('fn_emit_gamification_event', {
+        p_event_type: eventType,
+        p_meta: meta,
+        p_idempotency_key: idempotencyKey ?? null,
+      });
 
       if (error) throw error;
       return data as EmitResult;
@@ -221,17 +218,11 @@ export function getLevelName(level: number, levels: LevelInfo[]): string {
   return levels.find((l) => l.level === level)?.name_fr ?? `Niveau ${level}`;
 }
 
-export function getNextLevelThreshold(
-  currentLevel: number,
-  levels: LevelInfo[]
-): number {
+export function getNextLevelThreshold(currentLevel: number, levels: LevelInfo[]): number {
   const next = levels.find((l) => l.level === currentLevel + 1);
   return next?.min_points ?? (levels[levels.length - 1]?.min_points ?? 0) + 500;
 }
 
-export function getCurrentLevelThreshold(
-  currentLevel: number,
-  levels: LevelInfo[]
-): number {
+export function getCurrentLevelThreshold(currentLevel: number, levels: LevelInfo[]): number {
   return levels.find((l) => l.level === currentLevel)?.min_points ?? 0;
 }

@@ -24,17 +24,29 @@ export default function KpiRatings() {
   const { from, to } = getDateRange(dateRange);
   const filters = { dateFrom: from, dateTo: to, granularity };
 
-  const { data: summary, isLoading: loadingSummary, refetch: refetchSummary } = useQuery({
+  const {
+    data: summary,
+    isLoading: loadingSummary,
+    refetch: refetchSummary,
+  } = useQuery({
     queryKey: ['kpi-ratings-summary', from, to],
     queryFn: () => fetchRatingsSummary(filters),
   });
 
-  const { data: timeseries, isLoading: loadingTimeseries, refetch: refetchTimeseries } = useQuery({
+  const {
+    data: timeseries,
+    isLoading: loadingTimeseries,
+    refetch: refetchTimeseries,
+  } = useQuery({
     queryKey: ['kpi-ratings-timeseries', from, to, granularity],
     queryFn: () => fetchRatingsTimeseries(filters),
   });
 
-  const { data: distribution, isLoading: loadingDistribution, refetch: refetchDistribution } = useQuery({
+  const {
+    data: distribution,
+    isLoading: loadingDistribution,
+    refetch: refetchDistribution,
+  } = useQuery({
     queryKey: ['kpi-ratings-distribution', from, to],
     queryFn: () => fetchRatingsDistribution(filters),
   });

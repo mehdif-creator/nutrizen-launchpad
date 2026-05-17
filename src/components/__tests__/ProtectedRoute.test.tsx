@@ -29,7 +29,7 @@ function renderProtected(path: string, requireAdmin = false) {
         <Route path="/auth/login" element={<div data-testid="login-page">Login</div>} />
         <Route path="/app" element={<div data-testid="app-page">App</div>} />
       </Routes>
-    </MemoryRouter>,
+    </MemoryRouter>
   );
 }
 
@@ -46,7 +46,12 @@ describe('ProtectedRoute', () => {
   });
 
   it('shows spinner while adminLoading is true even if auth done', () => {
-    mockUseAuth.mockReturnValue({ user: { id: 'u1' }, loading: false, adminLoading: true, isAdmin: false });
+    mockUseAuth.mockReturnValue({
+      user: { id: 'u1' },
+      loading: false,
+      adminLoading: true,
+      isAdmin: false,
+    });
     const { container, queryByTestId } = renderProtected('/app/dashboard');
     expect(queryByTestId('protected-content')).toBeNull();
     expect(queryByTestId('login-page')).toBeNull();
@@ -54,25 +59,45 @@ describe('ProtectedRoute', () => {
   });
 
   it('redirects to login when no user', () => {
-    mockUseAuth.mockReturnValue({ user: null, loading: false, adminLoading: false, isAdmin: false });
+    mockUseAuth.mockReturnValue({
+      user: null,
+      loading: false,
+      adminLoading: false,
+      isAdmin: false,
+    });
     const { getByTestId } = renderProtected('/app/dashboard');
     expect(getByTestId('login-page')).toBeInTheDocument();
   });
 
   it('renders content for authenticated user', () => {
-    mockUseAuth.mockReturnValue({ user: { id: 'u1' }, loading: false, adminLoading: false, isAdmin: false });
+    mockUseAuth.mockReturnValue({
+      user: { id: 'u1' },
+      loading: false,
+      adminLoading: false,
+      isAdmin: false,
+    });
     const { getByTestId } = renderProtected('/app/dashboard');
     expect(getByTestId('protected-content')).toBeInTheDocument();
   });
 
   it('blocks non-admin from admin routes', () => {
-    mockUseAuth.mockReturnValue({ user: { id: 'u1' }, loading: false, adminLoading: false, isAdmin: false });
+    mockUseAuth.mockReturnValue({
+      user: { id: 'u1' },
+      loading: false,
+      adminLoading: false,
+      isAdmin: false,
+    });
     const { getByTestId } = renderProtected('/admin', true);
     expect(getByTestId('app-page')).toBeInTheDocument();
   });
 
   it('allows admin on admin routes', () => {
-    mockUseAuth.mockReturnValue({ user: { id: 'a1' }, loading: false, adminLoading: false, isAdmin: true });
+    mockUseAuth.mockReturnValue({
+      user: { id: 'a1' },
+      loading: false,
+      adminLoading: false,
+      isAdmin: true,
+    });
     const { getByTestId } = renderProtected('/admin', true);
     expect(getByTestId('protected-content')).toBeInTheDocument();
   });

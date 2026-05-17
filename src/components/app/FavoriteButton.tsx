@@ -9,7 +9,12 @@ interface FavoriteButtonProps {
   className?: string;
 }
 
-export function FavoriteButton({ isFavorite, onClick, size = 'sm', className }: FavoriteButtonProps) {
+export function FavoriteButton({
+  isFavorite,
+  onClick,
+  size = 'sm',
+  className,
+}: FavoriteButtonProps) {
   return (
     <Button
       variant="ghost"
@@ -26,12 +31,7 @@ export function FavoriteButton({ isFavorite, onClick, size = 'sm', className }: 
         onClick(e);
       }}
     >
-      <Heart
-        className={cn(
-          size === 'sm' ? 'h-4 w-4' : 'h-5 w-5',
-          isFavorite && 'fill-current'
-        )}
-      />
+      <Heart className={cn(size === 'sm' ? 'h-4 w-4' : 'h-5 w-5', isFavorite && 'fill-current')} />
     </Button>
   );
 }

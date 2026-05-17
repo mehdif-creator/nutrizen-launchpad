@@ -55,12 +55,7 @@ function addFooter(doc: jsPDF) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(GRAY.r, GRAY.g, GRAY.b);
-    doc.text(
-      `NutriZen — Page ${i}/${pageCount}`,
-      PAGE_W / 2,
-      297 - 8,
-      { align: 'center' }
-    );
+    doc.text(`NutriZen — Page ${i}/${pageCount}`, PAGE_W / 2, 297 - 8, { align: 'center' });
   }
 }
 
@@ -82,8 +77,7 @@ function formatWeekRange(weekStart: string): string {
   const start = new Date(weekStart);
   const end = new Date(start);
   end.setDate(end.getDate() + 6);
-  const fmt = (d: Date) =>
-    d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+  const fmt = (d: Date) => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
   return `Semaine du ${fmt(start)} au ${fmt(end)} ${start.getFullYear()}`;
 }
 
@@ -137,7 +131,13 @@ function addMenuTable(doc: jsPDF, startY: number, days: DayRecipes[]): number {
 
 // ─── RECIPE CARDS ───────────────────────────────────────────────────
 
-function addRecipeBlock(doc: jsPDF, y: number, recipe: RecipeInfo, dayName: string, mealType: string): number {
+function addRecipeBlock(
+  doc: jsPDF,
+  y: number,
+  recipe: RecipeInfo,
+  dayName: string,
+  mealType: string
+): number {
   if (y > 230) {
     doc.addPage();
     y = MARGIN + 5;
@@ -188,7 +188,7 @@ function addShoppingListTable(doc: jsPDF, startY: number, items: MergedShoppingI
   }
 
   // Build table data with category headers
-  const tableData: (string[])[] = [];
+  const tableData: string[][] = [];
   for (const cat of CATEGORY_ORDER) {
     const catItems = grouped.get(cat);
     if (!catItems || catItems.length === 0) continue;
@@ -271,12 +271,19 @@ export function exportWeeklyPackPdf(
   y += 6;
 
   // Weekly summary
-  const totalCal = days.reduce((sum, d) => sum + (d.lunch?.calories || 0) + (d.dinner?.calories || 0), 0);
+  const totalCal = days.reduce(
+    (sum, d) => sum + (d.lunch?.calories || 0) + (d.dinner?.calories || 0),
+    0
+  );
   const avgCal = days.length > 0 ? Math.round(totalCal / days.length) : 0;
   doc.setFont('helvetica', 'italic');
   doc.setFontSize(9);
   doc.setTextColor(GRAY.r, GRAY.g, GRAY.b);
-  doc.text(`Moyenne journalière : ${avgCal} kcal  |  Total semaine : ${totalCal} kcal`, MARGIN, y + 3);
+  doc.text(
+    `Moyenne journalière : ${avgCal} kcal  |  Total semaine : ${totalCal} kcal`,
+    MARGIN,
+    y + 3
+  );
   y += 10;
 
   // ── PAGE 2+: Recipes ──

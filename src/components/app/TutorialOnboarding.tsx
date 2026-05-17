@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, CalendarDays, Camera, Refrigerator, ShoppingCart, Gift, ChevronRight } from 'lucide-react';
+import {
+  X,
+  User,
+  CalendarDays,
+  Camera,
+  Refrigerator,
+  ShoppingCart,
+  Gift,
+  ChevronRight,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,25 +31,29 @@ const steps: TutorialStep[] = [
   },
   {
     title: 'Complète ton profil',
-    description: 'Renseigne tes objectifs, préférences alimentaires et informations personnelles pour des menus 100% adaptés à toi.',
+    description:
+      'Renseigne tes objectifs, préférences alimentaires et informations personnelles pour des menus 100% adaptés à toi.',
     icon: <User className="h-12 w-12" />,
     emoji: '📋',
   },
   {
     title: 'Génère tes menus personnalisés',
-    description: 'En un clic, obtiens une semaine de menus équilibrés et adaptés à tes besoins nutritionnels.',
+    description:
+      'En un clic, obtiens une semaine de menus équilibrés et adaptés à tes besoins nutritionnels.',
     icon: <CalendarDays className="h-12 w-12" />,
     emoji: '🥗',
   },
   {
     title: 'Scanne ton repas',
-    description: 'Prends en photo n\'importe quel plat et découvre instantanément ses apports nutritionnels.',
+    description:
+      "Prends en photo n'importe quel plat et découvre instantanément ses apports nutritionnels.",
     icon: <Camera className="h-12 w-12" />,
     emoji: '📸',
   },
   {
     title: 'InspiFrigo & Liste de courses',
-    description: 'Photo de ton frigo = recettes personnalisées. Génère automatiquement ta liste de courses à partir de ton menu.',
+    description:
+      'Photo de ton frigo = recettes personnalisées. Génère automatiquement ta liste de courses à partir de ton menu.',
     icon: (
       <div className="flex gap-2">
         <Refrigerator className="h-10 w-10" />
@@ -51,7 +64,8 @@ const steps: TutorialStep[] = [
   },
   {
     title: 'Parraine tes amis',
-    description: 'Partage ton lien de parrainage unique et gagne des crédits pour chaque ami qui s\'inscrit.',
+    description:
+      "Partage ton lien de parrainage unique et gagne des crédits pour chaque ami qui s'inscrit.",
     icon: <Gift className="h-12 w-12" />,
     emoji: '🎁',
   },
@@ -178,15 +192,10 @@ export function TutorialOnboarding() {
                   <div
                     key={i}
                     className={`h-1.5 rounded-full transition-all duration-300 ${
-                      i === currentStep
-                        ? 'w-6'
-                        : i < currentStep
-                        ? 'w-3'
-                        : 'w-3'
+                      i === currentStep ? 'w-6' : i < currentStep ? 'w-3' : 'w-3'
                     }`}
                     style={{
-                      backgroundColor:
-                        i <= currentStep ? '#0D7377' : 'rgba(255,255,255,0.15)',
+                      backgroundColor: i <= currentStep ? '#0D7377' : 'rgba(255,255,255,0.15)',
                     }}
                   />
                 ))}
@@ -222,9 +231,7 @@ export function TutorialOnboarding() {
                   </h2>
 
                   {/* Description */}
-                  <p className="text-white/70 text-sm leading-relaxed px-2">
-                    {step.description}
-                  </p>
+                  <p className="text-white/70 text-sm leading-relaxed px-2">{step.description}</p>
                 </motion.div>
               </AnimatePresence>
 

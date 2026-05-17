@@ -114,7 +114,11 @@ export function useMealValidated() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (params: { recipeId: string; durationMinutes?: number; dayCompleted?: boolean }) => {
+    mutationFn: async (params: {
+      recipeId: string;
+      durationMinutes?: number;
+      dayCompleted?: boolean;
+    }) => {
       const { data, error } = await supabase.functions.invoke('meal-validated', {
         body: params,
       });
@@ -220,9 +224,11 @@ export function useConsumeCredit() {
       queryClient.invalidateQueries({ queryKey: ['gamification-dashboard'] });
     },
     onError: (error: any) => {
-      toast.error(error.message === 'insufficient_credits' 
-        ? 'Pas assez de crédits! Convertissez vos points ou achetez des crédits.'
-        : 'Failed to use credit');
+      toast.error(
+        error.message === 'insufficient_credits'
+          ? 'Pas assez de crédits! Convertissez vos points ou achetez des crédits.'
+          : 'Failed to use credit'
+      );
     },
   });
 }

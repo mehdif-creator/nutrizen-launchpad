@@ -1,6 +1,6 @@
 /**
  * Recipe Macros Page
- * 
+ *
  * Displays all recipe macros with cursor-based pagination.
  * Route: /recipes/macros
  */
@@ -24,8 +24,8 @@ export default function RecipeMacros() {
               <h1 className="text-3xl font-bold">Macros des Recettes</h1>
             </div>
             <p className="text-muted-foreground">
-              Consultez les valeurs nutritionnelles calculées pour chaque recette.
-              Les données sont issues de la base CIQUAL et mises à jour régulièrement.
+              Consultez les valeurs nutritionnelles calculées pour chaque recette. Les données sont
+              issues de la base CIQUAL et mises à jour régulièrement.
             </p>
           </div>
 

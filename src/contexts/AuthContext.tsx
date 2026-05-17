@@ -1,4 +1,12 @@
-import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+  ReactNode,
+} from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -51,100 +59,115 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // De-dupe initial session side effects (subscription refresh + daily login) per user
   const initialSetupDoneForUser = useRef<string | null>(null);
 
-  const checkAdminRole = useCallback(async (userId: string, forceRefresh = false): Promise<boolean> => {
-    if (!userId) {
-      setIsAdmin(false);
-      setAdminLoading(false);
-      return false;
-    }
-
-    // Only return cached result if it was TRUE (never cache false — allows retry)
-    if (!forceRefresh && adminCheckResultRef.current.has(userId)) {
-      const cached = adminCheckResultRef.current.get(userId)!;
-      if (cached === true) {
-        setIsAdmin(true);
+  const checkAdminRole = useCallback(
+    async (userId: string, forceRefresh = false): Promise<boolean> => {
+      if (!userId) {
+        setIsAdmin(false);
         setAdminLoading(false);
-        return true;
-      }
-    }
-
-    setAdminLoading(true);
-    try {
-      console.log('[checkAdminRole] Checking admin for userId:', userId);
-
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .eq('role', 'admin')
-        .maybeSingle();
-
-      console.log('[checkAdminRole] Result:', { data, error });
-
-      if (error) {
-        console.error('[checkAdminRole] Query error:', error.message, error.code);
-        setIsAdmin(false);
         return false;
       }
 
-      if (!data) {
-        console.warn('[checkAdminRole] No admin row found for:', userId);
-        setIsAdmin(false);
-        return false;
+      // Only return cached result if it was TRUE (never cache false — allows retry)
+      if (!forceRefresh && adminCheckResultRef.current.has(userId)) {
+        const cached = adminCheckResultRef.current.get(userId)!;
+        if (cached === true) {
+          setIsAdmin(true);
+          setAdminLoading(false);
+          return true;
+        }
       }
 
-      const result = data.role === 'admin';
-      console.log('[checkAdminRole] isAdmin:', result);
-      setIsAdmin(result);
-      if (result) adminCheckResultRef.current.set(userId, true);
-      return result;
-    } catch (err) {
-      console.error('[checkAdminRole] Unexpected error:', err instanceof Error ? err.message : err);
-      setIsAdmin(false);
-      return false;
-    } finally {
-      setAdminLoading(false);
-    }
-  }, []);
+      setAdminLoading(true);
+      try {
+        console.log('[checkAdminRole] Checking admin for userId:', userId);
 
-  const refreshSubscription = useCallback(async (sessionOverride?: Session | null) => {
-    const currentSession = sessionOverride !== undefined ? sessionOverride : session;
-    if (!currentSession) {
-      setSubscription(null);
-      return;
-    }
-    try {
-      const { data, error } = await supabase.functions.invoke('check-subscription', {
-        headers: { Authorization: `Bearer ${currentSession.access_token}` },
-      });
-      if (error) {
-        logger.error('Error checking subscription', error);
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .eq('role', 'admin')
+          .maybeSingle();
+
+        console.log('[checkAdminRole] Result:', { data, error });
+
+        if (error) {
+          console.error('[checkAdminRole] Query error:', error.message, error.code);
+          setIsAdmin(false);
+          return false;
+        }
+
+        if (!data) {
+          console.warn('[checkAdminRole] No admin row found for:', userId);
+          setIsAdmin(false);
+          return false;
+        }
+
+        const result = data.role === 'admin';
+        console.log('[checkAdminRole] isAdmin:', result);
+        setIsAdmin(result);
+        if (result) adminCheckResultRef.current.set(userId, true);
+        return result;
+      } catch (err) {
+        console.error(
+          '[checkAdminRole] Unexpected error:',
+          err instanceof Error ? err.message : err
+        );
+        setIsAdmin(false);
+        return false;
+      } finally {
+        setAdminLoading(false);
+      }
+    },
+    []
+  );
+
+  const refreshSubscription = useCallback(
+    async (sessionOverride?: Session | null) => {
+      const currentSession = sessionOverride !== undefined ? sessionOverride : session;
+      if (!currentSession) {
+        setSubscription(null);
         return;
       }
-      setSubscription(data);
-    } catch (error) {
-      logger.error('Error refreshing subscription', error instanceof Error ? error : new Error(String(error)));
-    }
-  }, [session]);
+      try {
+        const { data, error } = await supabase.functions.invoke('check-subscription', {
+          headers: { Authorization: `Bearer ${currentSession.access_token}` },
+        });
+        if (error) {
+          logger.error('Error checking subscription', error);
+          return;
+        }
+        setSubscription(data);
+      } catch (error) {
+        logger.error(
+          'Error refreshing subscription',
+          error instanceof Error ? error : new Error(String(error))
+        );
+      }
+    },
+    [session]
+  );
 
   // C) Run subscription refresh + daily login exactly once per user
-  const runInitialSetupOnce = useCallback((sess: Session) => {
-    const uid = sess.user.id;
-    if (initialSetupDoneForUser.current === uid) return;
-    initialSetupDoneForUser.current = uid;
+  const runInitialSetupOnce = useCallback(
+    (sess: Session) => {
+      const uid = sess.user.id;
+      if (initialSetupDoneForUser.current === uid) return;
+      initialSetupDoneForUser.current = uid;
 
-    refreshSubscription(sess);
+      refreshSubscription(sess);
 
-    // Award daily login via V2 gamification system (idempotent per day)
-    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' });
-    (supabase.rpc as Function)('fn_emit_gamification_event', {
-      p_event_type: 'APP_OPEN',
-      p_meta: {},
-      p_idempotency_key: `app_open:${uid}:${today}`,
-    }).then(({ error }: any) => {
-      if (error) logger.warn('Daily login gamification event failed', error);
-    });
-  }, [refreshSubscription]);
+      // Award daily login via V2 gamification system (idempotent per day)
+      const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' });
+      (supabase.rpc as Function)('fn_emit_gamification_event', {
+        p_event_type: 'APP_OPEN',
+        p_meta: {},
+        p_idempotency_key: `app_open:${uid}:${today}`,
+      }).then(({ error }: any) => {
+        if (error) logger.warn('Daily login gamification event failed', error);
+      });
+    },
+    [refreshSubscription]
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -159,11 +182,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     }, 10000);
 
-    const handleSession = async (
-      newSession: Session | null,
-      event: string,
-      source: string,
-    ) => {
+    const handleSession = async (newSession: Session | null, event: string, source: string) => {
       if (!mounted) return;
       clearTimeout(loadingTimeout);
 
@@ -198,39 +217,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     // Register listener FIRST so we never miss INITIAL_SESSION with PKCE
-    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
-        if (!mounted) return;
+    const {
+      data: { subscription: authSub },
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
+      if (!mounted) return;
 
-        // PKCE/session restore can briefly emit INITIAL_SESSION with no session yet.
-        // Do not resolve auth from that placeholder event; let fallback getSession confirm.
-        if (event === 'INITIAL_SESSION' && !newSession) {
-          logger.warn('INITIAL_SESSION arrived without session, waiting for fallback getSession');
-          return;
-        }
-
-        resolvedByListener = true;
-
-        window.setTimeout(() => {
-          if (!mounted) return;
-          void handleSession(newSession, event, 'listener');
-        }, 0);
+      // PKCE/session restore can briefly emit INITIAL_SESSION with no session yet.
+      // Do not resolve auth from that placeholder event; let fallback getSession confirm.
+      if (event === 'INITIAL_SESSION' && !newSession) {
+        logger.warn('INITIAL_SESSION arrived without session, waiting for fallback getSession');
+        return;
       }
-    );
+
+      resolvedByListener = true;
+
+      window.setTimeout(() => {
+        if (!mounted) return;
+        void handleSession(newSession, event, 'listener');
+      }, 0);
+    });
 
     // Fallback: if the listener hasn't fired after a short delay, use getSession
     const fallbackTimer = setTimeout(() => {
       if (resolvedByListener || !mounted) return;
-      supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
-        if (resolvedByListener || !mounted) return;
-        await handleSession(currentSession, 'FALLBACK', 'getSession');
-      }).catch((err) => {
-        logger.error('getSession failed', err instanceof Error ? err : new Error(String(err)));
-        if (mounted) {
-          setLoading(false);
-          setAdminLoading(false);
-        }
-      });
+      supabase.auth
+        .getSession()
+        .then(async ({ data: { session: currentSession } }) => {
+          if (resolvedByListener || !mounted) return;
+          await handleSession(currentSession, 'FALLBACK', 'getSession');
+        })
+        .catch((err) => {
+          logger.error('getSession failed', err instanceof Error ? err : new Error(String(err)));
+          if (mounted) {
+            setLoading(false);
+            setAdminLoading(false);
+          }
+        });
     }, 1000);
 
     return () => {
@@ -267,12 +289,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, checkAdminRole]);
 
   return (
-    <AuthContext.Provider value={{
-      user, session, loading, adminLoading, isAdmin, subscription,
-      refreshSubscription: () => refreshSubscription(),
-      recheckAdmin,
-      signOut
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        loading,
+        adminLoading,
+        isAdmin,
+        subscription,
+        refreshSubscription: () => refreshSubscription(),
+        recheckAdmin,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

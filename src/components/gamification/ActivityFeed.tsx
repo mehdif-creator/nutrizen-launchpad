@@ -21,7 +21,11 @@ const EVENT_CONFIG: Record<string, { icon: any; color: string; label: string }> 
   APP_OPEN: { icon: Sparkles, color: 'text-blue-500', label: 'App ouverte' },
   MEAL_VALIDATED: { icon: Calendar, color: 'text-green-500', label: 'Repas validé' },
   DAY_COMPLETED: { icon: Trophy, color: 'text-purple-500', label: 'Journée complète' },
-  WEEKLY_CHALLENGE_COMPLETED: { icon: Trophy, color: 'text-yellow-500', label: 'Challenge terminé' },
+  WEEKLY_CHALLENGE_COMPLETED: {
+    icon: Trophy,
+    color: 'text-yellow-500',
+    label: 'Challenge terminé',
+  },
   SOCIAL_SHARE: { icon: Share2, color: 'text-pink-500', label: 'Partage social' },
   POINTS_REDEEMED_TO_CREDITS: { icon: Coins, color: 'text-primary', label: 'Points convertis' },
   STREAK_MILESTONE: { icon: Flame, color: 'text-orange-500', label: 'Palier de série' },
@@ -43,7 +47,7 @@ export function ActivityFeed({ events }: ActivityFeedProps) {
           {events.map((event, index) => {
             const config = EVENT_CONFIG[event.type] || EVENT_CONFIG.APP_OPEN;
             const Icon = config.icon;
-            
+
             return (
               <div
                 key={index}
@@ -57,27 +61,37 @@ export function ActivityFeed({ events }: ActivityFeedProps) {
                     <div className="flex-1">
                       <p className="text-sm font-medium">{config.label}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {formatDistanceToNow(new Date(event.at), { 
+                        {formatDistanceToNow(new Date(event.at), {
                           addSuffix: true,
-                          locale: fr 
+                          locale: fr,
                         })}
                       </p>
                     </div>
                     <div className="flex gap-2">
                       {event.points !== 0 && (
-                        <Badge 
-                          variant="outline" 
-                          className={event.points > 0 ? 'text-green-500 border-green-500' : 'text-red-500 border-red-500'}
+                        <Badge
+                          variant="outline"
+                          className={
+                            event.points > 0
+                              ? 'text-green-500 border-green-500'
+                              : 'text-red-500 border-red-500'
+                          }
                         >
-                          {event.points > 0 ? '+' : ''}{event.points} pts
+                          {event.points > 0 ? '+' : ''}
+                          {event.points} pts
                         </Badge>
                       )}
                       {event.credits !== 0 && (
-                        <Badge 
-                          variant="outline" 
-                          className={event.credits > 0 ? 'text-primary border-primary' : 'text-muted-foreground'}
+                        <Badge
+                          variant="outline"
+                          className={
+                            event.credits > 0
+                              ? 'text-primary border-primary'
+                              : 'text-muted-foreground'
+                          }
                         >
-                          {event.credits > 0 ? '+' : ''}{event.credits} crédits
+                          {event.credits > 0 ? '+' : ''}
+                          {event.credits} crédits
                         </Badge>
                       )}
                     </div>

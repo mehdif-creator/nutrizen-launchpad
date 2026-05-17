@@ -8,7 +8,7 @@ interface MobileStickyCTAProps {
 
 export const MobileStickyCTA = ({ onCtaClick }: MobileStickyCTAProps) => {
   const { t } = useLanguage();
-  
+
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 p-4 bg-background/95 backdrop-blur-sm border-t border-border shadow-lg md:hidden">
       <div className="container flex items-center justify-between gap-3">

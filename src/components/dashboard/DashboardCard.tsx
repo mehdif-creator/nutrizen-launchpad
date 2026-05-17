@@ -83,12 +83,7 @@ export function DashboardCard({
           </div>
           <p className="text-sm text-destructive mb-3">{errorMessage}</p>
           {onRetry && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onRetry}
-              disabled={retrying}
-            >
+            <Button size="sm" variant="outline" onClick={onRetry} disabled={retrying}>
               <RefreshCw className={cn('h-4 w-4 mr-2', retrying && 'animate-spin')} />
               {retrying ? 'Réessai...' : 'Réessayer'}
             </Button>

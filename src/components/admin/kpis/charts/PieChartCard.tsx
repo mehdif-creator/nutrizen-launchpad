@@ -1,13 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { BreakdownRow } from '@/lib/adminKpis';
 
 interface PieChartCardProps {
@@ -87,16 +80,12 @@ export function PieChartCard({
               outerRadius={100}
               dataKey="value"
               nameKey="segment"
-              label={({ name, percent }) => 
+              label={({ name, percent }) =>
                 showPercentage ? `${name}: ${(percent * 100).toFixed(0)}%` : name
               }
             >
               {data.map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
-                  fill={colors[index % colors.length]}
-                  strokeWidth={2}
-                />
+                <Cell key={`cell-${index}`} fill={colors[index % colors.length]} strokeWidth={2} />
               ))}
             </Pie>
             <Tooltip
@@ -106,8 +95,8 @@ export function PieChartCard({
                 borderRadius: '8px',
               }}
               formatter={(value: number, name: string) => [
-                `${formatValue(value)} (${data.find(d => d.segment === name)?.percentage?.toFixed(1)}%)`,
-                name
+                `${formatValue(value)} (${data.find((d) => d.segment === name)?.percentage?.toFixed(1)}%)`,
+                name,
               ]}
             />
             <Legend />

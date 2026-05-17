@@ -24,9 +24,7 @@ export default function Callback() {
     const urlError = queryParams.get('error') || hashParams.get('error');
     if (urlError) {
       const desc =
-        queryParams.get('error_description') ||
-        hashParams.get('error_description') ||
-        urlError;
+        queryParams.get('error_description') || hashParams.get('error_description') || urlError;
       setError(decodeURIComponent(desc.replace(/\+/g, ' ')));
       return;
     }
@@ -50,7 +48,9 @@ export default function Callback() {
 
     const checkExistingSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (session) {
           console.log('[AuthCallback] Session already available, redirecting...');
           doRedirect();
@@ -65,17 +65,20 @@ export default function Callback() {
 
     // Let Supabase handle the PKCE exchange automatically.
     // We just listen for the session to be established.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('[AuthCallback] Auth event:', event, 'User:', session?.user?.email);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('[AuthCallback] Auth event:', event, 'User:', session?.user?.email);
 
-        if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION')) {
-          console.log('[AuthCallback] Sign-in successful, redirecting...');
-          subscription.unsubscribe();
-          doRedirect();
-        }
-      },
-    );
+      if (
+        session &&
+        (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION')
+      ) {
+        console.log('[AuthCallback] Sign-in successful, redirecting...');
+        subscription.unsubscribe();
+        doRedirect();
+      }
+    });
 
     void checkExistingSession();
 
@@ -83,7 +86,9 @@ export default function Callback() {
     // before the listener is registered, or the event may be missed)
     const pollInterval = setInterval(async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (session) {
           console.log('[AuthCallback] Session found via polling, redirecting...');
           clearInterval(pollInterval);
@@ -125,10 +130,7 @@ export default function Callback() {
             <h2 className="text-xl font-semibold text-foreground">Erreur d'authentification</h2>
             <p className="text-muted-foreground">{error}</p>
             <div className="space-y-2">
-              <Button
-                onClick={() => navigate('/auth/login', { replace: true })}
-                className="w-full"
-              >
+              <Button onClick={() => navigate('/auth/login', { replace: true })} className="w-full">
                 Retour à la connexion
               </Button>
               <Button

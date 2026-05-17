@@ -50,7 +50,14 @@ export const STATUS_ORDER: Record<string, number> = {
   failed: -1,
 };
 
-export const STATUS_LABELS: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; className?: string }> = {
+export const STATUS_LABELS: Record<
+  string,
+  {
+    label: string;
+    variant: 'default' | 'secondary' | 'destructive' | 'outline';
+    className?: string;
+  }
+> = {
   pending: { label: 'En attente', variant: 'secondary' },
   serp_done: { label: 'SERP OK', variant: 'default', className: 'bg-blue-600' },
   brief_done: { label: 'Brief OK', variant: 'default', className: 'bg-blue-600' },
@@ -73,14 +80,32 @@ export interface ExpandedKeyword {
 }
 
 /** Map status → next edge function to call */
-export const NEXT_STEP: Record<string, { fn: string; label: string; payload: (a: SeoArticle) => Record<string, unknown> } | null> = {
+export const NEXT_STEP: Record<
+  string,
+  { fn: string; label: string; payload: (a: SeoArticle) => Record<string, unknown> } | null
+> = {
   pending: null, // handled at creation
   serp_done: { fn: 'seo-brief', label: 'Générer le brief', payload: (a) => ({ article_id: a.id }) },
   brief_done: { fn: 'seo-outline', label: 'Créer le plan', payload: (a) => ({ article_id: a.id }) },
-  outline_done: { fn: 'seo-image-gen', label: 'Générer les images', payload: (a) => ({ article_id: a.id }) },
-  images_done: { fn: 'seo-draft', label: 'Rédiger l\'article', payload: (a) => ({ article_id: a.id, cta_url: window.location.origin }) },
+  outline_done: {
+    fn: 'seo-image-gen',
+    label: 'Générer les images',
+    payload: (a) => ({ article_id: a.id }),
+  },
+  images_done: {
+    fn: 'seo-draft',
+    label: "Rédiger l'article",
+    payload: (a) => ({ article_id: a.id, cta_url: window.location.origin }),
+  },
   draft_done: { fn: 'seo-qa', label: 'Lancer le QA', payload: (a) => ({ article_id: a.id }) },
 };
 
-export const AUTO_PIPELINE_SEQUENCE = ['seo-serp-research', 'seo-brief', 'seo-outline', 'seo-image-gen', 'seo-draft', 'seo-qa'] as const;
+export const AUTO_PIPELINE_SEQUENCE = [
+  'seo-serp-research',
+  'seo-brief',
+  'seo-outline',
+  'seo-image-gen',
+  'seo-draft',
+  'seo-qa',
+] as const;
 export const AUTO_PIPELINE_LABELS = ['SERP', 'Brief', 'Plan', 'Images', 'Brouillon', 'QA'] as const;

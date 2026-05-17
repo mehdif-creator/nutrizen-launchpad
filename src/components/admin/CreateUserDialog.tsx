@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -50,7 +56,7 @@ export const CreateUserDialog = ({ onUserCreated }: CreateUserDialogProps) => {
       console.error('Error creating user:', error);
       toast({
         title: 'Erreur',
-        description: error instanceof Error ? error.message : 'Impossible de créer l\'utilisateur',
+        description: error instanceof Error ? error.message : "Impossible de créer l'utilisateur",
         variant: 'destructive',
       });
     } finally {

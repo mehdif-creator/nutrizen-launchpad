@@ -55,13 +55,13 @@ export function getScaleFactor(householdFactor: number, baseServings: number = 1
  */
 export function formatQuantity(value: number, decimals: number = 1): string {
   if (value === 0) return '0';
-  
+
   // For values >= 10, no decimals needed
   if (value >= 10) return Math.round(value).toString();
-  
+
   // For small values, use specified decimals
   const rounded = Math.round(value * Math.pow(10, decimals)) / Math.pow(10, decimals);
-  
+
   // Remove trailing zeros
   return rounded.toString();
 }
@@ -87,10 +87,7 @@ export interface NutritionValues {
   fibers?: number | null;
 }
 
-export function scaleNutrition(
-  nutrition: NutritionValues,
-  scale: number
-): NutritionValues {
+export function scaleNutrition(nutrition: NutritionValues, scale: number): NutritionValues {
   return {
     calories: nutrition.calories ? Math.round(nutrition.calories * scale) : null,
     proteins: nutrition.proteins ? Math.round(nutrition.proteins * scale) : null,
@@ -108,11 +105,11 @@ export function scaleNutrition(
  */
 export function scaleIngredientText(ingredientText: string, scale: number): string {
   if (scale === 1) return ingredientText;
-  
+
   // Match leading numbers, fractions, and ranges
   const quantityPattern = /^(\d+(?:[.,]\d+)?(?:\s*[-–]\s*\d+(?:[.,]\d+)?)?)/;
   const match = ingredientText.match(quantityPattern);
-  
+
   if (match) {
     const originalQty = parseFloat(match[1].replace(',', '.').split(/[-–]/)[0]);
     if (!isNaN(originalQty)) {
@@ -121,11 +118,11 @@ export function scaleIngredientText(ingredientText: string, scale: number): stri
       return ingredientText.replace(quantityPattern, formattedQty);
     }
   }
-  
+
   // Check for fraction-like patterns (1/2, 3/4, etc.)
   const fractionPattern = /^(\d+)\/(\d+)/;
   const fractionMatch = ingredientText.match(fractionPattern);
-  
+
   if (fractionMatch) {
     const numerator = parseInt(fractionMatch[1]);
     const denominator = parseInt(fractionMatch[2]);
@@ -134,7 +131,7 @@ export function scaleIngredientText(ingredientText: string, scale: number): stri
     const formattedQty = formatQuantity(scaledValue, 2);
     return ingredientText.replace(fractionPattern, formattedQty);
   }
-  
+
   // No quantity found - return unchanged
   return ingredientText;
 }
@@ -154,12 +151,12 @@ export function scaleIngredient(ingredient: IngredientItem | string, scale: numb
   if (typeof ingredient === 'string') {
     return scaleIngredientText(ingredient, scale);
   }
-  
+
   // Handle object format
   const name = ingredient.name || ingredient.ingredient || '';
   const qty = ingredient.quantity;
   const unit = ingredient.unit || '';
-  
+
   if (qty !== undefined && qty !== null) {
     const numQty = typeof qty === 'number' ? qty : parseFloat(String(qty));
     if (!isNaN(numQty)) {
@@ -167,12 +164,12 @@ export function scaleIngredient(ingredient: IngredientItem | string, scale: numb
       return `${scaledQty}${unit ? ' ' + unit : ''} ${name}`.trim();
     }
   }
-  
+
   // Fallback to raw text or name
   if (ingredient.raw) {
     return scaleIngredientText(ingredient.raw, scale);
   }
-  
+
   return name;
 }
 
@@ -184,22 +181,22 @@ export function scaleIngredient(ingredient: IngredientItem | string, scale: numb
  */
 export function formatHouseholdDisplay(adults: number, children: number): string {
   const effectiveSize = getHouseholdPortionFactor({ adults, children });
-  
+
   const parts: string[] = [];
-  
+
   if (adults > 0) {
     parts.push(`${adults} adulte${adults > 1 ? 's' : ''}`);
   }
-  
+
   if (children > 0) {
     parts.push(`${children} enfant${children > 1 ? 's' : ''}`);
   }
-  
+
   const base = parts.join(' + ');
-  
+
   if (adults !== 1 || children !== 0) {
     return `${base} (≈ ${formatQuantity(effectiveSize, 1)})`;
   }
-  
+
   return base || '1 personne';
 }

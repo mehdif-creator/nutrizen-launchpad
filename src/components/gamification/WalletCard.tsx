@@ -47,7 +47,7 @@ export function WalletCard({ points, credits, lifetimePoints, onBuyCredits }: Wa
               <span className="text-sm text-muted-foreground">Points</span>
             </div>
             <div className="text-3xl font-bold">{points}</div>
-            
+
             {/* Progress to next 100 */}
             <div className="mt-2">
               <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -87,12 +87,8 @@ export function WalletCard({ points, credits, lifetimePoints, onBuyCredits }: Wa
               <span className="text-sm text-muted-foreground">Crédits</span>
             </div>
             <div className="text-3xl font-bold">{credits}</div>
-            <p className="text-xs text-muted-foreground mt-2">
-              1 crédit = 1 Swap/Scan/Frigo
-            </p>
-            <p className="text-xs text-muted-foreground">
-              €5 = 15 crédits
-            </p>
+            <p className="text-xs text-muted-foreground mt-2">1 crédit = 1 Swap/Scan/Frigo</p>
+            <p className="text-xs text-muted-foreground">€5 = 15 crédits</p>
           </motion.div>
         </div>
 
@@ -100,7 +96,8 @@ export function WalletCard({ points, credits, lifetimePoints, onBuyCredits }: Wa
         <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
           <TrendingUp className="h-4 w-4 text-primary" />
           <span className="text-sm text-muted-foreground">
-            Total à vie: <span className="font-semibold text-foreground">{lifetimePoints}</span> points gagnés
+            Total à vie: <span className="font-semibold text-foreground">{lifetimePoints}</span>{' '}
+            points gagnés
           </span>
         </div>
       </div>

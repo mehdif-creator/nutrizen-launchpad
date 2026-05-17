@@ -7,7 +7,19 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
-import { Clock, Users, Flame, ChefHat, ArrowLeft, Utensils, BarChart3, RefreshCw, Download, Share2, Loader2 } from 'lucide-react';
+import {
+  Clock,
+  Users,
+  Flame,
+  ChefHat,
+  ArrowLeft,
+  Utensils,
+  BarChart3,
+  RefreshCw,
+  Download,
+  Share2,
+  Loader2,
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getRecipeImageUrl } from '@/lib/images';
 import { RecipeMacrosCard } from '@/components/app/RecipeMacrosCard';
@@ -68,20 +80,24 @@ export default function RecipeDetail() {
   useEffect(() => {
     const loadRecipe = async () => {
       if (!id) return;
-      
+
       // AI-generated recipes have IDs like "ai-0-RecipeTitle"
       if (id.startsWith('ai-')) {
         try {
           await loadAiRecipe(id);
         } catch (err) {
           console.error('Error loading AI recipe:', err);
-          toast({ title: "Erreur", description: "Impossible de charger la recette IA.", variant: "destructive" });
+          toast({
+            title: 'Erreur',
+            description: 'Impossible de charger la recette IA.',
+            variant: 'destructive',
+          });
         } finally {
           setLoading(false);
         }
         return;
       }
-      
+
       try {
         const { data, error } = await supabase.from('recipes').select('*').eq('id', id).single();
         if (error) throw error;
@@ -89,15 +105,19 @@ export default function RecipeDetail() {
         if (data) awardRecipeView(id);
       } catch (error) {
         console.error('Error loading recipe:', error);
-        toast({ title: "Erreur", description: "Impossible de charger la recette.", variant: "destructive" });
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de charger la recette.',
+          variant: 'destructive',
+        });
       } finally {
         setLoading(false);
       }
     };
-    
+
     const loadAiRecipe = async (aiId: string) => {
       if (!user?.id) return;
-      
+
       // Fetch current weekly menu payload
       const { data: menuData, error } = await supabase
         .from('user_weekly_menus')
@@ -106,14 +126,14 @@ export default function RecipeDetail() {
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
-      
+
       if (error || !menuData?.payload) {
         throw new Error('Menu introuvable');
       }
-      
+
       const payload = menuData.payload as any;
       const days = payload?.days || [];
-      
+
       // Search through all days for matching recipe
       for (const day of days) {
         for (const meal of [day.lunch, day.dinner]) {
@@ -129,10 +149,26 @@ export default function RecipeDetail() {
               prep_time_min: meal.prep_min || meal.temps_preparation_min,
               total_time_min: meal.total_min || meal.temps_preparation_min,
               servings: meal.servings_used || meal.base_servings || meal.portions,
-              calories_kcal: meal.kcal_par_portion || (meal.calories && meal.servings_used ? Math.round(meal.calories / meal.servings_used) : meal.calories),
-              proteins_g: meal.macros_par_portion?.proteines_g || (meal.proteins_g && meal.servings_used ? Math.round(meal.proteins_g / meal.servings_used) : meal.proteins_g),
-              carbs_g: meal.macros_par_portion?.glucides_g || (meal.carbs_g && meal.servings_used ? Math.round(meal.carbs_g / meal.servings_used) : meal.carbs_g),
-              fats_g: meal.macros_par_portion?.lipides_g || (meal.fats_g && meal.servings_used ? Math.round(meal.fats_g / meal.servings_used) : meal.fats_g),
+              calories_kcal:
+                meal.kcal_par_portion ||
+                (meal.calories && meal.servings_used
+                  ? Math.round(meal.calories / meal.servings_used)
+                  : meal.calories),
+              proteins_g:
+                meal.macros_par_portion?.proteines_g ||
+                (meal.proteins_g && meal.servings_used
+                  ? Math.round(meal.proteins_g / meal.servings_used)
+                  : meal.proteins_g),
+              carbs_g:
+                meal.macros_par_portion?.glucides_g ||
+                (meal.carbs_g && meal.servings_used
+                  ? Math.round(meal.carbs_g / meal.servings_used)
+                  : meal.carbs_g),
+              fats_g:
+                meal.macros_par_portion?.lipides_g ||
+                (meal.fats_g && meal.servings_used
+                  ? Math.round(meal.fats_g / meal.servings_used)
+                  : meal.fats_g),
               ingredients: (meal.ingredients || []).map((ing: any) => ({
                 name: ing.nom,
                 quantity: parseFloat(ing.quantite) || null,
@@ -146,10 +182,10 @@ export default function RecipeDetail() {
           }
         }
       }
-      
+
       throw new Error('Recette IA introuvable dans le menu');
     };
-    
+
     loadRecipe();
   }, [id, user?.id, toast, awardRecipeView]);
 
@@ -187,7 +223,11 @@ export default function RecipeDetail() {
       await navigator.clipboard.writeText(shareUrl);
       toast({ title: 'Lien copié ! 🎉', description: 'Partage cette recette avec tes amis.' });
     } catch (err: any) {
-      toast({ title: 'Erreur', description: err.message || 'Impossible de créer le lien.', variant: 'destructive' });
+      toast({
+        title: 'Erreur',
+        description: err.message || 'Impossible de créer le lien.',
+        variant: 'destructive',
+      });
     } finally {
       setSharing(false);
     }
@@ -220,7 +260,10 @@ export default function RecipeDetail() {
     );
   }
 
-  const imageUrl = getRecipeImageUrl({ image_url: recipe.image_url, image_path: recipe.image_path });
+  const imageUrl = getRecipeImageUrl({
+    image_url: recipe.image_url,
+    image_path: recipe.image_path,
+  });
   const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
   const instructions = Array.isArray(recipe.instructions) ? recipe.instructions : [];
 
@@ -234,9 +277,22 @@ export default function RecipeDetail() {
               <ArrowLeft className="h-4 w-4 mr-2" /> Retour
             </Button>
             <div className="flex items-center gap-2">
-              <FavoriteButton isFavorite={isFavorite(recipe.id)} onClick={() => toggleFavorite(recipe.id)} size="default" />
-              <Button variant="outline" onClick={handleShareRecipe} disabled={sharing} className="gap-2">
-                {sharing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
+              <FavoriteButton
+                isFavorite={isFavorite(recipe.id)}
+                onClick={() => toggleFavorite(recipe.id)}
+                size="default"
+              />
+              <Button
+                variant="outline"
+                onClick={handleShareRecipe}
+                disabled={sharing}
+                className="gap-2"
+              >
+                {sharing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Share2 className="h-4 w-4" />
+                )}
                 <span className="hidden sm:inline">Partager</span>
               </Button>
               <Button variant="outline" onClick={handleExportPdf} className="gap-2">
@@ -249,8 +305,14 @@ export default function RecipeDetail() {
           {/* Hero Image */}
           {imageUrl && (
             <div className="w-full rounded-2xl overflow-hidden mb-6">
-              <img src={imageUrl} alt={recipe.title} className="w-full rounded-2xl object-cover max-h-[420px]"
-                onError={(e) => { (e.target as HTMLImageElement).src = '/img/hero-default.jpg'; }} />
+              <img
+                src={imageUrl}
+                alt={recipe.title}
+                className="w-full rounded-2xl object-cover max-h-[420px]"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/img/hero-default.jpg';
+                }}
+              />
             </div>
           )}
 
@@ -259,8 +321,13 @@ export default function RecipeDetail() {
             <h1 className="text-3xl sm:text-4xl font-bold mb-4">{recipe.title}</h1>
             <div className="flex flex-wrap gap-2 mb-6">
               {recipe.difficulty_level && (
-                <Badge variant="outline"><ChefHat className="h-3 w-3 mr-1" />
-                  {recipe.difficulty_level === 'beginner' ? 'Débutant' : recipe.difficulty_level === 'intermediate' ? 'Intermédiaire' : 'Expert'}
+                <Badge variant="outline">
+                  <ChefHat className="h-3 w-3 mr-1" />
+                  {recipe.difficulty_level === 'beginner'
+                    ? 'Débutant'
+                    : recipe.difficulty_level === 'intermediate'
+                      ? 'Intermédiaire'
+                      : 'Expert'}
                 </Badge>
               )}
               {recipe.cuisine_type && <Badge variant="outline">{recipe.cuisine_type}</Badge>}
@@ -271,30 +338,54 @@ export default function RecipeDetail() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {recipe.prep_time_min && (
                 <Card className="p-4">
-                  <div className="flex items-center gap-2 mb-1"><Clock className="h-4 w-4 text-primary" /><span className="text-sm text-muted-foreground">Préparation</span></div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Clock className="h-4 w-4 text-primary" />
+                    <span className="text-sm text-muted-foreground">Préparation</span>
+                  </div>
                   <div className="text-lg font-semibold">{recipe.prep_time_min} min</div>
                 </Card>
               )}
               {recipe.total_time_min && (
                 <Card className="p-4">
-                  <div className="flex items-center gap-2 mb-1"><Clock className="h-4 w-4 text-primary" /><span className="text-sm text-muted-foreground">Total</span></div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Clock className="h-4 w-4 text-primary" />
+                    <span className="text-sm text-muted-foreground">Total</span>
+                  </div>
                   <div className="text-lg font-semibold">{recipe.total_time_min} min</div>
                 </Card>
               )}
               {recipe.servings && (
                 <Card className="p-4">
-                  <div className="flex items-center gap-2 mb-1"><Users className="h-4 w-4 text-primary" /><span className="text-sm text-muted-foreground">Portions</span></div>
-                  <div className="text-lg font-semibold">
-                    {portionMultiplier !== 1 ? `${(recipe.servings * portionMultiplier).toFixed(1)}` : recipe.servings}
+                  <div className="flex items-center gap-2 mb-1">
+                    <Users className="h-4 w-4 text-primary" />
+                    <span className="text-sm text-muted-foreground">Portions</span>
                   </div>
-                  {portionMultiplier !== 1 && <div className="text-xs text-muted-foreground mt-1">Base : {recipe.servings} pers. × {portionMultiplier.toFixed(1)}</div>}
+                  <div className="text-lg font-semibold">
+                    {portionMultiplier !== 1
+                      ? `${(recipe.servings * portionMultiplier).toFixed(1)}`
+                      : recipe.servings}
+                  </div>
+                  {portionMultiplier !== 1 && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Base : {recipe.servings} pers. × {portionMultiplier.toFixed(1)}
+                    </div>
+                  )}
                 </Card>
               )}
               {recipe.calories_kcal && (
                 <Card className="p-4">
-                  <div className="flex items-center gap-2 mb-1"><Flame className="h-4 w-4 text-primary" /><span className="text-sm text-muted-foreground">Calories</span></div>
-                  <div className="text-lg font-semibold">{Math.round((recipe.calories_kcal || 0) * portionMultiplier)} kcal</div>
-                  {portionMultiplier !== 1 && <div className="text-xs text-muted-foreground">{recipe.calories_kcal} kcal/pers.</div>}
+                  <div className="flex items-center gap-2 mb-1">
+                    <Flame className="h-4 w-4 text-primary" />
+                    <span className="text-sm text-muted-foreground">Calories</span>
+                  </div>
+                  <div className="text-lg font-semibold">
+                    {Math.round((recipe.calories_kcal || 0) * portionMultiplier)} kcal
+                  </div>
+                  {portionMultiplier !== 1 && (
+                    <div className="text-xs text-muted-foreground">
+                      {recipe.calories_kcal} kcal/pers.
+                    </div>
+                  )}
                 </Card>
               )}
             </div>
@@ -303,9 +394,18 @@ export default function RecipeDetail() {
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="recipe" className="gap-1"><Utensils className="h-4 w-4" /><span className="hidden sm:inline">Recette</span></TabsTrigger>
-              <TabsTrigger value="macros" className="gap-1"><BarChart3 className="h-4 w-4" /><span className="hidden sm:inline">Macros</span></TabsTrigger>
-              <TabsTrigger value="substitutions" className="gap-1"><RefreshCw className="h-4 w-4" /><span className="hidden sm:inline">Substitutions</span></TabsTrigger>
+              <TabsTrigger value="recipe" className="gap-1">
+                <Utensils className="h-4 w-4" />
+                <span className="hidden sm:inline">Recette</span>
+              </TabsTrigger>
+              <TabsTrigger value="macros" className="gap-1">
+                <BarChart3 className="h-4 w-4" />
+                <span className="hidden sm:inline">Macros</span>
+              </TabsTrigger>
+              <TabsTrigger value="substitutions" className="gap-1">
+                <RefreshCw className="h-4 w-4" />
+                <span className="hidden sm:inline">Substitutions</span>
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="recipe" className="mt-6">
@@ -324,7 +424,8 @@ export default function RecipeDetail() {
                           const unit = ingredient.unit || '';
                           if (qty !== null) {
                             const scaled = qty * portionMultiplier;
-                            display = `${formatQuantity(scaled)}${unit ? ' ' + unit : ''} ${name}`.trim();
+                            display =
+                              `${formatQuantity(scaled)}${unit ? ' ' + unit : ''} ${name}`.trim();
                           } else {
                             display = name;
                           }
@@ -345,8 +446,14 @@ export default function RecipeDetail() {
                     <ol className="space-y-3">
                       {instructions.map((instruction: any, index: number) => (
                         <li key={index} className="flex gap-3">
-                          <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">{index + 1}</span>
-                          <span className="flex-1">{typeof instruction === 'string' ? instruction : instruction.step || instruction.instruction}</span>
+                          <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
+                            {index + 1}
+                          </span>
+                          <span className="flex-1">
+                            {typeof instruction === 'string'
+                              ? instruction
+                              : instruction.step || instruction.instruction}
+                          </span>
                         </li>
                       ))}
                     </ol>
@@ -354,14 +461,16 @@ export default function RecipeDetail() {
                 )}
               </div>
 
-              {(recipe.allergens?.length || recipe.appliances?.length) ? (
+              {recipe.allergens?.length || recipe.appliances?.length ? (
                 <Card className="p-6 mt-8">
                   {recipe.allergens && recipe.allergens.length > 0 && (
                     <div className="mb-4">
                       <h3 className="font-semibold mb-2">Allergènes</h3>
                       <div className="flex flex-wrap gap-2">
                         {recipe.allergens.map((allergen, index) => (
-                          <Badge key={index} variant="destructive">{allergen}</Badge>
+                          <Badge key={index} variant="destructive">
+                            {allergen}
+                          </Badge>
                         ))}
                       </div>
                     </div>
@@ -371,7 +480,9 @@ export default function RecipeDetail() {
                       <h3 className="font-semibold mb-2">Équipement nécessaire</h3>
                       <div className="flex flex-wrap gap-2">
                         {recipe.appliances.map((appliance, index) => (
-                          <Badge key={index} variant="secondary">{appliance}</Badge>
+                          <Badge key={index} variant="secondary">
+                            {appliance}
+                          </Badge>
                         ))}
                       </div>
                     </div>

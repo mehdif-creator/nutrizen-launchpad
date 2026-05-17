@@ -2,13 +2,7 @@ import { ReactNode, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { AppFooter } from '@/components/app/AppFooter';
-import { 
-  ArrowLeft, 
-  RefreshCw, 
-  Download, 
-  Calendar,
-  Loader2 
-} from 'lucide-react';
+import { ArrowLeft, RefreshCw, Download, Calendar, Loader2 } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -65,7 +59,7 @@ export function KpiDetailLayout({
               <p className="text-muted-foreground">{subtitle}</p>
             </div>
           </div>
-          
+
           {/* Controls */}
           <div className="flex flex-wrap items-center gap-3">
             {/* Date Range */}
@@ -81,10 +75,13 @@ export function KpiDetailLayout({
                 <SelectItem value="12m">12 mois</SelectItem>
               </SelectContent>
             </Select>
-            
+
             {/* Granularity */}
             {showGranularity && granularity && onGranularityChange && (
-              <Select value={granularity} onValueChange={(v) => onGranularityChange(v as Granularity)}>
+              <Select
+                value={granularity}
+                onValueChange={(v) => onGranularityChange(v as Granularity)}
+              >
                 <SelectTrigger className="w-28">
                   <SelectValue />
                 </SelectTrigger>
@@ -95,17 +92,17 @@ export function KpiDetailLayout({
                 </SelectContent>
               </Select>
             )}
-            
+
             {/* Extra filters */}
             {filters}
-            
+
             {/* Export */}
             {onExport && (
               <Button variant="outline" size="icon" onClick={onExport} disabled={isLoading}>
                 <Download className="h-4 w-4" />
               </Button>
             )}
-            
+
             {/* Refresh */}
             {onRefresh && (
               <Button variant="outline" size="icon" onClick={onRefresh} disabled={isLoading}>
@@ -118,7 +115,7 @@ export function KpiDetailLayout({
             )}
           </div>
         </div>
-        
+
         {/* Date range info */}
         <div className="mb-6 text-sm text-muted-foreground">
           Période: {from} → {to}
@@ -127,7 +124,7 @@ export function KpiDetailLayout({
         {/* Content */}
         {children}
       </main>
-      
+
       <AppFooter />
     </div>
   );

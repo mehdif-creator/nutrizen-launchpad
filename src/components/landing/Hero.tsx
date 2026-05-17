@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
-import { Star, Check, Clock, ShoppingBag, Heart, Zap } from "lucide-react";
-import type { HeroCopy } from "@/config/marketingCopy";
+import { Button } from '@/components/ui/button';
+import { Star, Check, Clock, ShoppingBag, Heart, Zap } from 'lucide-react';
+import type { HeroCopy } from '@/config/marketingCopy';
 
 interface HeroProps {
   onCtaClick: () => void;
@@ -31,9 +31,21 @@ export const Hero = ({ onCtaClick, onExampleClick, copy }: HeroProps) => {
   const h1 = copy?.h1 || 'Fini de te demander "On mange quoi ce soir?"';
   const subtitle = copy?.subtitle || 'Ton menu de la semaine personnalisé en 30 secondes.';
   const bullets = copy?.bullets || [
-    { icon: 'heart' as const, bold: 'Un menu qui plaît à toute la famille', text: "— fini les \"j'aime pas ça\"" },
-    { icon: 'shopping' as const, bold: 'Ta liste de courses générée', text: '— courses en 20 min chrono' },
-    { icon: 'clock' as const, bold: 'Des recettes de 15–30 min', text: '— réalistes, pas des recettes de magazine' },
+    {
+      icon: 'heart' as const,
+      bold: 'Un menu qui plaît à toute la famille',
+      text: '— fini les "j\'aime pas ça"',
+    },
+    {
+      icon: 'shopping' as const,
+      bold: 'Ta liste de courses générée',
+      text: '— courses en 20 min chrono',
+    },
+    {
+      icon: 'clock' as const,
+      bold: 'Des recettes de 15–30 min',
+      text: '— réalistes, pas des recettes de magazine',
+    },
   ];
   const primaryCta = copy?.primaryCta || 'Créer mon menu gratuit';
   const secondaryCta = copy?.secondaryCta || 'Voir un exemple de semaine';
@@ -66,9 +78,7 @@ export const Hero = ({ onCtaClick, onExampleClick, copy }: HeroProps) => {
               <h1 className="text-[clamp(1.75rem,5vw,3rem)] md:text-5xl lg:text-6xl font-bold leading-tight">
                 {h1}
               </h1>
-              <p className="text-xl text-muted-foreground font-medium">
-                {subtitle}
-              </p>
+              <p className="text-xl text-muted-foreground font-medium">{subtitle}</p>
               <div className="space-y-3 text-lg pt-2">
                 {bullets.map((bullet, index) => {
                   const Icon = iconMap[bullet.icon];

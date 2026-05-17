@@ -1,14 +1,14 @@
-import { useState, useCallback } from "react";
-import { AppHeader } from "@/components/app/AppHeader";
-import { AppFooter } from "@/components/app/AppFooter";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Camera, Upload, Loader2, RefreshCw, AlertCircle, Coins } from "lucide-react";
-import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
-import { callEdgeFunction } from "@/lib/edgeFn";
-import { InsufficientCreditsModal } from "@/components/app/InsufficientCreditsModal";
-import { FEATURE_COSTS } from "@/lib/featureCosts";
+import { useState, useCallback } from 'react';
+import { AppHeader } from '@/components/app/AppHeader';
+import { AppFooter } from '@/components/app/AppFooter';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Camera, Upload, Loader2, RefreshCw, AlertCircle, Coins } from 'lucide-react';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
+import { callEdgeFunction } from '@/lib/edgeFn';
+import { InsufficientCreditsModal } from '@/components/app/InsufficientCreditsModal';
+import { FEATURE_COSTS } from '@/lib/featureCosts';
 
 interface AnalysisResult {
   ingredients_identifies: { nom: string; quantite: string }[];
@@ -33,26 +33,28 @@ export default function InspiFrigo() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
-  const [creditsInfo, setCreditsInfo] = useState<{ current: number; required: number } | null>(null);
+  const [creditsInfo, setCreditsInfo] = useState<{ current: number; required: number } | null>(
+    null
+  );
 
   const queryClient = useQueryClient();
   const cost = FEATURE_COSTS.inspi_frigo;
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type.startsWith("image/")) {
+    if (file && file.type.startsWith('image/')) {
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
       setAnalysisResult(null);
       setError(null);
     } else {
-      toast.error("Veuillez sélectionner une image");
+      toast.error('Veuillez sélectionner une image');
     }
   };
 
   const handleAnalyze = useCallback(async () => {
     if (!selectedFile) {
-      toast.error("Veuillez sélectionner une image");
+      toast.error('Veuillez sélectionner une image');
       return;
     }
 
@@ -70,7 +72,9 @@ export default function InspiFrigo() {
       });
 
       // Call Edge Function (handles credits + OpenAI in one atomic call)
-      const result = await callEdgeFunction<AnalysisResult & { error_code?: string; current_balance?: number; required?: number }>('analyze-fridge-photo', {
+      const result = await callEdgeFunction<
+        AnalysisResult & { error_code?: string; current_balance?: number; required?: number }
+      >('analyze-fridge-photo', {
         image: base64,
       });
 
@@ -90,11 +94,10 @@ export default function InspiFrigo() {
       }
 
       setAnalysisResult(result);
-      toast.success("Analyse terminée !");
-      queryClient.invalidateQueries({ queryKey: ["credits"] });
-      queryClient.invalidateQueries({ queryKey: ["user-dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["gamification"] });
-
+      toast.success('Analyse terminée !');
+      queryClient.invalidateQueries({ queryKey: ['credits'] });
+      queryClient.invalidateQueries({ queryKey: ['user-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['gamification'] });
     } catch (err: any) {
       const msg = err?.message || "Erreur lors de l'analyse";
 
@@ -141,13 +144,13 @@ export default function InspiFrigo() {
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith("image/")) {
+    if (file && file.type.startsWith('image/')) {
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
       setAnalysisResult(null);
       setError(null);
     } else {
-      toast.error("Veuillez sélectionner une image");
+      toast.error('Veuillez sélectionner une image');
     }
   };
 
@@ -162,7 +165,8 @@ export default function InspiFrigo() {
             Trouve des idées de recettes à partir de ton frigo
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Prends une photo de ton frigo ou de tes ingrédients, et découvre des recettes adaptées à ce que tu as sous la main.
+            Prends une photo de ton frigo ou de tes ingrédients, et découvre des recettes adaptées à
+            ce que tu as sous la main.
           </p>
           <p className="text-sm text-muted-foreground mt-2 flex items-center justify-center gap-1">
             <Coins className="h-4 w-4" />
@@ -181,7 +185,9 @@ export default function InspiFrigo() {
                 </div>
                 <div>
                   <p className="text-xl font-semibold mb-2">Analyse en cours... 🍃</p>
-                  <p className="text-muted-foreground">Notre IA analyse votre photo, patientez quelques secondes.</p>
+                  <p className="text-muted-foreground">
+                    Notre IA analyse votre photo, patientez quelques secondes.
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -195,7 +201,9 @@ export default function InspiFrigo() {
               <div className="flex flex-col items-center gap-6 text-center">
                 <AlertCircle className="h-16 w-16 text-destructive" />
                 <div>
-                  <p className="text-xl font-semibold mb-2 text-destructive">Erreur lors de l'analyse</p>
+                  <p className="text-xl font-semibold mb-2 text-destructive">
+                    Erreur lors de l'analyse
+                  </p>
                   <p className="text-muted-foreground mb-4">{error}</p>
                 </div>
                 <div className="flex gap-4">
@@ -214,12 +222,19 @@ export default function InspiFrigo() {
 
         {/* Upload Form */}
         {!isLoading && !error && !analysisResult && (
-          <Card className="shadow-lg animate-slide-up border-0 overflow-hidden" style={{ borderRadius: "1.5rem" }}>
+          <Card
+            className="shadow-lg animate-slide-up border-0 overflow-hidden"
+            style={{ borderRadius: '1.5rem' }}
+          >
             <CardContent className="p-8">
               <div className="space-y-6">
                 {previewUrl ? (
                   <div className="relative rounded-[1.5rem] overflow-hidden border-2 border-border shadow-[rgba(0,0,0,0.05)_2px_2px_5px]">
-                    <img src={previewUrl} alt="Aperçu" className="w-full h-auto max-h-96 object-contain" />
+                    <img
+                      src={previewUrl}
+                      alt="Aperçu"
+                      className="w-full h-auto max-h-96 object-contain"
+                    />
                   </div>
                 ) : (
                   <div
@@ -228,8 +243,8 @@ export default function InspiFrigo() {
                     onDrop={handleDrop}
                     className={`border-2 border-dashed rounded-[1.5rem] p-8 md:p-12 text-center transition-all duration-300 cursor-pointer ${
                       isDragging
-                        ? "border-primary bg-primary/5"
-                        : "border-muted-foreground/30 active:border-primary"
+                        ? 'border-primary bg-primary/5'
+                        : 'border-muted-foreground/30 active:border-primary'
                     }`}
                   >
                     <div className="flex flex-col items-center gap-4">
@@ -237,8 +252,12 @@ export default function InspiFrigo() {
                         <Camera className="h-12 w-12 text-primary" />
                       </div>
                       <div>
-                        <p className="text-lg font-medium mb-2">📸 Dépose une photo de ton frigo ici ou prends une photo</p>
-                        <p className="text-sm text-muted-foreground">Glisse ton image ou utilise les boutons ci-dessous</p>
+                        <p className="text-lg font-medium mb-2">
+                          📸 Dépose une photo de ton frigo ici ou prends une photo
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Glisse ton image ou utilise les boutons ci-dessous
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -246,24 +265,39 @@ export default function InspiFrigo() {
 
                 <div className="flex flex-col sm:flex-row gap-4">
                   <label className="flex-1">
-                    <input type="file" accept="image/*" capture="environment" onChange={handleFileSelect} className="hidden" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
                     <Button
                       type="button"
                       variant="outline"
                       className="w-full"
-                      onClick={(e) => (e.currentTarget.previousElementSibling as HTMLInputElement)?.click()}
+                      onClick={(e) =>
+                        (e.currentTarget.previousElementSibling as HTMLInputElement)?.click()
+                      }
                     >
                       <Camera className="mr-2 h-4 w-4" />
                       Prendre une photo
                     </Button>
                   </label>
                   <label className="flex-1">
-                    <input type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
                     <Button
                       type="button"
                       variant="outline"
                       className="w-full"
-                      onClick={(e) => (e.currentTarget.previousElementSibling as HTMLInputElement)?.click()}
+                      onClick={(e) =>
+                        (e.currentTarget.previousElementSibling as HTMLInputElement)?.click()
+                      }
                     >
                       <Upload className="mr-2 h-4 w-4" />
                       Choisir un fichier
@@ -277,7 +311,7 @@ export default function InspiFrigo() {
                     disabled={isLoading}
                     className="w-full bg-gradient-to-r from-primary to-accent hover:opacityprimary-foregroundext-white shadow-lg transition-all duration-300 hover:scale-105"
                     size="lg"
-                    style={{ borderRadius: "1rem" }}
+                    style={{ borderRadius: '1rem' }}
                   >
                     Analyser mon frigo ({cost} crédits)
                   </Button>
@@ -291,7 +325,7 @@ export default function InspiFrigo() {
         {analysisResult && (
           <div className="space-y-6">
             {/* Ingrédients détectés */}
-            <Card className="border-0 shadow-lg" style={{ borderRadius: "1.5rem" }}>
+            <Card className="border-0 shadow-lg" style={{ borderRadius: '1.5rem' }}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
                   🧺 Ingrédients détectés
@@ -300,7 +334,10 @@ export default function InspiFrigo() {
               <CardContent>
                 <div className="flex flex-wrap gap-2">
                   {analysisResult.ingredients_identifies.map((ing, i) => (
-                    <span key={i} className="px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                    <span
+                      key={i}
+                      className="px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium"
+                    >
                       {ing.nom} — {ing.quantite}
                     </span>
                   ))}
@@ -311,15 +348,23 @@ export default function InspiFrigo() {
             {/* Recettes */}
             <h2 className="text-2xl font-bold text-center">🍽️ Recettes possibles</h2>
             {analysisResult.recettes.map((recette, index) => (
-              <Card key={index} className="border-0 shadow-lg" style={{ borderRadius: "1.5rem" }}>
+              <Card key={index} className="border-0 shadow-lg" style={{ borderRadius: '1.5rem' }}>
                 <CardHeader>
                   <CardTitle className="text-2xl">{recette.nom}</CardTitle>
                   <p className="text-muted-foreground">{recette.description}</p>
                   <div className="flex flex-wrap gap-3 mt-2 text-sm">
-                    <span className="px-3 py-1 bg-primary/10 rounded-full">⏱️ Prépa : {recette.temps_preparation}</span>
-                    <span className="px-3 py-1 bg-primary/10 rounded-full">🔥 Cuisson : {recette.temps_cuisson}</span>
-                    <span className="px-3 py-1 bg-primary/10 rounded-full">👥 {recette.portions} portion(s)</span>
-                    <span className="px-3 py-1 bg-primary/10 rounded-full">📊 {recette.difficulte}</span>
+                    <span className="px-3 py-1 bg-primary/10 rounded-full">
+                      ⏱️ Prépa : {recette.temps_preparation}
+                    </span>
+                    <span className="px-3 py-1 bg-primary/10 rounded-full">
+                      🔥 Cuisson : {recette.temps_cuisson}
+                    </span>
+                    <span className="px-3 py-1 bg-primary/10 rounded-full">
+                      👥 {recette.portions} portion(s)
+                    </span>
+                    <span className="px-3 py-1 bg-primary/10 rounded-full">
+                      📊 {recette.difficulte}
+                    </span>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -327,7 +372,10 @@ export default function InspiFrigo() {
                     <h4 className="font-semibold mb-2">🛒 Ingrédients nécessaires</h4>
                     <ul className="grid grid-cols-2 gap-1">
                       {recette.ingredients_necessaires.map((ing, i) => (
-                        <li key={i} className="text-sm text-muted-foreground flex items-center gap-1">
+                        <li
+                          key={i}
+                          className="text-sm text-muted-foreground flex items-center gap-1"
+                        >
                           <span className="text-primary">•</span> {ing}
                         </li>
                       ))}
@@ -338,21 +386,28 @@ export default function InspiFrigo() {
                     <ol className="space-y-2">
                       {recette.etapes.map((etape, i) => (
                         <li key={i} className="flex gap-3 text-sm p-2 bg-primary/5 rounded-lg">
-                          <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold flex-shrink-0">{i + 1}</span>
+                          <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                            {i + 1}
+                          </span>
                           {etape}
                         </li>
                       ))}
                     </ol>
                   </div>
-                   <div className="p-3 bg-primary/10 rounded-lg text-sm text-primary">
-                     💚 {recette.note_nutritionnelle}
-                   </div>
+                  <div className="p-3 bg-primary/10 rounded-lg text-sm text-primary">
+                    💚 {recette.note_nutritionnelle}
+                  </div>
                 </CardContent>
               </Card>
             ))}
 
             <div className="flex justify-center">
-              <Button onClick={handleReset} size="lg" className="bg-gradient-to-r from-accent to-primary text-primary-foreground" style={{ borderRadius: "1rem" }}>
+              <Button
+                onClick={handleReset}
+                size="lg"
+                className="bg-gradient-to-r from-accent to-primary text-primary-foreground"
+                style={{ borderRadius: '1rem' }}
+              >
                 🔁 Analyser une autre photo
               </Button>
             </div>

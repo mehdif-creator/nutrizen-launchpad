@@ -15,12 +15,17 @@ import { getCategoryLabel } from '@/lib/categoryMapping';
 function formatDate(dateStr: string | null) {
   if (!dateStr) return '';
   return new Date(dateStr).toLocaleDateString('fr-FR', {
-    day: 'numeric', month: 'long', year: 'numeric',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
   });
 }
 
 function normalize(str: string): string {
-  return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
 }
 
 function highlightText(text: string, query: string): string {
@@ -73,7 +78,7 @@ export default function BlogIndex() {
   // Extract unique categories
   const categories = useMemo(() => {
     const cats = new Set<string>();
-    articles.forEach(a => {
+    articles.forEach((a) => {
       const c = getCategoryLabel(a.cluster_context || a.tags?.[0]);
       if (c) cats.add(c);
     });
@@ -87,28 +92,30 @@ export default function BlogIndex() {
     // 1. Text search
     if (debouncedQuery.trim()) {
       const q = normalize(debouncedQuery);
-      result = result.filter(a => {
+      result = result.filter((a) => {
         const fields = [
           getTitle(a),
           getExcerpt(a),
           a.outline?.meta_description,
           (a as any).keyword,
           a.cluster_context,
-        ].filter(Boolean).join(' ');
+        ]
+          .filter(Boolean)
+          .join(' ');
         return normalize(fields).includes(q);
       });
     }
 
     // 2. Category
     if (selectedCategory && selectedCategory !== 'Tous') {
-      result = result.filter(a =>
-        getCategoryLabel(a.cluster_context || a.tags?.[0]) === selectedCategory
+      result = result.filter(
+        (a) => getCategoryLabel(a.cluster_context || a.tags?.[0]) === selectedCategory
       );
     }
 
     // 3. Reading time
     if (readingTimeFilter) {
-      result = result.filter(a => {
+      result = result.filter((a) => {
         const t = getReadingTime(a);
         if (readingTimeFilter === 'short') return t <= 3;
         if (readingTimeFilter === 'medium') return t > 3 && t <= 7;
@@ -121,17 +128,16 @@ export default function BlogIndex() {
     result.sort((a, b) => {
       if (sortBy === 'oldest')
         return new Date(a.published_at || 0).getTime() - new Date(b.published_at || 0).getTime();
-      if (sortBy === 'score')
-        return (b.qa_score || 0) - (a.qa_score || 0);
-      if (sortBy === 'az')
-        return getTitle(a).localeCompare(getTitle(b), 'fr');
+      if (sortBy === 'score') return (b.qa_score || 0) - (a.qa_score || 0);
+      if (sortBy === 'az') return getTitle(a).localeCompare(getTitle(b), 'fr');
       return new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime();
     });
 
     return result;
   }, [articles, debouncedQuery, selectedCategory, readingTimeFilter, sortBy]);
 
-  const hasActiveFilters = debouncedQuery.trim() !== '' || selectedCategory !== 'Tous' || readingTimeFilter !== '';
+  const hasActiveFilters =
+    debouncedQuery.trim() !== '' || selectedCategory !== 'Tous' || readingTimeFilter !== '';
 
   const resetAllFilters = useCallback(() => {
     setSearchQuery('');
@@ -165,7 +171,7 @@ export default function BlogIndex() {
               type="text"
               placeholder="Rechercher un article, une recette, un conseil..."
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full py-4 pl-5 pr-12 text-base border-2 border-border rounded-full bg-background text-foreground placeholder:text-muted-foreground outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm"
             />
             <Search className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -174,14 +180,15 @@ export default function BlogIndex() {
           {/* Filters row */}
           <div className="flex flex-wrap items-center justify-center gap-2.5 mb-10 px-4">
             {/* Category pills */}
-            {categories.map(cat => (
+            {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-4 py-2 text-sm font-medium rounded-full border-2 transition-all cursor-pointer
-                  ${selectedCategory === cat
-                    ? 'bg-primary border-primary text-primary-foreground'
-                    : 'bg-background border-border text-foreground hover:bg-secondary hover:border-primary/40'
+                  ${
+                    selectedCategory === cat
+                      ? 'bg-primary border-primary text-primary-foreground'
+                      : 'bg-background border-border text-foreground hover:bg-secondary hover:border-primary/40'
                   }`}
               >
                 {cat}
@@ -194,7 +201,7 @@ export default function BlogIndex() {
             {/* Reading time */}
             <select
               value={readingTimeFilter}
-              onChange={e => setReadingTimeFilter(e.target.value)}
+              onChange={(e) => setReadingTimeFilter(e.target.value)}
               className="px-4 py-2 border-2 border-border rounded-full bg-background text-sm text-foreground cursor-pointer outline-none appearance-none pr-8 hover:border-primary/40 transition-colors"
             >
               <option value="">⏱ Durée</option>
@@ -206,7 +213,7 @@ export default function BlogIndex() {
             {/* Sort */}
             <select
               value={sortBy}
-              onChange={e => setSortBy(e.target.value)}
+              onChange={(e) => setSortBy(e.target.value)}
               className="px-4 py-2 border-2 border-border rounded-full bg-background text-sm text-foreground cursor-pointer outline-none appearance-none pr-8 hover:border-primary/40 transition-colors"
             >
               <option value="recent">📅 Récents</option>
@@ -237,7 +244,7 @@ export default function BlogIndex() {
           {/* Content */}
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6].map(i => (
+              {[1, 2, 3, 4, 5, 6].map((i) => (
                 <Skeleton key={i} className="h-80 rounded-2xl" />
               ))}
             </div>
@@ -245,9 +252,7 @@ export default function BlogIndex() {
             /* Empty state */
             <div className="text-center py-20">
               <div className="text-5xl mb-4">🔍</div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">
-                Aucun article trouvé
-              </h3>
+              <h3 className="text-xl font-semibold text-foreground mb-2">Aucun article trouvé</h3>
               <p className="text-muted-foreground mb-6">
                 Essayez avec d'autres mots-clés ou une autre catégorie.
               </p>
@@ -261,12 +266,8 @@ export default function BlogIndex() {
           ) : (
             /* Article grid */
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredArticles.map(article => (
-                <ArticleCard
-                  key={article.id}
-                  article={article}
-                  searchQuery={debouncedQuery}
-                />
+              {filteredArticles.map((article) => (
+                <ArticleCard key={article.id} article={article} searchQuery={debouncedQuery} />
               ))}
             </div>
           )}
@@ -282,25 +283,29 @@ function parseImageUrls(raw: unknown): { url: string; alt: string; type: string 
   if (!raw) return [];
   if (Array.isArray(raw)) return raw;
   if (typeof raw === 'string') {
-    try { return JSON.parse(raw); } catch { return []; }
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return [];
+    }
   }
   return [];
 }
 
 const categoryGradients: Record<string, string> = {
-  'Nutrition': 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 50%, #86efac 100%)',
-  'Recettes': 'linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fcd34d 100%)',
-  'Sport': 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #93c5fd 100%)',
+  Nutrition: 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 50%, #86efac 100%)',
+  Recettes: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fcd34d 100%)',
+  Sport: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #93c5fd 100%)',
   'Bien-être': 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 50%, #f9a8d4 100%)',
-  'Budget': 'linear-gradient(135deg, #ede9fe 0%, #ddd6fe 50%, #c4b5fd 100%)',
+  Budget: 'linear-gradient(135deg, #ede9fe 0%, #ddd6fe 50%, #c4b5fd 100%)',
 };
 
 const categoryEmojis: Record<string, string> = {
-  'Nutrition': '🥗',
-  'Recettes': '🍳',
-  'Sport': '💪',
+  Nutrition: '🥗',
+  Recettes: '🍳',
+  Sport: '💪',
   'Bien-être': '🧘',
-  'Budget': '💡',
+  Budget: '💡',
 };
 
 function ArticleCard({ article, searchQuery }: { article: BlogArticle; searchQuery: string }) {
@@ -312,15 +317,17 @@ function ArticleCard({ article, searchQuery }: { article: BlogArticle; searchQue
 
   // Fix 1: Parse image_urls safely
   const imageUrls = parseImageUrls(article.image_urls);
-  const heroImage = imageUrls.find(img => img.type === 'hero') || imageUrls[0] || null;
+  const heroImage = imageUrls.find((img) => img.type === 'hero') || imageUrls[0] || null;
   const heroUrl = heroImage?.url || article.cover_url || null;
   const heroAlt = heroImage?.alt || title;
-  const hasValidImage = typeof heroUrl === 'string'
-    && heroUrl.trim().length > 0
-    && !heroUrl.includes('undefined')
-    && !heroUrl.includes('null');
+  const hasValidImage =
+    typeof heroUrl === 'string' &&
+    heroUrl.trim().length > 0 &&
+    !heroUrl.includes('undefined') &&
+    !heroUrl.includes('null');
 
-  const fallbackGradient = categoryGradients[category] || 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)';
+  const fallbackGradient =
+    categoryGradients[category] || 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)';
   const fallbackEmoji = categoryEmojis[category] || '🥦';
 
   return (
@@ -340,9 +347,15 @@ function ArticleCard({ article, searchQuery }: { article: BlogArticle; searchQue
               loading="lazy"
             />
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center gap-2" style={{ background: fallbackGradient }}>
+            <div
+              className="w-full h-full flex flex-col items-center justify-center gap-2"
+              style={{ background: fallbackGradient }}
+            >
               <span className="text-5xl">{fallbackEmoji}</span>
-              <span className="text-xs font-semibold uppercase tracking-wider opacity-70" style={{ color: '#166534' }}>
+              <span
+                className="text-xs font-semibold uppercase tracking-wider opacity-70"
+                style={{ color: '#166534' }}
+              >
                 {category}
               </span>
             </div>
@@ -372,9 +385,7 @@ function ArticleCard({ article, searchQuery }: { article: BlogArticle; searchQue
               <span>📅 {formatDate(article.published_at)}</span>
               <span>⏱ {readingTime} min</span>
             </div>
-            <span className="text-xs text-primary font-semibold">
-              Lire →
-            </span>
+            <span className="text-xs text-primary font-semibold">Lire →</span>
           </div>
         </div>
       </article>

@@ -16,8 +16,8 @@ export const SubscriptionGuard = ({ children, requirePaid = false }: Subscriptio
     if (loading) return;
 
     // Check if user has an active subscription
-    const hasValidSubscription = subscription && 
-      (subscription.status === 'trialing' || subscription.status === 'active');
+    const hasValidSubscription =
+      subscription && (subscription.status === 'trialing' || subscription.status === 'active');
 
     if (!hasValidSubscription) {
       navigate('/?expired=true', { replace: true });
@@ -47,8 +47,8 @@ export const SubscriptionGuard = ({ children, requirePaid = false }: Subscriptio
     );
   }
 
-  const hasValidSubscription = subscription && 
-    (subscription.status === 'trialing' || subscription.status === 'active');
+  const hasValidSubscription =
+    subscription && (subscription.status === 'trialing' || subscription.status === 'active');
 
   if (!hasValidSubscription) {
     return null;

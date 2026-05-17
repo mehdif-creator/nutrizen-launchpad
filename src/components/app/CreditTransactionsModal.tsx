@@ -117,9 +117,7 @@ export function CreditTransactionsModal({
             <Sparkles className="h-5 w-5 text-primary" />
             Historique des Crédits Zen
           </DialogTitle>
-          <DialogDescription>
-            Les 50 dernières transactions de ton compte
-          </DialogDescription>
+          <DialogDescription>Les 50 dernières transactions de ton compte</DialogDescription>
         </DialogHeader>
 
         <ScrollArea className="h-[400px] pr-4">
@@ -135,30 +133,33 @@ export function CreditTransactionsModal({
           ) : (
             <div className="space-y-3">
               {transactions.map((tx) => (
-                <div
-                  key={tx.id}
-                  className="flex items-start gap-3 p-3 rounded-lg border bg-card"
-                >
-                  <div className={`p-2 rounded-full ${tx.delta >= 0 ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900'}`}>
+                <div key={tx.id} className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+                  <div
+                    className={`p-2 rounded-full ${tx.delta >= 0 ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900'}`}
+                  >
                     {tx.delta >= 0 ? (
                       <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
                     ) : (
                       <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
                     )}
                   </div>
-                  
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-sm truncate">
-                        {getReasonDisplay(tx)}
-                      </span>
-                      <span className={`font-bold text-sm ${tx.delta >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {tx.delta >= 0 ? '+' : ''}{tx.delta}
+                      <span className="font-medium text-sm truncate">{getReasonDisplay(tx)}</span>
+                      <span
+                        className={`font-bold text-sm ${tx.delta >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                      >
+                        {tx.delta >= 0 ? '+' : ''}
+                        {tx.delta}
                       </span>
                     </div>
-                    
+
                     <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="outline" className={`text-xs ${getTypeColor(tx.credit_type)}`}>
+                      <Badge
+                        variant="outline"
+                        className={`text-xs ${getTypeColor(tx.credit_type)}`}
+                      >
                         {getTypeLabel(tx.credit_type)}
                       </Badge>
                       <span className="text-xs text-muted-foreground flex items-center gap-1">

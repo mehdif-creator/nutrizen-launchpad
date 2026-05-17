@@ -7,9 +7,7 @@
 function getSupabaseUrl(): string {
   const url = import.meta.env.VITE_SUPABASE_URL;
   if (!url) {
-    throw new Error(
-      'VITE_SUPABASE_URL is not set. Add it to your .env file.'
-    );
+    throw new Error('VITE_SUPABASE_URL is not set. Add it to your .env file.');
   }
   return url.replace(/\/+$/, ''); // strip trailing slash
 }

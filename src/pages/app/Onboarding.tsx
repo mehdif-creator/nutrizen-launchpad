@@ -9,7 +9,11 @@ import { MobileSelect } from '@/components/ui/mobile-select';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { Check, ChevronRight, Users, Target, Utensils, AlertCircle } from 'lucide-react';
- import { completeOnboarding, updateOnboardingStatus, useOnboardingPageGuard } from '@/hooks/useOnboardingGuard';
+import {
+  completeOnboarding,
+  updateOnboardingStatus,
+  useOnboardingPageGuard,
+} from '@/hooks/useOnboardingGuard';
 // MenuGenerationProgress and useAutoMenuGeneration removed — menu generation no longer auto-triggered after onboarding
 import { queryClient } from '@/lib/queryClient';
 
@@ -31,15 +35,15 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
   // Auto menu generation removed — menu only generated after manual profile completion
-   
-   // Use the page guard - redirects to dashboard if already completed
-   const { state: onboardingState } = useOnboardingPageGuard(user?.id);
-  
+
+  // Use the page guard - redirects to dashboard if already completed
+  const { state: onboardingState } = useOnboardingPageGuard(user?.id);
+
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   // showMenuGeneration state removed — no longer needed
-  
+
   const [profileData, setProfileData] = useState<ProfileData>({
     household_adults: 1,
     household_children: 0,
@@ -48,27 +52,27 @@ export default function Onboarding() {
     portion_strategy: 'household',
   });
 
-   // Fetch profile data for the form (not status check - that's handled by guard)
+  // Fetch profile data for the form (not status check - that's handled by guard)
   useEffect(() => {
     if (!user?.id) return;
-     if (onboardingState === 'onboarded') return; // Guard will redirect
+    if (onboardingState === 'onboarded') return; // Guard will redirect
 
     const checkStatus = async () => {
       try {
         const { data, error } = await supabase
           .from('profiles')
-           .select('onboarding_step, required_fields_ok')
+          .select('onboarding_step, required_fields_ok')
           .eq('id', user.id)
-           .maybeSingle();
+          .maybeSingle();
 
         if (error) {
-           console.error('[Onboarding] Error fetching profile:', error);
+          console.error('[Onboarding] Error fetching profile:', error);
           setLoading(false);
           return;
         }
 
-         // Resume from saved step if exists
-         if (data?.onboarding_step && data.onboarding_step >= 1) {
+        // Resume from saved step if exists
+        if (data?.onboarding_step && data.onboarding_step >= 1) {
           setCurrentStep(Math.max(1, data.onboarding_step));
         }
 
@@ -80,7 +84,7 @@ export default function Onboarding() {
           .single();
 
         if (prefs) {
-          setProfileData(prev => ({
+          setProfileData((prev) => ({
             ...prev,
             objectif_principal: prefs.objectif_principal || undefined,
             type_alimentation: prefs.type_alimentation || undefined,
@@ -91,12 +95,14 @@ export default function Onboarding() {
         // Fetch profile data
         const { data: profile } = await supabase
           .from('profiles')
-          .select('household_adults, household_children, kid_portion_ratio, meals_per_day, portion_strategy')
+          .select(
+            'household_adults, household_children, kid_portion_ratio, meals_per_day, portion_strategy'
+          )
           .eq('id', user.id)
           .single();
 
         if (profile) {
-          setProfileData(prev => ({
+          setProfileData((prev) => ({
             ...prev,
             household_adults: profile.household_adults || 1,
             household_children: profile.household_children || 0,
@@ -108,13 +114,13 @@ export default function Onboarding() {
 
         setLoading(false);
       } catch (error) {
-         console.error('[Onboarding] Error:', error);
+        console.error('[Onboarding] Error:', error);
         setLoading(false);
       }
     };
 
     checkStatus();
-   }, [user?.id, onboardingState]);
+  }, [user?.id, onboardingState]);
 
   const saveStep = async (step: number) => {
     if (!user?.id) return;
@@ -144,14 +150,15 @@ export default function Onboarding() {
 
       // Save 2: preferences table
       console.log('[Onboarding] Saving to preferences...');
-      const { error: prefError } = await supabase
-        .from('preferences')
-        .upsert({
+      const { error: prefError } = await supabase.from('preferences').upsert(
+        {
           user_id: user.id,
           objectif_principal: profileData.objectif_principal ?? null,
           type_alimentation: profileData.type_alimentation ?? null,
           allergies: profileData.allergies ?? [],
-        }, { onConflict: 'user_id' });
+        },
+        { onConflict: 'user_id' }
+      );
 
       if (prefError) {
         console.error('[Onboarding] preferences UPSERT failed:', prefError);
@@ -181,7 +188,7 @@ export default function Onboarding() {
 
   const handleNext = async () => {
     await saveStep(currentStep);
-    
+
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep(currentStep + 1);
     } else {
@@ -197,14 +204,16 @@ export default function Onboarding() {
     try {
       // Use the new completeOnboarding function which sets server truth
       const success = await completeOnboarding(user.id);
-      
+
       if (!success) {
         throw new Error('Failed to complete onboarding');
       }
 
       // Grant welcome credits (idempotent — safe to call multiple times)
-      const { data: creditsData, error: creditsError } = await supabase
-        .rpc('grant_welcome_credits', { p_user_id: user.id });
+      const { data: creditsData, error: creditsError } = await supabase.rpc(
+        'grant_welcome_credits',
+        { p_user_id: user.id }
+      );
       if (creditsError) {
         console.error('[Onboarding] grant_welcome_credits FAILED:', {
           message: creditsError.message,
@@ -223,7 +232,7 @@ export default function Onboarding() {
       // Navigate to dashboard — menu generation will only happen after manual profile completion
       queryClient.invalidateQueries({ queryKey: ['userDashboard'] });
       queryClient.invalidateQueries({ queryKey: ['weeklyRecipesByDay'] });
-      
+
       navigate('/app/dashboard', { replace: true });
     } catch (error) {
       console.error('[Onboarding] Complete error:', error);
@@ -237,8 +246,8 @@ export default function Onboarding() {
     }
   };
 
-   // If guard says onboarded, show redirect message briefly
-   if (onboardingState === 'onboarded') {
+  // If guard says onboarded, show redirect message briefly
+  if (onboardingState === 'onboarded') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/20 p-4">
         <Card className="max-w-md w-full">
@@ -264,8 +273,8 @@ export default function Onboarding() {
     );
   }
 
-   // Show loading while guard is checking or data is loading
-   if (loading || onboardingState === 'loading') {
+  // Show loading while guard is checking or data is loading
+  if (loading || onboardingState === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">Chargement...</div>
@@ -285,7 +294,9 @@ export default function Onboarding() {
         {/* Progress */}
         <div className="mb-8">
           <div className="flex justify-between text-sm text-muted-foreground mb-2">
-            <span>Étape {currentStep} sur {TOTAL_STEPS}</span>
+            <span>
+              Étape {currentStep} sur {TOTAL_STEPS}
+            </span>
             <span>{Math.round((currentStep / TOTAL_STEPS) * 100)}%</span>
           </div>
           <Progress value={(currentStep / TOTAL_STEPS) * 100} className="h-2" />
@@ -294,27 +305,10 @@ export default function Onboarding() {
         {/* Step Content */}
         <Card>
           <CardContent className="pt-6">
-            {currentStep === 1 && (
-              <StepHousehold 
-                data={profileData} 
-                onChange={setProfileData} 
-              />
-            )}
-            {currentStep === 2 && (
-              <StepGoals 
-                data={profileData} 
-                onChange={setProfileData} 
-              />
-            )}
-            {currentStep === 3 && (
-              <StepDiet 
-                data={profileData} 
-                onChange={setProfileData} 
-              />
-            )}
-            {currentStep === 4 && (
-              <StepConfirm data={profileData} />
-            )}
+            {currentStep === 1 && <StepHousehold data={profileData} onChange={setProfileData} />}
+            {currentStep === 2 && <StepGoals data={profileData} onChange={setProfileData} />}
+            {currentStep === 3 && <StepDiet data={profileData} onChange={setProfileData} />}
+            {currentStep === 4 && <StepConfirm data={profileData} />}
           </CardContent>
         </Card>
 
@@ -338,17 +332,23 @@ export default function Onboarding() {
 }
 
 // Step 1: Household
-function StepHousehold({ data, onChange }: { data: ProfileData; onChange: (d: ProfileData) => void }) {
-  const adultsOptions = [1, 2, 3, 4, 5, 6].map(n => ({
+function StepHousehold({
+  data,
+  onChange,
+}: {
+  data: ProfileData;
+  onChange: (d: ProfileData) => void;
+}) {
+  const adultsOptions = [1, 2, 3, 4, 5, 6].map((n) => ({
     value: String(n),
-    label: `${n} adulte${n > 1 ? 's' : ''}`
+    label: `${n} adulte${n > 1 ? 's' : ''}`,
   }));
-  
-  const childrenOptions = [0, 1, 2, 3, 4, 5].map(n => ({
+
+  const childrenOptions = [0, 1, 2, 3, 4, 5].map((n) => ({
     value: String(n),
-    label: `${n} enfant${n > 1 ? 's' : ''}`
+    label: `${n} enfant${n > 1 ? 's' : ''}`,
   }));
-  
+
   const ratioOptions = [
     { value: '0.5', label: '50% (petits enfants)' },
     { value: '0.6', label: '60% (enfants)' },
@@ -356,7 +356,7 @@ function StepHousehold({ data, onChange }: { data: ProfileData; onChange: (d: Pr
     { value: '0.8', label: '80% (adolescents)' },
     { value: '1', label: '100% (comme un adulte)' },
   ];
-  
+
   const mealsOptions = [
     { value: '1', label: '1 repas (dîner uniquement)' },
     { value: '2', label: '2 repas (déjeuner + dîner)' },
@@ -512,7 +512,8 @@ function StepDiet({ data, onChange }: { data: ProfileData; onChange: (d: Profile
 
 // Step 4: Confirm
 function StepConfirm({ data }: { data: ProfileData }) {
-  const effectivePortions = data.household_adults + (data.household_children * data.kid_portion_ratio);
+  const effectivePortions =
+    data.household_adults + data.household_children * data.kid_portion_ratio;
 
   return (
     <div className="space-y-6">
@@ -531,7 +532,8 @@ function StepConfirm({ data }: { data: ProfileData }) {
           <span className="text-muted-foreground">Foyer</span>
           <span className="font-medium">
             {data.household_adults} adulte{data.household_adults > 1 ? 's' : ''}
-            {data.household_children > 0 && `, ${data.household_children} enfant${data.household_children > 1 ? 's' : ''}`}
+            {data.household_children > 0 &&
+              `, ${data.household_children} enfant${data.household_children > 1 ? 's' : ''}`}
           </span>
         </div>
         <div className="flex justify-between">
@@ -544,7 +546,9 @@ function StepConfirm({ data }: { data: ProfileData }) {
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Objectif</span>
-          <span className="font-medium capitalize">{data.objectif_principal?.replace('_', ' ') || 'Non défini'}</span>
+          <span className="font-medium capitalize">
+            {data.objectif_principal?.replace('_', ' ') || 'Non défini'}
+          </span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Régime</span>

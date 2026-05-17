@@ -2,7 +2,16 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, Trash2, Play, Zap, ExternalLink, AlertCircle, RotateCcw, ImageIcon } from 'lucide-react';
+import {
+  Loader2,
+  Trash2,
+  Play,
+  Zap,
+  ExternalLink,
+  AlertCircle,
+  RotateCcw,
+  ImageIcon,
+} from 'lucide-react';
 import { callEdgeFunction } from '@/lib/edgeFn';
 import { supabase } from '@/integrations/supabase/client';
 // supabase import already present for functions.invoke
@@ -20,7 +29,13 @@ interface Props {
   onOpenDetail: (article: SeoArticle) => void;
 }
 
-export function SeoArticleCard({ article, onRefresh, onQueueRefresh, onDelete, onOpenDetail }: Props) {
+export function SeoArticleCard({
+  article,
+  onRefresh,
+  onQueueRefresh,
+  onDelete,
+  onOpenDetail,
+}: Props) {
   const [busy, setBusy] = useState<string | null>(null); // edge fn name currently running
   const [autoPipeline, setAutoPipeline] = useState(false);
   const [autoStep, setAutoStep] = useState('');
@@ -29,20 +44,26 @@ export function SeoArticleCard({ article, onRefresh, onQueueRefresh, onDelete, o
 
   const si = STATUS_LABELS[article.status] ?? STATUS_LABELS['pending'];
 
-  const qaStatusOverride = article.status === 'qa_done' && article.qa_pass === false
-    ? { label: 'QA Échoué', variant: 'destructive' as const, className: '' }
-    : null;
+  const qaStatusOverride =
+    article.status === 'qa_done' && article.qa_pass === false
+      ? { label: 'QA Échoué', variant: 'destructive' as const, className: '' }
+      : null;
   const displayStatus = qaStatusOverride ?? si;
 
-  const scoreColor = article.qa_score != null
-    ? article.qa_score >= 75 ? 'bg-green-600' : article.qa_score >= 60 ? 'bg-orange-500' : 'bg-red-600'
-    : '';
+  const scoreColor =
+    article.qa_score != null
+      ? article.qa_score >= 75
+        ? 'bg-green-600'
+        : article.qa_score >= 60
+          ? 'bg-orange-500'
+          : 'bg-red-600'
+      : '';
 
   const autoImproveLoop = async (articleId: string) => {
     for (let attempt = 1; attempt <= 3; attempt++) {
       toast({ title: `Amélioration automatique en cours… (tentative ${attempt}/3)` });
       setBusy('seo-improve');
-      await new Promise(r => setTimeout(r, 2000));
+      await new Promise((r) => setTimeout(r, 2000));
       try {
         await callEdgeFunction('seo-improve', { article_id: articleId });
         await callEdgeFunction('seo-qa', { article_id: articleId });
@@ -52,7 +73,11 @@ export function SeoArticleCard({ article, onRefresh, onQueueRefresh, onDelete, o
       }
       onRefresh();
       // Re-fetch article to check result
-      const { data: updated } = await supabase.from('seo_articles').select('qa_pass, qa_score, improve_attempts').eq('id', articleId).single();
+      const { data: updated } = await supabase
+        .from('seo_articles')
+        .select('qa_pass, qa_score, improve_attempts')
+        .eq('id', articleId)
+        .single();
       if (updated?.qa_pass === true) {
         toast({ title: `✅ Article amélioré et validé — Score : ${updated.qa_score}/100` });
         setBusy(null);
@@ -60,7 +85,11 @@ export function SeoArticleCard({ article, onRefresh, onQueueRefresh, onDelete, o
         return;
       }
       if (attempt >= 3) {
-        toast({ title: 'Révision manuelle requise', description: '3 tentatives échouées.', variant: 'destructive' });
+        toast({
+          title: 'Révision manuelle requise',
+          description: '3 tentatives échouées.',
+          variant: 'destructive',
+        });
       }
     }
     setBusy(null);
@@ -133,9 +162,14 @@ export function SeoArticleCard({ article, onRefresh, onQueueRefresh, onDelete, o
   const handleAutoPipeline = async () => {
     setAutoPipeline(true);
     const statusToSeqIdx: Record<string, number> = {
-      pending: 0, serp_done: 1, brief_done: 2, outline_done: 3, images_done: 4, draft_done: 5,
+      pending: 0,
+      serp_done: 1,
+      brief_done: 2,
+      outline_done: 3,
+      images_done: 4,
+      draft_done: 5,
     };
-    let startIdx = statusToSeqIdx[article.status] ?? 0;
+    const startIdx = statusToSeqIdx[article.status] ?? 0;
 
     try {
       for (let i = startIdx; i < AUTO_PIPELINE_SEQUENCE.length; i++) {
@@ -159,7 +193,10 @@ export function SeoArticleCard({ article, onRefresh, onQueueRefresh, onDelete, o
           await autoImproveLoop(article.id);
         }
       }
-      toast({ title: 'Pipeline terminé ✓', description: `QA finalisé pour « ${article.keyword} ».` });
+      toast({
+        title: 'Pipeline terminé ✓',
+        description: `QA finalisé pour « ${article.keyword} ».`,
+      });
     } catch (e: any) {
       toast({ title: 'Pipeline interrompu', description: e.message, variant: 'destructive' });
     } finally {
@@ -194,7 +231,10 @@ export function SeoArticleCard({ article, onRefresh, onQueueRefresh, onDelete, o
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-semibold truncate text-base">{article.keyword}</p>
-            <Badge variant={displayStatus.variant} className={cn('border-0 text-white text-xs', displayStatus.className)}>
+            <Badge
+              variant={displayStatus.variant}
+              className={cn('border-0 text-white text-xs', displayStatus.className)}
+            >
               {displayStatus.label}
             </Badge>
             {article.qa_score != null && (
@@ -204,7 +244,11 @@ export function SeoArticleCard({ article, onRefresh, onQueueRefresh, onDelete, o
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            {new Date(article.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+            {new Date(article.created_at).toLocaleDateString('fr-FR', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+            })}
             {article.cluster_context && <> · Cluster : {article.cluster_context}</>}
           </p>
 
@@ -226,34 +270,57 @@ export function SeoArticleCard({ article, onRefresh, onQueueRefresh, onDelete, o
         </div>
 
         {/* Actions */}
-        <div className="flex flex-col gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
+        <div className="flex flex-col gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
           {/* Next step button */}
           {nextStep && !autoPipeline && (
             <Button size="sm" variant="default" onClick={handleNextStep} disabled={isBusy}>
-              {busy === nextStep.fn ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Play className="mr-1 h-3.5 w-3.5" />}
+              {busy === nextStep.fn ? (
+                <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Play className="mr-1 h-3.5 w-3.5" />
+              )}
               {nextStep.label}
             </Button>
           )}
 
           {/* Manual improve - only when auto-improve exhausted */}
-          {article.status === 'qa_done' && article.qa_pass === false && (article.improve_attempts ?? 0) < 3 && (
-            <Button size="sm" variant="outline" onClick={handleImprove} disabled={isBusy}>
-              {busy === 'seo-improve' ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="mr-1 h-3.5 w-3.5" />}
-              Améliorer ({article.improve_attempts ?? 0}/3)
-            </Button>
-          )}
+          {article.status === 'qa_done' &&
+            article.qa_pass === false &&
+            (article.improve_attempts ?? 0) < 3 && (
+              <Button size="sm" variant="outline" onClick={handleImprove} disabled={isBusy}>
+                {busy === 'seo-improve' ? (
+                  <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <RotateCcw className="mr-1 h-3.5 w-3.5" />
+                )}
+                Améliorer ({article.improve_attempts ?? 0}/3)
+              </Button>
+            )}
 
           {/* Revision manuelle requise after 3 failed attempts */}
-          {article.status === 'qa_done' && article.qa_pass === false && (article.improve_attempts ?? 0) >= 3 && (
-            <Button size="sm" variant="outline" className="border-orange-400 text-orange-600" onClick={handlePublish} disabled={isBusy}>
-              {busy === 'publish' ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
-              ⚠️ Forcer la publication
-            </Button>
-          )}
+          {article.status === 'qa_done' &&
+            article.qa_pass === false &&
+            (article.improve_attempts ?? 0) >= 3 && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-orange-400 text-orange-600"
+                onClick={handlePublish}
+                disabled={isBusy}
+              >
+                {busy === 'publish' ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
+                ⚠️ Forcer la publication
+              </Button>
+            )}
 
           {/* Publish */}
           {article.status === 'qa_done' && article.qa_pass === true && (
-            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={handlePublish} disabled={isBusy}>
+            <Button
+              size="sm"
+              className="bg-green-600 hover:bg-green-700 text-white"
+              onClick={handlePublish}
+              disabled={isBusy}
+            >
               {busy === 'publish' ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
               Publier
             </Button>
@@ -263,7 +330,8 @@ export function SeoArticleCard({ article, onRefresh, onQueueRefresh, onDelete, o
           {article.status === 'published' && article.blog_post_id && (
             <Button size="sm" variant="outline" asChild>
               <a href={`/blog/${article.blog_post_id}`} target="_blank" rel="noreferrer">
-                <ExternalLink className="mr-1 h-3.5 w-3.5" />Voir
+                <ExternalLink className="mr-1 h-3.5 w-3.5" />
+                Voir
               </a>
             </Button>
           )}
@@ -271,14 +339,16 @@ export function SeoArticleCard({ article, onRefresh, onQueueRefresh, onDelete, o
           {/* Auto pipeline */}
           {!['qa_done', 'published', 'failed'].includes(article.status) && !autoPipeline && (
             <Button size="sm" variant="secondary" onClick={handleAutoPipeline} disabled={isBusy}>
-              <Zap className="mr-1 h-3.5 w-3.5" />Auto
+              <Zap className="mr-1 h-3.5 w-3.5" />
+              Auto
             </Button>
           )}
 
           {/* Retry on error */}
           {article.error_message && (
             <Button size="sm" variant="outline" onClick={handleRetry} disabled={isBusy}>
-              <RotateCcw className="mr-1 h-3.5 w-3.5" />Réessayer
+              <RotateCcw className="mr-1 h-3.5 w-3.5" />
+              Réessayer
             </Button>
           )}
 
@@ -329,7 +399,11 @@ export function SeoArticleCard({ article, onRefresh, onQueueRefresh, onDelete, o
               }}
               disabled={isBusy}
             >
-              {busy === 'seo-image-refresh' ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <ImageIcon className="mr-1 h-3.5 w-3.5" />}
+              {busy === 'seo-image-refresh' ? (
+                <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <ImageIcon className="mr-1 h-3.5 w-3.5" />
+              )}
               Images
             </Button>
           )}

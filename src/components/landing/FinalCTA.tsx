@@ -23,12 +23,7 @@ export const FinalCTA = ({ onCtaClick, copy }: FinalCTAProps) => {
             {/* Free card */}
             <Card className="p-6 border-border text-center space-y-4">
               <p className="font-semibold text-lg">Je teste d'abord</p>
-              <Button
-                onClick={onCtaClick}
-                variant="outline"
-                size="lg"
-                className="w-full"
-              >
+              <Button onClick={onCtaClick} variant="outline" size="lg" className="w-full">
                 Commencer gratuitement
               </Button>
               <p className="text-xs text-muted-foreground">Aucune carte bancaire requise</p>
@@ -44,12 +39,15 @@ export const FinalCTA = ({ onCtaClick, copy }: FinalCTAProps) => {
               >
                 Commencer — 12,99€/mois
               </Button>
-              <p className="text-xs text-muted-foreground">Remboursé si pas satisfait dans les 30 jours</p>
+              <p className="text-xs text-muted-foreground">
+                Remboursé si pas satisfait dans les 30 jours
+              </p>
             </Card>
           </div>
 
           <p className="text-sm text-muted-foreground">
-            {copy?.subtitle || 'Rejoignez +12 000 personnes qui ont arrêté de se demander quoi manger ce soir.'}
+            {copy?.subtitle ||
+              'Rejoignez +12 000 personnes qui ont arrêté de se demander quoi manger ce soir.'}
           </p>
         </div>
       </div>

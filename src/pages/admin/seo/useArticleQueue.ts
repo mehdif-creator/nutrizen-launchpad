@@ -52,16 +52,18 @@ export function useArticleQueue() {
   useEffect(() => {
     fetchItems();
     pollingRef.current = setInterval(fetchItems, 5000);
-    return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
   }, [fetchItems]);
 
   const stats: QueueStats = {
-    pending: items.filter(i => i.status === 'pending').length,
-    processing: items.filter(i => i.status === 'processing').length,
-    done: items.filter(i => i.status === 'done').length,
-    error: items.filter(i => i.status === 'error').length,
-    duplicate: items.filter(i => i.status === 'duplicate').length,
-    actionable: items.filter(i => ['pending', 'processing', 'error'].includes(i.status)).length,
+    pending: items.filter((i) => i.status === 'pending').length,
+    processing: items.filter((i) => i.status === 'processing').length,
+    done: items.filter((i) => i.status === 'done').length,
+    error: items.filter((i) => i.status === 'error').length,
+    duplicate: items.filter((i) => i.status === 'duplicate').length,
+    actionable: items.filter((i) => ['pending', 'processing', 'error'].includes(i.status)).length,
   };
 
   const bulkInsert = async (
@@ -75,14 +77,16 @@ export function useArticleQueue() {
       .select('topic, status')
       .in('status', ['pending', 'processing', 'done']);
 
-    const existingTopics = new Set(((existingQueue as any[]) || []).map((q: any) => q.topic.toLowerCase().trim()));
+    const existingTopics = new Set(
+      ((existingQueue as any[]) || []).map((q: any) => q.topic.toLowerCase().trim())
+    );
 
     // Check for existing articles by keyword
-    const { data: existingArticles } = await supabase
-      .from('seo_articles')
-      .select('keyword');
+    const { data: existingArticles } = await supabase.from('seo_articles').select('keyword');
 
-    const existingKeywords = new Set(((existingArticles as any[]) || []).map((a: any) => a.keyword.toLowerCase().trim()));
+    const existingKeywords = new Set(
+      ((existingArticles as any[]) || []).map((a: any) => a.keyword.toLowerCase().trim())
+    );
 
     const toInsert: { topic: string; category: string | null; priority: number }[] = [];
     let duplicates = 0;
@@ -114,7 +118,7 @@ export function useArticleQueue() {
           console.error('bulk insert error:', error);
           throw new Error(`Erreur d'insertion : ${error.message}`);
         }
-        totalInserted += (inserted?.length ?? 0);
+        totalInserted += inserted?.length ?? 0;
       }
     }
 
@@ -125,7 +129,7 @@ export function useArticleQueue() {
 
   const deleteItem = async (id: string) => {
     await supabase.from('article_queue').delete().eq('id', id);
-    setItems(prev => prev.filter(i => i.id !== id));
+    setItems((prev) => prev.filter((i) => i.id !== id));
   };
 
   const retryItem = async (id: string) => {

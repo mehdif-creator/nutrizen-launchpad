@@ -28,7 +28,8 @@ interface StepConfig {
 const ONBOARDING_STEPS: StepConfig[] = [
   {
     title: 'Bienvenue sur NutriZen 👋',
-    subtitle: 'Étape 1 sur 4 — Commence par remplir ton profil pour que NutriZen puisse te proposer des menus vraiment adaptés à toi et à ta famille.',
+    subtitle:
+      'Étape 1 sur 4 — Commence par remplir ton profil pour que NutriZen puisse te proposer des menus vraiment adaptés à toi et à ta famille.',
     primaryCTA: 'Remplir mon profil',
     secondaryCTA: 'Plus tard',
     emoji: '👋',
@@ -38,7 +39,8 @@ const ONBOARDING_STEPS: StepConfig[] = [
   },
   {
     title: 'Génère ton premier menu en 1 clic 🍽️',
-    subtitle: 'Étape 2 sur 4 — Dis à NutriZen combien de repas tu veux, puis laisse-nous créer un menu équilibré pour la semaine.',
+    subtitle:
+      'Étape 2 sur 4 — Dis à NutriZen combien de repas tu veux, puis laisse-nous créer un menu équilibré pour la semaine.',
     primaryCTA: 'Créer mon premier menu',
     secondaryCTA: 'Plus tard',
     emoji: '🍽️',
@@ -57,7 +59,8 @@ const ONBOARDING_STEPS: StepConfig[] = [
   },
   {
     title: 'Utilise les swaps pour adapter ton menu 🔁',
-    subtitle: 'Étape 3 sur 4 — Si un repas ne te plaît pas, tu peux le remplacer facilement grâce aux swaps, sans casser l\'équilibre de ta semaine.',
+    subtitle:
+      "Étape 3 sur 4 — Si un repas ne te plaît pas, tu peux le remplacer facilement grâce aux swaps, sans casser l'équilibre de ta semaine.",
     primaryCTA: 'Voir comment ça marche',
     secondaryCTA: 'Compris',
     emoji: '🔁',
@@ -76,7 +79,8 @@ const ONBOARDING_STEPS: StepConfig[] = [
   },
   {
     title: 'Bloqué ? Utilise InspiFrigo et ScanRepas 🧠',
-    subtitle: 'Étape 4 sur 4 — Quand tu ne sais plus quoi manger, NutriZen t\'aide à partir de ce que tu as déjà dans ton frigo (InspiFrigo) ou à partir de la photo de ton assiette (ScanRepas).',
+    subtitle:
+      "Étape 4 sur 4 — Quand tu ne sais plus quoi manger, NutriZen t'aide à partir de ce que tu as déjà dans ton frigo (InspiFrigo) ou à partir de la photo de ton assiette (ScanRepas).",
     primaryCTA: 'Découvrir ces fonctionnalités',
     secondaryCTA: 'Terminer',
     emoji: '🧠',
@@ -86,23 +90,23 @@ const ONBOARDING_STEPS: StepConfig[] = [
   },
 ];
 
- /**
-  * OnboardingCoach - Post-onboarding tips modal
-  * Only shows AFTER the main onboarding is completed (for returning users)
-  * This is separate from the main /app/onboarding flow
-  */
+/**
+ * OnboardingCoach - Post-onboarding tips modal
+ * Only shows AFTER the main onboarding is completed (for returning users)
+ * This is separate from the main /app/onboarding flow
+ */
 export const OnboardingCoach = ({ userId }: OnboardingCoachProps) => {
   const navigate = useNavigate();
-   const { currentStep, shouldShow, nextStep, skipStep, loading } = useOnboarding(userId);
+  const { currentStep, shouldShow, nextStep, skipStep, loading } = useOnboarding(userId);
   const [isOpen, setIsOpen] = useState(false);
 
   // Show modal when onboarding should be displayed
   useEffect(() => {
-     // Don't show while loading
-     if (loading) return;
-     
-     // Show if shouldShow is true and we have a valid step
-     if (shouldShow && currentStep >= 0 && currentStep < 4) {
+    // Don't show while loading
+    if (loading) return;
+
+    // Show if shouldShow is true and we have a valid step
+    if (shouldShow && currentStep >= 0 && currentStep < 4) {
       // Small delay to let the page render first
       const timer = setTimeout(() => setIsOpen(true), 500);
       return () => clearTimeout(timer);
@@ -110,13 +114,13 @@ export const OnboardingCoach = ({ userId }: OnboardingCoachProps) => {
       // Close modal when onboarding is completed or shouldn't show
       setIsOpen(false);
     }
-   }, [shouldShow, currentStep, loading]);
+  }, [shouldShow, currentStep, loading]);
 
   // Get current step configuration
   const stepConfig = ONBOARDING_STEPS[currentStep];
 
-   // Don't render anything if loading, shouldn't show, or no step config
-   if (loading || !shouldShow || !stepConfig) {
+  // Don't render anything if loading, shouldn't show, or no step config
+  if (loading || !shouldShow || !stepConfig) {
     return null;
   }
 
@@ -144,27 +148,14 @@ export const OnboardingCoach = ({ userId }: OnboardingCoachProps) => {
               Étape {currentStep + 1}/4
             </Badge>
           </div>
-          <DialogTitle className="text-2xl flex items-center gap-2">
-            {stepConfig.title}
-          </DialogTitle>
-          <DialogDescription className="text-base pt-2">
-            {stepConfig.subtitle}
-          </DialogDescription>
+          <DialogTitle className="text-2xl flex items-center gap-2">{stepConfig.title}</DialogTitle>
+          <DialogDescription className="text-base pt-2">{stepConfig.subtitle}</DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex-col sm:flex-col gap-2 sm:gap-2">
-          <Button 
-            onClick={handlePrimaryAction}
-            className="w-full"
-            size="lg"
-          >
+          <Button onClick={handlePrimaryAction} className="w-full" size="lg">
             {stepConfig.primaryCTA}
           </Button>
-          <Button 
-            onClick={handleSecondaryAction}
-            variant="ghost"
-            className="w-full"
-            size="lg"
-          >
+          <Button onClick={handleSecondaryAction} variant="ghost" className="w-full" size="lg">
             {stepConfig.secondaryCTA}
           </Button>
         </DialogFooter>

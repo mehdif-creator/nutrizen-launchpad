@@ -7,18 +7,18 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminReferralFunnel } from '@/hooks/useAdminStats';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  Users, 
-  MousePointerClick, 
-  UserPlus, 
-  CheckCircle2, 
-  Gift, 
+import {
+  Users,
+  MousePointerClick,
+  UserPlus,
+  CheckCircle2,
+  Gift,
   TrendingUp,
   ArrowLeft,
   RefreshCw,
   FlaskConical,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
@@ -73,7 +73,7 @@ export default function AdminReferrals() {
       console.error('[AdminReferrals] Test harness error:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible d\'exécuter les tests de parrainage.',
+        description: "Impossible d'exécuter les tests de parrainage.",
         variant: 'destructive',
       });
     } finally {
@@ -93,9 +93,7 @@ export default function AdminReferrals() {
             </Link>
             <div>
               <h1 className="text-3xl font-bold">Parrainage</h1>
-              <p className="text-muted-foreground">
-                Funnel de conversion et tests
-              </p>
+              <p className="text-muted-foreground">Funnel de conversion et tests</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -170,9 +168,10 @@ export default function AdminReferrals() {
                   <TrendingUp className="h-8 w-8 text-primary" />
                 </div>
                 <p className="text-3xl font-bold">
-                  {stats?.total_clicks && stats.total_rewards 
-                    ? ((stats.total_rewards / stats.total_clicks) * 100).toFixed(1) 
-                    : 0}%
+                  {stats?.total_clicks && stats.total_rewards
+                    ? ((stats.total_rewards / stats.total_clicks) * 100).toFixed(1)
+                    : 0}
+                  %
                 </p>
                 <p className="text-sm text-muted-foreground">Clic → Récompense</p>
               </Card>
@@ -248,9 +247,7 @@ export default function AdminReferrals() {
               <Users className="h-5 w-5" />
               Top parrains
             </CardTitle>
-            <CardDescription>
-              Utilisateurs avec le plus de parrainages réussis
-            </CardDescription>
+            <CardDescription>Utilisateurs avec le plus de parrainages réussis</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground text-center py-8">

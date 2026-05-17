@@ -32,10 +32,9 @@ export function useBootstrapHealth(userId: string | undefined) {
   const query = useQuery({
     queryKey: ['bootstrapHealth', userId],
     queryFn: async (): Promise<BootstrapHealth> => {
-      const { data, error } = await (supabase.rpc as Function)(
-        'check_user_bootstrap_health',
-        { p_user_id: userId }
-      );
+      const { data, error } = await (supabase.rpc as Function)('check_user_bootstrap_health', {
+        p_user_id: userId,
+      });
 
       if (error) {
         logger.error('Health check failed', error);
@@ -62,10 +61,9 @@ export function useBootstrapHealth(userId: string | undefined) {
   // Repair mutation
   const repair = useMutation({
     mutationFn: async () => {
-      const { data, error } = await (supabase.rpc as Function)(
-        'repair_user_bootstrap',
-        { p_user_id: userId }
-      );
+      const { data, error } = await (supabase.rpc as Function)('repair_user_bootstrap', {
+        p_user_id: userId,
+      });
       if (error) throw error;
       return data;
     },

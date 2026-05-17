@@ -40,7 +40,10 @@ export default function ManualSocialPosts() {
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Link to="/admin" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Link
+                to="/admin"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
                 Admin
               </Link>
               <span className="text-muted-foreground">/</span>
@@ -50,7 +53,9 @@ export default function ManualSocialPosts() {
               <ImageIcon className="h-8 w-8 text-primary" />
               Posts manu RS
             </h1>
-            <p className="text-muted-foreground mt-1">Gestion manuelle des publications réseaux sociaux</p>
+            <p className="text-muted-foreground mt-1">
+              Gestion manuelle des publications réseaux sociaux
+            </p>
           </div>
           <Button variant="outline" size="sm" onClick={fetchPosts} disabled={loading}>
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
@@ -80,7 +85,7 @@ export default function ManualSocialPosts() {
               <span className="text-xs text-muted-foreground font-normal">(posts prêts)</span>
             </h2>
             <div className="flex flex-wrap gap-2">
-              {boardDistribution.map(b => (
+              {boardDistribution.map((b) => (
                 <Badge key={b.board_slug} variant="outline" className="text-xs px-2.5 py-1">
                   {b.board_name} : {b.count}
                 </Badge>

@@ -1,8 +1,8 @@
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Check, Sparkles, Shield, Crown, Star, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Check, Sparkles, Shield, Crown, Star, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
 
 interface ComparisonCopy {
   without: string[];
@@ -17,18 +17,22 @@ interface PricingProps {
 
 const defaultComparison: ComparisonCopy = {
   without: [
-    "~45 min/soir à décider quoi cuisiner",
-    "~200€/mois gaspillés en courses non planifiées",
-    "21 décisions alimentaires par semaine",
+    '~45 min/soir à décider quoi cuisiner',
+    '~200€/mois gaspillés en courses non planifiées',
+    '21 décisions alimentaires par semaine',
   ],
   with: [
     "5 minutes le dimanche — c'est tout",
-    "Économie moyenne de 200€/mois sur les courses",
-    "1 décision par semaine",
+    'Économie moyenne de 200€/mois sur les courses',
+    '1 décision par semaine',
   ],
 };
 
-export const Pricing = ({ onCtaClick, pricingNote, comparison = defaultComparison }: PricingProps) => {
+export const Pricing = ({
+  onCtaClick,
+  pricingNote,
+  comparison = defaultComparison,
+}: PricingProps) => {
   const navigate = useNavigate();
 
   const handleCheckout = (plan: string) => {
@@ -57,7 +61,9 @@ export const Pricing = ({ onCtaClick, pricingNote, comparison = defaultCompariso
           <div className="grid md:grid-cols-[1fr_auto_1fr] gap-6 md:gap-0">
             {/* Sans NutriZen */}
             <div className="space-y-3 md:pr-8">
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">Sans NutriZen</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">
+                Sans NutriZen
+              </p>
               {comparison.without.map((line) => (
                 <div key={line} className="flex items-start gap-2">
                   <X className="w-4 h-4 text-destructive/60 flex-shrink-0 mt-0.5" />
@@ -69,16 +75,22 @@ export const Pricing = ({ onCtaClick, pricingNote, comparison = defaultCompariso
             {/* VS divider */}
             <div className="hidden md:flex flex-col items-center justify-center">
               <div className="w-px h-full bg-border relative">
-                <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-muted/80 border border-border rounded-full px-2.5 py-1 text-xs font-bold text-muted-foreground">VS</span>
+                <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-muted/80 border border-border rounded-full px-2.5 py-1 text-xs font-bold text-muted-foreground">
+                  VS
+                </span>
               </div>
             </div>
             <div className="md:hidden flex items-center justify-center">
-              <span className="bg-muted/80 border border-border rounded-full px-3 py-1 text-xs font-bold text-muted-foreground">VS</span>
+              <span className="bg-muted/80 border border-border rounded-full px-3 py-1 text-xs font-bold text-muted-foreground">
+                VS
+              </span>
             </div>
 
             {/* Avec NutriZen */}
             <div className="space-y-3 md:pl-8">
-              <p className="text-xs font-bold uppercase tracking-wider text-green-500 mb-4">Avec NutriZen</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-green-500 mb-4">
+                Avec NutriZen
+              </p>
               {comparison.with.map((line) => (
                 <div key={line} className="flex items-start gap-2">
                   <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
@@ -122,8 +134,8 @@ export const Pricing = ({ onCtaClick, pricingNote, comparison = defaultCompariso
             <div className="space-y-3 mb-8">
               {[
                 "Jusqu'à 2 semaines de menus",
-                "Profil + allergies pris en compte",
-                "Liste de courses automatique",
+                'Profil + allergies pris en compte',
+                'Liste de courses automatique',
               ].map((f) => (
                 <div key={f} className="flex items-start gap-3">
                   <Check className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
@@ -132,7 +144,12 @@ export const Pricing = ({ onCtaClick, pricingNote, comparison = defaultCompariso
               ))}
             </div>
 
-            <Button onClick={() => handleCheckout('free')} variant="outline" className="w-full" size="lg">
+            <Button
+              onClick={() => handleCheckout('free')}
+              variant="outline"
+              className="w-full"
+              size="lg"
+            >
               Commencer gratuitement
             </Button>
             <p className="text-xs text-muted-foreground text-center mt-2">Sans carte bancaire</p>
@@ -167,9 +184,9 @@ export const Pricing = ({ onCtaClick, pricingNote, comparison = defaultCompariso
 
             <div className="space-y-3 mb-8">
               {[
-                "Menus de la semaine en 30 secondes, adaptés à ton profil",
-                "Liste de courses prête à imprimer",
-                "80 crédits/mois pour swaps, scans frigo, macros",
+                'Menus de la semaine en 30 secondes, adaptés à ton profil',
+                'Liste de courses prête à imprimer',
+                '80 crédits/mois pour swaps, scans frigo, macros',
                 "Rollover jusqu'à 20 crédits non utilisés",
               ].map((f) => (
                 <div key={f} className="flex items-start gap-3">
@@ -218,10 +235,10 @@ export const Pricing = ({ onCtaClick, pricingNote, comparison = defaultCompariso
 
             <div className="space-y-3 mb-8">
               {[
-                "200 crédits/mois — menus + scans + ajustements illimités",
-                "Priorité de génération : résultats plus rapides",
+                '200 crédits/mois — menus + scans + ajustements illimités',
+                'Priorité de génération : résultats plus rapides',
                 "Rollover jusqu'à 80 crédits",
-                "-10% sur les packs de crédits supplémentaires",
+                '-10% sur les packs de crédits supplémentaires',
               ].map((f) => (
                 <div key={f} className="flex items-start gap-3">
                   <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
@@ -246,7 +263,8 @@ export const Pricing = ({ onCtaClick, pricingNote, comparison = defaultCompariso
         {/* ROI summary line */}
         <p className="text-center text-sm text-muted-foreground italic mt-10 max-w-xl mx-auto">
           Pour 12,99€/mois, la plupart de nos utilisateurs économisent plus de{' '}
-          <span className="font-bold text-accent not-italic">15x</span> ce montant sur leur budget courses.
+          <span className="font-bold text-accent not-italic">15x</span> ce montant sur leur budget
+          courses.
         </p>
 
         {/* Trust indicators */}

@@ -97,10 +97,10 @@ export function useAwardXp() {
         };
       } catch (error) {
         logger.error('Unexpected error', error instanceof Error ? error : new Error(String(error)));
-        return { 
-          success: false, 
-          alreadyProcessed: false, 
-          error: error instanceof Error ? error.message : 'Unknown error' 
+        return {
+          success: false,
+          alreadyProcessed: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
         };
       }
     },

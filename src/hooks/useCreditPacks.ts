@@ -14,10 +14,46 @@ export interface CreditPack {
 
 // Fallback packs if database is unavailable
 const FALLBACK_PACKS: CreditPack[] = [
-  { id: 'pack_s', name: 'Pack S', credits: 50, price_cents: 499, currency: 'eur', stripe_price_id: null, active: true, sort_order: 1 },
-  { id: 'pack_m', name: 'Pack M', credits: 120, price_cents: 999, currency: 'eur', stripe_price_id: null, active: true, sort_order: 2 },
-  { id: 'pack_l', name: 'Pack L', credits: 300, price_cents: 1999, currency: 'eur', stripe_price_id: null, active: true, sort_order: 3 },
-  { id: 'pack_xl', name: 'Pack XL', credits: 700, price_cents: 3999, currency: 'eur', stripe_price_id: null, active: true, sort_order: 4 },
+  {
+    id: 'pack_s',
+    name: 'Pack S',
+    credits: 50,
+    price_cents: 499,
+    currency: 'eur',
+    stripe_price_id: null,
+    active: true,
+    sort_order: 1,
+  },
+  {
+    id: 'pack_m',
+    name: 'Pack M',
+    credits: 120,
+    price_cents: 999,
+    currency: 'eur',
+    stripe_price_id: null,
+    active: true,
+    sort_order: 2,
+  },
+  {
+    id: 'pack_l',
+    name: 'Pack L',
+    credits: 300,
+    price_cents: 1999,
+    currency: 'eur',
+    stripe_price_id: null,
+    active: true,
+    sort_order: 3,
+  },
+  {
+    id: 'pack_xl',
+    name: 'Pack XL',
+    credits: 700,
+    price_cents: 3999,
+    currency: 'eur',
+    stripe_price_id: null,
+    active: true,
+    sort_order: 4,
+  },
 ];
 
 export function useCreditPacks() {

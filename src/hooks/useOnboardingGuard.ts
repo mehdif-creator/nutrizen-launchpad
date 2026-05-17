@@ -174,10 +174,7 @@ export async function updateOnboardingStatus(
 
   if (Object.keys(updateData).length === 0) return;
 
-  const { error } = await supabase
-    .from('profiles')
-    .update(updateData)
-    .eq('id', userId);
+  const { error } = await supabase.from('profiles').update(updateData).eq('id', userId);
 
   if (error) {
     console.error('[updateOnboardingStatus] Error:', error);

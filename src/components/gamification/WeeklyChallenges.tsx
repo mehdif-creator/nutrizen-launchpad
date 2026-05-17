@@ -24,7 +24,7 @@ const defaultChallenges: Challenge[] = [
   {
     id: 'new-recipe',
     title: 'Essaie une nouvelle recette',
-    description: 'Cuisine une recette que tu n\'as jamais faite',
+    description: "Cuisine une recette que tu n'as jamais faite",
     target: 1,
     current: 0,
     reward: 20,
@@ -63,12 +63,12 @@ const defaultChallenges: Challenge[] = [
   },
 ];
 
-export const WeeklyChallenges = ({ 
-  challenges = defaultChallenges, 
-  weekNumber = 1 
+export const WeeklyChallenges = ({
+  challenges = defaultChallenges,
+  weekNumber = 1,
 }: Partial<WeeklyChallengesProps>) => {
-  const completedCount = challenges.filter(c => c.completed).length;
-  const totalRewards = challenges.filter(c => c.completed).reduce((acc, c) => acc + c.reward, 0);
+  const completedCount = challenges.filter((c) => c.completed).length;
+  const totalRewards = challenges.filter((c) => c.completed).reduce((acc, c) => acc + c.reward, 0);
 
   return (
     <Card className="p-6">
@@ -84,8 +84,7 @@ export const WeeklyChallenges = ({
           </p>
         </div>
         <Badge variant="secondary" className="flex items-center gap-1">
-          <Gift className="w-3 h-3" />
-          +{totalRewards} pts gagnés
+          <Gift className="w-3 h-3" />+{totalRewards} pts gagnés
         </Badge>
       </div>
 
@@ -99,22 +98,22 @@ export const WeeklyChallenges = ({
             transition={{ delay: index * 0.1 }}
             className={`
               p-4 rounded-lg border transition-all
-              ${challenge.completed 
-                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
-                : 'bg-card border-border hover:border-primary/30'
+              ${
+                challenge.completed
+                  ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                  : 'bg-card border-border hover:border-primary/30'
               }
             `}
           >
             <div className="flex items-start gap-4">
               {/* Icon & Status */}
               <div className="flex-shrink-0">
-                <div className={`
+                <div
+                  className={`
                   w-12 h-12 rounded-full flex items-center justify-center text-2xl
-                  ${challenge.completed 
-                    ? 'bg-green-100 dark:bg-green-800' 
-                    : 'bg-muted'
-                  }
-                `}>
+                  ${challenge.completed ? 'bg-green-100 dark:bg-green-800' : 'bg-muted'}
+                `}
+                >
                   {challenge.icon}
                 </div>
               </div>
@@ -122,23 +121,21 @@ export const WeeklyChallenges = ({
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <h4 className={`font-medium ${challenge.completed && 'text-green-700 dark:text-green-300'}`}>
+                  <h4
+                    className={`font-medium ${challenge.completed && 'text-green-700 dark:text-green-300'}`}
+                  >
                     {challenge.title}
                   </h4>
-                  {challenge.completed && (
-                    <CheckCircle2 className="w-4 h-4 text-green-600" />
-                  )}
+                  {challenge.completed && <CheckCircle2 className="w-4 h-4 text-green-600" />}
                 </div>
-                <p className="text-sm text-muted-foreground mb-2">
-                  {challenge.description}
-                </p>
+                <p className="text-sm text-muted-foreground mb-2">{challenge.description}</p>
 
                 {/* Progress */}
                 {!challenge.completed && (
                   <div className="flex items-center gap-3">
-                    <Progress 
-                      value={(challenge.current / challenge.target) * 100} 
-                      className="h-2 flex-1" 
+                    <Progress
+                      value={(challenge.current / challenge.target) * 100}
+                      className="h-2 flex-1"
                     />
                     <span className="text-xs font-medium text-muted-foreground">
                       {challenge.current}/{challenge.target}
@@ -148,13 +145,16 @@ export const WeeklyChallenges = ({
               </div>
 
               {/* Reward */}
-              <div className={`
+              <div
+                className={`
                 flex-shrink-0 px-3 py-1 rounded-full text-sm font-medium
-                ${challenge.completed 
-                  ? 'bg-green-200 dark:bg-green-700 text-green-800 dark:text-green-100' 
-                  : 'bg-accent/10 text-accent'
+                ${
+                  challenge.completed
+                    ? 'bg-green-200 dark:bg-green-700 text-green-800 dark:text-green-100'
+                    : 'bg-accent/10 text-accent'
                 }
-              `}>
+              `}
+              >
                 +{challenge.reward} pts
               </div>
             </div>
@@ -171,9 +171,7 @@ export const WeeklyChallenges = ({
         >
           <div className="text-3xl mb-2">🎉</div>
           <p className="font-semibold">Tous les défis complétés !</p>
-          <p className="text-sm text-muted-foreground">
-            Tu as gagné un bonus de +50 points !
-          </p>
+          <p className="text-sm text-muted-foreground">Tu as gagné un bonus de +50 points !</p>
         </motion.div>
       )}
     </Card>

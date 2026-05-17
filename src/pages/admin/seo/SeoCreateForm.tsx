@@ -59,18 +59,22 @@ export function SeoCreateForm({ onCreated }: Props) {
         <Input
           placeholder="Mot-clé cible (ex: recette healthy rapide midi)"
           value={keyword}
-          onChange={e => setKeyword(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleCreate()}
+          onChange={(e) => setKeyword(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
           className="flex-1"
         />
         <Input
           placeholder="Contexte du cluster (optionnel)"
           value={cluster}
-          onChange={e => setCluster(e.target.value)}
+          onChange={(e) => setCluster(e.target.value)}
           className="flex-1 sm:max-w-xs"
         />
         <Button onClick={handleCreate} disabled={creating || !keyword.trim()}>
-          {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Rocket className="mr-2 h-4 w-4" />}
+          {creating ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Rocket className="mr-2 h-4 w-4" />
+          )}
           Ajouter et lancer
         </Button>
       </div>

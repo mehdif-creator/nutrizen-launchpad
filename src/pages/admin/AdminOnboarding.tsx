@@ -3,16 +3,16 @@ import { AppFooter } from '@/components/app/AppFooter';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Users, 
-  TrendingUp, 
-  Clock, 
-  CheckCircle, 
+import {
+  Users,
+  TrendingUp,
+  Clock,
+  CheckCircle,
   XCircle,
   BarChart3,
   RefreshCw,
   UserCheck,
-  UserX
+  UserX,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -86,26 +86,30 @@ export default function AdminOnboarding() {
       if (profilesError) throw profilesError;
 
       // Email is now in the same profiles table
-      const emailMap = new Map(profiles?.map(p => [p.id, p.email]) || []);
+      const emailMap = new Map(profiles?.map((p) => [p.id, p.email]) || []);
 
       const totalUsers = profiles?.length || 0;
-      const completedOnboarding = profiles?.filter(p => p.onboarding_completed).length || 0;
-      const inProgressOnboarding = profiles?.filter(p => !p.onboarding_completed && p.onboarding_step > 0).length || 0;
-      const notStartedOnboarding = profiles?.filter(p => p.onboarding_step === 0 && !p.onboarding_completed).length || 0;
+      const completedOnboarding = profiles?.filter((p) => p.onboarding_completed).length || 0;
+      const inProgressOnboarding =
+        profiles?.filter((p) => !p.onboarding_completed && p.onboarding_step > 0).length || 0;
+      const notStartedOnboarding =
+        profiles?.filter((p) => p.onboarding_step === 0 && !p.onboarding_completed).length || 0;
 
       // Step distribution
       const stepStats = {
-        step0: profiles?.filter(p => p.onboarding_step === 0 && !p.onboarding_completed).length || 0,
-        step1: profiles?.filter(p => p.onboarding_step === 1).length || 0,
-        step2: profiles?.filter(p => p.onboarding_step === 2).length || 0,
-        step3: profiles?.filter(p => p.onboarding_step === 3).length || 0,
-        step4: profiles?.filter(p => p.onboarding_step === 4 || p.onboarding_completed).length || 0,
+        step0:
+          profiles?.filter((p) => p.onboarding_step === 0 && !p.onboarding_completed).length || 0,
+        step1: profiles?.filter((p) => p.onboarding_step === 1).length || 0,
+        step2: profiles?.filter((p) => p.onboarding_step === 2).length || 0,
+        step3: profiles?.filter((p) => p.onboarding_step === 3).length || 0,
+        step4:
+          profiles?.filter((p) => p.onboarding_step === 4 || p.onboarding_completed).length || 0,
       };
 
       // Calculate average completion time for completed onboarding
-      const completedUsers = profiles?.filter(p => p.onboarding_completed) || [];
+      const completedUsers = profiles?.filter((p) => p.onboarding_completed) || [];
       let totalCompletionTime = 0;
-      
+
       for (const user of completedUsers) {
         const createdAt = new Date(user.created_at);
         const now = new Date();
@@ -113,17 +117,18 @@ export default function AdminOnboarding() {
         totalCompletionTime += hoursElapsed;
       }
 
-      const avgCompletionTimeHours = completedUsers.length > 0 
-        ? totalCompletionTime / completedUsers.length 
-        : 0;
+      const avgCompletionTimeHours =
+        completedUsers.length > 0 ? totalCompletionTime / completedUsers.length : 0;
 
       // Get incomplete users (not completed onboarding)
-      const incompleteProfiles = profiles?.filter(p => !p.onboarding_completed) || [];
-      const incompleteUsers = incompleteProfiles.map(user => {
+      const incompleteProfiles = profiles?.filter((p) => !p.onboarding_completed) || [];
+      const incompleteUsers = incompleteProfiles.map((user) => {
         const createdAt = new Date(user.created_at);
         const now = new Date();
-        const daysSinceSignup = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
-        
+        const daysSinceSignup = Math.floor(
+          (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
         return {
           id: user.id,
           email: emailMap.get(user.id) || 'N/A',
@@ -199,7 +204,10 @@ export default function AdminOnboarding() {
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <Link to="/admin" className="text-sm text-muted-foreground hover:text-foreground mb-2 inline-block">
+            <Link
+              to="/admin"
+              className="text-sm text-muted-foreground hover:text-foreground mb-2 inline-block"
+            >
               ← Retour au dashboard
             </Link>
             <h1 className="text-4xl font-bold">Statistiques d'Onboarding</h1>
@@ -243,9 +251,7 @@ export default function AdminOnboarding() {
               <div>
                 <p className="text-sm text-muted-foreground">En cours</p>
                 <p className="text-3xl font-bold">{stats.inProgressOnboarding}</p>
-                <p className="text-xs text-amber-600 mt-1">
-                  Étapes 1-3
-                </p>
+                <p className="text-xs text-amber-600 mt-1">Étapes 1-3</p>
               </div>
               <TrendingUp className="h-10 w-10 text-amber-500" />
             </div>
@@ -256,9 +262,7 @@ export default function AdminOnboarding() {
               <div>
                 <p className="text-sm text-muted-foreground">Non démarré</p>
                 <p className="text-3xl font-bold">{stats.notStartedOnboarding}</p>
-                <p className="text-xs text-red-600 mt-1">
-                  Étape 0
-                </p>
+                <p className="text-xs text-red-600 mt-1">Étape 0</p>
               </div>
               <UserX className="h-10 w-10 text-red-500" />
             </div>
@@ -308,11 +312,15 @@ export default function AdminOnboarding() {
                   <div className="w-full bg-muted rounded-full h-2">
                     <div
                       className={`h-2 rounded-full transition-all ${
-                        stepNum === 4 ? 'bg-green-500' :
-                        stepNum === 3 ? 'bg-blue-500' :
-                        stepNum === 2 ? 'bg-amber-500' :
-                        stepNum === 1 ? 'bg-orange-500' :
-                        'bg-red-500'
+                        stepNum === 4
+                          ? 'bg-green-500'
+                          : stepNum === 3
+                            ? 'bg-blue-500'
+                            : stepNum === 2
+                              ? 'bg-amber-500'
+                              : stepNum === 1
+                                ? 'bg-orange-500'
+                                : 'bg-red-500'
                       }`}
                       style={{ width: `${percentage}%` }}
                     />
@@ -357,16 +365,14 @@ export default function AdminOnboarding() {
                         <TableCell className="font-medium">
                           {user.display_name || 'Non défini'}
                         </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {user.email}
+                        <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                        <TableCell>
+                          <Badge variant={stepBadge.variant}>{stepBadge.label}</Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={stepBadge.variant}>
-                            {stepBadge.label}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <span className={user.days_since_signup > 7 ? 'text-red-600 font-medium' : ''}>
+                          <span
+                            className={user.days_since_signup > 7 ? 'text-red-600 font-medium' : ''}
+                          >
                             {user.days_since_signup} jours
                           </span>
                         </TableCell>
@@ -382,8 +388,10 @@ export default function AdminOnboarding() {
           </div>
           {stats.incompleteUsers.length > 0 && (
             <p className="text-xs text-muted-foreground mt-4">
-              Affichage des 50 premiers utilisateurs. {stats.notStartedOnboarding + stats.inProgressOnboarding > 50 ? 
-                `${stats.notStartedOnboarding + stats.inProgressOnboarding - 50} utilisateurs supplémentaires non affichés.` : ''}
+              Affichage des 50 premiers utilisateurs.{' '}
+              {stats.notStartedOnboarding + stats.inProgressOnboarding > 50
+                ? `${stats.notStartedOnboarding + stats.inProgressOnboarding - 50} utilisateurs supplémentaires non affichés.`
+                : ''}
             </p>
           )}
         </Card>

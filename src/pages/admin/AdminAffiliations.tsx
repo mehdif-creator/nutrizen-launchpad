@@ -61,7 +61,10 @@ export default function AdminAffiliations() {
           .eq('affiliate_code', aff.affiliate_code);
 
         const total = comms?.reduce((s: number, c: any) => s + c.commission_amount_cents, 0) || 0;
-        const pending = comms?.filter((c: any) => c.status === 'pending').reduce((s: number, c: any) => s + c.commission_amount_cents, 0) || 0;
+        const pending =
+          comms
+            ?.filter((c: any) => c.status === 'pending')
+            .reduce((s: number, c: any) => s + c.commission_amount_cents, 0) || 0;
 
         rows.push({
           affiliate_code: aff.affiliate_code,

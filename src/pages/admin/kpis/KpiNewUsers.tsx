@@ -24,17 +24,29 @@ export default function KpiNewUsers() {
   const { from, to } = getDateRange(dateRange);
   const filters = { dateFrom: from, dateTo: to, granularity };
 
-  const { data: summary, isLoading: loadingSummary, refetch: refetchSummary } = useQuery({
+  const {
+    data: summary,
+    isLoading: loadingSummary,
+    refetch: refetchSummary,
+  } = useQuery({
     queryKey: ['kpi-new-users-summary', from, to],
     queryFn: () => fetchNewUsersSummary(filters),
   });
 
-  const { data: timeseries, isLoading: loadingTimeseries, refetch: refetchTimeseries } = useQuery({
+  const {
+    data: timeseries,
+    isLoading: loadingTimeseries,
+    refetch: refetchTimeseries,
+  } = useQuery({
     queryKey: ['kpi-new-users-timeseries', from, to, granularity],
     queryFn: () => fetchNewUsersTimeseries(filters),
   });
 
-  const { data: breakdown, isLoading: loadingBreakdown, refetch: refetchBreakdown } = useQuery({
+  const {
+    data: breakdown,
+    isLoading: loadingBreakdown,
+    refetch: refetchBreakdown,
+  } = useQuery({
     queryKey: ['kpi-new-users-breakdown', from, to],
     queryFn: () => fetchUsersBreakdown(filters),
   });

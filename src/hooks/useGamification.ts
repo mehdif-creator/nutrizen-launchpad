@@ -35,11 +35,11 @@ function computeLevelInfo(points: number): { level: number; xpToNext: number } {
       break;
     }
   }
-  
+
   const nextThreshold = LEVEL_THRESHOLDS[level] || LEVEL_THRESHOLDS[level - 1] + 500;
   const currentThreshold = LEVEL_THRESHOLDS[level - 1] || 0;
   const xpToNext = nextThreshold - currentThreshold;
-  
+
   return { level, xpToNext };
 }
 

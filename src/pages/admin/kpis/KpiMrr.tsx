@@ -26,22 +26,38 @@ export default function KpiMrr() {
   const { from, to } = getDateRange(dateRange);
   const filters = { dateFrom: from, dateTo: to, granularity };
 
-  const { data: summary, isLoading: loadingSummary, refetch: refetchSummary } = useQuery({
+  const {
+    data: summary,
+    isLoading: loadingSummary,
+    refetch: refetchSummary,
+  } = useQuery({
     queryKey: ['kpi-mrr-summary', from, to],
     queryFn: () => fetchMrrSummary(filters),
   });
 
-  const { data: timeseries, isLoading: loadingTimeseries, refetch: refetchTimeseries } = useQuery({
+  const {
+    data: timeseries,
+    isLoading: loadingTimeseries,
+    refetch: refetchTimeseries,
+  } = useQuery({
     queryKey: ['kpi-mrr-timeseries', from, to, granularity],
     queryFn: () => fetchMrrTimeseries(filters),
   });
 
-  const { data: byPlan, isLoading: loadingByPlan, refetch: refetchByPlan } = useQuery({
+  const {
+    data: byPlan,
+    isLoading: loadingByPlan,
+    refetch: refetchByPlan,
+  } = useQuery({
     queryKey: ['kpi-mrr-by-plan', from, to],
     queryFn: () => fetchMrrByPlan(filters),
   });
 
-  const { data: topCustomers, isLoading: loadingTopCustomers, refetch: refetchTopCustomers } = useQuery({
+  const {
+    data: topCustomers,
+    isLoading: loadingTopCustomers,
+    refetch: refetchTopCustomers,
+  } = useQuery({
     queryKey: ['kpi-mrr-top-customers', from, to],
     queryFn: () => fetchMrrTopCustomers(filters),
   });
@@ -63,7 +79,9 @@ export default function KpiMrr() {
     }
   };
 
-  const change = summary ? ((summary.current_mrr - summary.previous_mrr) / (summary.previous_mrr || 1)) * 100 : 0;
+  const change = summary
+    ? ((summary.current_mrr - summary.previous_mrr) / (summary.previous_mrr || 1)) * 100
+    : 0;
 
   return (
     <KpiDetailLayout
@@ -98,7 +116,9 @@ export default function KpiMrr() {
           title="Variation nette"
           value={`${summary?.net_change.toFixed(2) || 0}€`}
           icon={summary?.net_change && summary.net_change >= 0 ? TrendingUp : TrendingDown}
-          iconColor={summary?.net_change && summary.net_change >= 0 ? 'text-green-500' : 'text-red-500'}
+          iconColor={
+            summary?.net_change && summary.net_change >= 0 ? 'text-green-500' : 'text-red-500'
+          }
           isLoading={loadingSummary}
         />
         <SummaryTile
@@ -146,15 +166,15 @@ export default function KpiMrr() {
           { key: 'email', label: 'Email', sortable: true },
           { key: 'name', label: 'Nom' },
           { key: 'plan', label: 'Plan' },
-          { 
-            key: 'mrr', 
-            label: 'MRR', 
+          {
+            key: 'mrr',
+            label: 'MRR',
             format: (v) => `${v.toFixed(2)}€`,
             sortable: true,
             align: 'right',
           },
-          { 
-            key: 'created_at', 
+          {
+            key: 'created_at',
             label: 'Inscrit le',
             format: (v) => new Date(v).toLocaleDateString('fr-FR'),
           },

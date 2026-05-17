@@ -82,8 +82,8 @@ export function LineChartCard({
         <ResponsiveContainer width="100%" height={height}>
           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             {showGrid && <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />}
-            <XAxis 
-              dataKey="date" 
+            <XAxis
+              dataKey="date"
               tick={{ fontSize: 12 }}
               tickFormatter={(value) => {
                 const date = new Date(value);
@@ -91,13 +91,13 @@ export function LineChartCard({
               }}
               className="text-muted-foreground"
             />
-            <YAxis 
+            <YAxis
               tick={{ fontSize: 12 }}
               tickFormatter={formatValue}
               className="text-muted-foreground"
             />
-            <Tooltip 
-              contentStyle={{ 
+            <Tooltip
+              contentStyle={{
                 backgroundColor: 'hsl(var(--card))',
                 border: '1px solid hsl(var(--border))',
                 borderRadius: '8px',

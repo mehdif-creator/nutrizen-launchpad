@@ -1,6 +1,6 @@
 /**
  * Data Access Layer for Recipe Macros
- * 
+ *
  * Uses cursor-based pagination and RPC calls for optimal performance.
  * No OFFSET queries - all pagination is cursor-based on recipe_id.
  */
@@ -188,7 +188,7 @@ export async function adminProcessQueueBatch(
 
     // Rate limiting delay between batches
     if (i < maxIterations - 1 && processed > 0) {
-      await new Promise(resolve => setTimeout(resolve, delayMs));
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
   }
 

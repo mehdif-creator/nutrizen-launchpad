@@ -9,17 +9,17 @@ interface DailyRecipes {
 
 export function useDailyRecipes(date: Date = new Date()) {
   const { user } = useAuth();
-  
+
   return useQuery({
     queryKey: ['daily-recipes', user?.id, date.toISOString().split('T')[0]],
     queryFn: async () => {
       if (!user) throw new Error('Not authenticated');
-      
+
       const { data, error } = await supabase.rpc('get_daily_recipe_suggestions', {
         p_user_id: user.id,
         p_date: date.toISOString().split('T')[0],
       });
-      
+
       if (error) throw error;
       return data as unknown as DailyRecipes;
     },

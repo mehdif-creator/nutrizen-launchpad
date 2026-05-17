@@ -10,27 +10,27 @@ export type MealKey = 'breakfast' | 'lunch' | 'dinner';
  */
 const MEAL_KEY_MAP: Record<string, MealKey> = {
   // Breakfast variations
-  'breakfast': 'breakfast',
+  breakfast: 'breakfast',
   'petit dejeuner': 'breakfast',
   'petit-dejeuner': 'breakfast',
   'petit déjeuner': 'breakfast',
   'petit-déjeuner': 'breakfast',
-  'matin': 'breakfast',
-  
-  // Lunch variations  
-  'lunch': 'lunch',
-  'dejeuner': 'lunch',
-  'déjeuner': 'lunch',
-  'midi': 'lunch',
-  'midday': 'lunch',
-  
+  matin: 'breakfast',
+
+  // Lunch variations
+  lunch: 'lunch',
+  dejeuner: 'lunch',
+  déjeuner: 'lunch',
+  midi: 'lunch',
+  midday: 'lunch',
+
   // Dinner variations
-  'dinner': 'dinner',
-  'diner': 'dinner',
-  'dîner': 'dinner',
-  'soir': 'dinner',
-  'souper': 'dinner',
-  'evening': 'dinner',
+  dinner: 'dinner',
+  diner: 'dinner',
+  dîner: 'dinner',
+  soir: 'dinner',
+  souper: 'dinner',
+  evening: 'dinner',
 };
 
 /**
@@ -47,22 +47,22 @@ function removeAccents(str: string): string {
  */
 export function normalizeMealKey(value: string | null | undefined): MealKey | null {
   if (!value) return null;
-  
+
   // Normalize: lowercase, trim, remove accents, replace hyphens with spaces
   const normalized = removeAccents(value.toLowerCase().trim()).replace(/-/g, ' ');
-  
+
   // Direct lookup
   if (normalized in MEAL_KEY_MAP) {
     return MEAL_KEY_MAP[normalized];
   }
-  
+
   // Check if any mapping key is contained in the input
   for (const [pattern, key] of Object.entries(MEAL_KEY_MAP)) {
     if (normalized.includes(removeAccents(pattern))) {
       return key;
     }
   }
-  
+
   return null;
 }
 
@@ -74,7 +74,7 @@ export function normalizeMealKey(value: string | null | undefined): MealKey | nu
  */
 export function getMealLabel(key: MealKey | null, locale: string = 'fr'): string {
   if (!key) return '';
-  
+
   const labels: Record<string, Record<MealKey, string>> = {
     fr: {
       breakfast: 'Petit-déjeuner',
@@ -87,7 +87,7 @@ export function getMealLabel(key: MealKey | null, locale: string = 'fr'): string
       dinner: 'Dinner',
     },
   };
-  
+
   return labels[locale]?.[key] || labels.fr[key] || key;
 }
 

@@ -65,7 +65,10 @@ export async function getOnboardingStatus(userId: string): Promise<OnboardingSta
     statusCache.set(userId, { status, timestamp: Date.now() });
     return status;
   } catch (error) {
-    logger.error('Exception fetching status', error instanceof Error ? error : new Error(String(error)));
+    logger.error(
+      'Exception fetching status',
+      error instanceof Error ? error : new Error(String(error))
+    );
     // Return error state — do NOT silently assume onboarded
     return {
       state: 'error',
@@ -107,7 +110,10 @@ export async function markOnboardingComplete(userId: string): Promise<boolean> {
     logger.info('Marked complete', { userId });
     return true;
   } catch (error) {
-    logger.error('Exception marking complete', error instanceof Error ? error : new Error(String(error)));
+    logger.error(
+      'Exception marking complete',
+      error instanceof Error ? error : new Error(String(error))
+    );
     return false;
   }
 }

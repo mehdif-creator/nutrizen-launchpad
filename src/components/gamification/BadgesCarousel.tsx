@@ -13,9 +13,19 @@ interface BadgeItem {
 }
 
 const ALL_BADGES: BadgeItem[] = [
-  { code: 'DISCIPLINE_GOLD', name: 'Discipline Gold', description: '30-day streak achieved', icon: '🔥' },
+  {
+    code: 'DISCIPLINE_GOLD',
+    name: 'Discipline Gold',
+    description: '30-day streak achieved',
+    icon: '🔥',
+  },
   { code: 'FAST_COOK', name: 'Fast Cook', description: '10 recipes under 15 minutes', icon: '⚡' },
-  { code: 'ZERO_WASTE', name: 'Zero Waste', description: '3 weeks full menu completion', icon: '♻️' },
+  {
+    code: 'ZERO_WASTE',
+    name: 'Zero Waste',
+    description: '3 weeks full menu completion',
+    icon: '♻️',
+  },
   { code: 'VIRAL_SHARER', name: 'Viral Sharer', description: '10 social shares', icon: '📣' },
   { code: 'MENTOR_ZEN', name: 'Mentor Zen', description: '5 active referrals', icon: '🧑‍🏫' },
 ];
@@ -31,18 +41,20 @@ interface BadgesCarouselProps {
 }
 
 export function BadgesCarousel({ earnedBadges }: BadgesCarouselProps) {
-  const earnedCodes = new Set(earnedBadges.map(b => b.code));
+  const earnedCodes = new Set(earnedBadges.map((b) => b.code));
 
-  const badges = ALL_BADGES.map(badge => ({
+  const badges = ALL_BADGES.map((badge) => ({
     ...badge,
     earned: earnedCodes.has(badge.code),
-    grantedAt: earnedBadges.find(b => b.code === badge.code)?.grantedAt,
+    grantedAt: earnedBadges.find((b) => b.code === badge.code)?.grantedAt,
   }));
 
   return (
     <Card className="p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold">Badges ({earnedBadges.length}/{ALL_BADGES.length})</h2>
+        <h2 className="text-xl font-bold">
+          Badges ({earnedBadges.length}/{ALL_BADGES.length})
+        </h2>
         <Badge variant="secondary">{earnedBadges.length} débloqués</Badge>
       </div>
 

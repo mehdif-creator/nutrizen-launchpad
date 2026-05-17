@@ -44,7 +44,7 @@ function getCurrentWeekStart(): string {
 
 async function fetchWeeklyRecipesByDay(userId: string): Promise<DayRecipes[]> {
   const weekStart = getCurrentWeekStart();
-  
+
   logger.debug('Fetching recipes', { userId, weekStart });
 
   const { data, error } = await supabase.rpc('get_weekly_recipes_by_day', {
@@ -77,7 +77,7 @@ export function useWeeklyRecipesByDay(userId: string | undefined) {
     if (!userId) return;
 
     logger.debug('Setting up realtime subscription');
-    
+
     const channel = supabase
       .channel(`weekly_recipes_changes_${userId}`)
       .on(
@@ -86,7 +86,7 @@ export function useWeeklyRecipesByDay(userId: string | undefined) {
           event: '*',
           schema: 'public',
           table: 'user_weekly_menus',
-          filter: `user_id=eq.${userId}`
+          filter: `user_id=eq.${userId}`,
         },
         () => {
           logger.debug('Menu updated, refetching');

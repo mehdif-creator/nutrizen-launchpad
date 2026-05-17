@@ -22,15 +22,12 @@ export function useStreakUpdate(userId: string | undefined) {
     const updateStreak = async () => {
       try {
         const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' });
-        
-        const { data, error } = await (supabase.rpc as Function)(
-          'fn_emit_gamification_event',
-          {
-            p_event_type: 'APP_OPEN',
-            p_meta: {},
-            p_idempotency_key: `app_open:${userId}:${today}`,
-          }
-        );
+
+        const { data, error } = await (supabase.rpc as Function)('fn_emit_gamification_event', {
+          p_event_type: 'APP_OPEN',
+          p_meta: {},
+          p_idempotency_key: `app_open:${userId}:${today}`,
+        });
 
         if (error) {
           logger.error('Error updating streak', error);
@@ -44,7 +41,7 @@ export function useStreakUpdate(userId: string | undefined) {
         queryClient.invalidateQueries({ queryKey: ['gamification-events', userId] });
         queryClient.invalidateQueries({ queryKey: ['gamification-dashboard', userId] });
         queryClient.invalidateQueries({ queryKey: ['dashboardStats', userId] });
-        
+
         hasUpdated.current = true;
       } catch (error) {
         logger.error('Exception', error instanceof Error ? error : new Error(String(error)));

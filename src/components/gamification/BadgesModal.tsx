@@ -1,10 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge as BadgeUI } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
@@ -58,12 +53,12 @@ export function BadgesModal({ open, onOpenChange }: BadgesModalProps) {
 
       if (userError) throw userError;
 
-      const earnedSet = new Set(userBadges?.map(ub => ub.badge_code) || []);
+      const earnedSet = new Set(userBadges?.map((ub) => ub.badge_code) || []);
       const earnedDates = Object.fromEntries(
-        userBadges?.map(ub => [ub.badge_code, ub.granted_at]) || []
+        userBadges?.map((ub) => [ub.badge_code, ub.granted_at]) || []
       );
 
-      return (allBadges || []).map(badge => ({
+      return (allBadges || []).map((badge) => ({
         ...badge,
         earned: earnedSet.has(badge.code),
         earned_at: earnedDates[badge.code],
@@ -73,8 +68,8 @@ export function BadgesModal({ open, onOpenChange }: BadgesModalProps) {
     staleTime: 60 * 1000,
   });
 
-  const earnedBadges = badges?.filter(b => b.earned) || [];
-  const lockedBadges = badges?.filter(b => !b.earned) || [];
+  const earnedBadges = badges?.filter((b) => b.earned) || [];
+  const lockedBadges = badges?.filter((b) => !b.earned) || [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -88,7 +83,7 @@ export function BadgesModal({ open, onOpenChange }: BadgesModalProps) {
 
         {isLoading ? (
           <div className="space-y-3">
-            {[1, 2, 3].map(i => (
+            {[1, 2, 3].map((i) => (
               <div key={i} className="flex items-center gap-3">
                 <Skeleton className="h-12 w-12 rounded-full" />
                 <div className="flex-1">
@@ -101,9 +96,7 @@ export function BadgesModal({ open, onOpenChange }: BadgesModalProps) {
         ) : badges?.length === 0 ? (
           <div className="text-center py-8">
             <Award className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
-            <p className="text-muted-foreground">
-              Aucun badge disponible pour le moment.
-            </p>
+            <p className="text-muted-foreground">Aucun badge disponible pour le moment.</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -114,7 +107,7 @@ export function BadgesModal({ open, onOpenChange }: BadgesModalProps) {
                   Débloqués ({earnedBadges.length})
                 </h4>
                 <div className="space-y-3">
-                  {earnedBadges.map(badge => {
+                  {earnedBadges.map((badge) => {
                     const IconComponent = BADGE_ICONS[badge.icon || 'trophy'] || Award;
                     return (
                       <div
@@ -154,7 +147,7 @@ export function BadgesModal({ open, onOpenChange }: BadgesModalProps) {
                   À débloquer ({lockedBadges.length})
                 </h4>
                 <div className="space-y-3">
-                  {lockedBadges.map(badge => {
+                  {lockedBadges.map((badge) => {
                     const IconComponent = BADGE_ICONS[badge.icon || 'trophy'] || Award;
                     return (
                       <div

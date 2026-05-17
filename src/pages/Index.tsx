@@ -13,21 +13,51 @@ import { MadeForYou } from '@/components/landing/MadeForYou';
 import { Benefits } from '@/components/landing/Benefits';
 
 // Lazy: below the fold
-const ProfileQuiz = lazy(() => import('@/components/landing/ProfileQuiz').then(m => ({ default: m.ProfileQuiz })));
-const HowItWorks = lazy(() => import('@/components/landing/HowItWorks').then(m => ({ default: m.HowItWorks })));
-const ValueStackSection = lazy(() => import('@/components/landing/ValueStackSection').then(m => ({ default: m.ValueStackSection })));
-const Guarantee = lazy(() => import('@/components/landing/Guarantee').then(m => ({ default: m.Guarantee })));
-const GuaranteeCard = lazy(() => import('@/components/landing/GuaranteeCard').then(m => ({ default: m.GuaranteeCard })));
-const RecipeGallery = lazy(() => import('@/components/landing/RecipeGallery').then(m => ({ default: m.RecipeGallery })));
-const CommunityTestimonials = lazy(() => import('@/components/landing/CommunityTestimonials').then(m => ({ default: m.CommunityTestimonials })));
-const ExampleWeek = lazy(() => import('@/components/landing/ExampleWeek').then(m => ({ default: m.ExampleWeek })));
-const Pricing = lazy(() => import('@/components/landing/Pricing').then(m => ({ default: m.Pricing })));
-const FAQ = lazy(() => import('@/components/landing/FAQ').then(m => ({ default: m.FAQ })));
-const FinalCTA = lazy(() => import('@/components/landing/FinalCTA').then(m => ({ default: m.FinalCTA })));
-const Footer = lazy(() => import('@/components/landing/Footer').then(m => ({ default: m.Footer })));
-const MobileStickyCTA = lazy(() => import('@/components/landing/MobileStickyCTA').then(m => ({ default: m.MobileStickyCTA })));
-const ScrollToTop = lazy(() => import('@/components/common/ScrollToTop').then(m => ({ default: m.ScrollToTop })));
-const LeadMagnetForm = lazy(() => import('@/components/landing/LeadMagnetForm').then(m => ({ default: m.LeadMagnetForm })));
+const ProfileQuiz = lazy(() =>
+  import('@/components/landing/ProfileQuiz').then((m) => ({ default: m.ProfileQuiz }))
+);
+const HowItWorks = lazy(() =>
+  import('@/components/landing/HowItWorks').then((m) => ({ default: m.HowItWorks }))
+);
+const ValueStackSection = lazy(() =>
+  import('@/components/landing/ValueStackSection').then((m) => ({ default: m.ValueStackSection }))
+);
+const Guarantee = lazy(() =>
+  import('@/components/landing/Guarantee').then((m) => ({ default: m.Guarantee }))
+);
+const GuaranteeCard = lazy(() =>
+  import('@/components/landing/GuaranteeCard').then((m) => ({ default: m.GuaranteeCard }))
+);
+const RecipeGallery = lazy(() =>
+  import('@/components/landing/RecipeGallery').then((m) => ({ default: m.RecipeGallery }))
+);
+const CommunityTestimonials = lazy(() =>
+  import('@/components/landing/CommunityTestimonials').then((m) => ({
+    default: m.CommunityTestimonials,
+  }))
+);
+const ExampleWeek = lazy(() =>
+  import('@/components/landing/ExampleWeek').then((m) => ({ default: m.ExampleWeek }))
+);
+const Pricing = lazy(() =>
+  import('@/components/landing/Pricing').then((m) => ({ default: m.Pricing }))
+);
+const FAQ = lazy(() => import('@/components/landing/FAQ').then((m) => ({ default: m.FAQ })));
+const FinalCTA = lazy(() =>
+  import('@/components/landing/FinalCTA').then((m) => ({ default: m.FinalCTA }))
+);
+const Footer = lazy(() =>
+  import('@/components/landing/Footer').then((m) => ({ default: m.Footer }))
+);
+const MobileStickyCTA = lazy(() =>
+  import('@/components/landing/MobileStickyCTA').then((m) => ({ default: m.MobileStickyCTA }))
+);
+const ScrollToTop = lazy(() =>
+  import('@/components/common/ScrollToTop').then((m) => ({ default: m.ScrollToTop }))
+);
+const LeadMagnetForm = lazy(() =>
+  import('@/components/landing/LeadMagnetForm').then((m) => ({ default: m.LeadMagnetForm }))
+);
 
 const homeValueItems = [
   {
@@ -57,17 +87,20 @@ const homeValueItems = [
   },
   {
     feature: 'Scan code-barres intelligent',
-    description: 'Scannez un produit en supermarché et obtenez instantanément son analyse nutritionnelle',
+    description:
+      'Scannez un produit en supermarché et obtenez instantanément son analyse nutritionnelle',
     value: 'valeur : ~10€/mois (app nutrition)',
   },
   {
     feature: 'Analyse photo de repas par IA',
-    description: 'Prenez votre assiette en photo — calories, macros et conseils en quelques secondes',
+    description:
+      'Prenez votre assiette en photo — calories, macros et conseils en quelques secondes',
     value: 'valeur : ~15€/mois (coach nutrition)',
   },
   {
     feature: 'Inspi Frigo — recettes depuis vos ingrédients',
-    description: 'Photographiez votre frigo, notre IA vous propose des recettes avec ce que vous avez',
+    description:
+      'Photographiez votre frigo, notre IA vous propose des recettes avec ce que vous avez',
     value: 'valeur : ~20€/mois (anti-gaspillage)',
   },
 ];

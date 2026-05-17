@@ -19,7 +19,9 @@ const BLOG_FALLBACK_IMAGE = '/img/hero-default.jpg';
 function formatDateFr(dateStr: string | null) {
   if (!dateStr) return '';
   return new Date(dateStr).toLocaleDateString('fr-FR', {
-    day: 'numeric', month: 'long', year: 'numeric',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
   });
 }
 
@@ -28,7 +30,7 @@ function calculateReadTime(content: string): number {
     .replace(/<[^>]*>/g, '')
     .replace(/[#*`_~]/g, '')
     .split(/\s+/)
-    .filter(w => w.length > 0).length;
+    .filter((w) => w.length > 0).length;
   return Math.max(1, Math.round(wordCount / 200));
 }
 
@@ -39,11 +41,14 @@ function toSafeImageUrl(value: unknown): string | null {
   return cleaned;
 }
 
-function resolveArticleImage(articleLike: { cover_url?: unknown; image_urls?: unknown }): string | null {
+function resolveArticleImage(articleLike: {
+  cover_url?: unknown;
+  image_urls?: unknown;
+}): string | null {
   const firstFromArray = Array.isArray(articleLike.image_urls)
-    ? (typeof articleLike.image_urls[0] === 'string'
-        ? articleLike.image_urls[0]
-        : (articleLike.image_urls[0] as any)?.url)
+    ? typeof articleLike.image_urls[0] === 'string'
+      ? articleLike.image_urls[0]
+      : (articleLike.image_urls[0] as any)?.url
     : null;
 
   return toSafeImageUrl(articleLike.cover_url) || toSafeImageUrl(firstFromArray);
@@ -122,13 +127,16 @@ function useArticleSeoHead(article: ReturnType<typeof useBlogArticleBySlug>['art
 }
 
 /** Inject "Pour aller plus loin" links before FAQ section in HTML */
-function injectInternalLinks(html: string, related: ReturnType<typeof useBlogArticleBySlug>['relatedArticles']): string {
+function injectInternalLinks(
+  html: string,
+  related: ReturnType<typeof useBlogArticleBySlug>['relatedArticles']
+): string {
   if (!html || related.length === 0) return html;
   const linksHtml = `
 <div style="background: #f9fafb; border-radius: 8px; padding: 20px; margin: 32px 0;">
   <p style="font-weight: 600; margin: 0 0 12px 0; color: #374151;">📚 Pour aller plus loin :</p>
   <ul style="margin: 0; padding-left: 20px;">
-    ${related.map(a => `<li style="margin-bottom: 8px;"><a href="/blog/${a.slug}" style="color: #16a34a; text-decoration: none; font-weight: 500;">${a.title}</a></li>`).join('')}
+    ${related.map((a) => `<li style="margin-bottom: 8px;"><a href="/blog/${a.slug}" style="color: #16a34a; text-decoration: none; font-weight: 500;">${a.title}</a></li>`).join('')}
   </ul>
 </div>`;
 
@@ -150,7 +158,7 @@ export default function BlogPost() {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
-  const carouselArticles = allArticles.filter(a => a.slug !== slug).slice(0, 12);
+  const carouselArticles = allArticles.filter((a) => a.slug !== slug).slice(0, 12);
 
   const updateScrollButtons = () => {
     const el = scrollRef.current;
@@ -188,7 +196,9 @@ export default function BlogPost() {
         {user ? <AppHeader /> : <Header onCtaClick={() => {}} />}
         <main className="flex-1 container py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">Article introuvable</h1>
-          <Link to="/blog"><Button variant="outline">Retour au blog</Button></Link>
+          <Link to="/blog">
+            <Button variant="outline">Retour au blog</Button>
+          </Link>
         </main>
         {user ? <AppFooter /> : <Footer />}
       </div>
@@ -205,9 +215,10 @@ export default function BlogPost() {
 
   // Build the article HTML with placeholders replaced and internal links injected
   const pricingUrl = '/pricing';
-  let rawHtml = article.source === 'seo_factory'
-    ? (article.draft_html || article.content || '')
-    : (article.content || '');
+  let rawHtml =
+    article.source === 'seo_factory'
+      ? article.draft_html || article.content || ''
+      : article.content || '';
 
   // --- Sanitize: strip duplicate title at start of body ---
   const titleText = (h1 || article.title || '').trim();
@@ -222,7 +233,10 @@ export default function BlogPost() {
 
   // --- Sanitize: strip ANY leading image at start of body ---
   // Strip leading <figure>...<img>...</figure>
-  rawHtml = rawHtml.replace(/^\s*<figure[^>]*>\s*<img[^>]*\/?>\s*(?:<figcaption[^>]*>.*?<\/figcaption>\s*)?<\/figure>\s*/is, '');
+  rawHtml = rawHtml.replace(
+    /^\s*<figure[^>]*>\s*<img[^>]*\/?>\s*(?:<figcaption[^>]*>.*?<\/figcaption>\s*)?<\/figure>\s*/is,
+    ''
+  );
   // Strip leading <p><img></p>
   rawHtml = rawHtml.replace(/^\s*<p>\s*<img[^>]*\/?>\s*<\/p>\s*/i, '');
   // Strip leading standalone <img>
@@ -283,12 +297,12 @@ export default function BlogPost() {
     }
   );
 
-  const htmlContent = article.source === 'seo_factory'
-    ? injectInternalLinks(rawHtml, relatedArticles)
-    : rawHtml;
+  const htmlContent =
+    article.source === 'seo_factory' ? injectInternalLinks(rawHtml, relatedArticles) : rawHtml;
 
   // Check if FAQ is already well-rendered in HTML
-  const htmlHasFaq = htmlContent.toLowerCase().includes('<details') || htmlContent.toLowerCase().includes('faq');
+  const htmlHasFaq =
+    htmlContent.toLowerCase().includes('<details') || htmlContent.toLowerCase().includes('faq');
   const showExternalFaq = faqItems && faqItems.length > 0 && !htmlHasFaq;
 
   return (
@@ -317,9 +331,7 @@ export default function BlogPost() {
                 </Badge>
               )}
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-4">
-              {h1}
-            </h1>
+            <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-4">{h1}</h1>
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
               <span>📅 {formatDateFr(article.published_at)}</span>
               <span>⏱ {calculateReadTime(htmlContent)} min de lecture</span>
@@ -357,9 +369,7 @@ export default function BlogPost() {
                       {item.q}
                       <span className="text-primary text-xl ml-2">+</span>
                     </summary>
-                    <div className="p-4 text-muted-foreground leading-relaxed">
-                      {item.a}
-                    </div>
+                    <div className="p-4 text-muted-foreground leading-relaxed">{item.a}</div>
                   </details>
                 ))}
               </div>
@@ -400,7 +410,11 @@ export default function BlogPost() {
                   const caImage = resolveArticleImage(ca);
                   const caTitle = ca.title || (ca.outline as any)?.title || ca.slug;
                   return (
-                    <Link key={ca.id} to={`/blog/${ca.slug}`} className="flex-shrink-0 w-64 snap-start">
+                    <Link
+                      key={ca.id}
+                      to={`/blog/${ca.slug}`}
+                      className="flex-shrink-0 w-64 snap-start"
+                    >
                       <Card className="overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all h-full border border-border">
                         <div className="h-36 overflow-hidden bg-muted">
                           {caImage ? (
@@ -412,7 +426,9 @@ export default function BlogPost() {
                               onError={withImageFallback}
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-3xl">🥗</div>
+                            <div className="w-full h-full flex items-center justify-center text-3xl">
+                              🥗
+                            </div>
                           )}
                         </div>
                         <div className="p-3">
@@ -422,7 +438,9 @@ export default function BlogPost() {
                             </span>
                           )}
                           <h3 className="font-semibold text-sm line-clamp-2">{caTitle}</h3>
-                          <span className="text-xs text-muted-foreground mt-1 block">{formatDateFr(ca.published_at)}</span>
+                          <span className="text-xs text-muted-foreground mt-1 block">
+                            {formatDateFr(ca.published_at)}
+                          </span>
                         </div>
                       </Card>
                     </Link>
@@ -435,17 +453,12 @@ export default function BlogPost() {
           {/* Share Buttons */}
           <div className="mt-10 flex flex-col items-center gap-2">
             <p className="text-sm font-medium text-muted-foreground">Partager cet article</p>
-            <SocialShareButtons
-              url={`https://mynutrizen.fr/blog/${article.slug}`}
-              text={h1}
-            />
+            <SocialShareButtons url={`https://mynutrizen.fr/blog/${article.slug}`} text={h1} />
           </div>
 
           {/* CTA Block */}
           <div className="mt-12 p-6 bg-gradient-to-br from-accent/10 to-primary/10 rounded-2xl">
-            <h3 className="text-xl font-bold mb-2">
-              Envie d'essayer NutriZen ?
-            </h3>
+            <h3 className="text-xl font-bold mb-2">Envie d'essayer NutriZen ?</h3>
             <p className="text-muted-foreground mb-4">
               Laisse-nous générer tes menus et ta liste de courses automatiquement.
             </p>
@@ -458,12 +471,17 @@ export default function BlogPost() {
           {relatedArticles.length > 0 && (
             <section className="mt-12 pt-8 border-t-2 border-border">
               <h2 className="text-xl font-bold mb-2">Articles qui pourraient vous intéresser</h2>
-              <p className="text-sm text-muted-foreground mb-6">Continuez à explorer nos conseils nutrition</p>
+              <p className="text-sm text-muted-foreground mb-6">
+                Continuez à explorer nos conseils nutrition
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {relatedArticles.map((ra) => {
                   const raImage = resolveArticleImage(ra);
                   const raTitle = ra.title || (ra.outline as any)?.title || ra.slug;
-                  const raExcerpt = ra.excerpt || (ra.outline as any)?.excerpt || (ra.outline as any)?.meta_description;
+                  const raExcerpt =
+                    ra.excerpt ||
+                    (ra.outline as any)?.excerpt ||
+                    (ra.outline as any)?.meta_description;
                   return (
                     <Link key={ra.id} to={`/blog/${ra.slug}`}>
                       <Card className="overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all h-full border border-border">
@@ -477,7 +495,9 @@ export default function BlogPost() {
                               onError={withImageFallback}
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-4xl">🥗</div>
+                            <div className="w-full h-full flex items-center justify-center text-4xl">
+                              🥗
+                            </div>
                           )}
                         </div>
                         <div className="p-4">
@@ -488,7 +508,9 @@ export default function BlogPost() {
                           )}
                           <h3 className="font-semibold text-sm mb-1 line-clamp-2">{raTitle}</h3>
                           {raExcerpt && (
-                            <p className="text-xs text-muted-foreground line-clamp-2">{raExcerpt}</p>
+                            <p className="text-xs text-muted-foreground line-clamp-2">
+                              {raExcerpt}
+                            </p>
                           )}
                           <div className="flex justify-between items-center mt-3 pt-3 border-t border-border text-xs text-muted-foreground">
                             <span>{formatDateFr(ra.published_at)}</span>

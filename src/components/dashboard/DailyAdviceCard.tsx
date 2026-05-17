@@ -66,14 +66,17 @@ export function DailyAdviceCard({ advice, isLoading, userId }: DailyAdviceCardPr
   }
 
   // Fallback: always show something even if advice is missing
-  const displayAdvice = advice && advice.title ? advice : {
-    id: null,
-    title: 'Bienvenue sur NutriZen',
-    text: 'Planifie tes repas pour gagner du temps et manger équilibré. Génère ton premier menu pour commencer !',
-    category: 'motivation',
-    date: new Date().toISOString(),
-    is_today: true,
-  };
+  const displayAdvice =
+    advice && advice.title
+      ? advice
+      : {
+          id: null,
+          title: 'Bienvenue sur NutriZen',
+          text: 'Planifie tes repas pour gagner du temps et manger équilibré. Génère ton premier menu pour commencer !',
+          category: 'motivation',
+          date: new Date().toISOString(),
+          is_today: true,
+        };
 
   // This should never happen with the fallback above, but keep as safety
   if (!displayAdvice.title) {
@@ -91,7 +94,8 @@ export function DailyAdviceCard({ advice, isLoading, userId }: DailyAdviceCardPr
   }
 
   const isLong = displayAdvice.text.length > 150;
-  const displayText = expanded || !isLong ? displayAdvice.text : displayAdvice.text.substring(0, 150) + '...';
+  const displayText =
+    expanded || !isLong ? displayAdvice.text : displayAdvice.text.substring(0, 150) + '...';
 
   return (
     <Card className="rounded-2xl border shadow-sm p-4 md:p-5 bg-gradient-to-br from-primary/5 to-accent/5">
@@ -134,9 +138,7 @@ export function DailyAdviceCard({ advice, isLoading, userId }: DailyAdviceCardPr
 
         <div className="flex items-center gap-2">
           {!displayAdvice.is_today && (
-            <span className="text-xs text-muted-foreground">
-              (conseil récent)
-            </span>
+            <span className="text-xs text-muted-foreground">(conseil récent)</span>
           )}
           {displayAdvice.id && !isRead && (
             <Button

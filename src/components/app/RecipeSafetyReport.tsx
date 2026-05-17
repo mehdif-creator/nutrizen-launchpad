@@ -41,7 +41,7 @@ export function RecipeSafetyReport({
     if (!reason.trim()) {
       toast({
         title: 'Erreur',
-        description: 'Décris le problème avant d\'envoyer.',
+        description: "Décris le problème avant d'envoyer.",
         variant: 'destructive',
       });
       return;
@@ -50,8 +50,10 @@ export function RecipeSafetyReport({
     setSubmitting(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
         toast({
           title: 'Erreur',
@@ -86,12 +88,11 @@ export function RecipeSafetyReport({
         setSubmitted(false);
         setReason('');
       }, 2000);
-
     } catch (error) {
       console.error('[RecipeSafetyReport] Error:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible d\'envoyer le signalement. Réessaie plus tard.',
+        description: "Impossible d'envoyer le signalement. Réessaie plus tard.",
         variant: 'destructive',
       });
     } finally {
@@ -102,11 +103,7 @@ export function RecipeSafetyReport({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className={className}
-        >
+        <Button variant="ghost" size="sm" className={className}>
           <Flag className="h-3.5 w-3.5 mr-1" />
           Signaler
         </Button>
@@ -153,10 +150,7 @@ export function RecipeSafetyReport({
               <DialogClose asChild>
                 <Button variant="outline">Annuler</Button>
               </DialogClose>
-              <Button 
-                onClick={handleSubmit} 
-                disabled={submitting || !reason.trim()}
-              >
+              <Button onClick={handleSubmit} disabled={submitting || !reason.trim()}>
                 {submitting ? 'Envoi...' : 'Envoyer le signalement'}
               </Button>
             </div>

@@ -26,14 +26,17 @@ export function SeoKeywordExpander({ onArticleCreated }: Props) {
     if (!seed.trim()) return;
     setLoading(true);
     try {
-      const data = await callEdgeFunction<{ expanded_keywords?: ExpandedKeyword[] }>('seo-keyword-expand', {
-        seed_keyword: seed.trim(),
-        cluster_context: cluster.trim() || undefined,
-        existing_keywords: [],
-      });
+      const data = await callEdgeFunction<{ expanded_keywords?: ExpandedKeyword[] }>(
+        'seo-keyword-expand',
+        {
+          seed_keyword: seed.trim(),
+          cluster_context: cluster.trim() || undefined,
+          existing_keywords: [],
+        }
+      );
       setResults(data.expanded_keywords ?? []);
       if (!data.expanded_keywords?.length) {
-        toast({ title: 'Aucun résultat', description: 'L\'IA n\'a retourné aucun mot-clé.' });
+        toast({ title: 'Aucun résultat', description: "L'IA n'a retourné aucun mot-clé." });
       }
     } catch (e: any) {
       toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
@@ -51,7 +54,7 @@ export function SeoKeywordExpander({ onArticleCreated }: Props) {
       });
       if (error) throw new Error(error.message);
       toast({ title: 'Ajouté', description: `« ${kw.keyword} » ajouté au pipeline.` });
-      setResults(prev => prev.filter(r => r.keyword !== kw.keyword));
+      setResults((prev) => prev.filter((r) => r.keyword !== kw.keyword));
       onArticleCreated();
     } catch (e: any) {
       toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
@@ -79,8 +82,18 @@ export function SeoKeywordExpander({ onArticleCreated }: Props) {
       {open && (
         <div className="mt-4 space-y-4">
           <div className="flex flex-col sm:flex-row gap-3">
-            <Input placeholder="Seed keyword" value={seed} onChange={e => setSeed(e.target.value)} className="flex-1" />
-            <Input placeholder="Cluster context (optionnel)" value={cluster} onChange={e => setCluster(e.target.value)} className="flex-1 sm:max-w-xs" />
+            <Input
+              placeholder="Seed keyword"
+              value={seed}
+              onChange={(e) => setSeed(e.target.value)}
+              className="flex-1"
+            />
+            <Input
+              placeholder="Cluster context (optionnel)"
+              value={cluster}
+              onChange={(e) => setCluster(e.target.value)}
+              className="flex-1 sm:max-w-xs"
+            />
             <Button onClick={handleExpand} disabled={loading || !seed.trim()}>
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Générer
@@ -105,14 +118,25 @@ export function SeoKeywordExpander({ onArticleCreated }: Props) {
                     <tr key={kw.keyword} className="border-b last:border-0">
                       <td className="py-2 pr-2 font-medium">{kw.keyword}</td>
                       <td className="py-2 pr-2">
-                        <Badge variant="outline" className={intentColors[kw.intent] ?? ''}>{kw.intent}</Badge>
+                        <Badge variant="outline" className={intentColors[kw.intent] ?? ''}>
+                          {kw.intent}
+                        </Badge>
                       </td>
                       <td className="py-2 pr-2 capitalize">{kw.funnel_stage}</td>
                       <td className="py-2 pr-2">{kw.serp_format}</td>
                       <td className="py-2 pr-2 font-mono">{kw.estimated_priority}</td>
                       <td className="py-2">
-                        <Button size="sm" variant="ghost" onClick={() => handleAdd(kw)} disabled={adding === kw.keyword}>
-                          {adding === kw.keyword ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleAdd(kw)}
+                          disabled={adding === kw.keyword}
+                        >
+                          {adding === kw.keyword ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Plus className="h-3.5 w-3.5" />
+                          )}
                         </Button>
                       </td>
                     </tr>

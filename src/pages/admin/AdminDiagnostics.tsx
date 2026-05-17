@@ -5,8 +5,22 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Loader2, Play, CheckCircle2, XCircle, ChevronDown, ChevronRight, History, RefreshCw } from 'lucide-react';
-import { useDiagnostics, AVAILABLE_TESTS, DiagnosticsResult, DiagnosticsRun } from '@/hooks/useDiagnostics';
+import {
+  Loader2,
+  Play,
+  CheckCircle2,
+  XCircle,
+  ChevronDown,
+  ChevronRight,
+  History,
+  RefreshCw,
+} from 'lucide-react';
+import {
+  useDiagnostics,
+  AVAILABLE_TESTS,
+  DiagnosticsResult,
+  DiagnosticsRun,
+} from '@/hooks/useDiagnostics';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -63,7 +77,13 @@ function TestResultCard({ result }: { result: DiagnosticsResult }) {
   );
 }
 
-function HistoryItem({ run, onViewDetails }: { run: DiagnosticsRun; onViewDetails: (run: DiagnosticsRun) => void }) {
+function HistoryItem({
+  run,
+  onViewDetails,
+}: {
+  run: DiagnosticsRun;
+  onViewDetails: (run: DiagnosticsRun) => void;
+}) {
   const statusColors = {
     running: 'bg-blue-500',
     success: 'bg-green-500',
@@ -88,11 +108,20 @@ function HistoryItem({ run, onViewDetails }: { run: DiagnosticsRun; onViewDetail
             {format(new Date(run.started_at), 'dd MMM yyyy HH:mm', { locale: fr })}
           </div>
           <div className="text-xs text-muted-foreground">
-            {run.summary?.total_tests || 0} tests • {run.summary?.pass_count || 0} réussis • {run.summary?.fail_count || 0} échecs
+            {run.summary?.total_tests || 0} tests • {run.summary?.pass_count || 0} réussis •{' '}
+            {run.summary?.fail_count || 0} échecs
           </div>
         </div>
       </div>
-      <Badge variant={run.status === 'success' ? 'default' : run.status === 'error' ? 'destructive' : 'secondary'}>
+      <Badge
+        variant={
+          run.status === 'success'
+            ? 'default'
+            : run.status === 'error'
+              ? 'destructive'
+              : 'secondary'
+        }
+      >
         {statusLabels[run.status]}
       </Badge>
     </div>
@@ -141,7 +170,8 @@ export default function AdminDiagnostics() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Diagnostics</h1>
           <p className="text-muted-foreground mt-2">
-            Lancez une série de tests automatiques pour vérifier Supabase, les images, le profil, le dashboard et les données.
+            Lancez une série de tests automatiques pour vérifier Supabase, les images, le profil, le
+            dashboard et les données.
           </p>
         </div>
 
@@ -172,15 +202,10 @@ export default function AdminDiagnostics() {
                         onCheckedChange={() => toggleTest(test.key)}
                       />
                       <div className="grid gap-0.5 leading-none">
-                        <label
-                          htmlFor={test.key}
-                          className="text-sm font-medium cursor-pointer"
-                        >
+                        <label htmlFor={test.key} className="text-sm font-medium cursor-pointer">
                           {test.label}
                         </label>
-                        <p className="text-xs text-muted-foreground">
-                          {test.description}
-                        </p>
+                        <p className="text-xs text-muted-foreground">{test.description}</p>
                       </div>
                     </div>
                   ))}
@@ -217,10 +242,12 @@ export default function AdminDiagnostics() {
                   </CardTitle>
                   <CardDescription>
                     {selectedRun
-                      ? format(new Date(selectedRun.started_at), 'dd MMMM yyyy à HH:mm', { locale: fr })
+                      ? format(new Date(selectedRun.started_at), 'dd MMMM yyyy à HH:mm', {
+                          locale: fr,
+                        })
                       : lastRunResults
-                      ? `${lastRunResults.summary.pass_count}/${lastRunResults.summary.total_tests} tests réussis`
-                      : 'Lancez les tests pour voir les résultats'}
+                        ? `${lastRunResults.summary.pass_count}/${lastRunResults.summary.total_tests} tests réussis`
+                        : 'Lancez les tests pour voir les résultats'}
                   </CardDescription>
                 </div>
                 {selectedRun && (
@@ -267,7 +294,9 @@ export default function AdminDiagnostics() {
                   <div className="text-muted-foreground">
                     <Play className="h-12 w-12 mx-auto mb-4 opacity-20" />
                     <p>Aucun résultat pour le moment.</p>
-                    <p className="text-sm">Sélectionnez des tests et cliquez sur "Lancer les tests".</p>
+                    <p className="text-sm">
+                      Sélectionnez des tests et cliquez sur "Lancer les tests".
+                    </p>
                   </div>
                 </div>
               )}

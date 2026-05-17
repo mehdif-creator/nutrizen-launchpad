@@ -90,12 +90,30 @@ export interface UserDashboardData {
 
 const DEFAULT_DASHBOARD: UserDashboardData = {
   wallet: { balance_total: 0, balance_subscription: 0, balance_lifetime: 0 },
-  week: { week_start: new Date().toISOString().split('T')[0], menu_exists: false, meals_count: 0, days: [] },
-  today_meal: { exists: false, lunch_recipe_id: null, lunch_title: null, dinner_recipe_id: null, dinner_title: null },
+  week: {
+    week_start: new Date().toISOString().split('T')[0],
+    menu_exists: false,
+    meals_count: 0,
+    days: [],
+  },
+  today_meal: {
+    exists: false,
+    lunch_recipe_id: null,
+    lunch_title: null,
+    dinner_recipe_id: null,
+    dinner_title: null,
+  },
   shopping_list_status: { exists: false, items_total: 0, items_checked: 0 },
   streaks: { current_days: 0, best_days: 0 },
   gamification: { level: 1, xp: 0, xp_to_next: 100, badges: [] },
-  advice_of_day: { id: null, title: 'Bienvenue', text: 'Planifie tes repas pour bien démarrer.', category: 'motivation', date: new Date().toISOString(), is_today: true },
+  advice_of_day: {
+    id: null,
+    title: 'Bienvenue',
+    text: 'Planifie tes repas pour bien démarrer.',
+    category: 'motivation',
+    date: new Date().toISOString(),
+    is_today: true,
+  },
   referral: { code: '', has_code: false, clicks: 0, signups: 0, qualified: 0, rewards_earned: 0 },
   last_updated_at: new Date().toISOString(),
 };
@@ -148,7 +166,12 @@ export function useUserDashboard(userId: string | undefined) {
       )
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'user_daily_recipes', filter: `user_id=eq.${userId}` },
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_daily_recipes',
+          filter: `user_id=eq.${userId}`,
+        },
         () => queryClient.invalidateQueries({ queryKey: ['userDashboard', userId] })
       )
       .on(
@@ -158,7 +181,12 @@ export function useUserDashboard(userId: string | undefined) {
       )
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'user_gamification', filter: `user_id=eq.${userId}` },
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_gamification',
+          filter: `user_id=eq.${userId}`,
+        },
         () => queryClient.invalidateQueries({ queryKey: ['userDashboard', userId] })
       )
       .subscribe();

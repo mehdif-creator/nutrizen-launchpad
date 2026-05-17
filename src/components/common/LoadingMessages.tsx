@@ -3,13 +3,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type LoadingVariant = 
-  | 'dashboard' 
-  | 'menu' 
-  | 'recipe' 
-  | 'grocery' 
-  | 'payment' 
-  | 'general';
+export type LoadingVariant = 'dashboard' | 'menu' | 'recipe' | 'grocery' | 'payment' | 'general';
 
 interface LoadingMessagesProps {
   variant?: LoadingVariant;
@@ -52,11 +46,7 @@ const MESSAGES: Record<LoadingVariant, string[]> = {
     'On optimise ton panier…',
     'On trie les ingrédients…',
   ],
-  payment: [
-    'On sécurise ta transaction…',
-    'On vérifie ton paiement…',
-    'Un instant, on finalise…',
-  ],
+  payment: ['On sécurise ta transaction…', 'On vérifie ton paiement…', 'Un instant, on finalise…'],
   general: [
     'Chargement en cours...',
     'Un petit moment...',
@@ -105,7 +95,7 @@ export function LoadingMessages({
     if (!isLoading || !shouldShow) return;
 
     const interval = setInterval(() => {
-      setMessageIndex(prev => (prev + 1) % messages.length);
+      setMessageIndex((prev) => (prev + 1) % messages.length);
     }, 1200);
 
     return () => clearInterval(interval);
@@ -118,11 +108,7 @@ export function LoadingMessages({
       {showSkeleton && (
         <div className="space-y-2">
           {Array.from({ length: skeletonCount }).map((_, i) => (
-            <Skeleton 
-              key={i} 
-              className="h-4" 
-              style={{ width: `${85 - i * 15}%` }} 
-            />
+            <Skeleton key={i} className="h-4" style={{ width: `${85 - i * 15}%` }} />
           ))}
         </div>
       )}
@@ -130,9 +116,7 @@ export function LoadingMessages({
       {shouldShow && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground animate-fade-in">
           <Loader2 className="h-4 w-4 animate-spin" />
-          <span className="transition-opacity duration-300">
-            {messages[messageIndex]}
-          </span>
+          <span className="transition-opacity duration-300">{messages[messageIndex]}</span>
         </div>
       )}
     </div>
@@ -154,7 +138,7 @@ export function LoadingLine({
     if (!isLoading) return;
 
     const interval = setInterval(() => {
-      setMessageIndex(prev => (prev + 1) % messages.length);
+      setMessageIndex((prev) => (prev + 1) % messages.length);
     }, 1200);
 
     return () => clearInterval(interval);

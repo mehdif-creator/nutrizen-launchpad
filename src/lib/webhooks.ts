@@ -1,12 +1,18 @@
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 
-export const WebhookEventSchema = z.object({
-  event: z.string().min(1).max(100).regex(/^[a-z_]+$/),
-  ts: z.number().int().positive().optional(),
-  user_id: z.string().uuid().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-}).strict();
+export const WebhookEventSchema = z
+  .object({
+    event: z
+      .string()
+      .min(1)
+      .max(100)
+      .regex(/^[a-z_]+$/),
+    ts: z.number().int().positive().optional(),
+    user_id: z.string().uuid().optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+  })
+  .strict();
 
 export type WebhookEvent = z.infer<typeof WebhookEventSchema>;
 
@@ -19,7 +25,9 @@ export const emitWebhookEvent = async (eventData: WebhookEvent) => {
   }
 
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
     if (!session) {
       console.warn('No active session, webhook not emitted');

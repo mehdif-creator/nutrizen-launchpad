@@ -52,39 +52,42 @@ export function InsufficientCreditsModal({
             <div className="p-3 rounded-full bg-primary/10">
               <Sparkles className="h-6 w-6 text-primary" />
             </div>
-            <AlertDialogTitle className="text-xl">
-              Crédits insuffisants
-            </AlertDialogTitle>
+            <AlertDialogTitle className="text-xl">Crédits insuffisants</AlertDialogTitle>
           </div>
           <AlertDialogDescription className="text-base space-y-3 pt-2">
             <p>
-              Tu n'as pas assez de crédits pour {featureNames[feature] || 'utiliser cette fonctionnalité'}.
+              Tu n'as pas assez de crédits pour{' '}
+              {featureNames[feature] || 'utiliser cette fonctionnalité'}.
             </p>
             <div className="bg-muted/50 rounded-lg p-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Ton solde actuel :</span>
-                <span className="font-semibold">{currentBalance} crédit{currentBalance !== 1 ? 's' : ''}</span>
+                <span className="font-semibold">
+                  {currentBalance} crédit{currentBalance !== 1 ? 's' : ''}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Crédits nécessaires :</span>
-                <span className="font-semibold">{required} crédit{required > 1 ? 's' : ''}</span>
+                <span className="font-semibold">
+                  {required} crédit{required > 1 ? 's' : ''}
+                </span>
               </div>
               <div className="flex justify-between text-sm border-t pt-2">
                 <span className="text-muted-foreground">Il te manque :</span>
-                <span className="font-bold text-primary">{missing} crédit{missing !== 1 ? 's' : ''}</span>
+                <span className="font-bold text-primary">
+                  {missing} crédit{missing !== 1 ? 's' : ''}
+                </span>
               </div>
             </div>
             <p className="text-sm">
-              Achète un pack de Crédits Zen pour continuer à profiter de toutes les fonctionnalités de NutriZen.
+              Achète un pack de Crédits Zen pour continuer à profiter de toutes les fonctionnalités
+              de NutriZen.
             </p>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="gap-2 sm:gap-0">
           <AlertDialogCancel>Annuler</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleBuyCredits}
-            className="gap-2"
-          >
+          <AlertDialogAction onClick={handleBuyCredits} className="gap-2">
             <ShoppingCart className="h-4 w-4" />
             Acheter des Crédits Zen
           </AlertDialogAction>

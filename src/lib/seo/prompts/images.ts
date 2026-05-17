@@ -30,10 +30,7 @@ Professional food lifestyle photography, soft natural lighting,
 no text, no watermark, high resolution, French aesthetic."
 `;
 
-export const IMAGE_REFINEMENT_USER_TEMPLATE = (
-  rawDirection: string,
-  articleContext: string
-) => `
+export const IMAGE_REFINEMENT_USER_TEMPLATE = (rawDirection: string, articleContext: string) => `
 Refine this image direction into an optimized DALL-E 3 prompt.
 
 RAW DIRECTION: "${rawDirection}"

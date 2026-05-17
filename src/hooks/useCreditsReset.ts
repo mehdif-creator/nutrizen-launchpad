@@ -17,9 +17,9 @@ export function useCreditsReset(userId: string | undefined) {
     const checkAndApplyReset = async () => {
       try {
         hasChecked.current = true;
-        
+
         logger.debug('Checking credit reset for user');
-        
+
         // Call the RPC to apply reset if due
         const { data, error } = await supabase.rpc('rpc_apply_credit_reset', {
           p_user_id: userId,
