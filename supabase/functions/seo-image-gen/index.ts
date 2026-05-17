@@ -42,7 +42,7 @@ async function refinePrompt(rawDirection: string, articleContext: string): Promi
 
 async function generateImage(prompt: string, size: string): Promise<string> {
   const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
-  // gpt-image-1 supported sizes: 1024x1024, 1024x1536, 1536x1024, auto
+  // gpt-image-2 supported sizes: 1024x1024, 1024x1536, 1536x1024, auto
   const normalizedSize =
     size === "1792x1024" ? "1536x1024" :
     size === "1024x1792" ? "1024x1536" :
@@ -51,7 +51,7 @@ async function generateImage(prompt: string, size: string): Promise<string> {
     method: "POST",
     headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "gpt-image-1",
+      model: "gpt-image-2",
       prompt,
       n: 1,
       size: normalizedSize,
@@ -60,12 +60,12 @@ async function generateImage(prompt: string, size: string): Promise<string> {
   });
   if (!res.ok) {
     const errText = await res.text();
-    console.error("[seo-image-gen] gpt-image-1 error:", res.status, errText);
-    throw new Error(`gpt-image-1 error ${res.status}: ${errText}`);
+    console.error("[seo-image-gen] gpt-image-2 error:", res.status, errText);
+    throw new Error(`gpt-image-2 error ${res.status}: ${errText}`);
   }
   const data = await res.json();
   const b64 = data.data?.[0]?.b64_json;
-  if (!b64) throw new Error("gpt-image-1: empty image response");
+  if (!b64) throw new Error("gpt-image-2: empty image response");
   return `data:image/png;base64,${b64}`;
 }
 
