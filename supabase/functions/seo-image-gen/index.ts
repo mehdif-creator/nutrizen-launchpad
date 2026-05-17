@@ -42,26 +42,31 @@ async function refinePrompt(rawDirection: string, articleContext: string): Promi
 
 async function generateImage(prompt: string, size: string): Promise<string> {
   const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
+  // gpt-image-1 supported sizes: 1024x1024, 1024x1536, 1536x1024, auto
+  const normalizedSize =
+    size === "1792x1024" ? "1536x1024" :
+    size === "1024x1792" ? "1024x1536" :
+    size;
   const res = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
     headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "dall-e-3",
+      model: "gpt-image-1",
       prompt,
       n: 1,
-      size,
-      quality: "hd",
-      style: "natural",
-      response_format: "url",
+      size: normalizedSize,
+      quality: "high",
     }),
   });
   if (!res.ok) {
     const errText = await res.text();
-    console.error("[seo-image-gen] DALL-E error:", res.status, errText);
-    throw new Error(`DALL-E error ${res.status}: ${errText}`);
+    console.error("[seo-image-gen] gpt-image-1 error:", res.status, errText);
+    throw new Error(`gpt-image-1 error ${res.status}: ${errText}`);
   }
   const data = await res.json();
-  return data.data?.[0]?.url || "";
+  const b64 = data.data?.[0]?.b64_json;
+  if (!b64) throw new Error("gpt-image-1: empty image response");
+  return `data:image/png;base64,${b64}`;
 }
 
 Deno.serve(async (req) => {
@@ -111,11 +116,11 @@ Deno.serve(async (req) => {
         const imgResponse = await fetch(tempUrl);
         if (!imgResponse.ok) throw new Error(`Download failed: ${imgResponse.status}`);
         const imgBuffer = await imgResponse.arrayBuffer();
-        const fileName = `seo-${article_id}-${imgIndex}-${Date.now()}.jpg`;
+        const fileName = `seo-${article_id}-${imgIndex}-${Date.now()}.png`;
         const { error: uploadError } = await adminClient.storage
           .from("seo-images")
           .upload(fileName, imgBuffer, {
-            contentType: "image/jpeg",
+            contentType: "image/png",
             upsert: false,
             cacheControl: "31536000",
           });
