@@ -16,38 +16,38 @@ export { KEYWORD_EXPAND_SYSTEM_PROMPT, KEYWORD_EXPAND_USER_TEMPLATE } from './pr
 /** Per-step model & temperature config */
 export const PIPELINE_CONFIG = {
   brief: {
-    model: 'gpt-4o',
-    temperature: 0.3,
+    model: 'gpt-5',
+    temperature: 1,
     max_tokens: 1500,
   },
   outline: {
-    model: 'gpt-4o',
-    temperature: 0.4,
+    model: 'gpt-5',
+    temperature: 1,
     max_tokens: 2000,
   },
   image_refinement: {
-    model: 'gpt-4o',
-    temperature: 0.5,
+    model: 'gpt-5',
+    temperature: 1,
     max_tokens: 500,
   },
   draft: {
-    model: 'gpt-4o',
-    temperature: 0.6,
+    model: 'gpt-5',
+    temperature: 1,
     max_tokens: 4000,
   },
   qa: {
-    model: 'claude-sonnet-4-5',
+    model: 'claude-sonnet-4-5-20250929',
     temperature: 0.2,
     max_tokens: 2000,
   },
   improve: {
-    model: 'gpt-4o',
-    temperature: 0.5,
+    model: 'gpt-5',
+    temperature: 1,
     max_tokens: 4000,
   },
   keyword_expand: {
-    model: 'gpt-4o',
-    temperature: 0.4,
+    model: 'gpt-5',
+    temperature: 1,
     max_tokens: 2000,
   },
 } as const;

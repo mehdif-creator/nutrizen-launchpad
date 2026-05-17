@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders } from "../_shared/security.ts";
 import { requireAdmin } from "../_shared/auth.ts";
 
-async function callOpenAI(systemPrompt: string, userPrompt: string, temperature: number, maxTokens: number) {
+async function callOpenAI(systemPrompt: string, userPrompt: string, _temperature: number, maxTokens: number) {
   const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
   if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY not configured");
 
@@ -13,9 +13,8 @@ async function callOpenAI(systemPrompt: string, userPrompt: string, temperature:
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "gpt-4o",
-      temperature,
-      max_tokens: maxTokens,
+      model: "gpt-5",
+      max_completion_tokens: maxTokens,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
