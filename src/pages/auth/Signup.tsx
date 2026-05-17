@@ -17,7 +17,6 @@ import {
 } from '@/config/pricing';
 
 const PAID_PLAN_KEYS = ['starter', 'premium', 'starter_yearly', 'premium_yearly'] as const;
-type PaidPlanKey = (typeof PAID_PLAN_KEYS)[number];
 
 function parsePlanKey(raw: string): { tier: PlanTier; interval: BillingInterval } | null {
   if (raw === 'starter') return { tier: 'starter', interval: 'month' };
