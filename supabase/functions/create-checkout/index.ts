@@ -312,6 +312,7 @@ Deno.serve(async (req) => {
       metadata: {
         plan: planKey,
         plan_tier: meta.tier || planKey,
+        billing_interval: meta.interval || 'month',
         credits_monthly: String(meta.credits || 0),
         rollover_cap: String(meta.rollover_cap || 0),
         user_id: userId || "",
