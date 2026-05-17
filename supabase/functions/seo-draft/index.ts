@@ -6,7 +6,7 @@ function getAdminClient() {
   return createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 }
 
-async function callOpenAI(systemPrompt: string, userPrompt: string, temperature: number, maxTokens: number) {
+async function callOpenAI(systemPrompt: string, userPrompt: string, _temperature: number, maxTokens: number) {
   const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
   if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY not configured");
 
@@ -14,9 +14,8 @@ async function callOpenAI(systemPrompt: string, userPrompt: string, temperature:
     method: "POST",
     headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "gpt-4o",
-      temperature,
-      max_tokens: maxTokens,
+      model: "gpt-5",
+      max_completion_tokens: maxTokens,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
