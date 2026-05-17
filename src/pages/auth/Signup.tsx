@@ -7,10 +7,41 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Shield, CheckCircle, Mail } from 'lucide-react';
 
-const PLAN_INFO: Record<string, { label: string; price: string }> = {
-  starter: { label: 'Plan Starter', price: '12,99€/mois' },
-  premium: { label: 'Plan Premium', price: '19,99€/mois' },
-};
+import {
+  PLANS,
+  getTotalPrice,
+  getEffectiveMonthlyPrice,
+  formatEUR,
+  type BillingInterval,
+  type PlanTier,
+} from '@/config/pricing';
+
+const PAID_PLAN_KEYS = ['starter', 'premium', 'starter_yearly', 'premium_yearly'] as const;
+type PaidPlanKey = (typeof PAID_PLAN_KEYS)[number];
+
+function parsePlanKey(raw: string): { tier: PlanTier; interval: BillingInterval } | null {
+  if (raw === 'starter') return { tier: 'starter', interval: 'month' };
+  if (raw === 'premium') return { tier: 'premium', interval: 'month' };
+  if (raw === 'starter_yearly') return { tier: 'starter', interval: 'year' };
+  if (raw === 'premium_yearly') return { tier: 'premium', interval: 'year' };
+  return null;
+}
+
+function describePlan(raw: string): { label: string; price: string } | null {
+  const parsed = parsePlanKey(raw);
+  if (!parsed) return null;
+  const { tier, interval } = parsed;
+  const name = `Plan ${PLANS[tier].name}`;
+  if (interval === 'month') {
+    return { label: `${name} mensuel`, price: `${formatEUR(PLANS[tier].monthlyPrice)}/mois` };
+  }
+  const total = getTotalPrice(tier, 'year');
+  const effective = getEffectiveMonthlyPrice(tier, 'year');
+  return {
+    label: `${name} annuel`,
+    price: `${formatEUR(total)}/an · soit ${formatEUR(effective)}/mois`,
+  };
+}
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -18,7 +49,8 @@ export default function Signup() {
   const { toast } = useToast();
 
   const plan = searchParams.get('plan') ?? 'free';
-  const isPaid = plan === 'starter' || plan === 'premium';
+  const isPaid = (PAID_PLAN_KEYS as readonly string[]).includes(plan);
+  const planInfo = isPaid ? describePlan(plan) : null;
 
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
