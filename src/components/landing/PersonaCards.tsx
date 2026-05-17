@@ -9,38 +9,36 @@ interface PersonaCardsProps {
 
 export const PersonaCards = ({ onPersonaChange }: PersonaCardsProps) => {
   const { t } = useLanguage();
-  
+
   const personas = [
     {
       key: 'thomas' as PersonaKey,
       icon: Dumbbell,
       title: t('personas.muscu.title'),
       description: t('personas.muscu.description'),
-      cta: t('personas.muscu.cta')
+      cta: t('personas.muscu.cta'),
     },
     {
       key: 'sarah' as PersonaKey,
       icon: Zap,
       title: t('personas.crossfit.title'),
       description: t('personas.crossfit.description'),
-      cta: t('personas.crossfit.cta')
+      cta: t('personas.crossfit.cta'),
     },
     {
       key: 'kevin' as PersonaKey,
       icon: TrendingUp,
       title: t('personas.running.title'),
       description: t('personas.running.description'),
-      cta: t('personas.running.cta')
-    }
+      cta: t('personas.running.cta'),
+    },
   ];
 
   return (
     <section id="personas" className="py-16 bg-gradient-to-b from-background to-secondary/20">
       <div className="container">
         <div className="text-center mb-12 animate-fade-in">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            {t('personas.title')}
-          </h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">{t('personas.title')}</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             {t('personas.subtitle')}
           </p>

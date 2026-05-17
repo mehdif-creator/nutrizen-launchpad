@@ -17,16 +17,21 @@ export function SeoProgressBar({ status }: Props) {
         const active = currentIdx === stepIdx;
         return (
           <div key={step.key} className="flex items-center gap-1">
-            {i > 0 && (
-              <div className={cn('h-0.5 w-3 sm:w-5', done ? 'bg-primary' : 'bg-muted')} />
-            )}
+            {i > 0 && <div className={cn('h-0.5 w-3 sm:w-5', done ? 'bg-primary' : 'bg-muted')} />}
             <div className="flex flex-col items-center">
               {done ? (
-                <CheckCircle className={cn('h-4 w-4', active ? 'text-primary' : 'text-primary/70')} />
+                <CheckCircle
+                  className={cn('h-4 w-4', active ? 'text-primary' : 'text-primary/70')}
+                />
               ) : (
                 <Circle className="h-4 w-4 text-muted-foreground/40" />
               )}
-              <span className={cn('text-[10px] mt-0.5 leading-none', done ? 'text-foreground' : 'text-muted-foreground')}>
+              <span
+                className={cn(
+                  'text-[10px] mt-0.5 leading-none',
+                  done ? 'text-foreground' : 'text-muted-foreground'
+                )}
+              >
                 {step.label}
               </span>
             </div>

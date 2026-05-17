@@ -11,7 +11,9 @@ interface PinterestStatus {
 }
 
 const getAuthHeaders = async (): Promise<Record<string, string>> => {
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
   if (!session?.access_token) return {};
   return { Authorization: `Bearer ${session.access_token}` };
 };
@@ -26,11 +28,11 @@ const PinterestConnectionCard: React.FC = () => {
   const checkStatus = async () => {
     setLoading(true);
     try {
-      const { data } = await supabase
+      const { data } = (await supabase
         .from('pinterest_oauth_status' as any)
         .select('scope, expires_at')
         .eq('account_label', 'main')
-        .maybeSingle() as { data: { scope: string | null; expires_at: string | null } | null };
+        .maybeSingle()) as { data: { scope: string | null; expires_at: string | null } | null };
 
       if (data && data.expires_at && new Date(data.expires_at) > new Date()) {
         setStatus({ connected: true, scope: data.scope ?? undefined, expiresAt: data.expires_at });
@@ -44,7 +46,9 @@ const PinterestConnectionCard: React.FC = () => {
     }
   };
 
-  useEffect(() => { checkStatus(); }, []);
+  useEffect(() => {
+    checkStatus();
+  }, []);
 
   const handleConnect = async () => {
     setConnecting(true);
@@ -58,10 +62,10 @@ const PinterestConnectionCard: React.FC = () => {
       if (data.ok && data.auth_url) {
         window.location.href = data.auth_url;
       } else {
-        addToast(data.message || "Failed to get Pinterest auth URL", "error");
+        addToast(data.message || 'Failed to get Pinterest auth URL', 'error');
       }
     } catch {
-      addToast("Unable to start Pinterest connection", "error");
+      addToast('Unable to start Pinterest connection', 'error');
     } finally {
       setConnecting(false);
     }
@@ -77,12 +81,12 @@ const PinterestConnectionCard: React.FC = () => {
       });
       const data = await res.json();
       if (data.ok) {
-        addToast("Connection OK ✅", "success");
+        addToast('Connection OK ✅', 'success');
       } else {
-        addToast("Connection failed ❌", "error");
+        addToast('Connection failed ❌', 'error');
       }
     } catch {
-      addToast("Connection test failed ❌", "error");
+      addToast('Connection test failed ❌', 'error');
     } finally {
       setTesting(false);
     }
@@ -116,7 +120,11 @@ const PinterestConnectionCard: React.FC = () => {
               <span className="flex items-center gap-1 text-sm font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-100">
                 <Check className="w-3 h-3" /> Connected
               </span>
-              <button onClick={checkStatus} className="p-1 text-slate-400 hover:text-emerald-600" title="Refresh status">
+              <button
+                onClick={checkStatus}
+                className="p-1 text-slate-400 hover:text-emerald-600"
+                title="Refresh status"
+              >
                 <RefreshCw className="w-3 h-3" />
               </button>
             </>
@@ -127,7 +135,11 @@ const PinterestConnectionCard: React.FC = () => {
               className="text-sm font-medium text-white px-3 py-1.5 rounded-lg flex items-center gap-2 hover:opacity-90 transition"
               style={{ backgroundColor: '#E60023' }}
             >
-              {connecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Share2 className="w-3 h-3" />}
+              {connecting ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Share2 className="w-3 h-3" />
+              )}
               Connect Pinterest
             </button>
           )}
@@ -147,7 +159,11 @@ const PinterestConnectionCard: React.FC = () => {
                 <p className="text-slate-700 mt-0.5">
                   {status.expiresAt
                     ? new Date(status.expiresAt).toLocaleDateString('fr-FR', {
-                        day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
                       })
                     : 'N/A'}
                 </p>
@@ -160,7 +176,11 @@ const PinterestConnectionCard: React.FC = () => {
                 disabled={connecting}
                 className="text-sm font-medium text-slate-700 px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 flex items-center gap-2"
               >
-                {connecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                {connecting ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-3 h-3" />
+                )}
                 Reconnect
               </button>
               <button
@@ -168,7 +188,11 @@ const PinterestConnectionCard: React.FC = () => {
                 disabled={testing}
                 className="text-sm font-medium text-slate-700 px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 flex items-center gap-2"
               >
-                {testing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                {testing ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Zap className="w-3 h-3" />
+                )}
                 Test Connection
               </button>
             </div>

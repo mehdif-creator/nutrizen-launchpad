@@ -107,11 +107,13 @@ const App = () => {
   useAffiliateTracking();
 
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      }
+    >
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/i/:code" element={<ReferralRedirect />} />
@@ -124,57 +126,368 @@ const App = () => {
         <Route path="/auth/callback" element={<Callback />} />
 
         {/* App (Protected) */}
-        <Route path="/app" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/app/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/app/onboarding" element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />
-        <Route path="/app/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        <Route path="/app/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-        <Route path="/app/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
-        <Route path="/app/referral" element={<ProtectedRoute><Referral /></ProtectedRoute>} />
-        <Route path="/app/gamification" element={<ProtectedRoute><Gamification /></ProtectedRoute>} />
-        <Route path="/app/ai-tools" element={<ProtectedRoute><AITools /></ProtectedRoute>} />
-        <Route path="/app/scan-repas" element={<ProtectedRoute><ErrorBoundary><ScanRepas /></ErrorBoundary></ProtectedRoute>} />
-        <Route path="/app/inspi-frigo" element={<ProtectedRoute><ErrorBoundary><InspiFrigo /></ErrorBoundary></ProtectedRoute>} />
-        <Route path="/app/recipes/:id" element={<ProtectedRoute><ErrorBoundary><RecipeDetail /></ErrorBoundary></ProtectedRoute>} />
-        <Route path="/app/shopping-list" element={<ProtectedRoute><ErrorBoundary><ShoppingList /></ErrorBoundary></ProtectedRoute>} />
-        <Route path="/app/supabase-debug" element={<ProtectedRoute requireAdmin><SupabaseDebug /></ProtectedRoute>} />
+        <Route
+          path="/app"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/onboarding"
+          element={
+            <ProtectedRoute skipOnboardingCheck>
+              <Onboarding />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/settings"
+          element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/support"
+          element={
+            <ProtectedRoute>
+              <Support />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/referral"
+          element={
+            <ProtectedRoute>
+              <Referral />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/gamification"
+          element={
+            <ProtectedRoute>
+              <Gamification />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/ai-tools"
+          element={
+            <ProtectedRoute>
+              <AITools />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/scan-repas"
+          element={
+            <ProtectedRoute>
+              <ErrorBoundary>
+                <ScanRepas />
+              </ErrorBoundary>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/inspi-frigo"
+          element={
+            <ProtectedRoute>
+              <ErrorBoundary>
+                <InspiFrigo />
+              </ErrorBoundary>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/recipes/:id"
+          element={
+            <ProtectedRoute>
+              <ErrorBoundary>
+                <RecipeDetail />
+              </ErrorBoundary>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/shopping-list"
+          element={
+            <ProtectedRoute>
+              <ErrorBoundary>
+                <ShoppingList />
+              </ErrorBoundary>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/supabase-debug"
+          element={
+            <ProtectedRoute requireAdmin>
+              <SupabaseDebug />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/app/famille-plus" element={<Navigate to="/app" replace />} />
-        <Route path="/app/day-menu/:date" element={<ProtectedRoute><DayMenu /></ProtectedRoute>} />
-        <Route path="/app/scan-barcode" element={<ProtectedRoute><ErrorBoundary><ScanBarcode /></ErrorBoundary></ProtectedRoute>} />
-        <Route path="/app/credits" element={<ProtectedRoute><Credits /></ProtectedRoute>} />
+        <Route
+          path="/app/day-menu/:date"
+          element={
+            <ProtectedRoute>
+              <DayMenu />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/scan-barcode"
+          element={
+            <ProtectedRoute>
+              <ErrorBoundary>
+                <ScanBarcode />
+              </ErrorBoundary>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/credits"
+          element={
+            <ProtectedRoute>
+              <Credits />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/pricing" element={<Navigate to="/" replace />} />
 
         {/* Admin (Protected + Admin Only) */}
-        <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
-        <Route path="/admin/users" element={<ProtectedRoute requireAdmin><AdminUsers /></ProtectedRoute>} />
-        <Route path="/admin/onboarding" element={<ProtectedRoute requireAdmin><AdminOnboarding /></ProtectedRoute>} />
-        <Route path="/admin/tickets" element={<ProtectedRoute requireAdmin><AdminTickets /></ProtectedRoute>} />
-        <Route path="/admin/diagnostics" element={<ProtectedRoute requireAdmin><AdminDiagnostics /></ProtectedRoute>} />
-        <Route path="/admin/referrals" element={<ProtectedRoute requireAdmin><AdminReferrals /></ProtectedRoute>} />
-        <Route path="/admin/conversion" element={<ProtectedRoute requireAdmin><AdminConversion /></ProtectedRoute>} />
-        <Route path="/admin/macros-maintenance" element={<ProtectedRoute requireAdmin><AdminMacrosMaintenance /></ProtectedRoute>} />
-        <Route path="/admin/health" element={<ProtectedRoute requireAdmin><AdminHealth /></ProtectedRoute>} />
-        <Route path="/admin/automation/*" element={<ProtectedRoute requireAdmin><AutomationIndex /></ProtectedRoute>} />
-        <Route path="/admin/seo-factory" element={<ProtectedRoute requireAdmin><AdminSeoFactory /></ProtectedRoute>} />
-        <Route path="/admin/affiliations" element={<ProtectedRoute requireAdmin><AdminAffiliations /></ProtectedRoute>} />
-        <Route path="/admin/posts-manu-rs" element={<ProtectedRoute requireAdmin><ManualSocialPosts /></ProtectedRoute>} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminUsers />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/onboarding"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminOnboarding />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/tickets"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminTickets />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/diagnostics"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminDiagnostics />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/referrals"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminReferrals />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/conversion"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminConversion />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/macros-maintenance"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminMacrosMaintenance />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/health"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminHealth />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/automation/*"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AutomationIndex />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/seo-factory"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminSeoFactory />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/affiliations"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminAffiliations />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/posts-manu-rs"
+          element={
+            <ProtectedRoute requireAdmin>
+              <ManualSocialPosts />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Admin KPI Detail Pages */}
-        <Route path="/admin/kpis/mrr" element={<ProtectedRoute requireAdmin><KpiMrr /></ProtectedRoute>} />
-        <Route path="/admin/kpis/arpu" element={<ProtectedRoute requireAdmin><KpiArpu /></ProtectedRoute>} />
-        <Route path="/admin/kpis/conversion" element={<ProtectedRoute requireAdmin><KpiConversion /></ProtectedRoute>} />
-        <Route path="/admin/kpis/churn" element={<ProtectedRoute requireAdmin><KpiChurn /></ProtectedRoute>} />
-        <Route path="/admin/kpis/users-total" element={<ProtectedRoute requireAdmin><KpiUsersTotal /></ProtectedRoute>} />
-        <Route path="/admin/kpis/subscribers-active" element={<ProtectedRoute requireAdmin><KpiSubscribersActive /></ProtectedRoute>} />
-        <Route path="/admin/kpis/new-users" element={<ProtectedRoute requireAdmin><KpiNewUsers /></ProtectedRoute>} />
-        <Route path="/admin/kpis/tickets-open" element={<ProtectedRoute requireAdmin><KpiTicketsOpen /></ProtectedRoute>} />
-        <Route path="/admin/kpis/menus-created" element={<ProtectedRoute requireAdmin><KpiMenusCreated /></ProtectedRoute>} />
-        <Route path="/admin/kpis/menus-per-user" element={<ProtectedRoute requireAdmin><KpiMenusPerUser /></ProtectedRoute>} />
-        <Route path="/admin/kpis/ratings" element={<ProtectedRoute requireAdmin><KpiRatings /></ProtectedRoute>} />
-        <Route path="/admin/kpis/points-total" element={<ProtectedRoute requireAdmin><KpiPointsTotal /></ProtectedRoute>} />
+        <Route
+          path="/admin/kpis/mrr"
+          element={
+            <ProtectedRoute requireAdmin>
+              <KpiMrr />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/kpis/arpu"
+          element={
+            <ProtectedRoute requireAdmin>
+              <KpiArpu />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/kpis/conversion"
+          element={
+            <ProtectedRoute requireAdmin>
+              <KpiConversion />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/kpis/churn"
+          element={
+            <ProtectedRoute requireAdmin>
+              <KpiChurn />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/kpis/users-total"
+          element={
+            <ProtectedRoute requireAdmin>
+              <KpiUsersTotal />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/kpis/subscribers-active"
+          element={
+            <ProtectedRoute requireAdmin>
+              <KpiSubscribersActive />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/kpis/new-users"
+          element={
+            <ProtectedRoute requireAdmin>
+              <KpiNewUsers />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/kpis/tickets-open"
+          element={
+            <ProtectedRoute requireAdmin>
+              <KpiTicketsOpen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/kpis/menus-created"
+          element={
+            <ProtectedRoute requireAdmin>
+              <KpiMenusCreated />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/kpis/menus-per-user"
+          element={
+            <ProtectedRoute requireAdmin>
+              <KpiMenusPerUser />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/kpis/ratings"
+          element={
+            <ProtectedRoute requireAdmin>
+              <KpiRatings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/kpis/points-total"
+          element={
+            <ProtectedRoute requireAdmin>
+              <KpiPointsTotal />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Recipes */}
-        <Route path="/recipes/macros" element={<ProtectedRoute><RecipeMacros /></ProtectedRoute>} />
+        <Route
+          path="/recipes/macros"
+          element={
+            <ProtectedRoute>
+              <RecipeMacros />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Blog */}
         <Route path="/blog" element={<BlogIndex />} />
@@ -207,7 +520,14 @@ const App = () => {
         <Route path="/affiliate" element={<Affiliate />} />
         <Route path="/affiliation" element={<Affiliate />} />
         <Route path="/post-checkout" element={<PostCheckout />} />
-        <Route path="/post-checkout-profile" element={<ProtectedRoute skipOnboardingCheck><PostCheckoutProfile /></ProtectedRoute>} />
+        <Route
+          path="/post-checkout-profile"
+          element={
+            <ProtectedRoute skipOnboardingCheck>
+              <PostCheckoutProfile />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/credits" element={<Navigate to="/app" replace />} />
         <Route path="/a-propos" element={<About />} />
         <Route path="/about" element={<About />} />

@@ -23,12 +23,20 @@ export default function KpiConversion() {
   const { from, to } = getDateRange(dateRange);
   const filters = { dateFrom: from, dateTo: to, granularity };
 
-  const { data: funnel, isLoading: loadingFunnel, refetch: refetchFunnel } = useQuery({
+  const {
+    data: funnel,
+    isLoading: loadingFunnel,
+    refetch: refetchFunnel,
+  } = useQuery({
     queryKey: ['kpi-conversion-funnel', from, to],
     queryFn: () => fetchConversionFunnel(filters),
   });
 
-  const { data: timeseries, isLoading: loadingTimeseries, refetch: refetchTimeseries } = useQuery({
+  const {
+    data: timeseries,
+    isLoading: loadingTimeseries,
+    refetch: refetchTimeseries,
+  } = useQuery({
     queryKey: ['kpi-conversion-timeseries', from, to, granularity],
     queryFn: () => fetchConversionTimeseries(filters),
   });
@@ -49,9 +57,10 @@ export default function KpiConversion() {
   };
 
   // Calculate overall conversion rate
-  const overallRate = funnel && funnel.length >= 2 && funnel[0].count > 0
-    ? (funnel[funnel.length - 1].count / funnel[0].count) * 100
-    : 0;
+  const overallRate =
+    funnel && funnel.length >= 2 && funnel[0].count > 0
+      ? (funnel[funnel.length - 1].count / funnel[0].count) * 100
+      : 0;
 
   return (
     <KpiDetailLayout

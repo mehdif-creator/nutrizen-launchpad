@@ -1,15 +1,19 @@
-import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Flame, Trophy, Award, Sparkles } from "lucide-react";
-import { useGamificationState, useLevels, getLevelName as getLevelNameV2 } from "@/hooks/useGamificationV2";
-import { useAuth } from "@/contexts/AuthContext";
-import { cn } from "@/lib/utils";
-import { useDashboardStats } from "@/hooks/useDashboardStats";
-import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
+import { Card } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Flame, Trophy, Award, Sparkles } from 'lucide-react';
+import {
+  useGamificationState,
+  useLevels,
+  getLevelName as getLevelNameV2,
+} from '@/hooks/useGamificationV2';
+import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useState } from 'react';
 
 // Animated counter component
-function AnimatedCounter({ value, suffix = "" }: { value: number; suffix?: string }) {
+function AnimatedCounter({ value, suffix = '' }: { value: number; suffix?: string }) {
   const [displayValue, setDisplayValue] = useState(0);
 
   useEffect(() => {
@@ -17,7 +21,7 @@ function AnimatedCounter({ value, suffix = "" }: { value: number; suffix?: strin
     const steps = 30;
     const increment = (value - displayValue) / steps;
     let current = displayValue;
-    
+
     const timer = setInterval(() => {
       current += increment;
       if ((increment > 0 && current >= value) || (increment < 0 && current <= value)) {
@@ -78,8 +82,8 @@ export function StreakBar() {
                 key={i}
                 className="absolute w-2 h-2 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500"
                 initial={{
-                  x: "50%",
-                  y: "50%",
+                  x: '50%',
+                  y: '50%',
                   scale: 0,
                   opacity: 1,
                 }}
@@ -93,7 +97,7 @@ export function StreakBar() {
                 transition={{
                   duration: 2,
                   delay: i * 0.05,
-                  ease: "easeOut",
+                  ease: 'easeOut',
                 }}
               />
             ))}
@@ -106,7 +110,7 @@ export function StreakBar() {
         <motion.div
           className="flex items-center gap-3"
           whileHover={{ scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300 }}
+          transition={{ type: 'spring', stiffness: 300 }}
         >
           <motion.div
             className="bg-gradient-to-br from-orange-500 to-red-500 rounded-xl p-3 shadow-lg"
@@ -128,14 +132,20 @@ export function StreakBar() {
         <motion.div
           className="flex items-center gap-3"
           whileHover={{ scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300 }}
+          transition={{ type: 'spring', stiffness: 300 }}
         >
-          <div className={cn("rounded-xl p-3 shadow-lg", 
-            levelName === "Bronze" ? "bg-gradient-to-br from-amber-600 to-amber-800" :
-            levelName === "Silver" ? "bg-gradient-to-br from-gray-300 to-gray-500" :
-            levelName === "Gold" ? "bg-gradient-to-br from-yellow-400 to-yellow-600" :
-            "bg-gradient-to-br from-blue-400 to-blue-600"
-          )}>
+          <div
+            className={cn(
+              'rounded-xl p-3 shadow-lg',
+              levelName === 'Bronze'
+                ? 'bg-gradient-to-br from-amber-600 to-amber-800'
+                : levelName === 'Silver'
+                  ? 'bg-gradient-to-br from-gray-300 to-gray-500'
+                  : levelName === 'Gold'
+                    ? 'bg-gradient-to-br from-yellow-400 to-yellow-600'
+                    : 'bg-gradient-to-br from-blue-400 to-blue-600'
+            )}
+          >
             <Trophy className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -150,7 +160,7 @@ export function StreakBar() {
         <motion.div
           className="flex items-center gap-3"
           whileHover={{ scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300 }}
+          transition={{ type: 'spring', stiffness: 300 }}
         >
           <motion.div
             className="bg-gradient-to-br from-primary to-primary/80 rounded-xl p-3 shadow-lg"
@@ -171,7 +181,7 @@ export function StreakBar() {
         <motion.div
           className="flex items-center gap-3"
           whileHover={{ scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300 }}
+          transition={{ type: 'spring', stiffness: 300 }}
         >
           <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-3 shadow-lg">
             <Award className="h-6 w-6 text-white" />
@@ -193,10 +203,7 @@ export function StreakBar() {
             {gamification.streak_days}/{streakGoal} jours
           </span>
         </div>
-        <Progress 
-          value={streakProgress} 
-          className="h-2 bg-muted"
-        />
+        <Progress value={streakProgress} className="h-2 bg-muted" />
         {gamification.streak_days >= streakGoal && (
           <div className="text-xs text-green-600 dark:text-green-500 font-medium flex items-center gap-1">
             <Flame className="h-3 w-3" />

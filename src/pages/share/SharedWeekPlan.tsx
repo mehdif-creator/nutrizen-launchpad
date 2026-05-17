@@ -41,16 +41,32 @@ export default function SharedWeekPlan() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) { setError('Lien invalide.'); setLoading(false); return; }
+    if (!token) {
+      setError('Lien invalide.');
+      setLoading(false);
+      return;
+    }
     (async () => {
       try {
-        const { data, error: rpcError } = await supabase.rpc('get_shared_week_plan', { p_token: token });
-        if (rpcError) { setError('Impossible de charger le menu partagé.'); return; }
+        const { data, error: rpcError } = await supabase.rpc('get_shared_week_plan', {
+          p_token: token,
+        });
+        if (rpcError) {
+          setError('Impossible de charger le menu partagé.');
+          return;
+        }
         const result = data as unknown as SharedPlan;
-        if (result?.error) { setError(result.error); return; }
+        if (result?.error) {
+          setError(result.error);
+          return;
+        }
         if (result?.success) setPlan(result);
         else setError('Menu introuvable.');
-      } catch { setError('Erreur de connexion.'); } finally { setLoading(false); }
+      } catch {
+        setError('Erreur de connexion.');
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [token]);
 
@@ -72,15 +88,26 @@ export default function SharedWeekPlan() {
           <CardContent className="p-8">
             <div className="text-5xl mb-4">😕</div>
             <h1 className="text-xl font-bold mb-2">Lien introuvable</h1>
-            <p className="text-muted-foreground mb-6">{error || 'Ce lien de partage est invalide ou a expiré.'}</p>
-            <Link to="/"><Button><ArrowLeft className="h-4 w-4 mr-2" />Retour à l'accueil</Button></Link>
+            <p className="text-muted-foreground mb-6">
+              {error || 'Ce lien de partage est invalide ou a expiré.'}
+            </p>
+            <Link to="/">
+              <Button>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Retour à l'accueil
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  const weekFormatted = new Date(plan.week_start).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const weekFormatted = new Date(plan.week_start).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
   const ctaUrl = plan.shared_by.referral_code
     ? `https://mynutrizen.fr/auth/signup?ref=${plan.shared_by.referral_code}`
     : 'https://mynutrizen.fr/auth/signup';
@@ -95,7 +122,9 @@ export default function SharedWeekPlan() {
             <img src={nutrizenLogo} alt="NutriZen" className="h-8" />
           </Link>
           <a href={ctaUrl}>
-            <Button size="sm" className="text-xs">Essayer gratuitement</Button>
+            <Button size="sm" className="text-xs">
+              Essayer gratuitement
+            </Button>
           </a>
         </div>
       </header>
@@ -105,7 +134,11 @@ export default function SharedWeekPlan() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-3">
             {plan.shared_by.avatar_url ? (
-              <img src={plan.shared_by.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover border-2 border-primary" />
+              <img
+                src={plan.shared_by.avatar_url}
+                alt=""
+                className="h-10 w-10 rounded-full object-cover border-2 border-primary"
+              />
             ) : (
               <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <UtensilsCrossed className="h-5 w-5 text-primary" />
@@ -175,12 +208,17 @@ export default function SharedWeekPlan() {
         {/* Social Share */}
         <div className="text-center mb-8">
           <p className="text-sm text-muted-foreground mb-3">Partager ce menu</p>
-          <SocialShareButtons url={shareUrl} text="Découvre mon menu de la semaine sur NutriZen 🥗" />
+          <SocialShareButtons
+            url={shareUrl}
+            text="Découvre mon menu de la semaine sur NutriZen 🥗"
+          />
         </div>
 
         {/* CTA */}
         <div className="text-center py-8 bg-primary/5 rounded-2xl mb-8">
-          <h2 className="text-xl font-bold mb-2">Envie de planifier tes repas aussi facilement ?</h2>
+          <h2 className="text-xl font-bold mb-2">
+            Envie de planifier tes repas aussi facilement ?
+          </h2>
           <p className="text-muted-foreground mb-4 text-sm">
             NutriZen génère tes menus personnalisés en 3 minutes.
           </p>

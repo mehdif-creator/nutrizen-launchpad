@@ -5,8 +5,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
-  Loader2, Play, CheckCircle2, XCircle, AlertTriangle,
-  ChevronDown, ChevronRight, Activity, Bell, RefreshCw, Shield,
+  Loader2,
+  Play,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  Activity,
+  Bell,
+  RefreshCw,
+  Shield,
 } from 'lucide-react';
 import { useHealthCheck, HealthCheckResult } from '@/hooks/useHealthCheck';
 import { format } from 'date-fns';
@@ -26,10 +35,14 @@ const CHECK_LABELS: Record<string, { label: string; icon: string }> = {
 
 function StatusIcon({ status }: { status: string }) {
   switch (status) {
-    case 'pass': return <CheckCircle2 className="h-5 w-5 text-green-500" />;
-    case 'fail': return <XCircle className="h-5 w-5 text-red-500" />;
-    case 'warn': return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
-    default: return null;
+    case 'pass':
+      return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+    case 'fail':
+      return <XCircle className="h-5 w-5 text-red-500" />;
+    case 'warn':
+      return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+    default:
+      return null;
   }
 }
 
@@ -47,10 +60,15 @@ function CheckCard({ result }: { result: HealthCheckResult }) {
   const info = CHECK_LABELS[result.name] || { label: result.name, icon: '🔍' };
 
   return (
-    <Card className={`border-l-4 ${
-      result.status === 'pass' ? 'border-l-green-500' :
-      result.status === 'fail' ? 'border-l-red-500' : 'border-l-yellow-500'
-    }`}>
+    <Card
+      className={`border-l-4 ${
+        result.status === 'pass'
+          ? 'border-l-green-500'
+          : result.status === 'fail'
+            ? 'border-l-red-500'
+            : 'border-l-yellow-500'
+      }`}
+    >
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors py-3">
@@ -67,7 +85,11 @@ function CheckCard({ result }: { result: HealthCheckResult }) {
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">{result.duration_ms}ms</span>
                 <StatusBadge status={result.status} />
-                {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                {isOpen ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
               </div>
             </div>
           </CardHeader>
@@ -113,23 +135,31 @@ export default function AdminHealth() {
 
         {/* Summary bar */}
         {lastResult && (
-          <Card className={`mb-6 border-2 ${
-            overallStatus === 'pass' ? 'border-green-500/50 bg-green-50/50 dark:bg-green-950/20' :
-            overallStatus === 'fail' ? 'border-red-500/50 bg-red-50/50 dark:bg-red-950/20' :
-            'border-yellow-500/50 bg-yellow-50/50 dark:bg-yellow-950/20'
-          }`}>
+          <Card
+            className={`mb-6 border-2 ${
+              overallStatus === 'pass'
+                ? 'border-green-500/50 bg-green-50/50 dark:bg-green-950/20'
+                : overallStatus === 'fail'
+                  ? 'border-red-500/50 bg-red-50/50 dark:bg-red-950/20'
+                  : 'border-yellow-500/50 bg-yellow-50/50 dark:bg-yellow-950/20'
+            }`}
+          >
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <StatusIcon status={overallStatus || 'pass'} />
                   <div>
                     <p className="font-semibold text-lg">
-                      {overallStatus === 'pass' ? 'Système sain' :
-                       overallStatus === 'fail' ? 'Problèmes détectés' : 'Avertissements'}
+                      {overallStatus === 'pass'
+                        ? 'Système sain'
+                        : overallStatus === 'fail'
+                          ? 'Problèmes détectés'
+                          : 'Avertissements'}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {lastResult.summary.pass} ✅ {lastResult.summary.warn} ⚠️ {lastResult.summary.fail} ❌
-                      — {format(new Date(lastResult.run_at), 'dd MMM HH:mm', { locale: fr })}
+                      {lastResult.summary.pass} ✅ {lastResult.summary.warn} ⚠️{' '}
+                      {lastResult.summary.fail} ❌ —{' '}
+                      {format(new Date(lastResult.run_at), 'dd MMM HH:mm', { locale: fr })}
                     </p>
                   </div>
                 </div>
@@ -150,17 +180,33 @@ export default function AdminHealth() {
             </CardHeader>
             <CardContent className="pt-0">
               <div className="space-y-2">
-                {alerts.slice(0, 5).map((alert: { id: string; severity: string; message: string; alert_type: string; created_at: string }) => (
-                  <div key={alert.id} className="flex items-center gap-3 p-2 rounded bg-muted">
-                    <Badge variant={alert.severity === 'critical' || alert.severity === 'error' ? 'destructive' : 'secondary'}>
-                      {alert.severity}
-                    </Badge>
-                    <span className="text-sm flex-1">{alert.message}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {format(new Date(alert.created_at), 'dd/MM HH:mm')}
-                    </span>
-                  </div>
-                ))}
+                {alerts
+                  .slice(0, 5)
+                  .map(
+                    (alert: {
+                      id: string;
+                      severity: string;
+                      message: string;
+                      alert_type: string;
+                      created_at: string;
+                    }) => (
+                      <div key={alert.id} className="flex items-center gap-3 p-2 rounded bg-muted">
+                        <Badge
+                          variant={
+                            alert.severity === 'critical' || alert.severity === 'error'
+                              ? 'destructive'
+                              : 'secondary'
+                          }
+                        >
+                          {alert.severity}
+                        </Badge>
+                        <span className="text-sm flex-1">{alert.message}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(alert.created_at), 'dd/MM HH:mm')}
+                        </span>
+                      </div>
+                    )
+                  )}
               </div>
             </CardContent>
           </Card>
@@ -170,9 +216,15 @@ export default function AdminHealth() {
         <div className="mb-6">
           <Button onClick={handleRunAll} disabled={isRunning} size="lg">
             {isRunning ? (
-              <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Vérification en cours...</>
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Vérification en cours...
+              </>
             ) : (
-              <><Shield className="mr-2 h-5 w-5" />Lancer tous les checks</>
+              <>
+                <Shield className="mr-2 h-5 w-5" />
+                Lancer tous les checks
+              </>
             )}
           </Button>
         </div>

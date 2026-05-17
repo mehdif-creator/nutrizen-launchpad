@@ -92,10 +92,9 @@ export function ZenCreditsDisplay({
     if (!userId) return;
     setWalletState('loading');
     try {
-      const { data, error } = await (supabase.rpc as Function)(
-        'repair_user_bootstrap',
-        { p_user_id: userId }
-      );
+      const { data, error } = await (supabase.rpc as Function)('repair_user_bootstrap', {
+        p_user_id: userId,
+      });
       if (error) throw error;
       // Re-fetch after repair
       await fetchCredits();
@@ -125,7 +124,7 @@ export function ZenCreditsDisplay({
           <div>
             <p className="text-sm font-medium text-foreground">
               {walletState === 'missing'
-                ? 'Portefeuille en cours d\'initialisation'
+                ? "Portefeuille en cours d'initialisation"
                 : 'Erreur de chargement des crédits'}
             </p>
             <p className="text-xs text-muted-foreground">
@@ -135,12 +134,7 @@ export function ZenCreditsDisplay({
             </p>
           </div>
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleRepairWallet}
-          className="w-full gap-2"
-        >
+        <Button size="sm" variant="outline" onClick={handleRepairWallet} className="w-full gap-2">
           <RefreshCw className="h-3.5 w-3.5" />
           {walletState === 'missing' ? 'Initialiser' : 'Réessayer'}
         </Button>
@@ -210,9 +204,7 @@ export function ZenCreditsDisplay({
             </div>
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">Crédits abonnement</p>
-              <p className="text-sm font-semibold text-foreground">
-                {subscriptionCredits ?? '—'}
-              </p>
+              <p className="text-sm font-semibold text-foreground">{subscriptionCredits ?? '—'}</p>
               <p className="text-xs text-muted-foreground/70">Renouvelés mensuellement</p>
             </div>
           </div>
@@ -220,11 +212,7 @@ export function ZenCreditsDisplay({
       </div>
 
       {userId && (
-        <CreditTransactionsModal
-          open={historyOpen}
-          onOpenChange={setHistoryOpen}
-          userId={userId}
-        />
+        <CreditTransactionsModal open={historyOpen} onOpenChange={setHistoryOpen} userId={userId} />
       )}
     </>
   );

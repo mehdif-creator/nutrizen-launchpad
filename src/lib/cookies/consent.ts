@@ -31,14 +31,14 @@ export function getConsent(): CookieConsent | null {
   try {
     const stored = localStorage.getItem(CONSENT_KEY);
     if (!stored) return null;
-    
+
     const consent = JSON.parse(stored) as CookieConsent;
-    
+
     // If version has changed, return null to re-show banner
     if (consent.version !== CONSENT_VERSION) {
       return null;
     }
-    
+
     return consent;
   } catch {
     return null;
@@ -79,9 +79,9 @@ export function saveConsent(consent: Partial<CookieConsent>): void {
     version: CONSENT_VERSION,
     timestamp: Date.now(),
   };
-  
+
   localStorage.setItem(CONSENT_KEY, JSON.stringify(fullConsent));
-  
+
   // Dispatch custom event for components to react
   window.dispatchEvent(new CustomEvent('cookie-consent-updated', { detail: fullConsent }));
 }

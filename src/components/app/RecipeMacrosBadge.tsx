@@ -9,13 +9,13 @@ interface RecipeMacrosBadgeProps {
   className?: string;
 }
 
-export function RecipeMacrosBadge({ 
-  calories, 
-  proteins, 
-  carbs, 
-  fats, 
+export function RecipeMacrosBadge({
+  calories,
+  proteins,
+  carbs,
+  fats,
   servings = 1,
-  className = ''
+  className = '',
 }: RecipeMacrosBadgeProps) {
   // Calculate per serving
   const caloriesPerServing = calories ? Math.round(calories / servings) : null;
@@ -28,20 +28,16 @@ export function RecipeMacrosBadge({
   }
 
   return (
-    <div className={`flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground ${className}`}>
+    <div
+      className={`flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground ${className}`}
+    >
       <span className="flex items-center gap-1 font-medium">
         <Flame className="h-3 w-3" />
         {caloriesPerServing} kcal
       </span>
-      {proteinsPerServing && (
-        <span>• P: {proteinsPerServing}g</span>
-      )}
-      {carbsPerServing && (
-        <span>• G: {carbsPerServing}g</span>
-      )}
-      {fatsPerServing && (
-        <span>• L: {fatsPerServing}g</span>
-      )}
+      {proteinsPerServing && <span>• P: {proteinsPerServing}g</span>}
+      {carbsPerServing && <span>• G: {carbsPerServing}g</span>}
+      {fatsPerServing && <span>• L: {fatsPerServing}g</span>}
     </div>
   );
 }

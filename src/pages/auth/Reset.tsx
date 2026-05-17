@@ -73,9 +73,7 @@ export default function Reset() {
             </form>
           ) : (
             <div className="text-center space-y-4">
-              <p className="text-green-600">
-                Un email a été envoyé à {email}
-              </p>
+              <p className="text-green-600">Un email a été envoyé à {email}</p>
               <Button onClick={() => setSent(false)} variant="outline">
                 Renvoyer
               </Button>

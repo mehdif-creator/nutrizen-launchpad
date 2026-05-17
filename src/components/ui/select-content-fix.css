@@ -7,14 +7,14 @@
 [data-radix-select-content] {
   /* Use dvh (dynamic viewport height) instead of vh for iOS */
   max-height: min(60vh, 60dvh);
-  
+
   /* Ensure proper z-index layering */
   z-index: 9999;
-  
+
   /* Enable smooth scrolling within dropdown */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  
+
   /* Prevent iOS rubber band effect from blocking parent scroll */
   overscroll-behavior: contain;
 }
@@ -31,16 +31,16 @@
     overflow: visible !important;
     position: static !important;
   }
-  
+
   /* Make dropdown content more mobile-friendly */
   [data-radix-select-content] {
     max-height: min(40vh, 40dvh);
     border-radius: 1rem 1rem 0 0;
-    
+
     /* Add bottom padding for iOS safe area */
     padding-bottom: env(safe-area-inset-bottom, 0);
   }
-  
+
   /* Improve touch target size */
   [data-radix-select-item] {
     min-height: 44px;

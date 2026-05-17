@@ -1,5 +1,11 @@
 import { create } from 'zustand';
-import { AutomationRecipe, SocialQueueItem, PinterestBoardMap, AutomationSettings, isValidPlatform } from './AutomationTypes';
+import {
+  AutomationRecipe,
+  SocialQueueItem,
+  PinterestBoardMap,
+  AutomationSettings,
+  isValidPlatform,
+} from './AutomationTypes';
 import { automationApi } from './AutomationApi';
 
 interface AutomationState {
@@ -37,18 +43,19 @@ export const useAutomationStore = create<AutomationState>((set, get) => ({
       ]);
       set({ recipes, queue, boards, settings, loading: false });
     } catch (e) {
-      console.error("Erreur chargement données automation:", e);
+      console.error('Erreur chargement données automation:', e);
       set({ loading: false });
     }
   },
 
   addRecipe: async (recipe) => {
     const newRecipe = await automationApi.addRecipe(recipe);
-    set(state => ({ recipes: [newRecipe, ...state.recipes] }));
+    set((state) => ({ recipes: [newRecipe, ...state.recipes] }));
   },
 
   addToQueue: async (recipe, platform = 'Pinterest') => {
-    const defaultBoard = get().boards.find(b => b.cuisine_key === recipe.cuisine_type)?.board_slug || 'general';
+    const defaultBoard =
+      get().boards.find((b) => b.cuisine_key === recipe.cuisine_type)?.board_slug || 'general';
     const safePlatform = isValidPlatform(platform) ? platform : 'Pinterest';
     const newItem = await automationApi.addToQueue({
       recipe_id: recipe.id,
@@ -63,31 +70,43 @@ export const useAutomationStore = create<AutomationState>((set, get) => ({
       status: 'rendered',
       attempts: 0,
     });
-    set(state => ({ queue: [newItem, ...state.queue] }));
+    set((state) => ({ queue: [newItem, ...state.queue] }));
   },
 
   removeFromQueue: async (id) => {
     await automationApi.removeFromQueue(id);
-    set(state => ({ queue: state.queue.filter(i => i.id !== id) }));
+    set((state) => ({ queue: state.queue.filter((i) => i.id !== id) }));
   },
 
   updateQueueItem: async (id, updates) => {
-    set(state => ({ queue: state.queue.map(i => i.id === id ? { ...i, ...updates } : i) }));
+    set((state) => ({ queue: state.queue.map((i) => (i.id === id ? { ...i, ...updates } : i)) }));
     await automationApi.updateQueueItem(id, updates);
   },
 
   retryPublishItem: async (id) => {
-    set(state => ({ queue: state.queue.map(i => i.id === id ? { ...i, status: 'rendered', publish_error: undefined } : i) }));
-    await automationApi.updateQueueItem(id, { status: 'rendered', publish_error: undefined, attempts: 0, locked_at: undefined, scheduled_at: new Date().toISOString() } as any);
+    set((state) => ({
+      queue: state.queue.map((i) =>
+        i.id === id ? { ...i, status: 'rendered', publish_error: undefined } : i
+      ),
+    }));
+    await automationApi.updateQueueItem(id, {
+      status: 'rendered',
+      publish_error: undefined,
+      attempts: 0,
+      locked_at: undefined,
+      scheduled_at: new Date().toISOString(),
+    } as any);
   },
 
   addBoard: async (boardData) => {
     const newBoard = await automationApi.addBoard(boardData);
-    set(state => ({ boards: [...state.boards, newBoard] }));
+    set((state) => ({ boards: [...state.boards, newBoard] }));
   },
 
   toggleBoardActive: async (id, isActive) => {
-    set(state => ({ boards: state.boards.map(b => b.id === id ? { ...b, is_active: isActive } : b) }));
+    set((state) => ({
+      boards: state.boards.map((b) => (b.id === id ? { ...b, is_active: isActive } : b)),
+    }));
     await automationApi.updateBoard(id, { is_active: isActive });
   },
 

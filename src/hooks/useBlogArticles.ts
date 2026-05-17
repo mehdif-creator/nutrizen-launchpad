@@ -27,7 +27,14 @@ function mapSeoArticle(a: any): BlogArticle {
   const images = a.image_urls as any[];
   return {
     id: a.id,
-    slug: a.slug || outline?.slug || a.keyword?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || a.id,
+    slug:
+      a.slug ||
+      outline?.slug ||
+      a.keyword
+        ?.toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '') ||
+      a.id,
     title: outline?.title || outline?.h1 || a.keyword,
     excerpt: outline?.excerpt || null,
     cover_url: images?.[0]?.url || images?.[0] || null,
@@ -86,7 +93,8 @@ export function useBlogArticles() {
         const manual = (manualRes.data || []).map(mapBlogPost);
         const seo = (seoRes.data || []).map(mapSeoArticle);
         const all = [...manual, ...seo].sort(
-          (a, b) => new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime()
+          (a, b) =>
+            new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime()
         );
 
         setArticles(all);
@@ -158,12 +166,15 @@ export function useBlogArticleBySlug(slug: string | undefined) {
         ];
 
         // Build set of all valid published slugs
-        const slugSet = new Set(allMapped.map(a => a.slug).filter(Boolean));
+        const slugSet = new Set(allMapped.map((a) => a.slug).filter(Boolean));
         setValidSlugs(slugSet);
 
         const allRelated = allMapped
-          .filter(a => a.slug !== slug)
-          .sort((a, b) => new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime())
+          .filter((a) => a.slug !== slug)
+          .sort(
+            (a, b) =>
+              new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime()
+          )
           .slice(0, 3);
 
         setRelatedArticles(allRelated);

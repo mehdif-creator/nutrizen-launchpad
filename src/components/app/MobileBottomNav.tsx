@@ -21,7 +21,7 @@ export function MobileBottomNav() {
 
   if (!isAppPage) return null;
 
-  const isActive = (tab: typeof tabs[number]) => {
+  const isActive = (tab: (typeof tabs)[number]) => {
     if (tab.id === 'home') return isDashboard;
     return location.pathname === tab.to;
   };

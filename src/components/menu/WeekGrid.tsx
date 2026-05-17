@@ -11,12 +11,12 @@ interface WeekGridProps {
 
 const WEEKDAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
-export function WeekGrid({ 
-  days, 
-  onValidate, 
-  onSwap, 
+export function WeekGrid({
+  days,
+  onValidate,
+  onSwap,
   onViewRecipe,
-  swapsRemaining = 0 
+  swapsRemaining = 0,
 }: WeekGridProps) {
   return (
     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -45,8 +45,8 @@ export function WeekGridSkeleton() {
   return (
     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {[...Array(7)].map((_, i) => (
-        <div 
-          key={i} 
+        <div
+          key={i}
           className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden animate-pulse"
         >
           <div className="h-32 bg-muted" />

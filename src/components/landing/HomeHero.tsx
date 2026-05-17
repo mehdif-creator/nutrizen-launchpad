@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
-import { Star, Check, Shield, ArrowRight, Timer, CalendarDays, Leaf } from "lucide-react";
-import homeHeroImage from "@/assets/home-hero.jpg";
+import { Button } from '@/components/ui/button';
+import { Star, Check, Shield, ArrowRight, Timer, CalendarDays, Leaf } from 'lucide-react';
+import homeHeroImage from '@/assets/home-hero.jpg';
 
 interface HomeHeroProps {
   onCtaClick: () => void;
@@ -26,7 +26,7 @@ export const HomeHero = ({ onCtaClick }: HomeHeroProps) => {
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(90deg, #0d1f1a 0%, #0d1f1a 35%, rgba(13,31,26,0.85) 50%, rgba(13,31,26,0.2) 70%, rgba(13,31,26,0) 100%)",
+              'linear-gradient(90deg, #0d1f1a 0%, #0d1f1a 35%, rgba(13,31,26,0.85) 50%, rgba(13,31,26,0.2) 70%, rgba(13,31,26,0) 100%)',
           }}
         />
         {/* Mobile bottom fade */}
@@ -56,7 +56,7 @@ export const HomeHero = ({ onCtaClick }: HomeHeroProps) => {
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.05] tracking-tight">
               Arrêtez de vous demander quoi manger.
               <br />
-              Mangez mieux,{" "}
+              Mangez mieux,{' '}
               <span className="relative text-emerald-400">
                 simplement
                 <svg
@@ -78,16 +78,16 @@ export const HomeHero = ({ onCtaClick }: HomeHeroProps) => {
             </h1>
 
             <p className="text-base md:text-lg text-white/70 leading-relaxed">
-              NutriZen crée des menus personnalisés et des recettes adaptées à vos goûts,
-              votre rythme et vos objectifs, pour ne plus perdre de temps à décider quoi manger.
+              NutriZen crée des menus personnalisés et des recettes adaptées à vos goûts, votre
+              rythme et vos objectifs, pour ne plus perdre de temps à décider quoi manger.
             </p>
 
             <ul className="space-y-3 pt-2">
               {[
-                { bold: "Menus personnalisés", text: " : adaptés à vos goûts et objectifs" },
-                { bold: "Recettes rapides", text: " : simples, équilibrées et faciles à préparer" },
-                { bold: "Liste de courses intelligente", text: " : moins de charge mentale" },
-                { bold: "Suivi malin", text: " : une semaine plus fluide, sans improviser" },
+                { bold: 'Menus personnalisés', text: ' : adaptés à vos goûts et objectifs' },
+                { bold: 'Recettes rapides', text: ' : simples, équilibrées et faciles à préparer' },
+                { bold: 'Liste de courses intelligente', text: ' : moins de charge mentale' },
+                { bold: 'Suivi malin', text: ' : une semaine plus fluide, sans improviser' },
               ].map((item, i) => (
                 <li key={i} className="flex items-start gap-3 text-sm md:text-base">
                   <span className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
@@ -143,7 +143,11 @@ export const HomeHero = ({ onCtaClick }: HomeHeroProps) => {
                 <Timer className="w-6 h-6 text-emerald-400" />
                 <div>
                   <div className="text-2xl font-bold text-white">+5h</div>
-                  <div className="text-xs text-white/60">gagnées<br />par semaine</div>
+                  <div className="text-xs text-white/60">
+                    gagnées
+                    <br />
+                    par semaine
+                  </div>
                 </div>
               </div>
             </div>
@@ -154,7 +158,11 @@ export const HomeHero = ({ onCtaClick }: HomeHeroProps) => {
                 <CalendarDays className="w-6 h-6 text-emerald-400" />
                 <div>
                   <div className="text-2xl font-bold text-white">7 repas</div>
-                  <div className="text-xs text-white/70">planifiés<br />cette semaine</div>
+                  <div className="text-xs text-white/70">
+                    planifiés
+                    <br />
+                    cette semaine
+                  </div>
                 </div>
               </div>
               <div className="mt-3 h-1 w-full bg-white/10 rounded-full overflow-hidden">

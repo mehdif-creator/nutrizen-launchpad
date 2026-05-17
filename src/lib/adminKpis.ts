@@ -2,7 +2,7 @@
  * Admin KPI Data Layer
  * All admin data queries now go through the admin-analytics Edge Function
  * to prevent client-side data exposure. No direct database queries.
- * 
+ *
  * ARCHITECTURE:
  * - All data access proxied through server-side Edge Function
  * - Admin auth validated server-side before any query execution
@@ -17,18 +17,18 @@ import { supabase } from '@/integrations/supabase/client';
 export type DateRange = '7d' | '30d' | '90d' | '12m' | 'custom';
 export type Granularity = 'day' | 'week' | 'month';
 
-export type KpiSlug = 
-  | 'mrr' 
-  | 'arpu' 
-  | 'conversion' 
+export type KpiSlug =
+  | 'mrr'
+  | 'arpu'
+  | 'conversion'
   | 'churn'
-  | 'users-total' 
-  | 'subscribers-active' 
-  | 'new-users' 
+  | 'users-total'
+  | 'subscribers-active'
+  | 'new-users'
   | 'tickets-open'
-  | 'menus-created' 
-  | 'menus-per-user' 
-  | 'ratings' 
+  | 'menus-created'
+  | 'menus-per-user'
+  | 'ratings'
   | 'points-total';
 
 export interface KpiFilters {
@@ -89,7 +89,7 @@ export interface KpiConfig {
 }
 
 export const KPI_REGISTRY: Record<KpiSlug, KpiConfig> = {
-  'mrr': {
+  mrr: {
     slug: 'mrr',
     title: 'MRR',
     subtitle: 'Revenue mensuel récurrent',
@@ -101,7 +101,7 @@ export const KPI_REGISTRY: Record<KpiSlug, KpiConfig> = {
     breakdownRpc: 'get_kpi_mrr_by_plan',
     formatValue: (v) => `${v.toFixed(2)}€`,
   },
-  'arpu': {
+  arpu: {
     slug: 'arpu',
     title: 'ARPU',
     subtitle: 'Revenue moyen par utilisateur',
@@ -112,7 +112,7 @@ export const KPI_REGISTRY: Record<KpiSlug, KpiConfig> = {
     seriesRpc: 'get_kpi_arpu_timeseries',
     formatValue: (v) => `${v.toFixed(2)}€`,
   },
-  'conversion': {
+  conversion: {
     slug: 'conversion',
     title: 'Taux de conversion',
     subtitle: 'Trial → Paid',
@@ -124,7 +124,7 @@ export const KPI_REGISTRY: Record<KpiSlug, KpiConfig> = {
     breakdownRpc: 'get_kpi_conversion_breakdown',
     formatValue: (v) => `${v.toFixed(1)}%`,
   },
-  'churn': {
+  churn: {
     slug: 'churn',
     title: 'Taux de churn',
     subtitle: 'Annulations',
@@ -203,7 +203,7 @@ export const KPI_REGISTRY: Record<KpiSlug, KpiConfig> = {
     breakdownRpc: 'get_kpi_menus_per_user_distribution',
     formatValue: (v) => v.toFixed(1),
   },
-  'ratings': {
+  ratings: {
     slug: 'ratings',
     title: 'Notations',
     subtitle: 'Évaluations',
@@ -292,7 +292,9 @@ export class AdminAccessError extends Error {
 }
 
 export async function assertAdminOrThrow(): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) throw new AdminAccessError();
 
   const { data, error } = await supabase
@@ -342,19 +344,35 @@ async function callAdminApi<T>(action: string, filters: Partial<KpiFilters> = {}
 
 // ============= Helper Functions =============
 
-export function getDateRange(range: DateRange, customFrom?: string, customTo?: string): { from: string; to: string } {
+export function getDateRange(
+  range: DateRange,
+  customFrom?: string,
+  customTo?: string
+): { from: string; to: string } {
   const now = new Date();
   const to = now.toISOString().split('T')[0];
-  
+
   switch (range) {
     case '7d':
-      return { from: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], to };
+      return {
+        from: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        to,
+      };
     case '30d':
-      return { from: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], to };
+      return {
+        from: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        to,
+      };
     case '90d':
-      return { from: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], to };
+      return {
+        from: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        to,
+      };
     case '12m':
-      return { from: new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], to };
+      return {
+        from: new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        to,
+      };
     case 'custom':
       return { from: customFrom || to, to: customTo || to };
     default:
@@ -379,7 +397,7 @@ export function exportToCsv(data: any[], filename: string): void {
   const headers = Object.keys(data[0]);
   const csvContent = [
     headers.join(','),
-    ...data.map(row => headers.map(h => JSON.stringify(row[h] ?? '')).join(',')),
+    ...data.map((row) => headers.map((h) => JSON.stringify(row[h] ?? '')).join(',')),
   ].join('\n');
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
@@ -391,22 +409,22 @@ export function exportToCsv(data: any[], filename: string): void {
 // ============= Unified KPI Fetchers =============
 
 const CARD_ACTION_MAP: Record<KpiSlug, string> = {
-  'mrr': 'mrr_card',
-  'arpu': 'arpu_card',
-  'conversion': 'conversion_card',
-  'churn': 'churn_card',
+  mrr: 'mrr_card',
+  arpu: 'arpu_card',
+  conversion: 'conversion_card',
+  churn: 'churn_card',
   'users-total': 'users_card',
   'subscribers-active': 'subscribers_card',
   'new-users': 'new_users_card',
   'tickets-open': 'tickets_card',
   'menus-created': 'menus_card',
   'menus-per-user': 'menus_per_user_card',
-  'ratings': 'ratings_card',
+  ratings: 'ratings_card',
   'points-total': 'points_card',
 };
 
 export async function fetchKpiCardSummary(
-  slug: KpiSlug, 
+  slug: KpiSlug,
   range: DateRange = '30d'
 ): Promise<KpiCardSummary> {
   const { from, to } = getDateRange(range);
@@ -414,7 +432,7 @@ export async function fetchKpiCardSummary(
   const action = CARD_ACTION_MAP[slug];
   if (!action) return { headline: 0, subtitle: 'Unknown KPI' };
 
-  return dedupedRequest(cacheKey, () => 
+  return dedupedRequest(cacheKey, () =>
     callAdminApi<KpiCardSummary>(action, { dateFrom: from, dateTo: to })
   );
 }
@@ -448,18 +466,54 @@ export async function fetchKpiDetails(
 
   // Fetch summary, series, and breakdown in parallel via edge function
   const detailMap: Record<KpiSlug, { summary: string; series: string; breakdown: string }> = {
-    'mrr': { summary: 'mrr_card', series: 'mrr_timeseries', breakdown: 'mrr_by_plan' },
-    'arpu': { summary: 'arpu_card', series: 'arpu_timeseries', breakdown: 'mrr_by_plan' },
-    'conversion': { summary: 'conversion_card', series: 'conversion_timeseries', breakdown: 'conversion_funnel' },
-    'churn': { summary: 'churn_card', series: 'churn_timeseries', breakdown: 'churn_by_plan' },
-    'users-total': { summary: 'users_card', series: 'users_timeseries', breakdown: 'users_breakdown' },
-    'subscribers-active': { summary: 'subscribers_card', series: 'subscribers_timeseries', breakdown: 'subscribers_summary' },
-    'new-users': { summary: 'new_users_card', series: 'new_users_timeseries', breakdown: 'new_users_timeseries' },
-    'tickets-open': { summary: 'tickets_card', series: 'tickets_timeseries', breakdown: 'tickets_by_category' },
-    'menus-created': { summary: 'menus_card', series: 'menus_timeseries', breakdown: 'menus_timeseries' },
-    'menus-per-user': { summary: 'menus_per_user_card', series: 'menus_timeseries', breakdown: 'menus_per_user_distribution' },
-    'ratings': { summary: 'ratings_card', series: 'ratings_timeseries', breakdown: 'ratings_distribution' },
-    'points-total': { summary: 'points_card', series: 'points_timeseries', breakdown: 'points_by_event_type' },
+    mrr: { summary: 'mrr_card', series: 'mrr_timeseries', breakdown: 'mrr_by_plan' },
+    arpu: { summary: 'arpu_card', series: 'arpu_timeseries', breakdown: 'mrr_by_plan' },
+    conversion: {
+      summary: 'conversion_card',
+      series: 'conversion_timeseries',
+      breakdown: 'conversion_funnel',
+    },
+    churn: { summary: 'churn_card', series: 'churn_timeseries', breakdown: 'churn_by_plan' },
+    'users-total': {
+      summary: 'users_card',
+      series: 'users_timeseries',
+      breakdown: 'users_breakdown',
+    },
+    'subscribers-active': {
+      summary: 'subscribers_card',
+      series: 'subscribers_timeseries',
+      breakdown: 'subscribers_summary',
+    },
+    'new-users': {
+      summary: 'new_users_card',
+      series: 'new_users_timeseries',
+      breakdown: 'new_users_timeseries',
+    },
+    'tickets-open': {
+      summary: 'tickets_card',
+      series: 'tickets_timeseries',
+      breakdown: 'tickets_by_category',
+    },
+    'menus-created': {
+      summary: 'menus_card',
+      series: 'menus_timeseries',
+      breakdown: 'menus_timeseries',
+    },
+    'menus-per-user': {
+      summary: 'menus_per_user_card',
+      series: 'menus_timeseries',
+      breakdown: 'menus_per_user_distribution',
+    },
+    ratings: {
+      summary: 'ratings_card',
+      series: 'ratings_timeseries',
+      breakdown: 'ratings_distribution',
+    },
+    'points-total': {
+      summary: 'points_card',
+      series: 'points_timeseries',
+      breakdown: 'points_by_event_type',
+    },
   };
 
   const actions = detailMap[slug];
@@ -541,14 +595,21 @@ export async function fetchMrrByPlan(filters: KpiFilters): Promise<BreakdownRow[
   return callAdminApi('mrr_by_plan', filters);
 }
 export async function fetchMrrTopCustomers(
-  filters: KpiFilters, cursor?: string, limit = 20
+  filters: KpiFilters,
+  cursor?: string,
+  limit = 20
 ): Promise<{ data: CustomerRow[]; nextCursor?: string }> {
   return callAdminApi('mrr_top_customers', { ...filters, cursor, limit } as any);
 }
 
 // ARPU
 export async function fetchArpuSummary(filters: KpiFilters) {
-  return callAdminApi<{ arpu_current: number; arpu_previous: number; active_users: number; total_revenue: number }>('arpu_summary', filters);
+  return callAdminApi<{
+    arpu_current: number;
+    arpu_previous: number;
+    active_users: number;
+    total_revenue: number;
+  }>('arpu_summary', filters);
 }
 export async function fetchArpuTimeseries(filters: KpiFilters): Promise<TimeSeriesPoint[]> {
   return callAdminApi('arpu_timeseries', filters);
@@ -567,7 +628,12 @@ export async function fetchConversionTimeseries(filters: KpiFilters): Promise<Ti
 
 // Churn
 export async function fetchChurnSummary(filters: KpiFilters) {
-  return callAdminApi<{ churn_rate: number; cancellations: number; retention_rate: number; avg_subscription_age: number }>('churn_summary', filters);
+  return callAdminApi<{
+    churn_rate: number;
+    cancellations: number;
+    retention_rate: number;
+    avg_subscription_age: number;
+  }>('churn_summary', filters);
 }
 export async function fetchChurnTimeseries(filters: KpiFilters): Promise<TimeSeriesPoint[]> {
   return callAdminApi('churn_timeseries', filters);
@@ -578,7 +644,13 @@ export async function fetchChurnByPlan(filters: KpiFilters): Promise<BreakdownRo
 
 // Users
 export async function fetchUsersSummary(filters: KpiFilters) {
-  return callAdminApi<{ total_users: number; active_users_7d: number; active_users_30d: number; trial_users: number; paid_users: number }>('users_summary', filters);
+  return callAdminApi<{
+    total_users: number;
+    active_users_7d: number;
+    active_users_30d: number;
+    trial_users: number;
+    paid_users: number;
+  }>('users_summary', filters);
 }
 export async function fetchUsersTimeseries(filters: KpiFilters): Promise<TimeSeriesPoint[]> {
   return callAdminApi('users_timeseries', filters);
@@ -589,7 +661,12 @@ export async function fetchUsersBreakdown(filters: KpiFilters): Promise<Breakdow
 
 // Subscribers
 export async function fetchSubscribersSummary(filters: KpiFilters) {
-  return callAdminApi<{ active_subscribers: number; new_subscribers: number; cancelled_subscribers: number; plan_distribution: BreakdownRow[] }>('subscribers_summary', filters);
+  return callAdminApi<{
+    active_subscribers: number;
+    new_subscribers: number;
+    cancelled_subscribers: number;
+    plan_distribution: BreakdownRow[];
+  }>('subscribers_summary', filters);
 }
 export async function fetchSubscribersTimeseries(filters: KpiFilters): Promise<TimeSeriesPoint[]> {
   return callAdminApi('subscribers_timeseries', filters);
@@ -597,7 +674,10 @@ export async function fetchSubscribersTimeseries(filters: KpiFilters): Promise<T
 
 // New Users
 export async function fetchNewUsersSummary(filters: KpiFilters) {
-  return callAdminApi<{ new_users: number; new_users_week: number; activation_rate: number }>('new_users_summary', filters);
+  return callAdminApi<{ new_users: number; new_users_week: number; activation_rate: number }>(
+    'new_users_summary',
+    filters
+  );
 }
 export async function fetchNewUsersTimeseries(filters: KpiFilters): Promise<TimeSeriesPoint[]> {
   return callAdminApi('new_users_timeseries', filters);
@@ -605,7 +685,12 @@ export async function fetchNewUsersTimeseries(filters: KpiFilters): Promise<Time
 
 // Tickets
 export async function fetchTicketsSummary(filters: KpiFilters) {
-  return callAdminApi<{ open_tickets: number; avg_first_response_time: number; avg_resolution_time: number; sla_breach_count: number }>('tickets_summary', filters);
+  return callAdminApi<{
+    open_tickets: number;
+    avg_first_response_time: number;
+    avg_resolution_time: number;
+    sla_breach_count: number;
+  }>('tickets_summary', filters);
 }
 export async function fetchTicketsTimeseries(filters: KpiFilters): Promise<TimeSeriesPoint[]> {
   return callAdminApi('tickets_timeseries', filters);
@@ -614,33 +699,55 @@ export async function fetchTicketsByCategory(filters: KpiFilters): Promise<Break
   return callAdminApi('tickets_by_category', filters);
 }
 export async function fetchTicketList(
-  filters: KpiFilters, cursor?: string, limit = 20, status?: string
+  filters: KpiFilters,
+  cursor?: string,
+  limit = 20,
+  status?: string
 ): Promise<{ data: TicketRow[]; nextCursor?: string }> {
   return callAdminApi('tickets_list', { ...filters, cursor, limit, status } as any);
 }
 
 // Menus
 export async function fetchMenusSummary(filters: KpiFilters) {
-  return callAdminApi<{ menus_created: number; menus_today: number; menus_week: number; users_with_menus: number; avg_menus_per_user: number }>('menus_summary', filters);
+  return callAdminApi<{
+    menus_created: number;
+    menus_today: number;
+    menus_week: number;
+    users_with_menus: number;
+    avg_menus_per_user: number;
+  }>('menus_summary', filters);
 }
 export async function fetchMenusTimeseries(filters: KpiFilters): Promise<TimeSeriesPoint[]> {
   return callAdminApi('menus_timeseries', filters);
 }
 export async function fetchMenusPerUserSummary(filters: KpiFilters) {
-  return callAdminApi<{ avg_menus_per_user: number; median_menus_per_user: number; p90_menus_per_user: number; active_users: number }>('menus_per_user_summary', filters);
+  return callAdminApi<{
+    avg_menus_per_user: number;
+    median_menus_per_user: number;
+    p90_menus_per_user: number;
+    active_users: number;
+  }>('menus_per_user_summary', filters);
 }
 export async function fetchMenusPerUserDistribution(filters: KpiFilters): Promise<BreakdownRow[]> {
   return callAdminApi('menus_per_user_distribution', filters);
 }
 export async function fetchTopMenuCreators(
-  filters: KpiFilters, cursor?: string, limit = 20
-): Promise<{ data: { user_id: string; email: string; menu_count: number }[]; nextCursor?: string }> {
+  filters: KpiFilters,
+  cursor?: string,
+  limit = 20
+): Promise<{
+  data: { user_id: string; email: string; menu_count: number }[];
+  nextCursor?: string;
+}> {
   return callAdminApi('top_menu_creators', { ...filters, cursor, limit } as any);
 }
 
 // Ratings
 export async function fetchRatingsSummary(filters: KpiFilters) {
-  return callAdminApi<{ avg_rating: number; ratings_count: number; pct_4_5_stars: number }>('ratings_summary', filters);
+  return callAdminApi<{ avg_rating: number; ratings_count: number; pct_4_5_stars: number }>(
+    'ratings_summary',
+    filters
+  );
 }
 export async function fetchRatingsTimeseries(filters: KpiFilters): Promise<TimeSeriesPoint[]> {
   return callAdminApi('ratings_timeseries', filters);
@@ -651,7 +758,10 @@ export async function fetchRatingsDistribution(filters: KpiFilters): Promise<Bre
 
 // Points
 export async function fetchPointsSummary(filters: KpiFilters) {
-  return callAdminApi<{ total_points: number; points_per_user: number; top_earners_count: number }>('points_summary', filters);
+  return callAdminApi<{ total_points: number; points_per_user: number; top_earners_count: number }>(
+    'points_summary',
+    filters
+  );
 }
 export async function fetchPointsTimeseries(filters: KpiFilters): Promise<TimeSeriesPoint[]> {
   return callAdminApi('points_timeseries', filters);
@@ -660,7 +770,9 @@ export async function fetchPointsByEventType(filters: KpiFilters): Promise<Break
   return callAdminApi('points_by_event_type', filters);
 }
 export async function fetchPointsLeaderboard(
-  filters: KpiFilters, cursor?: string, limit = 20
+  filters: KpiFilters,
+  cursor?: string,
+  limit = 20
 ): Promise<{ data: LeaderboardRow[]; nextCursor?: string }> {
   return callAdminApi('points_leaderboard', { ...filters, cursor, limit } as any);
 }

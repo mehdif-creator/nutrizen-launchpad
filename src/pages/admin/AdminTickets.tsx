@@ -81,7 +81,7 @@ export default function AdminTickets() {
                         month: 'long',
                         year: 'numeric',
                         hour: '2-digit',
-                        minute: '2-digit'
+                        minute: '2-digit',
                       })}
                     </p>
                   </div>
@@ -89,14 +89,14 @@ export default function AdminTickets() {
                     {ticket.status === 'open' ? 'Ouvert' : 'Fermé'}
                   </Badge>
                 </div>
-                
-                {ticket.messages && Array.isArray(ticket.messages) && ticket.messages.length > 0 && (
-                  <div className="bg-muted/30 rounded-lg p-4 mt-4">
-                    <p className="text-sm whitespace-pre-wrap">
-                      {ticket.messages[0].text}
-                    </p>
-                  </div>
-                )}
+
+                {ticket.messages &&
+                  Array.isArray(ticket.messages) &&
+                  ticket.messages.length > 0 && (
+                    <div className="bg-muted/30 rounded-lg p-4 mt-4">
+                      <p className="text-sm whitespace-pre-wrap">{ticket.messages[0].text}</p>
+                    </div>
+                  )}
               </Card>
             ))}
           </div>

@@ -1,11 +1,11 @@
 /**
  * Admin Macros Maintenance Page
- * 
+ *
  * Provides admin tools for managing recipe macros:
  * - View queue status and coverage stats
  * - Process macros queue in batches
  * - Refresh materialized view
- * 
+ *
  * Route: /admin/macros-maintenance
  */
 
@@ -151,7 +151,9 @@ export default function AdminMacrosMaintenance() {
                   size="sm"
                   disabled={isLoadingCoverage || isLoadingQueue}
                 >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${(isLoadingCoverage || isLoadingQueue) ? 'animate-spin' : ''}`} />
+                  <RefreshCw
+                    className={`h-4 w-4 mr-2 ${isLoadingCoverage || isLoadingQueue ? 'animate-spin' : ''}`}
+                  />
                   Actualiser stats
                 </Button>
               </CardContent>
@@ -199,7 +201,8 @@ export default function AdminMacrosMaintenance() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Le mode batch exécute jusqu'à 5 itérations de 200 recettes avec un délai de 1s entre chaque.
+                  Le mode batch exécute jusqu'à 5 itérations de 200 recettes avec un délai de 1s
+                  entre chaque.
                 </p>
               </CardContent>
             </Card>
@@ -216,11 +219,7 @@ export default function AdminMacrosMaintenance() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button
-                  onClick={refreshMV2}
-                  disabled={isRefreshing}
-                  variant="outline"
-                >
+                <Button onClick={refreshMV2} disabled={isRefreshing} variant="outline">
                   {isRefreshing ? (
                     <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
@@ -229,7 +228,8 @@ export default function AdminMacrosMaintenance() {
                   Refresh MV2
                 </Button>
                 <p className="text-xs text-muted-foreground">
-                  Cette opération peut prendre quelques secondes. La vue sera mise à jour de manière concurrente (sans blocage des lectures).
+                  Cette opération peut prendre quelques secondes. La vue sera mise à jour de manière
+                  concurrente (sans blocage des lectures).
                 </p>
               </CardContent>
             </Card>
@@ -242,14 +242,25 @@ export default function AdminMacrosMaintenance() {
             </CardHeader>
             <CardContent className="prose prose-sm dark:prose-invert max-w-none">
               <ul className="list-disc pl-4 space-y-1 text-muted-foreground">
-                <li><strong>recipe_macros_queue</strong> : File d'attente des recettes à traiter</li>
-                <li><strong>recipe_macros_store</strong> : Données calculées persistées</li>
-                <li><strong>recipe_macros_mv2</strong> : Vue matérialisée pour les lectures rapides</li>
-                <li><strong>process_recipe_macros_queue()</strong> : Fonction de traitement batch</li>
-                <li><strong>compute_recipe_macros()</strong> : Fonction de calcul unitaire</li>
+                <li>
+                  <strong>recipe_macros_queue</strong> : File d'attente des recettes à traiter
+                </li>
+                <li>
+                  <strong>recipe_macros_store</strong> : Données calculées persistées
+                </li>
+                <li>
+                  <strong>recipe_macros_mv2</strong> : Vue matérialisée pour les lectures rapides
+                </li>
+                <li>
+                  <strong>process_recipe_macros_queue()</strong> : Fonction de traitement batch
+                </li>
+                <li>
+                  <strong>compute_recipe_macros()</strong> : Fonction de calcul unitaire
+                </li>
               </ul>
               <p className="mt-4 text-sm text-muted-foreground">
-                Le front-end utilise exclusivement des lectures via RPC/MV2. Les recalculs sont déclenchés uniquement depuis cette interface admin.
+                Le front-end utilise exclusivement des lectures via RPC/MV2. Les recalculs sont
+                déclenchés uniquement depuis cette interface admin.
               </p>
             </CardContent>
           </Card>

@@ -28,7 +28,10 @@ export function normalizeIngredientName(name: string): string {
     .replace(/[.,;:]/g, ' ')
     .replace(/[’]/g, "'")
     .replace(PREP_WORDS_RE, ' ')
-    .replace(/\b(?:r[aâ]p[eé]e?s?|é?minc[eé]e?s?|coup[eé]e?s?|hach[eé]e?s?|frais|fra[iî]che?s?|en fines? tranches?|en lamelles?|en d[eé]s|en rondelles?|en morceaux)\b/gi, ' ')
+    .replace(
+      /\b(?:r[aâ]p[eé]e?s?|é?minc[eé]e?s?|coup[eé]e?s?|hach[eé]e?s?|frais|fra[iî]che?s?|en fines? tranches?|en lamelles?|en d[eé]s|en rondelles?|en morceaux)\b/gi,
+      ' '
+    )
     .replace(/\s+(?:coup[eé]e?s?|hach[eé]e?s?|r[aâ]p[eé]e?s?|é?minc[eé]e?s?).*$/gi, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
@@ -60,10 +63,10 @@ const PIECE_TO_GRAMS: Record<string, number> = {
   courgette: 200,
   aubergine: 250,
   poivron: 150,
-  'gousse d\'ail': 5,
-  'ail': 5,
-  'oeuf': 60,
-  'œuf': 60,
+  "gousse d'ail": 5,
+  ail: 5,
+  oeuf: 60,
+  œuf: 60,
   pomme: 150,
   poire: 150,
   banane: 120,
@@ -77,7 +80,7 @@ const PIECE_TO_GRAMS: Record<string, number> = {
   fenouil: 250,
   artichaut: 120,
   poireau: 200,
-  'échalote': 30,
+  échalote: 30,
   céleri: 40,
 };
 
@@ -114,8 +117,10 @@ function canonicalizeUnit(unit: string): string {
   if (u === 'millilitre' || u === 'millilitres') return 'ml';
   if (u === 'centilitre' || u === 'centilitres') return 'cl';
   if (u === 'litre' || u === 'litres') return 'l';
-  if (/^(tbsp|tablespoon|c\.?\s*à\s*s(?:oupe)?|cuillère[s]?\s*à\s*soupe|càs|cas)$/i.test(u)) return 'tbsp';
-  if (/^(tsp|teaspoon|c\.?\s*à\s*c(?:afé)?|cuillère[s]?\s*à\s*café|càc|cac)$/i.test(u)) return 'tsp';
+  if (/^(tbsp|tablespoon|c\.?\s*à\s*s(?:oupe)?|cuillère[s]?\s*à\s*soupe|càs|cas)$/i.test(u))
+    return 'tbsp';
+  if (/^(tsp|teaspoon|c\.?\s*à\s*c(?:afé)?|cuillère[s]?\s*à\s*café|càc|cac)$/i.test(u))
+    return 'tsp';
   if (/^(pincée|pincee|pinch|pincées|pincees)$/.test(u)) return 'pinch';
   if (u === 'bunch' || u === 'botte') return 'bunch';
   if (u === 'handful' || u === 'poignée') return 'handful';
@@ -139,38 +144,57 @@ function canonicalizeUnit(unit: string): string {
 function unitToFrench(canonical: string, qty: number): string {
   const plural = qty > 1;
   switch (canonical) {
-    case 'piece': return '';
-    case 'g': return 'g';
-    case 'kg': return 'kg';
-    case 'ml': return 'ml';
-    case 'cl': return 'cl';
-    case 'l': return 'l';
-    case 'tbsp': return 'c. à soupe';
-    case 'tsp': return 'c. à café';
-    case 'pinch': return plural ? 'pincées' : 'pincée';
-    case 'bunch': return plural ? 'bottes' : 'botte';
-    case 'handful': return plural ? 'poignées' : 'poignée';
-    case 'slice': return plural ? 'tranches' : 'tranche';
-    case 'clove': return plural ? 'gousses' : 'gousse';
-    case 'sprig': return plural ? 'brins' : 'brin';
-    case 'leaf': return plural ? 'feuilles' : 'feuille';
-    case 'head': return plural ? 'têtes' : 'tête';
-    case 'stalk': return plural ? 'tiges' : 'tige';
-    case 'can': return plural ? 'boîtes' : 'boîte';
-    case 'bag': return plural ? 'sachets' : 'sachet';
-    case 'pack': return plural ? 'paquets' : 'paquet';
-    case 'jar': return plural ? 'bocaux' : 'bocal';
-    case 'cup': return plural ? 'tasses' : 'tasse';
-    default: return canonical;
+    case 'piece':
+      return '';
+    case 'g':
+      return 'g';
+    case 'kg':
+      return 'kg';
+    case 'ml':
+      return 'ml';
+    case 'cl':
+      return 'cl';
+    case 'l':
+      return 'l';
+    case 'tbsp':
+      return 'c. à soupe';
+    case 'tsp':
+      return 'c. à café';
+    case 'pinch':
+      return plural ? 'pincées' : 'pincée';
+    case 'bunch':
+      return plural ? 'bottes' : 'botte';
+    case 'handful':
+      return plural ? 'poignées' : 'poignée';
+    case 'slice':
+      return plural ? 'tranches' : 'tranche';
+    case 'clove':
+      return plural ? 'gousses' : 'gousse';
+    case 'sprig':
+      return plural ? 'brins' : 'brin';
+    case 'leaf':
+      return plural ? 'feuilles' : 'feuille';
+    case 'head':
+      return plural ? 'têtes' : 'tête';
+    case 'stalk':
+      return plural ? 'tiges' : 'tige';
+    case 'can':
+      return plural ? 'boîtes' : 'boîte';
+    case 'bag':
+      return plural ? 'sachets' : 'sachet';
+    case 'pack':
+      return plural ? 'paquets' : 'paquet';
+    case 'jar':
+      return plural ? 'bocaux' : 'bocal';
+    case 'cup':
+      return plural ? 'tasses' : 'tasse';
+    default:
+      return canonical;
   }
 }
 
 /** Convert a quantity to grams when possible. Returns null if can't convert. */
-export function toGrams(
-  qty: number,
-  unit: string,
-  normName: string,
-): { grams: number } | null {
+export function toGrams(qty: number, unit: string, normName: string): { grams: number } | null {
   const u = canonicalizeUnit(unit);
   if (u === 'g') return { grams: qty };
   if (u === 'kg') return { grams: qty * 1000 };
@@ -206,13 +230,11 @@ const JUICE_PER_FRUIT: Record<string, number> = {
   orange: 80,
 };
 
-const JUICE_RE =
-  /^jus\s+de\s+(.+)$/i;
+const JUICE_RE = /^jus\s+de\s+(.+)$/i;
 
 const INLINE_TBSP_RE =
   /^(?:c\.?\s*à\s*s(?:oupe)?|cuillère[s]?\s*à\s*soupe|tbsp)\s*(?:de\s+|d')?(.+)$/i;
-const INLINE_TSP_RE =
-  /^(?:c\.?\s*à\s*c(?:afé)?|cuillère[s]?\s*à\s*café|tsp)\s*(?:de\s+|d')?(.+)$/i;
+const INLINE_TSP_RE = /^(?:c\.?\s*à\s*c(?:afé)?|cuillère[s]?\s*à\s*café|tsp)\s*(?:de\s+|d')?(.+)$/i;
 
 function extractInlineUnitFromName(name: string): { cleanName: string; inlineUnit: string | null } {
   const trimmed = name.trim();
@@ -254,23 +276,47 @@ function isJuiceOf(normName: string): string | null {
 // Order matters: first match wins. More specific keywords first.
 const CATEGORY_RULES: Array<[RegExp, string]> = [
   // Viandes & Poissons
-  [/\b(agneau|boeuf|bœuf|porc|veau|dinde|poulet|canard|lapin|magret|entrecôte|escalope)\b|\bfilet de\s+.*\b(poulet|dinde|porc|boeuf|bœuf)\b/i, 'Viandes & Poissons'],
-  [/\b(saumon|thon|cabillaud|crevette|moule|sardine|truite|bar|lieu|merlu|colin|sole|dorade|gambas|calamars?|poisson|anchois|maquereau)\b/i, 'Viandes & Poissons'],
+  [
+    /\b(agneau|boeuf|bœuf|porc|veau|dinde|poulet|canard|lapin|magret|entrecôte|escalope)\b|\bfilet de\s+.*\b(poulet|dinde|porc|boeuf|bœuf)\b/i,
+    'Viandes & Poissons',
+  ],
+  [
+    /\b(saumon|thon|cabillaud|crevette|moule|sardine|truite|bar|lieu|merlu|colin|sole|dorade|gambas|calamars?|poisson|anchois|maquereau)\b/i,
+    'Viandes & Poissons',
+  ],
 
   // Fruits & Légumes (must come before Épicerie to catch "oignon" etc.)
-  [/oignon|carotte|concombre|courgette|aubergine|poivron|tomate|brocoli|chou|épinard|salade|laitue|radis|betterave|poireau|asperge|artichaut|fenouil|navet|céleri|champignon|endive|cresson|roquette|mâche|haricot[s]?\s*vert/i, 'Fruits & Légumes'],
-  [/citron|orange|pomme(?! de terre)|poire|banane|mangue|ananas|fraise|framboise|raisin|melon|pastèque|kiwi|abricot|pêche|prune|avocat|grenade|figue/i, 'Fruits & Légumes'],
+  [
+    /oignon|carotte|concombre|courgette|aubergine|poivron|tomate|brocoli|chou|épinard|salade|laitue|radis|betterave|poireau|asperge|artichaut|fenouil|navet|céleri|champignon|endive|cresson|roquette|mâche|haricot[s]?\s*vert/i,
+    'Fruits & Légumes',
+  ],
+  [
+    /citron|orange|pomme(?! de terre)|poire|banane|mangue|ananas|fraise|framboise|raisin|melon|pastèque|kiwi|abricot|pêche|prune|avocat|grenade|figue/i,
+    'Fruits & Légumes',
+  ],
   [/ail|échalote|gingembre|citronnelle/i, 'Fruits & Légumes'],
-  [/persil|coriandre|basilic|menthe|ciboulette|aneth|estragon|cerfeuil|thym frais|romarin frais/i, 'Fruits & Légumes'],
+  [
+    /persil|coriandre|basilic|menthe|ciboulette|aneth|estragon|cerfeuil|thym frais|romarin frais/i,
+    'Fruits & Légumes',
+  ],
 
   // Féculents
-  [/riz|pâte[s]?|spaghetti|nouille|ramen|quinoa|semoule|boulgour|pain|farine|pomme[s]?\s*de\s*terre|patate|lentille|pois\s*chiche|haricot[s]?\s*(?:rouge|blanc|noir|sec)|couscous|tapioca|gnocchi|tortilla|blé|maïs|avoine|flocon|muesli|céréale/i, 'Féculents'],
+  [
+    /riz|pâte[s]?|spaghetti|nouille|ramen|quinoa|semoule|boulgour|pain|farine|pomme[s]?\s*de\s*terre|patate|lentille|pois\s*chiche|haricot[s]?\s*(?:rouge|blanc|noir|sec)|couscous|tapioca|gnocchi|tortilla|blé|maïs|avoine|flocon|muesli|céréale/i,
+    'Féculents',
+  ],
 
   // Produits laitiers
-  [/lait|fromage|crème(?! de coco)|beurre|yaourt|yogourt|feta|mozzarella|parmesan|gruyère|ricotta|mascarpone|chèvre|comté|emmental|roquefort|camembert|reblochon/i, 'Produits laitiers'],
+  [
+    /lait|fromage|crème(?! de coco)|beurre|yaourt|yogourt|feta|mozzarella|parmesan|gruyère|ricotta|mascarpone|chèvre|comté|emmental|roquefort|camembert|reblochon/i,
+    'Produits laitiers',
+  ],
 
   // Épicerie
-  [/huile|vinaigre|sel|poivre|épice|sucre|miel|sauce|bouillon|moutarde|ketchup|mayonnaise|tahini|soja|miso|curry|cumin|paprika|thym|romarin|basilic sec|origan|cannelle|muscade|safran|piment|harissa|concentré|conserve|coulis|maïzena|fécule|levure|bicarbonate|gélatine|agar|vanille|cacao|chocolat|confiture|sirop|cornichon|câpre|olive|noix|amande|noisette|pistache|sésame|cacahuète|pignon|graine/i, 'Épicerie'],
+  [
+    /huile|vinaigre|sel|poivre|épice|sucre|miel|sauce|bouillon|moutarde|ketchup|mayonnaise|tahini|soja|miso|curry|cumin|paprika|thym|romarin|basilic sec|origan|cannelle|muscade|safran|piment|harissa|concentré|conserve|coulis|maïzena|fécule|levure|bicarbonate|gélatine|agar|vanille|cacao|chocolat|confiture|sirop|cornichon|câpre|olive|noix|amande|noisette|pistache|sésame|cacahuète|pignon|graine/i,
+    'Épicerie',
+  ],
   [/crème\s*de\s*coco|lait\s*de\s*coco|coconut/i, 'Épicerie'],
 
   // Boissons
@@ -291,10 +337,10 @@ export const CATEGORY_ICONS: Record<string, string> = {
   'Fruits & Légumes': '🥦',
   'Viandes & Poissons': '🥩',
   'Produits laitiers': '🧀',
-  'Féculents': '🍚',
-  'Épicerie': '🫙',
-  'Boissons': '🥤',
-  'Divers': '📦',
+  Féculents: '🍚',
+  Épicerie: '🫙',
+  Boissons: '🥤',
+  Divers: '📦',
 };
 
 export function getCategory(ingredientName: string): string {
@@ -312,7 +358,10 @@ export function getCategory(ingredientName: string): string {
 function formatCompactNumber(value: number): string {
   const rounded = Math.round(value * 100) / 100;
   if (Number.isInteger(rounded)) return `${rounded}`;
-  return rounded.toFixed(2).replace(/\.00$/, '').replace(/(\.\d*[1-9])0$/, '$1');
+  return rounded
+    .toFixed(2)
+    .replace(/\.00$/, '')
+    .replace(/(\.\d*[1-9])0$/, '$1');
 }
 
 function roundCountQuantity(qty: number): number {
@@ -457,7 +506,8 @@ export function mergeShoppingItems(raw: RawShoppingItem[]): MergedShoppingItem[]
 
     if (fruitBase) {
       // Convert juice spoon/volume → ml → whole fruit count
-      const ml = spoonToMl(effectiveUnit, effectiveQty) ?? toMilliliters(effectiveQty, effectiveUnit);
+      const ml =
+        spoonToMl(effectiveUnit, effectiveQty) ?? toMilliliters(effectiveQty, effectiveUnit);
       if (ml !== null) {
         const perFruit = JUICE_PER_FRUIT[fruitBase] ?? 30;
         effectiveQty = ml / perFruit;
@@ -521,7 +571,9 @@ export function mergeShoppingItems(raw: RawShoppingItem[]): MergedShoppingItem[]
       qtyParts.push(formatShoppingQty(null, 'piece', bucket.countQty));
     }
 
-    for (const [unit, qty] of Object.entries(bucket.otherUnits).sort((a, b) => a[0].localeCompare(b[0], 'fr'))) {
+    for (const [unit, qty] of Object.entries(bucket.otherUnits).sort((a, b) =>
+      a[0].localeCompare(b[0], 'fr')
+    )) {
       if (qty > 0) qtyParts.push(formatShoppingQty(null, unit, qty));
     }
 

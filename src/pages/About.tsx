@@ -99,15 +99,15 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Comment sont gérées les allergies ?',
-    a: 'Les allergies sont traitées comme des contraintes strictes (bloquantes). Aucune recette contenant un allergène déclaré ne sera proposée. En cas de doute sur un ingrédient, vérifiez toujours l\'étiquette du produit.',
+    a: "Les allergies sont traitées comme des contraintes strictes (bloquantes). Aucune recette contenant un allergène déclaré ne sera proposée. En cas de doute sur un ingrédient, vérifiez toujours l'étiquette du produit.",
   },
   {
     q: 'Puis-je changer une recette ?',
-    a: 'Oui, la fonction « swap » permet de remplacer n\'importe quelle recette d\'un menu par une alternative compatible avec vos contraintes.',
+    a: "Oui, la fonction « swap » permet de remplacer n'importe quelle recette d'un menu par une alternative compatible avec vos contraintes.",
   },
   {
     q: 'Les crédits expirent-ils ?',
-    a: 'Les crédits achetés à la carte (lifetime) n\'expirent pas. Les crédits offerts avec un abonnement sont remis à zéro selon la cadence de votre plan.',
+    a: "Les crédits achetés à la carte (lifetime) n'expirent pas. Les crédits offerts avec un abonnement sont remis à zéro selon la cadence de votre plan.",
   },
 ];
 
@@ -150,9 +150,7 @@ export default function About() {
         {/* ── 1. Hero ──────────────────────────────────────── */}
         <section className="py-20 md:py-28 bg-gradient-to-b from-primary/10 to-background">
           <div className="container max-w-4xl text-center space-y-6">
-            <h1 className="text-4xl md:text-5xl font-bold leading-tight">
-              À propos de NutriZen
-            </h1>
+            <h1 className="text-4xl md:text-5xl font-bold leading-tight">À propos de NutriZen</h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
               Des menus personnalisés qui respectent vos préférences, vos contraintes et vos
               allergies — sans prise de tête.
@@ -194,9 +192,7 @@ export default function About() {
         {/* ── 3. Comment ça marche ─────────────────────────── */}
         <section className="py-16 bg-gradient-to-b from-secondary/20 to-background">
           <div className="container max-w-5xl">
-            <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">
-              Comment ça marche
-            </h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">Comment ça marche</h2>
             <div className="grid md:grid-cols-3 gap-6">
               {STEPS.map(({ number, icon: Icon, title, text }) => (
                 <Card
@@ -234,8 +230,8 @@ export default function About() {
                 <li className="flex items-start gap-3">
                   <Shield className="mt-0.5 h-5 w-5 shrink-0 text-destructive/80" />
                   <span>
-                    Les allergies sont des <strong>contraintes bloquantes</strong> : aucune
-                    recette contenant un allergène déclaré ne sera proposée.
+                    Les allergies sont des <strong>contraintes bloquantes</strong> : aucune recette
+                    contenant un allergène déclaré ne sera proposée.
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
@@ -329,9 +325,7 @@ export default function About() {
         {/* ── 8. Final CTA ─────────────────────────────────── */}
         <section className="py-24 bg-gradient-to-br from-accent/10 to-primary/10">
           <div className="container max-w-3xl text-center space-y-6">
-            <h2 className="text-3xl md:text-4xl font-bold">
-              Prêt à simplifier tes repas ?
-            </h2>
+            <h2 className="text-3xl md:text-4xl font-bold">Prêt à simplifier tes repas ?</h2>
             <Button
               onClick={() => navigate('/auth/signup')}
               size="lg"
@@ -339,9 +333,7 @@ export default function About() {
             >
               Créer mon premier menu
             </Button>
-            <p className="text-sm text-muted-foreground">
-              Gratuit, sans carte bancaire.
-            </p>
+            <p className="text-sm text-muted-foreground">Gratuit, sans carte bancaire.</p>
           </div>
         </section>
       </main>

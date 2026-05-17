@@ -105,8 +105,7 @@ describe('getCreditsBalance', () => {
     mockFrom.mockReturnValue({
       select: () => ({
         eq: () => ({
-          single: () =>
-            Promise.resolve({ data: null, error: { code: 'PGRST116' } }),
+          single: () => Promise.resolve({ data: null, error: { code: 'PGRST116' } }),
         }),
       }),
     });

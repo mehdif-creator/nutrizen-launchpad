@@ -8,12 +8,12 @@ interface PASSectionProps {
 
 export const PASSection = ({ config }: PASSectionProps) => {
   const { t } = useLanguage();
-  
+
   const solutions = [
     t('pas.solution1'),
     t('pas.solution2'),
     t('pas.solution3'),
-    t('pas.solution4')
+    t('pas.solution4'),
   ];
 
   return (
@@ -25,9 +25,7 @@ export const PASSection = ({ config }: PASSectionProps) => {
             <div className="inline-block px-4 py-2 bg-error/10 text-error rounded-full text-sm font-medium">
               {t('pas.tag')}
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold">
-              {t('pas.title')}
-            </h2>
+            <h2 className="text-3xl md:text-4xl font-bold">{t('pas.title')}</h2>
             <div className="space-y-4">
               {config.pain.map((pain, index) => (
                 <div key={index} className="flex gap-3">
@@ -37,9 +35,7 @@ export const PASSection = ({ config }: PASSectionProps) => {
               ))}
             </div>
             <div className="p-4 bg-muted rounded-lg border-l-4 border-error">
-              <p className="text-sm text-muted-foreground">
-                {t('pas.resultNote')}
-              </p>
+              <p className="text-sm text-muted-foreground">{t('pas.resultNote')}</p>
             </div>
           </div>
 
@@ -48,9 +44,7 @@ export const PASSection = ({ config }: PASSectionProps) => {
             <div className="inline-block px-4 py-2 bg-success/10 text-success rounded-full text-sm font-medium">
               {t('pas.solutionTag')}
             </div>
-            <h3 className="text-2xl md:text-3xl font-bold">
-              {t('pas.solutionTitle')}
-            </h3>
+            <h3 className="text-2xl md:text-3xl font-bold">{t('pas.solutionTitle')}</h3>
             <div className="space-y-4">
               {solutions.map((solution, index) => (
                 <div key={index} className="flex gap-3">

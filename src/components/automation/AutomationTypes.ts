@@ -5,7 +5,14 @@ export function isValidPlatform(p: string): p is Platform {
   return PLATFORMS.includes(p as Platform);
 }
 
-export type QueueStatus = 'pending' | 'rendered' | 'processing' | 'posted' | 'failed' | 'scheduled' | 'error';
+export type QueueStatus =
+  | 'pending'
+  | 'rendered'
+  | 'processing'
+  | 'posted'
+  | 'failed'
+  | 'scheduled'
+  | 'error';
 
 export interface AutomationRecipe {
   id: string;

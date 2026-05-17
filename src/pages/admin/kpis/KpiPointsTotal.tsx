@@ -27,22 +27,38 @@ export default function KpiPointsTotal() {
   const { from, to } = getDateRange(dateRange);
   const filters = { dateFrom: from, dateTo: to, granularity };
 
-  const { data: summary, isLoading: loadingSummary, refetch: refetchSummary } = useQuery({
+  const {
+    data: summary,
+    isLoading: loadingSummary,
+    refetch: refetchSummary,
+  } = useQuery({
     queryKey: ['kpi-points-summary', from, to],
     queryFn: () => fetchPointsSummary(filters),
   });
 
-  const { data: timeseries, isLoading: loadingTimeseries, refetch: refetchTimeseries } = useQuery({
+  const {
+    data: timeseries,
+    isLoading: loadingTimeseries,
+    refetch: refetchTimeseries,
+  } = useQuery({
     queryKey: ['kpi-points-timeseries', from, to, granularity],
     queryFn: () => fetchPointsTimeseries(filters),
   });
 
-  const { data: byEventType, isLoading: loadingByEventType, refetch: refetchByEventType } = useQuery({
+  const {
+    data: byEventType,
+    isLoading: loadingByEventType,
+    refetch: refetchByEventType,
+  } = useQuery({
     queryKey: ['kpi-points-by-event', from, to],
     queryFn: () => fetchPointsByEventType(filters),
   });
 
-  const { data: leaderboard, isLoading: loadingLeaderboard, refetch: refetchLeaderboard } = useQuery({
+  const {
+    data: leaderboard,
+    isLoading: loadingLeaderboard,
+    refetch: refetchLeaderboard,
+  } = useQuery({
     queryKey: ['kpi-points-leaderboard', from, to],
     queryFn: () => fetchPointsLeaderboard(filters),
   });
@@ -128,8 +144,8 @@ export default function KpiPointsTotal() {
         isLoading={loadingLeaderboard}
         exportFilename="points_leaderboard"
         columns={[
-          { 
-            key: 'rank', 
+          {
+            key: 'rank',
             label: '#',
             format: (v) => (
               <Badge variant={v <= 3 ? 'default' : 'secondary'}>

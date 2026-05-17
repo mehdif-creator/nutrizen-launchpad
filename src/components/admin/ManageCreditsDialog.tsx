@@ -1,9 +1,21 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Coins } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { manageUserCredits } from '@/actions/adminActions';
@@ -12,10 +24,19 @@ interface ManageCreditsDialogProps {
   userId: string;
   userEmail: string;
   currentCredits: number;
-  onCreditsUpdated: (payload: { userId: string; previousCredits: number; newCredits: number }) => void;
+  onCreditsUpdated: (payload: {
+    userId: string;
+    previousCredits: number;
+    newCredits: number;
+  }) => void;
 }
 
-export const ManageCreditsDialog = ({ userId, userEmail, currentCredits, onCreditsUpdated }: ManageCreditsDialogProps) => {
+export const ManageCreditsDialog = ({
+  userId,
+  userEmail,
+  currentCredits,
+  onCreditsUpdated,
+}: ManageCreditsDialogProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [operation, setOperation] = useState<'set' | 'add' | 'subtract'>('set');

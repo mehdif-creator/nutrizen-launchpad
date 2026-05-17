@@ -99,9 +99,7 @@ export const LeadMagnetForm = ({
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-primary to-accent rounded-full mb-4">
               <Download className="w-8 h-8 text-white" />
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
-              📘 {title}
-            </h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">📘 {title}</h2>
             <p className="text-lg text-muted-foreground">{text}</p>
           </div>
 
@@ -149,7 +147,8 @@ export const LeadMagnetForm = ({
             )}
 
             <p className="text-sm text-muted-foreground text-center pt-2">
-              En vous inscrivant, vous acceptez de recevoir des emails de NutriZen. Désinscription en 1 clic.
+              En vous inscrivant, vous acceptez de recevoir des emails de NutriZen. Désinscription
+              en 1 clic.
             </p>
           </form>
         </Card>

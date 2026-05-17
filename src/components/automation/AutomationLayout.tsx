@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, List, Settings, ChefHat, Bell, Search, User, ShieldCheck, Map as MapIcon, ArrowLeft } from 'lucide-react';
+import {
+  LayoutDashboard,
+  List,
+  Settings,
+  ChefHat,
+  Bell,
+  Search,
+  User,
+  ShieldCheck,
+  Map as MapIcon,
+  ArrowLeft,
+} from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -23,13 +34,17 @@ const AutomationLayout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 transform transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0`}>
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 transform transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0`}
+      >
         <div className="flex items-center justify-center h-16 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
               <ChefHat className="text-white w-5 h-5" />
             </div>
-            <span className="text-xl font-bold text-slate-800 tracking-tight">Nutri<span className="text-emerald-600">Zen</span></span>
+            <span className="text-xl font-bold text-slate-800 tracking-tight">
+              Nutri<span className="text-emerald-600">Zen</span>
+            </span>
           </div>
         </div>
 
@@ -56,7 +71,9 @@ const AutomationLayout: React.FC<LayoutProps> = ({ children }) => {
                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`}
               >
-                <item.icon className={`w-5 h-5 ${isActive ? 'text-emerald-600' : 'text-slate-400'}`} />
+                <item.icon
+                  className={`w-5 h-5 ${isActive ? 'text-emerald-600' : 'text-slate-400'}`}
+                />
                 {item.name}
               </Link>
             );
@@ -112,14 +129,15 @@ const AutomationLayout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          {children}
-        </main>
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
 
       {/* Mobile overlay */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 bg-black/20 z-40 md:hidden" onClick={() => setIsMobileMenuOpen(false)} />
+        <div
+          className="fixed inset-0 bg-black/20 z-40 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
       )}
     </div>
   );

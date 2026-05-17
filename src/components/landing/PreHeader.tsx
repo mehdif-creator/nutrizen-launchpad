@@ -24,9 +24,7 @@ export const PreHeader = () => {
     <div className="w-full bg-gradient-to-r from-primary to-accent text-white">
       <div className="container py-2.5 flex items-center justify-center md:justify-between text-sm">
         <div className="flex items-center gap-2">
-          <span className="font-semibold">
-            {t('preheader.trial')}
-          </span>
+          <span className="font-semibold">{t('preheader.trial')}</span>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -42,7 +40,7 @@ export const PreHeader = () => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="h-8 gap-1 text-white hover:bg-white/20">
                 <Globe className="h-4 w-4" />
-                <span className="text-xs">{languages.find(l => l.code === language)?.flag}</span>
+                <span className="text-xs">{languages.find((l) => l.code === language)?.flag}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

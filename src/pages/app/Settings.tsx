@@ -35,17 +35,19 @@ export default function Settings() {
       .eq('id', user.id);
     toast({
       title: 'Tutoriel réinitialisé',
-      description: 'Le tutoriel s\'affichera au prochain chargement du tableau de bord.',
+      description: "Le tutoriel s'affichera au prochain chargement du tableau de bord.",
     });
   };
 
   const handleStripePortal = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session) {
       toast({
-        title: "Erreur",
-        description: "Vous devez être connecté",
-        variant: "destructive",
+        title: 'Erreur',
+        description: 'Vous devez être connecté',
+        variant: 'destructive',
       });
       return;
     }
@@ -65,9 +67,9 @@ export default function Settings() {
     } catch (error) {
       console.error('Error opening portal:', error);
       toast({
-        title: "Erreur",
+        title: 'Erreur',
         description: "Impossible d'ouvrir le portail de gestion",
-        variant: "destructive",
+        variant: 'destructive',
       });
     }
   };
@@ -94,61 +96,60 @@ export default function Settings() {
           {/* Subscription */}
           <Card className="p-4 md:p-6 mb-4 md:mb-6">
             <div className="mb-4">
-            <div className="mb-3">
-              <h2 className="text-lg md:text-xl font-semibold mb-2">Mon compte</h2>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                <Badge className="bg-gradient-to-r from-primary to-accent text-white w-fit">
-                  Gratuit à vie
-                </Badge>
-                <span className="text-xs md:text-sm text-muted-foreground">
-                  Accès complet aux fonctionnalités de base
-                </span>
+              <div className="mb-3">
+                <h2 className="text-lg md:text-xl font-semibold mb-2">Mon compte</h2>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                  <Badge className="bg-gradient-to-r from-primary to-accent text-white w-fit">
+                    Gratuit à vie
+                  </Badge>
+                  <span className="text-xs md:text-sm text-muted-foreground">
+                    Accès complet aux fonctionnalités de base
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="space-y-2 md:space-y-3">
-            <div className="flex items-center justify-between py-2">
-              <span className="text-xs md:text-sm">Plan</span>
-              <span className="text-sm md:text-base font-medium">Gratuit à vie</span>
-            </div>
-            <div className="flex items-center justify-between py-2">
-              <span className="text-xs md:text-sm">Crédits Zen</span>
-              <span className="text-sm md:text-base font-medium">Options premium</span>
-            </div>
+            <div className="space-y-2 md:space-y-3">
+              <div className="flex items-center justify-between py-2">
+                <span className="text-xs md:text-sm">Plan</span>
+                <span className="text-sm md:text-base font-medium">Gratuit à vie</span>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-xs md:text-sm">Crédits Zen</span>
+                <span className="text-sm md:text-base font-medium">Options premium</span>
+              </div>
               <div className="flex items-center justify-between py-2">
                 <span className="text-xs md:text-sm">Swaps mensuels</span>
                 <span className="text-sm md:text-base font-medium">10 inclus</span>
               </div>
             </div>
 
-          <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t space-y-2 md:space-y-3">
-            <Button onClick={handleStripePortal} className="w-full text-sm md:text-base">
-              <ExternalLink className="mr-2 h-4 w-4" />
-              Gérer mes Crédits Zen
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              Depuis le portail Stripe, tu peux consulter tes achats de crédits 
-              et tes factures.
-            </p>
-          </div>
+            <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t space-y-2 md:space-y-3">
+              <Button onClick={handleStripePortal} className="w-full text-sm md:text-base">
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Gérer mes Crédits Zen
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Depuis le portail Stripe, tu peux consulter tes achats de crédits et tes factures.
+              </p>
+            </div>
           </Card>
 
           {/* Help & Support */}
           <Card className="p-4 md:p-6 mb-4 md:mb-6">
             <h2 className="text-lg md:text-xl font-semibold mb-4">Aide & Support</h2>
             <div className="space-y-3">
-              <Button 
-                onClick={() => navigate('/app/support')} 
-                variant="outline" 
+              <Button
+                onClick={() => navigate('/app/support')}
+                variant="outline"
                 className="w-full text-sm md:text-base"
               >
                 <HelpCircle className="mr-2 h-4 w-4" />
                 FAQ & Questions fréquentes
               </Button>
               <p className="text-xs text-muted-foreground">
-                Retrouve les réponses aux questions les plus courantes sur l'utilisation de NutriZen, 
-                les crédits, le parrainage et la facturation.
+                Retrouve les réponses aux questions les plus courantes sur l'utilisation de
+                NutriZen, les crédits, le parrainage et la facturation.
               </p>
             </div>
           </Card>
@@ -164,17 +165,21 @@ export default function Settings() {
                     Reçois des conseils chaque semaine
                   </p>
                 </div>
-                <Button variant="outline" size="sm" className="whitespace-nowrap">Activé</Button>
+                <Button variant="outline" size="sm" className="whitespace-nowrap">
+                  Activé
+                </Button>
               </div>
-            <div className="flex items-start sm:items-center justify-between gap-3">
-              <div className="flex-1">
-                <p className="text-sm md:text-base font-medium">Nouveaux Crédits Zen</p>
-                <p className="text-xs md:text-sm text-muted-foreground">
-                  Quand de nouveaux packs sont disponibles
-                </p>
+              <div className="flex items-start sm:items-center justify-between gap-3">
+                <div className="flex-1">
+                  <p className="text-sm md:text-base font-medium">Nouveaux Crédits Zen</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">
+                    Quand de nouveaux packs sont disponibles
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" className="whitespace-nowrap">
+                  Activé
+                </Button>
               </div>
-              <Button variant="outline" size="sm" className="whitespace-nowrap">Activé</Button>
-            </div>
             </div>
           </Card>
 
@@ -204,7 +209,7 @@ export default function Settings() {
             <p className="text-xs md:text-sm text-muted-foreground mb-4">
               Cette action est irréversible. Toutes tes données seront supprimées définitivement.
             </p>
-            
+
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" className="w-full sm:w-auto text-sm md:text-base">
@@ -214,15 +219,20 @@ export default function Settings() {
               </AlertDialogTrigger>
               <AlertDialogContent className="max-w-[95vw] sm:max-w-lg">
                 <AlertDialogHeader>
-                  <AlertDialogTitle className="text-base md:text-lg">Es-tu absolument sûr(e) ?</AlertDialogTitle>
+                  <AlertDialogTitle className="text-base md:text-lg">
+                    Es-tu absolument sûr(e) ?
+                  </AlertDialogTitle>
                   <AlertDialogDescription className="text-xs md:text-sm">
-                    Cette action est irréversible. Ton compte et toutes tes données
-                    seront définitivement supprimés de nos serveurs après 7 jours.
+                    Cette action est irréversible. Ton compte et toutes tes données seront
+                    définitivement supprimés de nos serveurs après 7 jours.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="flex-col sm:flex-row gap-2">
                   <AlertDialogCancel className="w-full sm:w-auto">Annuler</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive w-full sm:w-auto">
+                  <AlertDialogAction
+                    onClick={handleDeleteAccount}
+                    className="bg-destructive w-full sm:w-auto"
+                  >
                     Oui, supprimer mon compte
                   </AlertDialogAction>
                 </AlertDialogFooter>

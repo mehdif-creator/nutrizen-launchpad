@@ -41,8 +41,10 @@ export const ScoreZenWidget = ({
   return (
     <Card className="p-6 overflow-hidden relative">
       {/* Background gradient */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${levelColors[level] || levelColors[1]} opacity-5`} />
-      
+      <div
+        className={`absolute inset-0 bg-gradient-to-br ${levelColors[level] || levelColors[1]} opacity-5`}
+      />
+
       <div className="relative z-10">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -51,9 +53,7 @@ export const ScoreZenWidget = ({
               <Zap className="w-5 h-5 text-primary" />
               Score Zen
             </h3>
-            <p className="text-sm text-muted-foreground">
-              Ta sérénité repas cette semaine
-            </p>
+            <p className="text-sm text-muted-foreground">Ta sérénité repas cette semaine</p>
           </div>
           <Badge variant="outline" className="text-xs">
             {levelName || levelNames[level]}
@@ -74,10 +74,13 @@ export const ScoreZenWidget = ({
           </motion.div>
 
           {/* Weekly change indicator */}
-          <div className={`flex items-center gap-1 ${isPositiveChange ? 'text-green-600' : 'text-red-500'}`}>
+          <div
+            className={`flex items-center gap-1 ${isPositiveChange ? 'text-green-600' : 'text-red-500'}`}
+          >
             <TrendingUp className={`w-4 h-4 ${!isPositiveChange && 'rotate-180'}`} />
             <span className="text-sm font-medium">
-              {isPositiveChange ? '+' : ''}{weeklyChange} cette semaine
+              {isPositiveChange ? '+' : ''}
+              {weeklyChange} cette semaine
             </span>
           </div>
         </div>
@@ -86,7 +89,9 @@ export const ScoreZenWidget = ({
         <div className="mb-6">
           <div className="flex justify-between text-sm mb-2">
             <span className="text-muted-foreground">Progression niveau {level + 1}</span>
-            <span className="font-medium">{score}/{nextLevelAt}</span>
+            <span className="font-medium">
+              {score}/{nextLevelAt}
+            </span>
           </div>
           <Progress value={progressToNext} className="h-2" />
         </div>

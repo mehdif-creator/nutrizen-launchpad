@@ -42,7 +42,7 @@ export default function PostCheckoutProfile() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!user) return;
 
     // Validation
@@ -60,11 +60,10 @@ export default function PostCheckoutProfile() {
     try {
       // Initialize user rows (including onboarding state)
       await initializeNewUser(user.id);
-      
+
       // Save preferences
-      const { error: prefsError } = await supabase
-        .from('preferences')
-        .upsert({
+      const { error: prefsError } = await supabase.from('preferences').upsert(
+        {
           user_id: user.id,
           age: parseInt(formData.age),
           sexe: formData.sexe,
@@ -72,7 +71,9 @@ export default function PostCheckoutProfile() {
           objectif_principal: formData.objectif_principal,
           type_alimentation: formData.type_alimentation || 'omnivore',
           temps_preparation: formData.temps_preparation || '30min',
-        }, { onConflict: 'user_id' });
+        },
+        { onConflict: 'user_id' }
+      );
 
       if (prefsError) throw prefsError;
 
@@ -99,12 +100,11 @@ export default function PostCheckoutProfile() {
       }
 
       setStep('complete');
-      
+
       // Redirect to dashboard after 2 seconds
       setTimeout(() => {
         navigate('/app');
       }, 2000);
-
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -182,17 +182,17 @@ export default function PostCheckoutProfile() {
                   max="99"
                   required
                   value={formData.age}
-                  onChange={(e) => setFormData({...formData, age: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, age: e.target.value })}
                   placeholder="Ex: 30"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="sexe">Sexe *</Label>
                 <MobileSelect
                   id="sexe"
                   value={formData.sexe}
-                  onValueChange={(v) => setFormData({...formData, sexe: v})}
+                  onValueChange={(v) => setFormData({ ...formData, sexe: v })}
                   placeholder={t('profile.select')}
                   options={[
                     { value: 'homme', label: t('profile.gender.male') },
@@ -209,7 +209,7 @@ export default function PostCheckoutProfile() {
               <MobileSelect
                 id="niveau_activite"
                 value={formData.niveau_activite}
-                onValueChange={(v) => setFormData({...formData, niveau_activite: v})}
+                onValueChange={(v) => setFormData({ ...formData, niveau_activite: v })}
                 placeholder={t('profile.select')}
                 options={[
                   { value: 'sedentaire', label: t('profile.activityLevel.sedentary') },
@@ -227,7 +227,7 @@ export default function PostCheckoutProfile() {
               <MobileSelect
                 id="objectif_principal"
                 value={formData.objectif_principal}
-                onValueChange={(v) => setFormData({...formData, objectif_principal: v})}
+                onValueChange={(v) => setFormData({ ...formData, objectif_principal: v })}
                 placeholder={t('profile.select')}
                 options={[
                   { value: 'perte_poids', label: 'Perte de poids' },
@@ -244,7 +244,7 @@ export default function PostCheckoutProfile() {
               <MobileSelect
                 id="type_alimentation"
                 value={formData.type_alimentation}
-                onValueChange={(v) => setFormData({...formData, type_alimentation: v})}
+                onValueChange={(v) => setFormData({ ...formData, type_alimentation: v })}
                 placeholder={t('profile.select')}
                 options={[
                   { value: 'omnivore', label: 'Omnivore' },
@@ -262,7 +262,7 @@ export default function PostCheckoutProfile() {
               <MobileSelect
                 id="temps_preparation"
                 value={formData.temps_preparation}
-                onValueChange={(v) => setFormData({...formData, temps_preparation: v})}
+                onValueChange={(v) => setFormData({ ...formData, temps_preparation: v })}
                 placeholder={t('profile.select')}
                 options={[
                   { value: '15min', label: '15 min maximum' },
@@ -273,12 +273,7 @@ export default function PostCheckoutProfile() {
               />
             </div>
 
-            <Button
-              type="submit"
-              className="w-full"
-              size="lg"
-              disabled={loading}
-            >
+            <Button type="submit" className="w-full" size="lg" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -292,9 +287,7 @@ export default function PostCheckoutProfile() {
               )}
             </Button>
 
-            <p className="text-xs text-center text-muted-foreground">
-              * Champs obligatoires
-            </p>
+            <p className="text-xs text-center text-muted-foreground">* Champs obligatoires</p>
           </form>
         </CardContent>
       </Card>

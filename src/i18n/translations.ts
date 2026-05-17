@@ -1,7 +1,7 @@
 /**
  * Translations for NutriZen
  * DEFAULT LOCALE: fr-FR
- * 
+ *
  * IMPORTANT: Refer to fr-glossary.ts for domain-specific terms
  * to avoid homonym errors (e.g., "four" = oven, not "quatre" = 4)
  */
@@ -12,13 +12,13 @@ export const translations = {
   fr: {
     // Appareils de cuisine (voir glossaire pour éviter "four" → "quatre")
     'appliance.oven': 'Four',
-    'appliance.microwave': 'Micro-ondes', 
+    'appliance.microwave': 'Micro-ondes',
     'appliance.blender': 'Mixeur',
     'appliance.stove': 'Cuisinière',
     'appliance.airFryer': 'Friteuse à air',
     'appliance.slowCooker': 'Mijoteuse',
     'appliance.pressureCooker': 'Autocuiseur',
-    
+
     // Profile page
     'profile.title': 'Tes préférences',
     'profile.subtitle': 'Aide-nous à personnaliser tes recommandations au maximum',
@@ -31,7 +31,7 @@ export const translations = {
     'profile.errorSaving': 'Impossible de sauvegarder tes préférences. Réessaye plus tard.',
     'profile.tooFast': 'Trop rapide',
     'profile.waitMinutes': 'Tu peux modifier tes préférences dans {minutes} minute(s).',
-    
+
     // Profile sections
     'profile.section.personal': 'Ton profil',
     'profile.section.goals': 'Tes objectifs',
@@ -41,7 +41,7 @@ export const translations = {
     'profile.section.nutrition': 'Objectifs nutritionnels',
     'profile.section.family': 'Contexte familial',
     'profile.section.lifestyle': 'Style de vie',
-    
+
     // Profile fields
     'profile.gender': 'Sexe',
     'profile.gender.male': 'Homme',
@@ -51,7 +51,7 @@ export const translations = {
     'profile.height': 'Taille (cm)',
     'profile.currentWeight': 'Poids actuel (kg)',
     'profile.targetWeight': 'Poids souhaité (kg)',
-    'profile.activityLevel': 'Niveau d\'activité',
+    'profile.activityLevel': "Niveau d'activité",
     'profile.activityLevel.sedentary': 'Sédentaire',
     'profile.activityLevel.light': 'Léger',
     'profile.activityLevel.moderate': 'Modéré',
@@ -63,7 +63,7 @@ export const translations = {
     'profile.job.physical': 'Physique',
     'profile.job.other': 'Autre',
     'profile.select': 'Sélectionne...',
-    
+
     // Menu generation
     'menu.generating': 'Génération de ton menu...',
     'menu.generatingDesc': 'Nous créons ton plan hebdomadaire personnalisé.',
@@ -73,15 +73,16 @@ export const translations = {
     'menu.errorDesc': 'Impossible de générer ton menu. Réessaye dans quelques instants.',
     'menu.retry': 'Réessayer',
     'menu.viewMenu': 'Voir mon menu',
-    
+
     // Post-checkout
     'postCheckout.title': '🎉 Paiement confirmé !',
     'postCheckout.welcome': 'Bienvenue dans la famille NutriZen',
     'postCheckout.completeProfile': 'Complète ton profil',
-    'postCheckout.completeProfileDesc': 'Pour générer ton premier menu personnalisé, nous avons besoin de quelques informations.',
+    'postCheckout.completeProfileDesc':
+      'Pour générer ton premier menu personnalisé, nous avons besoin de quelques informations.',
     'postCheckout.generatingMenu': 'Génération de ton menu en cours...',
     'postCheckout.menuReady': 'Ton menu hebdomadaire est prêt !',
-    
+
     // Common UI
     'common.loading': 'Chargement...',
     'common.error': 'Erreur',
@@ -92,11 +93,11 @@ export const translations = {
     'common.retry': 'Réessayer',
     'common.continue': 'Continuer',
     'common.back': 'Retour',
-    
+
     // Errors
     'error.generic': 'Une erreur est survenue',
     'error.network': 'Erreur de connexion',
-    'error.auth': 'Erreur d\'authentification',
+    'error.auth': "Erreur d'authentification",
     'error.notFound': 'Non trouvé',
   },
 } as const;
@@ -109,5 +110,5 @@ export const DEFAULT_LOCALE: Locale = 'fr';
  * Falls back to the key itself if translation is missing
  */
 export function t(key: TranslationKey, locale: Locale = DEFAULT_LOCALE): string {
-  return translations[locale]?.[key as keyof typeof translations['fr']] || key;
+  return translations[locale]?.[key as keyof (typeof translations)['fr']] || key;
 }

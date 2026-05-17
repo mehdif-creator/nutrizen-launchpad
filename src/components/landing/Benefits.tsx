@@ -20,9 +20,24 @@ export const Benefits = ({ copy }: BenefitsProps) => {
         description: card.description,
       }))
     : [
-        { icon: Clock, title: t('benefits.1.title'), result: t('benefits.1.result'), description: t('benefits.1.description') },
-        { icon: Coins, title: t('benefits.2.title'), result: t('benefits.2.result'), description: t('benefits.2.description') },
-        { icon: Brain, title: t('benefits.3.title'), result: t('benefits.3.result'), description: t('benefits.3.description') },
+        {
+          icon: Clock,
+          title: t('benefits.1.title'),
+          result: t('benefits.1.result'),
+          description: t('benefits.1.description'),
+        },
+        {
+          icon: Coins,
+          title: t('benefits.2.title'),
+          result: t('benefits.2.result'),
+          description: t('benefits.2.description'),
+        },
+        {
+          icon: Brain,
+          title: t('benefits.3.title'),
+          result: t('benefits.3.result'),
+          description: t('benefits.3.description'),
+        },
       ];
 
   const title = copy?.title || t('benefits.title');

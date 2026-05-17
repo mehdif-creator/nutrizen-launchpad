@@ -35,7 +35,10 @@ export function useReferralSignup() {
       }
     },
     onError: (error: unknown) => {
-      logger.error('Referral signup error', error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        'Referral signup error',
+        error instanceof Error ? error : new Error(String(error))
+      );
       toast.error("Erreur lors de l'enregistrement du parrainage");
     },
   });

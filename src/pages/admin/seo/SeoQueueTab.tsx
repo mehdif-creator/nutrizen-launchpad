@@ -5,10 +5,28 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Loader2, Play, Trash2, RotateCcw, RefreshCw, ExternalLink, Upload, Clock, AlertCircle, Square, CirclePlay, ArrowUpDown,
+  Loader2,
+  Play,
+  Trash2,
+  RotateCcw,
+  RefreshCw,
+  ExternalLink,
+  Upload,
+  Clock,
+  AlertCircle,
+  Square,
+  CirclePlay,
+  ArrowUpDown,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useArticleQueue } from './useArticleQueue';
@@ -27,7 +45,14 @@ const QUEUE_STATUS_ORDER: Record<string, number> = {
 
 type QueueSortBy = 'queue' | 'status' | 'priority' | 'created_at';
 type SortDir = 'asc' | 'desc';
-type QueueFilterStatus = 'actionable' | 'all' | 'pending' | 'processing' | 'error' | 'done' | 'duplicate';
+type QueueFilterStatus =
+  | 'actionable'
+  | 'all'
+  | 'pending'
+  | 'processing'
+  | 'error'
+  | 'done'
+  | 'duplicate';
 
 const CATEGORIES = [
   { value: '', label: 'Aucune' },
@@ -47,8 +72,10 @@ function normalizeText(value: string): string {
 }
 
 export function SeoQueueTab() {
-  const { items, loading, stats, fetchItems, bulkInsert, deleteItem, retryItem, clearDone } = useArticleQueue();
-  const { autoMode, toggleAutoMode, processing, processItem, isRunning, stopProcessing } = useQueueProcessor(fetchItems);
+  const { items, loading, stats, fetchItems, bulkInsert, deleteItem, retryItem, clearDone } =
+    useArticleQueue();
+  const { autoMode, toggleAutoMode, processing, processItem, isRunning, stopProcessing } =
+    useQueueProcessor(fetchItems);
   const { toast } = useToast();
 
   const [bulkText, setBulkText] = useState('');
@@ -62,11 +89,13 @@ export function SeoQueueTab() {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   const topicCount = useMemo(() => {
-    return bulkText.split('\n').filter(l => l.trim().length > 0).length;
+    return bulkText.split('\n').filter((l) => l.trim().length > 0).length;
   }, [bulkText]);
 
   const availableCategories = useMemo(() => {
-    const values = Array.from(new Set(items.map(i => i.category).filter((v): v is string => Boolean(v))));
+    const values = Array.from(
+      new Set(items.map((i) => i.category).filter((v): v is string => Boolean(v)))
+    );
     return values.sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
   }, [items]);
 
@@ -74,18 +103,20 @@ export function SeoQueueTab() {
     const normalizedSearch = normalizeText(searchFilter);
 
     return items.filter((item) => {
-      if (statusFilter === 'actionable' && !['pending', 'processing', 'error'].includes(item.status)) return false;
-      if (!['all', 'actionable'].includes(statusFilter) && item.status !== statusFilter) return false;
+      if (
+        statusFilter === 'actionable' &&
+        !['pending', 'processing', 'error'].includes(item.status)
+      )
+        return false;
+      if (!['all', 'actionable'].includes(statusFilter) && item.status !== statusFilter)
+        return false;
       if (categoryFilter !== 'all' && (item.category ?? '') !== categoryFilter) return false;
 
       if (!normalizedSearch) return true;
 
-      const haystack = normalizeText([
-        item.topic,
-        item.category ?? '',
-        item.status,
-        item.error_message ?? '',
-      ].join(' '));
+      const haystack = normalizeText(
+        [item.topic, item.category ?? '', item.status, item.error_message ?? ''].join(' ')
+      );
 
       return haystack.includes(normalizedSearch);
     });
@@ -97,13 +128,18 @@ export function SeoQueueTab() {
     list.sort((a, b) => {
       switch (sortBy) {
         case 'status':
-          return dir * ((QUEUE_STATUS_ORDER[a.status] ?? 99) - (QUEUE_STATUS_ORDER[b.status] ?? 99));
+          return (
+            dir * ((QUEUE_STATUS_ORDER[a.status] ?? 99) - (QUEUE_STATUS_ORDER[b.status] ?? 99))
+          );
         case 'priority':
           return dir * ((a.priority ?? 5) - (b.priority ?? 5));
         case 'created_at':
           return dir * (new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
         default: // queue = priority asc then created_at asc
-          return (a.priority ?? 5) - (b.priority ?? 5) || new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          return (
+            (a.priority ?? 5) - (b.priority ?? 5) ||
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          );
       }
     });
     return list;
@@ -111,7 +147,7 @@ export function SeoQueueTab() {
 
   const toggleSort = (col: QueueSortBy) => {
     if (sortBy === col) {
-      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortBy(col);
       setSortDir('asc');
@@ -125,19 +161,23 @@ export function SeoQueueTab() {
   };
 
   const handleImport = async () => {
-    const topics = bulkText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const topics = bulkText
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
     if (topics.length === 0) return;
     setImporting(true);
     try {
       const result = await bulkInsert(topics, category || null, priority);
       let msg = `${result.inserted} sujet(s) importé(s)`;
       if (result.duplicates > 0) msg += ` · ${result.duplicates} doublon(s) ignoré(s)`;
-      if (result.existing.length > 0) msg += ` · ${result.existing.length} déjà publié(s) (avertissement)`;
+      if (result.existing.length > 0)
+        msg += ` · ${result.existing.length} déjà publié(s) (avertissement)`;
       toast({ title: '✅ Import terminé', description: msg });
       setBulkText('');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Erreur inconnue';
-      toast({ title: 'Erreur d\'import', description: message, variant: 'destructive' });
+      toast({ title: "Erreur d'import", description: message, variant: 'destructive' });
     } finally {
       setImporting(false);
     }
@@ -146,7 +186,11 @@ export function SeoQueueTab() {
   const estimatedHours = stats.pending * 8;
 
   // Queue status indicator
-  const queueStatus: QueueStatus = isRunning ? 'running' : stats.pending === 0 && stats.processing === 0 ? 'empty' : 'stopped';
+  const queueStatus: QueueStatus = isRunning
+    ? 'running'
+    : stats.pending === 0 && stats.processing === 0
+      ? 'empty'
+      : 'stopped';
 
   return (
     <div className="space-y-6">
@@ -182,9 +226,7 @@ export function SeoQueueTab() {
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
             <span className="font-semibold">Traitement en cours…</span>
           </div>
-          <p className="text-sm mb-3">
-            Sujet : « {processing.item.topic} »
-          </p>
+          <p className="text-sm mb-3">Sujet : « {processing.item.topic} »</p>
           {/* Step progress */}
           <div className="flex items-center gap-1 mb-2">
             {AUTO_PIPELINE_LABELS.map((label, i) => {
@@ -192,13 +234,21 @@ export function SeoQueueTab() {
               const isActive = i === processing.stepIndex;
               return (
                 <div key={label} className="flex items-center gap-1">
-                  {i > 0 && <div className={cn('h-0.5 w-3', isDone || isActive ? 'bg-primary' : 'bg-muted')} />}
-                  <div className={cn(
-                    'text-[10px] px-1.5 py-0.5 rounded',
-                    isDone ? 'bg-primary text-primary-foreground' :
-                    isActive ? 'bg-primary/20 text-primary font-semibold' :
-                    'bg-muted text-muted-foreground'
-                  )}>
+                  {i > 0 && (
+                    <div
+                      className={cn('h-0.5 w-3', isDone || isActive ? 'bg-primary' : 'bg-muted')}
+                    />
+                  )}
+                  <div
+                    className={cn(
+                      'text-[10px] px-1.5 py-0.5 rounded',
+                      isDone
+                        ? 'bg-primary text-primary-foreground'
+                        : isActive
+                          ? 'bg-primary/20 text-primary font-semibold'
+                          : 'bg-muted text-muted-foreground'
+                    )}
+                  >
                     {label}
                   </div>
                 </div>
@@ -206,11 +256,20 @@ export function SeoQueueTab() {
             })}
             {/* Publication step */}
             <div className="flex items-center gap-1">
-              <div className={cn('h-0.5 w-3', processing.stepLabel === 'Publication' ? 'bg-primary' : 'bg-muted')} />
-              <div className={cn(
-                'text-[10px] px-1.5 py-0.5 rounded',
-                processing.stepLabel === 'Publication' ? 'bg-primary/20 text-primary font-semibold' : 'bg-muted text-muted-foreground'
-              )}>
+              <div
+                className={cn(
+                  'h-0.5 w-3',
+                  processing.stepLabel === 'Publication' ? 'bg-primary' : 'bg-muted'
+                )}
+              />
+              <div
+                className={cn(
+                  'text-[10px] px-1.5 py-0.5 rounded',
+                  processing.stepLabel === 'Publication'
+                    ? 'bg-primary/20 text-primary font-semibold'
+                    : 'bg-muted text-muted-foreground'
+                )}
+              >
                 Publié
               </div>
             </div>
@@ -218,7 +277,13 @@ export function SeoQueueTab() {
           <p className="text-xs text-muted-foreground">
             Étape : {processing.stepLabel}
             {processing.startedAt && (
-              <> · Démarré il y a {Math.round((Date.now() - processing.startedAt.getTime()) / 60000)} min</>
+              <>
+                {' '}
+                · Démarré il y a {Math.round(
+                  (Date.now() - processing.startedAt.getTime()) / 60000
+                )}{' '}
+                min
+              </>
             )}
           </p>
         </Card>
@@ -228,9 +293,11 @@ export function SeoQueueTab() {
       <Card className="p-5">
         <h3 className="font-semibold text-lg mb-3">Import en masse</h3>
         <Textarea
-          placeholder={"Collez vos sujets, un par ligne :\n\nGratin de courgettes version légère\nCookies healthy : 3 versions\nComment cuisiner le tofu : 7 marinades"}
+          placeholder={
+            'Collez vos sujets, un par ligne :\n\nGratin de courgettes version légère\nCookies healthy : 3 versions\nComment cuisiner le tofu : 7 marinades'
+          }
           value={bulkText}
-          onChange={e => setBulkText(e.target.value)}
+          onChange={(e) => setBulkText(e.target.value)}
           className="min-h-[150px] font-mono text-sm"
         />
         <div className="flex flex-col sm:flex-row gap-3 mt-3 items-end">
@@ -239,10 +306,12 @@ export function SeoQueueTab() {
             <select
               className="border rounded-md px-3 py-2 text-sm bg-background w-full"
               value={category}
-              onChange={e => setCategory(e.target.value)}
+              onChange={(e) => setCategory(e.target.value)}
             >
-              {CATEGORIES.map(c => (
-                <option key={c.value} value={c.value}>{c.label}</option>
+              {CATEGORIES.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
               ))}
             </select>
           </div>
@@ -253,12 +322,16 @@ export function SeoQueueTab() {
               min={1}
               max={10}
               value={priority}
-              onChange={e => setPriority(Number(e.target.value))}
+              onChange={(e) => setPriority(Number(e.target.value))}
               className="border rounded-md px-3 py-2 text-sm bg-background w-full"
             />
           </div>
           <Button onClick={handleImport} disabled={importing || topicCount === 0}>
-            {importing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+            {importing ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Upload className="mr-2 h-4 w-4" />
+            )}
             Importer {topicCount} sujet{topicCount !== 1 ? 's' : ''}
           </Button>
         </div>
@@ -275,12 +348,7 @@ export function SeoQueueTab() {
           </div>
           {/* Prominent stop/resume button */}
           {autoMode || isRunning ? (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={stopProcessing}
-              className="gap-1.5"
-            >
+            <Button variant="destructive" size="sm" onClick={stopProcessing} className="gap-1.5">
               <Square className="h-3.5 w-3.5" />
               Stopper la génération
             </Button>
@@ -302,10 +370,22 @@ export function SeoQueueTab() {
           </Button>
           <Badge variant="secondary">{stats.actionable} à traiter</Badge>
           <Badge variant="outline">{stats.pending} en attente</Badge>
-          <Badge variant="default" className="bg-blue-600">{stats.processing} en cours</Badge>
-          <Badge variant="default" className="bg-green-600">{stats.done} terminé{stats.done !== 1 ? 's' : ''}</Badge>
-          {stats.duplicate > 0 && <Badge variant="outline">{stats.duplicate} doublon{stats.duplicate !== 1 ? 's' : ''}</Badge>}
-          {stats.error > 0 && <Badge variant="destructive">{stats.error} erreur{stats.error !== 1 ? 's' : ''}</Badge>}
+          <Badge variant="default" className="bg-blue-600">
+            {stats.processing} en cours
+          </Badge>
+          <Badge variant="default" className="bg-green-600">
+            {stats.done} terminé{stats.done !== 1 ? 's' : ''}
+          </Badge>
+          {stats.duplicate > 0 && (
+            <Badge variant="outline">
+              {stats.duplicate} doublon{stats.duplicate !== 1 ? 's' : ''}
+            </Badge>
+          )}
+          {stats.error > 0 && (
+            <Badge variant="destructive">
+              {stats.error} erreur{stats.error !== 1 ? 's' : ''}
+            </Badge>
+          )}
           {stats.done > 0 && (
             <Button variant="outline" size="sm" onClick={clearDone}>
               Vider les terminés
@@ -318,7 +398,8 @@ export function SeoQueueTab() {
       {stats.pending > 0 && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Clock className="h-4 w-4" />
-          Temps estimé pour traiter la file : ~{estimatedHours} heure{estimatedHours !== 1 ? 's' : ''}
+          Temps estimé pour traiter la file : ~{estimatedHours} heure
+          {estimatedHours !== 1 ? 's' : ''}
         </div>
       )}
 
@@ -358,14 +439,19 @@ export function SeoQueueTab() {
             >
               <option value="all">Toutes</option>
               {availableCategories.map((c) => (
-                <option key={c} value={c}>{c}</option>
+                <option key={c} value={c}>
+                  {c}
+                </option>
               ))}
             </select>
           </div>
-          <Button variant="outline" onClick={resetFilters}>Réinitialiser</Button>
+          <Button variant="outline" onClick={resetFilters}>
+            Réinitialiser
+          </Button>
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
-          {filteredItems.length} résultat{filteredItems.length > 1 ? 's' : ''} affiché{filteredItems.length > 1 ? 's' : ''} sur {items.length}
+          {filteredItems.length} résultat{filteredItems.length > 1 ? 's' : ''} affiché
+          {filteredItems.length > 1 ? 's' : ''} sur {items.length}
         </p>
       </Card>
 
@@ -384,14 +470,26 @@ export function SeoQueueTab() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {[1, 2, 3, 4].map(i => (
+              {[1, 2, 3, 4].map((i) => (
                 <TableRow key={i}>
-                  <TableCell><Skeleton className="h-4 w-48" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-8" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                  <TableCell><Skeleton className="h-6 w-16" /></TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-48" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-16" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-8" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-16" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-6 w-16" />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -412,34 +510,56 @@ export function SeoQueueTab() {
               <TableRow>
                 <TableHead>Sujet</TableHead>
                 <TableHead className="w-28">Catégorie</TableHead>
-                <TableHead className="w-20 cursor-pointer select-none" onClick={() => toggleSort('priority')}>
-                  <span className="inline-flex items-center gap-1">Priorité <ArrowUpDown className="h-3 w-3 text-muted-foreground" /></span>
+                <TableHead
+                  className="w-20 cursor-pointer select-none"
+                  onClick={() => toggleSort('priority')}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    Priorité <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                  </span>
                 </TableHead>
-                <TableHead className="w-28 cursor-pointer select-none" onClick={() => toggleSort('status')}>
-                  <span className="inline-flex items-center gap-1">Statut <ArrowUpDown className="h-3 w-3 text-muted-foreground" /></span>
+                <TableHead
+                  className="w-28 cursor-pointer select-none"
+                  onClick={() => toggleSort('status')}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    Statut <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                  </span>
                 </TableHead>
-                <TableHead className="w-28 cursor-pointer select-none" onClick={() => toggleSort('created_at')}>
-                  <span className="inline-flex items-center gap-1">Créé le <ArrowUpDown className="h-3 w-3 text-muted-foreground" /></span>
+                <TableHead
+                  className="w-28 cursor-pointer select-none"
+                  onClick={() => toggleSort('created_at')}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    Créé le <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                  </span>
                 </TableHead>
                 <TableHead className="w-36">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedItems.map(item => (
+              {sortedItems.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-medium max-w-[300px] truncate">
                     {item.topic}
                     {item.error_message && (
-                      <div className="flex items-center gap-1 mt-1 text-destructive text-xs" title={item.error_message}>
+                      <div
+                        className="flex items-center gap-1 mt-1 text-destructive text-xs"
+                        title={item.error_message}
+                      >
                         <AlertCircle className="h-3 w-3 shrink-0" />
                         <span className="truncate">{item.error_message}</span>
                       </div>
                     )}
                     {item.resolved_reason === 'published_article' && (
-                      <div className="mt-1 text-xs text-muted-foreground">Déjà publié — retiré de la file active</div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        Déjà publié — retiré de la file active
+                      </div>
                     )}
                     {item.resolved_reason === 'duplicate_queue_item' && (
-                      <div className="mt-1 text-xs text-muted-foreground">Doublon résolu — non actionnable</div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        Doublon résolu — non actionnable
+                      </div>
                     )}
                   </TableCell>
                   <TableCell className="text-sm">{item.category || '—'}</TableCell>
@@ -448,7 +568,10 @@ export function SeoQueueTab() {
                     <StatusBadge status={item.status} articleId={item.article_id} />
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
-                    {new Date(item.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                    {new Date(item.created_at).toLocaleDateString('fr-FR', {
+                      day: 'numeric',
+                      month: 'short',
+                    })}
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
@@ -463,13 +586,23 @@ export function SeoQueueTab() {
                           >
                             <Play className="h-3.5 w-3.5" />
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={() => deleteItem(item.id)} title="Supprimer">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => deleteItem(item.id)}
+                            title="Supprimer"
+                          >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </>
                       )}
                       {item.status === 'error' && (
-                        <Button size="sm" variant="ghost" onClick={() => retryItem(item.id)} title="Réessayer">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => retryItem(item.id)}
+                          title="Réessayer"
+                        >
                           <RotateCcw className="h-3.5 w-3.5" />
                         </Button>
                       )}
@@ -492,18 +625,29 @@ export function SeoQueueTab() {
   );
 }
 
-function StatusBadge({ status, articleId: _articleId }: { status: string; articleId: string | null }) {
+function StatusBadge({
+  status,
+  articleId: _articleId,
+}: {
+  status: string;
+  articleId: string | null;
+}) {
   switch (status) {
     case 'pending':
       return <Badge variant="secondary">En attente</Badge>;
     case 'processing':
       return (
         <Badge variant="default" className="bg-blue-600 text-white">
-          <Loader2 className="h-3 w-3 animate-spin mr-1" />En cours
+          <Loader2 className="h-3 w-3 animate-spin mr-1" />
+          En cours
         </Badge>
       );
     case 'done':
-      return <Badge variant="default" className="bg-green-600 text-white">Terminé</Badge>;
+      return (
+        <Badge variant="default" className="bg-green-600 text-white">
+          Terminé
+        </Badge>
+      );
     case 'error':
       return <Badge variant="destructive">Erreur</Badge>;
     case 'duplicate':

@@ -54,10 +54,10 @@ export const FEATURE_DESCRIPTIONS: Record<FeatureType, string> = {
   generate_meal: 'Générez un repas personnalisé selon vos préférences.',
   generate_week_1: 'Générez un menu hebdomadaire avec 1 repas par jour.',
   generate_week_2: 'Générez un menu hebdomadaire avec déjeuner et dîner.',
-  regenerate_day: 'Remplacez toutes les recettes d\'un jour.',
-  regenerate_week: 'Regénérez l\'intégralité de votre menu hebdomadaire.',
+  regenerate_day: "Remplacez toutes les recettes d'un jour.",
+  regenerate_week: "Regénérez l'intégralité de votre menu hebdomadaire.",
   scan_barcode: 'Scannez un code-barres pour voir les infos nutritionnelles du produit.',
-  chat_nutrition: 'Posez vos questions nutritionnelles à l\'assistant IA.',
+  chat_nutrition: "Posez vos questions nutritionnelles à l'assistant IA.",
 };
 
 /**
@@ -69,7 +69,7 @@ export const CREDIT_COSTS_DISPLAY = [
   { label: 'Générer semaine (déjeuner + dîner, 14 repas)', cost: 11 },
   { label: 'Scan repas (vision)', cost: 4 },
   { label: 'Analyse frigo (vision + planning)', cost: 6 },
-  { label: 'Substitution d\'ingrédient', cost: 1 },
+  { label: "Substitution d'ingrédient", cost: 1 },
   { label: 'Regénérer un jour', cost: 2 },
   { label: 'Regénérer semaine complète', cost: 8 },
 ];

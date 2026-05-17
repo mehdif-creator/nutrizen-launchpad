@@ -18,13 +18,13 @@ interface UseMacrosAdminResult {
   // Data
   coverage: MacrosCoverage | null;
   queueCount: number;
-  
+
   // Loading states
   isLoadingCoverage: boolean;
   isLoadingQueue: boolean;
   isProcessing: boolean;
   isRefreshing: boolean;
-  
+
   // Actions
   processQueue: (limit?: number) => Promise<void>;
   processBatch: (batchSize?: number) => Promise<void>;
@@ -38,8 +38,8 @@ export function useMacrosAdmin(): UseMacrosAdminResult {
   const queryClient = useQueryClient();
 
   // Fetch coverage stats
-  const { 
-    data: coverage, 
+  const {
+    data: coverage,
     isLoading: isLoadingCoverage,
     refetch: refetchCoverage,
   } = useQuery({
@@ -51,8 +51,8 @@ export function useMacrosAdmin(): UseMacrosAdminResult {
   });
 
   // Fetch queue count
-  const { 
-    data: queueCount = 0, 
+  const {
+    data: queueCount = 0,
     isLoading: isLoadingQueue,
     refetch: refetchQueue,
   } = useQuery({

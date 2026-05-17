@@ -8,7 +8,9 @@ function parseStringArray(val: unknown): string[] | null {
     try {
       const parsed = JSON.parse(val);
       if (Array.isArray(parsed)) return parsed.map(String);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
   return null;
 }
@@ -18,7 +20,10 @@ export function getIngredients(post: ManualSocialPost): string[] {
   const fromJson = parseStringArray(post.ingredients_json);
   if (fromJson && fromJson.length > 0) return fromJson;
   if (post.ingredients_text?.trim()) {
-    return post.ingredients_text.split('\n').map(l => l.trim()).filter(Boolean);
+    return post.ingredients_text
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
   }
   return [];
 }
@@ -28,7 +33,10 @@ export function getPreparationSteps(post: ManualSocialPost): string[] {
   const fromJson = parseStringArray(post.preparation_steps_json);
   if (fromJson && fromJson.length > 0) return fromJson;
   if (post.preparation_steps_text?.trim()) {
-    return post.preparation_steps_text.split('\n').map(l => l.trim()).filter(Boolean);
+    return post.preparation_steps_text
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
   }
   return [];
 }
@@ -40,12 +48,16 @@ export function hasRecipeData(post: ManualSocialPost): boolean {
 
 /** Format ingredients as plain text for clipboard */
 export function formatIngredientsText(post: ManualSocialPost): string {
-  return getIngredients(post).map(i => `• ${i}`).join('\n');
+  return getIngredients(post)
+    .map((i) => `• ${i}`)
+    .join('\n');
 }
 
 /** Format preparation steps as plain text for clipboard */
 export function formatPreparationText(post: ManualSocialPost): string {
-  return getPreparationSteps(post).map((s, i) => `${i + 1}. ${s}`).join('\n');
+  return getPreparationSteps(post)
+    .map((s, i) => `${i + 1}. ${s}`)
+    .join('\n');
 }
 
 /** Build a TikTok-ready script block */
@@ -59,7 +71,7 @@ export function buildTikTokScript(post: ManualSocialPost): string {
 
   if (ingredients.length > 0) {
     parts.push('Ingrédients :');
-    ingredients.forEach(i => parts.push(`• ${i}`));
+    ingredients.forEach((i) => parts.push(`• ${i}`));
     parts.push('');
   }
 

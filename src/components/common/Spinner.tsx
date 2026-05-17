@@ -13,11 +13,7 @@ export function Spinner({ size = 'md', className }: SpinnerProps) {
     lg: 'h-12 w-12',
   };
 
-  return (
-    <Loader2 
-      className={cn('animate-spin text-primary', sizeClasses[size], className)} 
-    />
-  );
+  return <Loader2 className={cn('animate-spin text-primary', sizeClasses[size], className)} />;
 }
 
 export function SpinnerPage() {

@@ -41,12 +41,17 @@ export default function AdminUsers() {
 
   const fetchUsers = useCallback(async () => {
     try {
-      const [{ data: profiles, error: profilesError }, { data: subscriptions, error: subsError }, { data: wallets, error: walletsError }] =
-        await Promise.all([
-          supabase.from('profiles').select('id, email, full_name, created_at'),
-          supabase.from('subscriptions').select('user_id, status, plan, trial_end'),
-          supabase.from('user_wallets').select('user_id, credits_total, subscription_credits, lifetime_credits'),
-        ]);
+      const [
+        { data: profiles, error: profilesError },
+        { data: subscriptions, error: subsError },
+        { data: wallets, error: walletsError },
+      ] = await Promise.all([
+        supabase.from('profiles').select('id, email, full_name, created_at'),
+        supabase.from('subscriptions').select('user_id, status, plan, trial_end'),
+        supabase
+          .from('user_wallets')
+          .select('user_id, credits_total, subscription_credits, lifetime_credits'),
+      ]);
 
       if (profilesError) throw profilesError;
       if (subsError) throw subsError;
@@ -59,7 +64,7 @@ export default function AdminUsers() {
 
           const creditsTotal =
             (wallet as any)?.credits_total ??
-            (((wallet as any)?.subscription_credits ?? 0) + ((wallet as any)?.lifetime_credits ?? 0));
+            ((wallet as any)?.subscription_credits ?? 0) + ((wallet as any)?.lifetime_credits ?? 0);
 
           return {
             ...profile,
@@ -103,9 +108,10 @@ export default function AdminUsers() {
     };
   }, [fetchUsers]);
 
-  const filteredUsers = users.filter(user =>
-    user.email?.toLowerCase().includes(search.toLowerCase()) ||
-    user.full_name?.toLowerCase().includes(search.toLowerCase())
+  const filteredUsers = users.filter(
+    (user) =>
+      user.email?.toLowerCase().includes(search.toLowerCase()) ||
+      user.full_name?.toLowerCase().includes(search.toLowerCase())
   );
 
   const getStatusBadge = (status: string) => {
@@ -120,7 +126,11 @@ export default function AdminUsers() {
   };
 
   const handleResetUser = async (user: UserData) => {
-    if (!confirm(`Êtes-vous sûr de vouloir réinitialiser le compte de ${user.email}?\n\nCela va:\n- Remettre les swaps à 0/10\n- Réinitialiser les points et gamification\n- Supprimer tous les menus\n- Prolonger le trial de 30 jours`)) {
+    if (
+      !confirm(
+        `Êtes-vous sûr de vouloir réinitialiser le compte de ${user.email}?\n\nCela va:\n- Remettre les swaps à 0/10\n- Réinitialiser les points et gamification\n- Supprimer tous les menus\n- Prolonger le trial de 30 jours`
+      )
+    ) {
       return;
     }
 
@@ -134,7 +144,7 @@ export default function AdminUsers() {
           title: 'Compte réinitialisé',
           description: `Le compte ${user.email} a été réinitialisé avec succès`,
         });
-        
+
         await fetchUsers();
       } else {
         throw new Error(result.message || 'Erreur inconnue');
@@ -143,7 +153,8 @@ export default function AdminUsers() {
       console.error('Error resetting user:', error);
       toast({
         title: 'Erreur',
-        description: error instanceof Error ? error.message : 'Impossible de réinitialiser le compte',
+        description:
+          error instanceof Error ? error.message : 'Impossible de réinitialiser le compte',
         variant: 'destructive',
       });
     } finally {
@@ -152,7 +163,11 @@ export default function AdminUsers() {
   };
 
   const handleDeleteUser = async (user: UserData) => {
-    if (!confirm(`⚠️ ATTENTION: Êtes-vous absolument sûr de vouloir SUPPRIMER définitivement ${user.email}?\n\nCette action est IRRÉVERSIBLE et supprimera:\n- Le compte utilisateur\n- Toutes ses données\n- Ses menus et préférences\n- Son historique\n\nTapez "DELETE" pour confirmer.`)) {
+    if (
+      !confirm(
+        `⚠️ ATTENTION: Êtes-vous absolument sûr de vouloir SUPPRIMER définitivement ${user.email}?\n\nCette action est IRRÉVERSIBLE et supprimera:\n- Le compte utilisateur\n- Toutes ses données\n- Ses menus et préférences\n- Son historique\n\nTapez "DELETE" pour confirmer.`
+      )
+    ) {
       return;
     }
 
@@ -175,7 +190,7 @@ export default function AdminUsers() {
           title: 'Utilisateur supprimé',
           description: `${user.email} a été supprimé définitivement`,
         });
-        
+
         await fetchUsers();
       } else {
         throw new Error(result.message || 'Erreur inconnue');
@@ -184,7 +199,8 @@ export default function AdminUsers() {
       console.error('Error deleting user:', error);
       toast({
         title: 'Erreur',
-        description: error instanceof Error ? error.message : 'Impossible de supprimer l\'utilisateur',
+        description:
+          error instanceof Error ? error.message : "Impossible de supprimer l'utilisateur",
         variant: 'destructive',
       });
     } finally {
@@ -243,13 +259,9 @@ export default function AdminUsers() {
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.email}</TableCell>
                     <TableCell>{user.full_name || '-'}</TableCell>
-                    <TableCell>
-                      {toFrenchDate(user.created_at)}
-                    </TableCell>
+                    <TableCell>{toFrenchDate(user.created_at)}</TableCell>
                     <TableCell>{getStatusBadge(user.subscription_status || 'none')}</TableCell>
-                    <TableCell className="capitalize">
-                      {user.subscription_plan || '-'}
-                    </TableCell>
+                    <TableCell className="capitalize">{user.subscription_plan || '-'}</TableCell>
                     <TableCell>
                       <span className="font-semibold">{user.credits}</span>
                     </TableCell>
@@ -261,17 +273,19 @@ export default function AdminUsers() {
                           currentCredits={user.credits || 0}
                           onCreditsUpdated={handleCreditsUpdated}
                         />
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="outline"
                           onClick={() => handleResetUser(user)}
                           disabled={resettingUserId === user.id}
                           title="Réinitialiser le compte"
                         >
-                          <RefreshCw className={`h-4 w-4 ${resettingUserId === user.id ? 'animate-spin' : ''}`} />
+                          <RefreshCw
+                            className={`h-4 w-4 ${resettingUserId === user.id ? 'animate-spin' : ''}`}
+                          />
                         </Button>
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="outline"
                           onClick={() => handleDeleteUser(user)}
                           disabled={resettingUserId === user.id}

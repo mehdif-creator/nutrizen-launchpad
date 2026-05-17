@@ -1,17 +1,17 @@
-import { AppHeader } from "@/components/app/AppHeader";
-import { AppFooter } from "@/components/app/AppFooter";
-import { MobileBottomNav } from "@/components/app/MobileBottomNav";
-import { useAuth } from "@/contexts/AuthContext";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Sparkles, Star, History, Info, Check } from "lucide-react";
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useCreditPacks } from "@/hooks/useCreditPacks";
-import { ZenCreditsDisplay } from "@/components/app/ZenCreditsDisplay";
-import { CREDIT_COSTS_DISPLAY } from "@/lib/featureCosts";
+import { AppHeader } from '@/components/app/AppHeader';
+import { AppFooter } from '@/components/app/AppFooter';
+import { MobileBottomNav } from '@/components/app/MobileBottomNav';
+import { useAuth } from '@/contexts/AuthContext';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Sparkles, Star, History, Info, Check } from 'lucide-react';
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useCreditPacks } from '@/hooks/useCreditPacks';
+import { ZenCreditsDisplay } from '@/components/app/ZenCreditsDisplay';
+import { CREDIT_COSTS_DISPLAY } from '@/lib/featureCosts';
 
 export default function Credits() {
   const { user } = useAuth();
@@ -19,32 +19,32 @@ export default function Credits() {
   const { packs, loading: packsLoading, formatPrice, getPricePerCredit } = useCreditPacks();
   const [buying, setBuying] = useState<string | null>(null);
 
-  const handleBuyPack = async (pack: typeof packs[0]) => {
+  const handleBuyPack = async (pack: (typeof packs)[0]) => {
     if (!pack.stripe_price_id) {
       toast({
-        title: "Achat indisponible",
+        title: 'Achat indisponible',
         description: "Ce pack n'est pas encore configuré pour l'achat.",
-        variant: "destructive",
+        variant: 'destructive',
       });
       return;
     }
 
     setBuying(pack.id);
     try {
-      const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { price_id: pack.stripe_price_id, mode: "payment" },
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { price_id: pack.stripe_price_id, mode: 'payment' },
       });
 
       if (error) throw error;
       if (data?.url) {
-        window.open(data.url, "_blank");
+        window.open(data.url, '_blank');
       }
     } catch (err) {
-      console.error("Checkout error:", err);
+      console.error('Checkout error:', err);
       toast({
-        title: "Erreur",
-        description: "Impossible de lancer le paiement. Réessaie plus tard.",
-        variant: "destructive",
+        title: 'Erreur',
+        description: 'Impossible de lancer le paiement. Réessaie plus tard.',
+        variant: 'destructive',
       });
     } finally {
       setBuying(null);
@@ -52,13 +52,14 @@ export default function Credits() {
   };
 
   // Find the best value pack (highest credits/price ratio)
-  const bestValueIdx = packs.length > 0
-    ? packs.reduce((bestIdx, pack, idx, arr) => {
-        const ratio = pack.credits / pack.price_cents;
-        const bestRatio = arr[bestIdx].credits / arr[bestIdx].price_cents;
-        return ratio > bestRatio ? idx : bestIdx;
-      }, 0)
-    : -1;
+  const bestValueIdx =
+    packs.length > 0
+      ? packs.reduce((bestIdx, pack, idx, arr) => {
+          const ratio = pack.credits / pack.price_cents;
+          const bestRatio = arr[bestIdx].credits / arr[bestIdx].price_cents;
+          return ratio > bestRatio ? idx : bestIdx;
+        }, 0)
+      : -1;
 
   // Middle pack is "popular"
   const popularIdx = Math.floor(packs.length / 2);
@@ -103,7 +104,7 @@ export default function Credits() {
                   <Card
                     key={pack.id}
                     className={`relative p-6 flex flex-col items-center text-center space-y-4 transition-all hover:shadow-lg ${
-                      isPopular ? "border-primary ring-1 ring-primary/30 scale-[1.02]" : ""
+                      isPopular ? 'border-primary ring-1 ring-primary/30 scale-[1.02]' : ''
                     }`}
                   >
                     {isPopular && (
@@ -137,11 +138,11 @@ export default function Credits() {
 
                     <Button
                       className="w-full"
-                      variant={isPopular ? "default" : "outline"}
+                      variant={isPopular ? 'default' : 'outline'}
                       disabled={buying !== null}
                       onClick={() => handleBuyPack(pack)}
                     >
-                      {buying === pack.id ? "Redirection…" : "Acheter"}
+                      {buying === pack.id ? 'Redirection…' : 'Acheter'}
                     </Button>
                   </Card>
                 );
@@ -160,13 +161,10 @@ export default function Credits() {
           <h2 className="text-lg font-semibold mb-4">Coût par fonctionnalité</h2>
           <Card className="divide-y divide-border">
             {CREDIT_COSTS_DISPLAY.map((item, idx) => (
-              <div
-                key={idx}
-                className="flex items-center justify-between px-4 py-3 text-sm"
-              >
+              <div key={idx} className="flex items-center justify-between px-4 py-3 text-sm">
                 <span className="text-foreground">{item.label}</span>
                 <Badge variant="secondary">
-                  {item.cost} crédit{item.cost > 1 ? "s" : ""}
+                  {item.cost} crédit{item.cost > 1 ? 's' : ''}
                 </Badge>
               </div>
             ))}

@@ -17,7 +17,14 @@ interface GuideLayoutProps {
   metaTitle: string;
 }
 
-export default function GuideLayout({ title, subtitle, badgeColor, points, pdfUrl, metaTitle }: GuideLayoutProps) {
+export default function GuideLayout({
+  title,
+  subtitle,
+  badgeColor,
+  points,
+  pdfUrl,
+  metaTitle,
+}: GuideLayoutProps) {
   useEffect(() => {
     document.title = metaTitle;
     let meta = document.querySelector('meta[name="robots"]');
@@ -52,7 +59,10 @@ export default function GuideLayout({ title, subtitle, badgeColor, points, pdfUr
           <h1 className="text-3xl md:text-4xl font-bold text-foreground leading-tight">{title}</h1>
           <p className="text-lg text-muted-foreground">{subtitle}</p>
           <a href={pdfUrl} target="_blank" rel="noopener noreferrer" download>
-            <Button size="lg" className="mt-2 text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Button
+              size="lg"
+              className="mt-2 text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
               <Download className="mr-2 h-5 w-5" />
               📥 Télécharger mon guide PDF
             </Button>
@@ -75,7 +85,10 @@ export default function GuideLayout({ title, subtitle, badgeColor, points, pdfUr
         {/* Second CTA */}
         <section className="text-center">
           <a href={pdfUrl} target="_blank" rel="noopener noreferrer" download>
-            <Button size="lg" className="text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Button
+              size="lg"
+              className="text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
               <Download className="mr-2 h-5 w-5" />
               📥 Télécharger maintenant — c'est gratuit
             </Button>
@@ -85,7 +98,8 @@ export default function GuideLayout({ title, subtitle, badgeColor, points, pdfUr
 
       {/* Footer */}
       <footer className="border-t border-border/40 py-6 text-center text-sm text-muted-foreground">
-        © 2026 NutriZen · mynutrizen.fr · Ce guide est informatif et ne remplace pas un avis médical.
+        © 2026 NutriZen · mynutrizen.fr · Ce guide est informatif et ne remplace pas un avis
+        médical.
       </footer>
     </div>
   );

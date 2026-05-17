@@ -4,15 +4,7 @@ import { AppFooter } from '@/components/app/AppFooter';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  ShoppingCart,
-  Download,
-  RefreshCw,
-  Check,
-  X,
-  ChefHat,
-  FileDown,
-} from 'lucide-react';
+import { ShoppingCart, Download, RefreshCw, Check, X, ChefHat, FileDown } from 'lucide-react';
 import { exportShoppingListPdf } from '@/lib/pdfExport';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -47,11 +39,7 @@ export default function ShoppingList() {
     const now = new Date();
     const dayOfWeek = now.getUTCDay();
     const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    const weekStartMs = Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate() + diff
-    );
+    const weekStartMs = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diff);
     setWeekStart(new Date(weekStartMs).toISOString().split('T')[0]);
   }, []);
 
@@ -66,113 +54,121 @@ export default function ShoppingList() {
     }
   }, [storageKey]);
 
-  const saveCheckedState = useCallback((checked: Record<string, boolean>) => {
-    if (!storageKey) return;
-    localStorage.setItem(storageKey, JSON.stringify(checked));
-  }, [storageKey]);
+  const saveCheckedState = useCallback(
+    (checked: Record<string, boolean>) => {
+      if (!storageKey) return;
+      localStorage.setItem(storageKey, JSON.stringify(checked));
+    },
+    [storageKey]
+  );
 
-  const fetchList = useCallback(async (showRefreshing = false) => {
-    if (!user?.id || !weekStart) return;
-    if (showRefreshing) setIsRefreshing(true);
-    else setIsLoading(true);
+  const fetchList = useCallback(
+    async (showRefreshing = false) => {
+      if (!user?.id || !weekStart) return;
+      if (showRefreshing) setIsRefreshing(true);
+      else setIsLoading(true);
 
-    try {
-      // 1. Try the RPC (works for DB-backed menus with user_weekly_menu_items)
-      const { data, error } = await supabase.rpc(
-        'get_shopping_list_from_weekly_menu',
-        { p_user_id: user.id, p_week_start: weekStart }
-      );
+      try {
+        // 1. Try the RPC (works for DB-backed menus with user_weekly_menu_items)
+        const { data, error } = await supabase.rpc('get_shopping_list_from_weekly_menu', {
+          p_user_id: user.id,
+          p_week_start: weekStart,
+        });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      let rawItems: RawShoppingItem[] = (data || []).map((row: any) => ({
-        ingredient_name: row.ingredient_name,
-        total_quantity: row.total_quantity,
-        unit: row.unit,
-        formatted_display: row.formatted_display,
-      }));
+        let rawItems: RawShoppingItem[] = (data || []).map((row: any) => ({
+          ingredient_name: row.ingredient_name,
+          total_quantity: row.total_quantity,
+          unit: row.unit,
+          formatted_display: row.formatted_display,
+        }));
 
-      // 2. If RPC returned nothing, try extracting from AI menu payload
-      if (rawItems.length === 0) {
-        const { data: menuData } = await supabase
-          .from('user_weekly_menus')
-          .select('payload')
-          .eq('user_id', user.id)
-          .eq('week_start', weekStart)
-          .maybeSingle();
+        // 2. If RPC returned nothing, try extracting from AI menu payload
+        if (rawItems.length === 0) {
+          const { data: menuData } = await supabase
+            .from('user_weekly_menus')
+            .select('payload')
+            .eq('user_id', user.id)
+            .eq('week_start', weekStart)
+            .maybeSingle();
 
-        const payload = menuData?.payload as any;
-        if (payload?.ai_generated && payload?.days) {
-          const aiItems: RawShoppingItem[] = [];
-          for (const day of payload.days) {
-            for (const meal of [day.lunch, day.dinner]) {
-              if (!meal?.ingredients) continue;
-              for (const ing of meal.ingredients) {
-                const qty = parseFloat(ing.quantite) || 0;
-                const unit = ing.unite || '';
-                const name = ing.nom || '';
-                if (!name) continue;
-                aiItems.push({
-                  ingredient_name: name,
-                  total_quantity: qty,
-                  unit,
-                  formatted_display: qty > 0 ? `${qty} ${unit} ${name}`.trim() : name,
-                });
+          const payload = menuData?.payload as any;
+          if (payload?.ai_generated && payload?.days) {
+            const aiItems: RawShoppingItem[] = [];
+            for (const day of payload.days) {
+              for (const meal of [day.lunch, day.dinner]) {
+                if (!meal?.ingredients) continue;
+                for (const ing of meal.ingredients) {
+                  const qty = parseFloat(ing.quantite) || 0;
+                  const unit = ing.unite || '';
+                  const name = ing.nom || '';
+                  if (!name) continue;
+                  aiItems.push({
+                    ingredient_name: name,
+                    total_quantity: qty,
+                    unit,
+                    formatted_display: qty > 0 ? `${qty} ${unit} ${name}`.trim() : name,
+                  });
+                }
               }
             }
+            rawItems = aiItems;
           }
-          rawItems = aiItems;
         }
+
+        // Merge & deduplicate through the pipeline
+        const merged = mergeShoppingItems(rawItems);
+
+        const checkedState = loadCheckedState();
+
+        const displayItems: DisplayItem[] = merged.map((m) => ({
+          ...m,
+          checked: checkedState[m.normalizedKey] ?? false,
+        }));
+
+        setItems(displayItems);
+      } catch (err) {
+        console.error('Error fetching shopping list:', err);
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de charger la liste de courses.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
       }
-
-      // Merge & deduplicate through the pipeline
-      const merged = mergeShoppingItems(rawItems);
-
-      const checkedState = loadCheckedState();
-
-      const displayItems: DisplayItem[] = merged.map(m => ({
-        ...m,
-        checked: checkedState[m.normalizedKey] ?? false,
-      }));
-
-      setItems(displayItems);
-    } catch (err) {
-      console.error('Error fetching shopping list:', err);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de charger la liste de courses.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, [user?.id, weekStart, loadCheckedState, toast]);
+    },
+    [user?.id, weekStart, loadCheckedState, toast]
+  );
 
   useEffect(() => {
     fetchList();
   }, [fetchList]);
 
   const handleToggle = (key: string, checked: boolean) => {
-    setItems(prev => prev.map(item =>
-      item.normalizedKey === key ? { ...item, checked } : item
-    ));
+    setItems((prev) =>
+      prev.map((item) => (item.normalizedKey === key ? { ...item, checked } : item))
+    );
     const current = loadCheckedState();
     current[key] = checked;
     saveCheckedState(current);
   };
 
   const handleCheckAll = (checked: boolean) => {
-    setItems(prev => prev.map(item => ({ ...item, checked })));
+    setItems((prev) => prev.map((item) => ({ ...item, checked })));
     const newState: Record<string, boolean> = {};
-    items.forEach(item => { newState[item.normalizedKey] = checked; });
+    items.forEach((item) => {
+      newState[item.normalizedKey] = checked;
+    });
     saveCheckedState(newState);
   };
 
   const handleExportCSV = () => {
     const BOM = '\uFEFF';
     const header = 'Catégorie;Article;Coché';
-    const rows = items.map(item =>
+    const rows = items.map((item) =>
       [
         item.category,
         `"${item.displayLine.replace(/"/g, '""')}"`,
@@ -193,13 +189,16 @@ export default function ShoppingList() {
   const formatDate = (d: string) =>
     new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
-  const grouped = CATEGORY_ORDER.reduce((acc, cat) => {
-    const catItems = items.filter(i => i.category === cat);
-    if (catItems.length > 0) acc[cat] = catItems;
-    return acc;
-  }, {} as Record<string, DisplayItem[]>);
+  const grouped = CATEGORY_ORDER.reduce(
+    (acc, cat) => {
+      const catItems = items.filter((i) => i.category === cat);
+      if (catItems.length > 0) acc[cat] = catItems;
+      return acc;
+    },
+    {} as Record<string, DisplayItem[]>
+  );
 
-  const checkedCount = items.filter(i => i.checked).length;
+  const checkedCount = items.filter((i) => i.checked).length;
   const totalCount = items.length;
   const progress = totalCount > 0 ? Math.round((checkedCount / totalCount) * 100) : 0;
 
@@ -276,11 +275,7 @@ export default function ShoppingList() {
 
           {/* Actions */}
           <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              onClick={() => fetchList(true)}
-              disabled={isRefreshing}
-            >
+            <Button variant="outline" onClick={() => fetchList(true)} disabled={isRefreshing}>
               <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
               Actualiser
             </Button>
@@ -319,12 +314,12 @@ export default function ShoppingList() {
                   {category}
                 </h2>
                 <Badge variant="outline" className="text-xs">
-                  {catItems.filter(i => i.checked).length}/{catItems.length}
+                  {catItems.filter((i) => i.checked).length}/{catItems.length}
                 </Badge>
               </div>
 
               <ul className="space-y-2">
-                {catItems.map(item => (
+                {catItems.map((item) => (
                   <li
                     key={item.normalizedKey}
                     className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
@@ -334,9 +329,7 @@ export default function ShoppingList() {
                   >
                     <div
                       className={`h-5 w-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
-                        item.checked
-                          ? 'bg-primary border-primary'
-                          : 'border-muted-foreground/40'
+                        item.checked ? 'bg-primary border-primary' : 'border-muted-foreground/40'
                       }`}
                     >
                       {item.checked && <Check className="h-3 w-3 text-primary-foreground" />}

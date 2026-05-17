@@ -1,20 +1,36 @@
-import { useState } from "react";
-import { createPortal } from "react-dom";
-import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { useTheme } from "@/contexts/ThemeContext";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Home, BookOpen, User, Settings, HelpCircle, LogOut, Shield, Camera, Menu, X, Moon, Sun, Globe, ScanBarcode, Sparkles } from "lucide-react";
-import { GamificationHeader } from "./GamificationHeader";
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+  Home,
+  BookOpen,
+  User,
+  Settings,
+  HelpCircle,
+  LogOut,
+  Shield,
+  Camera,
+  Menu,
+  X,
+  Moon,
+  Sun,
+  Globe,
+  ScanBarcode,
+  Sparkles,
+} from 'lucide-react';
+import { GamificationHeader } from './GamificationHeader';
 
 export const AppHeader = () => {
   const { user, isAdmin, signOut } = useAuth();
@@ -31,18 +47,18 @@ export const AppHeader = () => {
   ];
 
   const getInitials = (name?: string) => {
-    if (!name) return "U";
+    if (!name) return 'U';
     return name
-      .split(" ")
+      .split(' ')
       .map((n) => n[0])
-      .join("")
+      .join('')
       .toUpperCase()
       .slice(0, 2);
   };
 
   const isActivePath = (path: string) => {
-    if (path === "/app") {
-      return location.pathname === "/app" || location.pathname === "/app/dashboard";
+    if (path === '/app') {
+      return location.pathname === '/app' || location.pathname === '/app/dashboard';
     }
     return location.pathname.startsWith(path);
   };
@@ -51,9 +67,12 @@ export const AppHeader = () => {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to="/app" className="flex items-center hover:opacity-80 transition-opacity shrink-0">
+          <Link
+            to="/app"
+            className="flex items-center hover:opacity-80 transition-opacity shrink-0"
+          >
             <img
-              src={new URL("@/assets/nutrizen-main-logo.png", import.meta.url).href}
+              src={new URL('@/assets/nutrizen-main-logo.png', import.meta.url).href}
               alt="NutriZen"
               className="h-9 w-auto"
             />
@@ -61,23 +80,23 @@ export const AppHeader = () => {
 
           <nav className="hidden xl:flex items-center gap-0.5">
             {[
-              { to: "/app", label: "Tableau de bord", icon: Home },
-              { to: "/app/credits", label: "Crédits", icon: Sparkles },
-              { to: "/app/scan-repas", label: "ScanRepas", icon: Camera },
-              { to: "/app/scan-barcode", label: "CodeBarres", icon: ScanBarcode },
-              { to: "/app/inspi-frigo", label: "InspiFrigo", icon: Camera },
-              { to: "/app/profile", label: "Profil", icon: User },
-              { to: "/app/settings", label: "Paramètres", icon: Settings },
-              { to: "/app/support", label: "Support", icon: HelpCircle },
-              { to: "/blog", label: "Blog" },
+              { to: '/app', label: 'Tableau de bord', icon: Home },
+              { to: '/app/credits', label: 'Crédits', icon: Sparkles },
+              { to: '/app/scan-repas', label: 'ScanRepas', icon: Camera },
+              { to: '/app/scan-barcode', label: 'CodeBarres', icon: ScanBarcode },
+              { to: '/app/inspi-frigo', label: 'InspiFrigo', icon: Camera },
+              { to: '/app/profile', label: 'Profil', icon: User },
+              { to: '/app/settings', label: 'Paramètres', icon: Settings },
+              { to: '/app/support', label: 'Support', icon: HelpCircle },
+              { to: '/blog', label: 'Blog' },
             ].map(({ to, label, icon: Icon }) => (
               <Link
                 key={to}
                 to={to}
                 className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
                   isActivePath(to)
-                    ? "text-primary bg-primary/10"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    ? 'text-primary bg-primary/10'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
               >
                 {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
@@ -90,7 +109,7 @@ export const AppHeader = () => {
         <div className="flex items-center gap-4">
           <div className="hidden xl:flex items-center gap-2">
             <GamificationHeader />
-            
+
             {/* Theme Toggle */}
             <Button
               variant="ghost"
@@ -101,13 +120,15 @@ export const AppHeader = () => {
             >
               {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
             </Button>
-            
+
             {/* Language Selector */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-9 gap-1">
                   <Globe className="h-4 w-4" />
-                  <span className="text-xs">{languages.find(l => l.code === language)?.flag}</span>
+                  <span className="text-xs">
+                    {languages.find((l) => l.code === language)?.flag}
+                  </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -138,7 +159,9 @@ export const AppHeader = () => {
             <DropdownMenuContent className="w-56 bg-background z-50" align="end">
               <div className="flex items-center justify-start gap-2 p-2">
                 <div className="flex flex-col space-y-1 leading-none">
-                  {user?.user_metadata?.full_name && <p className="font-medium">{user.user_metadata.full_name}</p>}
+                  {user?.user_metadata?.full_name && (
+                    <p className="font-medium">{user.user_metadata.full_name}</p>
+                  )}
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
               </div>
@@ -173,10 +196,12 @@ export const AppHeader = () => {
                 </>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={(e) => {
-                e.preventDefault();
-                signOut();
-              }}>
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault();
+                  signOut();
+                }}
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 Déconnexion
               </DropdownMenuItem>
@@ -185,7 +210,10 @@ export const AppHeader = () => {
 
           {/* Mobile Menu Button */}
           <button
-            onClick={(e) => { e.stopPropagation(); setMobileMenuOpen(!mobileMenuOpen); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setMobileMenuOpen(!mobileMenuOpen);
+            }}
             className="xl:hidden p-3 min-h-[44px] min-w-[44px] flex items-center justify-center relative z-[60]"
             aria-label={mobileMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
           >
@@ -195,83 +223,85 @@ export const AppHeader = () => {
       </div>
 
       {/* Mobile Menu - rendered via portal to escape sticky stacking context */}
-      {mobileMenuOpen && createPortal(
-        <div className="xl:hidden fixed inset-0 z-[9999] bg-background overflow-y-auto pt-16">
-          {/* Close button */}
-          <button
-            onClick={() => setMobileMenuOpen(false)}
-            className="absolute top-4 right-4 p-3 min-h-[44px] min-w-[44px] flex items-center justify-center z-[10000]"
-            aria-label="Fermer le menu"
-          >
-            <X size={24} />
-          </button>
-          <nav className="container py-4 flex flex-col gap-1">
-            {/* Gamification in mobile */}
-            <div className="pb-3 border-b">
-              <GamificationHeader />
-            </div>
-            
-            {/* Theme and Language controls in mobile */}
-            <div className="flex items-center gap-2 pb-3 border-b">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={toggleTheme}
-                className="flex-1"
-              >
-                {theme === 'light' ? <Moon className="h-4 w-4 mr-2" /> : <Sun className="h-4 w-4 mr-2" />}
-                {theme === 'light' ? 'Mode sombre' : 'Mode clair'}
-              </Button>
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="flex-1 gap-1">
-                    <Globe className="h-4 w-4" />
-                    <span>{languages.find(l => l.code === language)?.flag}</span>
-                    <span className="text-xs">{languages.find(l => l.code === language)?.label}</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {languages.map((lang) => (
-                    <DropdownMenuItem
-                      key={lang.code}
-                      onClick={() => setLanguage(lang.code)}
-                      className={language === lang.code ? 'bg-accent' : ''}
-                    >
-                      <span className="mr-2">{lang.flag}</span>
-                      {lang.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-            
-            {[
-              { to: "/app", icon: Home, label: "Tableau de bord" },
-              { to: "/app/scan-repas", icon: Camera, label: "ScanRepas" },
-              { to: "/app/scan-barcode", icon: ScanBarcode, label: "CodeBarres" },
-              { to: "/app/inspi-frigo", icon: Camera, label: "InspiFrigo" },
-              { to: "/app/profile", icon: User, label: "Profil" },
-              { to: "/app/settings", icon: Settings, label: "Paramètres" },
-              { to: "/app/support", icon: HelpCircle, label: "Support" },
-              { to: "/blog", icon: BookOpen, label: "Blog" },
-            ].map(({ to, icon: Icon, label }) => (
-            <Link
-              key={to}
-              to={to}
-              className={`text-left text-base font-medium transition-colors flex items-center gap-3 min-h-[48px] px-2 border-b border-border/30 ${
-                isActivePath(to) ? "text-primary font-semibold" : "text-muted-foreground"
-              }`}
+      {mobileMenuOpen &&
+        createPortal(
+          <div className="xl:hidden fixed inset-0 z-[9999] bg-background overflow-y-auto pt-16">
+            {/* Close button */}
+            <button
               onClick={() => setMobileMenuOpen(false)}
+              className="absolute top-4 right-4 p-3 min-h-[44px] min-w-[44px] flex items-center justify-center z-[10000]"
+              aria-label="Fermer le menu"
             >
-              <Icon className="h-5 w-5 flex-shrink-0" />
-              {label}
-            </Link>
-            ))}
-          </nav>
-        </div>,
-        document.body
-      )}
+              <X size={24} />
+            </button>
+            <nav className="container py-4 flex flex-col gap-1">
+              {/* Gamification in mobile */}
+              <div className="pb-3 border-b">
+                <GamificationHeader />
+              </div>
+
+              {/* Theme and Language controls in mobile */}
+              <div className="flex items-center gap-2 pb-3 border-b">
+                <Button variant="outline" size="sm" onClick={toggleTheme} className="flex-1">
+                  {theme === 'light' ? (
+                    <Moon className="h-4 w-4 mr-2" />
+                  ) : (
+                    <Sun className="h-4 w-4 mr-2" />
+                  )}
+                  {theme === 'light' ? 'Mode sombre' : 'Mode clair'}
+                </Button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="flex-1 gap-1">
+                      <Globe className="h-4 w-4" />
+                      <span>{languages.find((l) => l.code === language)?.flag}</span>
+                      <span className="text-xs">
+                        {languages.find((l) => l.code === language)?.label}
+                      </span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {languages.map((lang) => (
+                      <DropdownMenuItem
+                        key={lang.code}
+                        onClick={() => setLanguage(lang.code)}
+                        className={language === lang.code ? 'bg-accent' : ''}
+                      >
+                        <span className="mr-2">{lang.flag}</span>
+                        {lang.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {[
+                { to: '/app', icon: Home, label: 'Tableau de bord' },
+                { to: '/app/scan-repas', icon: Camera, label: 'ScanRepas' },
+                { to: '/app/scan-barcode', icon: ScanBarcode, label: 'CodeBarres' },
+                { to: '/app/inspi-frigo', icon: Camera, label: 'InspiFrigo' },
+                { to: '/app/profile', icon: User, label: 'Profil' },
+                { to: '/app/settings', icon: Settings, label: 'Paramètres' },
+                { to: '/app/support', icon: HelpCircle, label: 'Support' },
+                { to: '/blog', icon: BookOpen, label: 'Blog' },
+              ].map(({ to, icon: Icon, label }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className={`text-left text-base font-medium transition-colors flex items-center gap-3 min-h-[48px] px-2 border-b border-border/30 ${
+                    isActivePath(to) ? 'text-primary font-semibold' : 'text-muted-foreground'
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Icon className="h-5 w-5 flex-shrink-0" />
+                  {label}
+                </Link>
+              ))}
+            </nav>
+          </div>,
+          document.body
+        )}
     </header>
   );
 };

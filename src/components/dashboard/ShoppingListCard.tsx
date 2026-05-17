@@ -12,21 +12,15 @@ interface ShoppingListCardProps {
   onRetry: () => void;
 }
 
-export function ShoppingListCard({
-  status,
-  isLoading,
-  isError,
-  onRetry,
-}: ShoppingListCardProps) {
+export function ShoppingListCard({ status, isLoading, isError, onRetry }: ShoppingListCardProps) {
   const navigate = useNavigate();
   let state: CardState = 'ready';
   if (isLoading) state = 'loading';
   else if (isError) state = 'error';
   else if (!status?.exists) state = 'empty';
 
-  const progress = status && status.items_total > 0 
-    ? (status.items_checked / status.items_total) * 100 
-    : 0;
+  const progress =
+    status && status.items_total > 0 ? (status.items_checked / status.items_total) * 100 : 0;
 
   return (
     <DashboardCard

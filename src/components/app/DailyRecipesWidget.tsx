@@ -25,7 +25,15 @@ export function DailyRecipesWidget() {
     return null;
   }
 
-  const RecipeCard = ({ recipe, timeOfDay, icon: Icon }: { recipe: any; timeOfDay: string; icon: any }) => {
+  const RecipeCard = ({
+    recipe,
+    timeOfDay,
+    icon: Icon,
+  }: {
+    recipe: any;
+    timeOfDay: string;
+    icon: any;
+  }) => {
     if (!recipe) {
       return (
         <div className="p-4 bg-muted/30 rounded-lg border border-dashed">
@@ -37,13 +45,18 @@ export function DailyRecipesWidget() {
     }
 
     const servings = recipe.servings || recipe.base_servings || 1;
-    const caloriesPerServing = recipe.calories_kcal ? Math.round(recipe.calories_kcal / servings) : null;
+    const caloriesPerServing = recipe.calories_kcal
+      ? Math.round(recipe.calories_kcal / servings)
+      : null;
     const proteinsPerServing = recipe.proteins_g ? Math.round(recipe.proteins_g / servings) : null;
     const carbsPerServing = recipe.carbs_g ? Math.round(recipe.carbs_g / servings) : null;
     const fatsPerServing = recipe.fats_g ? Math.round(recipe.fats_g / servings) : null;
 
     return (
-      <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => navigate(`/app/recipes/${recipe.id}`)}>
+      <Card
+        className="p-4 hover:shadow-md transition-shadow cursor-pointer group"
+        onClick={() => navigate(`/app/recipes/${recipe.id}`)}
+      >
         <div className="flex items-start gap-4">
           <div className="flex-shrink-0">
             <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -60,7 +73,7 @@ export function DailyRecipesWidget() {
               </div>
               <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all flex-shrink-0" />
             </div>
-            
+
             {/* Macros compact */}
             {caloriesPerServing && (
               <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
@@ -68,15 +81,9 @@ export function DailyRecipesWidget() {
                   <Flame className="h-3 w-3" />
                   {caloriesPerServing} kcal
                 </span>
-                {proteinsPerServing && (
-                  <span>• P: {proteinsPerServing}g</span>
-                )}
-                {carbsPerServing && (
-                  <span>• G: {carbsPerServing}g</span>
-                )}
-                {fatsPerServing && (
-                  <span>• L: {fatsPerServing}g</span>
-                )}
+                {proteinsPerServing && <span>• P: {proteinsPerServing}g</span>}
+                {carbsPerServing && <span>• G: {carbsPerServing}g</span>}
+                {fatsPerServing && <span>• L: {fatsPerServing}g</span>}
               </div>
             )}
           </div>
@@ -93,7 +100,7 @@ export function DailyRecipesWidget() {
           <h2 className="text-xl font-semibold">Tes recettes du jour</h2>
         </div>
       </div>
-      
+
       <div className="space-y-3">
         <RecipeCard recipe={recipes.lunch} timeOfDay="Midi (déjeuner)" icon={Sun} />
         <RecipeCard recipe={recipes.dinner} timeOfDay="Soir (dîner)" icon={Moon} />

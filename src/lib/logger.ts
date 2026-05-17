@@ -75,8 +75,12 @@ class Logger {
   }
 
   error(message: string, error?: Error | unknown, meta?: LogContext): void {
-    const errorMeta = error instanceof Error ? { message: error.message, stack: error.stack } : { error };
-    const formatted = formatMessage('error', `[${this.context}] ${message}`, { ...meta, ...errorMeta });
+    const errorMeta =
+      error instanceof Error ? { message: error.message, stack: error.stack } : { error };
+    const formatted = formatMessage('error', `[${this.context}] ${message}`, {
+      ...meta,
+      ...errorMeta,
+    });
     console.error(formatted);
   }
 

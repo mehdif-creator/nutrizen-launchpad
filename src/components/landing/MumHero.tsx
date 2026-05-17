@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
-import { Star, Check, Shield, ArrowRight, Timer, CalendarDays, Leaf } from "lucide-react";
-import mumHeroImage from "@/assets/mum-hero.jpg";
+import { Button } from '@/components/ui/button';
+import { Star, Check, Shield, ArrowRight, Timer, CalendarDays, Leaf } from 'lucide-react';
+import mumHeroImage from '@/assets/mum-hero.jpg';
 
 interface MumHeroProps {
   onCtaClick: () => void;
@@ -26,7 +26,7 @@ export const MumHero = ({ onCtaClick }: MumHeroProps) => {
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(90deg, #0d1f1a 0%, #0d1f1a 35%, rgba(13,31,26,0.85) 50%, rgba(13,31,26,0.2) 70%, rgba(13,31,26,0) 100%)",
+              'linear-gradient(90deg, #0d1f1a 0%, #0d1f1a 35%, rgba(13,31,26,0.85) 50%, rgba(13,31,26,0.2) 70%, rgba(13,31,26,0) 100%)',
           }}
         />
         {/* Mobile bottom fade */}
@@ -54,7 +54,7 @@ export const MumHero = ({ onCtaClick }: MumHeroProps) => {
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.05] tracking-tight">
-              Des repas de famille qui tiennent dans une{" "}
+              Des repas de famille qui tiennent dans une{' '}
               <span className="relative text-emerald-400">
                 vraie semaine
                 <svg
@@ -76,16 +76,25 @@ export const MumHero = ({ onCtaClick }: MumHeroProps) => {
             </h1>
 
             <p className="text-base md:text-lg text-white/70 leading-relaxed">
-              NutriZen Mum t'aide à prévoir des repas simples, équilibrés et réalistes pour toute
-              la famille, même quand les journées sont chargées.
+              NutriZen Mum t'aide à prévoir des repas simples, équilibrés et réalistes pour toute la
+              famille, même quand les journées sont chargées.
             </p>
 
             <ul className="space-y-3 pt-2">
               {[
-                { bold: "Repas familiaux simples", text: " : bons, rapides, adaptés au quotidien" },
-                { bold: "Planning intelligent", text: " : moins de charge mentale, plus de sérénité" },
-                { bold: "Recettes réalistes", text: " : peu d'ingrédients, peu de temps, plus d'idées" },
-                { bold: "Organisation facile", text: " : une semaine plus fluide, sans improviser" },
+                { bold: 'Repas familiaux simples', text: ' : bons, rapides, adaptés au quotidien' },
+                {
+                  bold: 'Planning intelligent',
+                  text: ' : moins de charge mentale, plus de sérénité',
+                },
+                {
+                  bold: 'Recettes réalistes',
+                  text: " : peu d'ingrédients, peu de temps, plus d'idées",
+                },
+                {
+                  bold: 'Organisation facile',
+                  text: ' : une semaine plus fluide, sans improviser',
+                },
               ].map((item, i) => (
                 <li key={i} className="flex items-start gap-3 text-sm md:text-base">
                   <span className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
@@ -141,7 +150,11 @@ export const MumHero = ({ onCtaClick }: MumHeroProps) => {
                 <Timer className="w-6 h-6 text-emerald-400" />
                 <div>
                   <div className="text-2xl font-bold text-white">+5h</div>
-                  <div className="text-xs text-white/60">gagnées<br />par semaine</div>
+                  <div className="text-xs text-white/60">
+                    gagnées
+                    <br />
+                    par semaine
+                  </div>
                 </div>
               </div>
             </div>
@@ -152,7 +165,11 @@ export const MumHero = ({ onCtaClick }: MumHeroProps) => {
                 <CalendarDays className="w-6 h-6 text-emerald-400" />
                 <div>
                   <div className="text-2xl font-bold text-white">7 repas</div>
-                  <div className="text-xs text-white/70">planifiés<br />cette semaine</div>
+                  <div className="text-xs text-white/70">
+                    planifiés
+                    <br />
+                    cette semaine
+                  </div>
                 </div>
               </div>
               <div className="mt-3 h-1 w-full bg-white/10 rounded-full overflow-hidden">

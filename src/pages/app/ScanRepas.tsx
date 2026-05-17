@@ -4,7 +4,18 @@ import { AppFooter } from '@/components/app/AppFooter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Camera, Upload, Loader2, Brain, RefreshCw, AlertCircle, AlertTriangle, Lightbulb, Info, Sparkles } from 'lucide-react';
+import {
+  Camera,
+  Upload,
+  Loader2,
+  Brain,
+  RefreshCw,
+  AlertCircle,
+  AlertTriangle,
+  Lightbulb,
+  Info,
+  Sparkles,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { InsufficientCreditsModal } from '@/components/app/InsufficientCreditsModal';
 import { useAuth } from '@/contexts/AuthContext';
@@ -104,13 +115,18 @@ export default function ScanRepas() {
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
-  const [creditsInfo, setCreditsInfo] = useState<{ current: number; required: number } | null>(null);
+  const [creditsInfo, setCreditsInfo] = useState<{ current: number; required: number } | null>(
+    null
+  );
 
   // ── File handling ────────────────────────────────────────────────────────
 
   const pickFile = (file: File) => {
     const err = validateImage(file);
-    if (err) { toast.error(err); return; }
+    if (err) {
+      toast.error(err);
+      return;
+    }
     setSelectedFile(file);
     setPreviewUrl(URL.createObjectURL(file));
     setResult(null);
@@ -142,8 +158,14 @@ export default function ScanRepas() {
 
     try {
       // Auth check
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setError('Veuillez vous connecter.'); setLoading(false); return; }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setError('Veuillez vous connecter.');
+        setLoading(false);
+        return;
+      }
 
       // Generate unique request_id for idempotency
       const requestId = crypto.randomUUID();
@@ -156,7 +178,9 @@ export default function ScanRepas() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000);
 
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
       const response = await fetch(ANALYSE_REPAS_URL, {
         method: 'POST',
@@ -172,7 +196,12 @@ export default function ScanRepas() {
 
       // Read body as text first (n8n may return non-JSON on errors)
       const raw = await response.text();
-      console.log('[ScanRepas] Status:', response.status, '| Content-Type:', response.headers.get('content-type'));
+      console.log(
+        '[ScanRepas] Status:',
+        response.status,
+        '| Content-Type:',
+        response.headers.get('content-type')
+      );
       console.log('[ScanRepas] Body preview:', raw.substring(0, 300));
 
       if (!response.ok) {
@@ -181,9 +210,9 @@ export default function ScanRepas() {
           const errJson = JSON.parse(raw);
           // Handle insufficient credits from server
           if (response.status === 402 || errJson?.error_code === 'INSUFFICIENT_CREDITS') {
-            setCreditsInfo({ 
-              current: errJson?.current_balance ?? 0, 
-              required: errJson?.required ?? SCAN_COST 
+            setCreditsInfo({
+              current: errJson?.current_balance ?? 0,
+              required: errJson?.required ?? SCAN_COST,
             });
             setCreditsModalOpen(true);
             setLoading(false);
@@ -208,7 +237,9 @@ export default function ScanRepas() {
       const data: ScanRepasResponse = Array.isArray(json) ? json[0] : json;
 
       if (data.status !== 'succès' || !data.aliments) {
-        throw new Error("L'analyse a échoué. Vérifiez que l'image montre bien un repas et réessayez.");
+        throw new Error(
+          "L'analyse a échoué. Vérifiez que l'image montre bien un repas et réessayez."
+        );
       }
 
       setResult(data);
@@ -217,7 +248,10 @@ export default function ScanRepas() {
       if (err?.name === 'AbortError') {
         setError('Délai dépassé — réessayez avec une image plus légère.');
       } else {
-        setError(err?.message || "L'analyse a échoué. Vérifiez que l'image montre bien un repas et réessayez.");
+        setError(
+          err?.message ||
+            "L'analyse a échoué. Vérifiez que l'image montre bien un repas et réessayez."
+        );
       }
     } finally {
       setLoading(false);
@@ -248,7 +282,9 @@ export default function ScanRepas() {
           </p>
           <div className="flex items-center justify-center gap-2 mt-4 text-sm text-muted-foreground bg-muted/50 px-4 py-2 rounded-full w-fit mx-auto">
             <Sparkles className="h-4 w-4 text-primary" />
-            <span>Coût : {SCAN_COST} crédit{SCAN_COST > 1 ? 's' : ''} par analyse</span>
+            <span>
+              Coût : {SCAN_COST} crédit{SCAN_COST > 1 ? 's' : ''} par analyse
+            </span>
           </div>
         </div>
 
@@ -277,14 +313,18 @@ export default function ScanRepas() {
               <div className="flex flex-col items-center gap-6 text-center">
                 <AlertCircle className="h-16 w-16 text-destructive" />
                 <div>
-                  <p className="text-xl font-semibold mb-2 text-destructive">Erreur lors de l'analyse</p>
+                  <p className="text-xl font-semibold mb-2 text-destructive">
+                    Erreur lors de l'analyse
+                  </p>
                   <p className="text-muted-foreground mb-4">{error}</p>
                 </div>
                 <div className="flex gap-4">
                   <Button onClick={handleAnalyze} variant="default" className="gap-2">
                     <RefreshCw className="h-4 w-4" /> Réessayer
                   </Button>
-                  <Button onClick={handleReset} variant="outline">Nouvelle photo</Button>
+                  <Button onClick={handleReset} variant="outline">
+                    Nouvelle photo
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -293,16 +333,26 @@ export default function ScanRepas() {
 
         {/* Upload form */}
         {!loading && !error && !result && (
-          <Card className="shadow-lg animate-slide-up border-0 overflow-hidden" style={{ borderRadius: '1.5rem' }}>
+          <Card
+            className="shadow-lg animate-slide-up border-0 overflow-hidden"
+            style={{ borderRadius: '1.5rem' }}
+          >
             <CardContent className="p-8">
               <div className="space-y-6">
                 {previewUrl ? (
                   <div className="relative rounded-[1.5rem] overflow-hidden border-2 border-border shadow-sm">
-                    <img src={previewUrl} alt="Aperçu" className="w-full h-auto max-h-96 object-contain" />
+                    <img
+                      src={previewUrl}
+                      alt="Aperçu"
+                      className="w-full h-auto max-h-96 object-contain"
+                    />
                   </div>
                 ) : (
                   <div
-                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDragging(true);
+                    }}
                     onDragLeave={() => setIsDragging(false)}
                     onDrop={handleDrop}
                     className={`border-2 border-dashed rounded-[1.5rem] p-8 md:p-12 text-center transition-all duration-300 cursor-pointer ${
@@ -317,7 +367,9 @@ export default function ScanRepas() {
                       </div>
                       <div>
                         <p className="text-lg font-medium mb-2">📸 Prenez en photo votre repas</p>
-                        <p className="text-sm text-muted-foreground">Glissez votre image ou utilisez les boutons ci-dessous</p>
+                        <p className="text-sm text-muted-foreground">
+                          Glissez votre image ou utilisez les boutons ci-dessous
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -325,18 +377,37 @@ export default function ScanRepas() {
 
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="flex-1">
-                    <input type="file" accept="image/*" capture="environment" onChange={handleFileSelect} className="hidden" id="camera-input" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      id="camera-input"
+                    />
                     <label htmlFor="camera-input" className="w-full">
                       <Button type="button" variant="outline" className="w-full" asChild>
-                        <span className="cursor-pointer"><Camera className="mr-2 h-4 w-4" />Prendre une photo</span>
+                        <span className="cursor-pointer">
+                          <Camera className="mr-2 h-4 w-4" />
+                          Prendre une photo
+                        </span>
                       </Button>
                     </label>
                   </div>
                   <div className="flex-1">
-                    <input type="file" accept="image/*" onChange={handleFileSelect} className="hidden" id="file-input" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      id="file-input"
+                    />
                     <label htmlFor="file-input" className="w-full">
                       <Button type="button" variant="outline" className="w-full" asChild>
-                        <span className="cursor-pointer"><Upload className="mr-2 h-4 w-4" />Choisir un fichier</span>
+                        <span className="cursor-pointer">
+                          <Upload className="mr-2 h-4 w-4" />
+                          Choisir un fichier
+                        </span>
                       </Button>
                     </label>
                   </div>
@@ -388,18 +459,25 @@ function ResultsView({ data, onReset }: { data: ScanRepasResponse; onReset: () =
   return (
     <div className="space-y-6">
       {/* Dish name & description */}
-      <Card className="shadow-lg border-0 overflow-hidden" style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out both' }}>
+      <Card
+        className="shadow-lg border-0 overflow-hidden"
+        style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out both' }}
+      >
         <CardHeader className="bg-gradient-to-r from-primary to-accent text-primary-foreground pb-4">
           <CardTitle className="text-2xl">{data.nom_du_plat}</CardTitle>
           <p className="text-primary-foreground/80 text-sm mt-1">{data.description}</p>
         </CardHeader>
         <CardContent className="p-6">
           <div className="flex items-center gap-3 flex-wrap">
-            <Badge className={`text-sm px-3 py-1 border ${confidenceColor(data.confiance_estimation)}`}>
+            <Badge
+              className={`text-sm px-3 py-1 border ${confidenceColor(data.confiance_estimation)}`}
+            >
               Confiance : {data.confiance_estimation}%
             </Badge>
             {data.micronutriments_notables?.map((m, i) => (
-              <Badge key={i} variant="secondary" className="text-xs">{m}</Badge>
+              <Badge key={i} variant="secondary" className="text-xs">
+                {m}
+              </Badge>
             ))}
           </div>
         </CardContent>
@@ -409,7 +487,10 @@ function ResultsView({ data, onReset }: { data: ScanRepasResponse; onReset: () =
       <SummaryCard total={data.total} />
 
       {/* Ingredients table */}
-      <Card className="shadow-sm border-0 overflow-hidden" style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out 0.2s both' }}>
+      <Card
+        className="shadow-sm border-0 overflow-hidden"
+        style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out 0.2s both' }}
+      >
         <CardHeader>
           <CardTitle className="text-lg">Détail des aliments</CardTitle>
         </CardHeader>
@@ -428,7 +509,10 @@ function ResultsView({ data, onReset }: { data: ScanRepasResponse; onReset: () =
               </thead>
               <tbody>
                 {data.aliments.map((a, i) => (
-                  <tr key={i} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                  <tr
+                    key={i}
+                    className="border-b last:border-0 hover:bg-muted/30 transition-colors"
+                  >
                     <td className="p-3 font-medium">{a.nom}</td>
                     <td className="p-3 text-muted-foreground">{a.quantité}</td>
                     <td className="p-3 text-right">{macro(a.calories)}</td>
@@ -438,7 +522,9 @@ function ResultsView({ data, onReset }: { data: ScanRepasResponse; onReset: () =
                   </tr>
                 ))}
                 <tr className="bg-muted/50 font-bold">
-                  <td className="p-3" colSpan={2}>Total</td>
+                  <td className="p-3" colSpan={2}>
+                    Total
+                  </td>
                   <td className="p-3 text-right">{macro(data.total.calories)}</td>
                   <td className="p-3 text-right">{macro(data.total.protéines)}</td>
                   <td className="p-3 text-right">{macro(data.total.glucides)}</td>
@@ -452,21 +538,29 @@ function ResultsView({ data, onReset }: { data: ScanRepasResponse; onReset: () =
 
       {/* Nutritional analysis */}
       {data.analyse_nutritionnelle && (
-        <Card className="shadow-sm border-0" style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out 0.3s both' }}>
+        <Card
+          className="shadow-sm border-0"
+          style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out 0.3s both' }}
+        >
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Brain className="h-5 w-5 text-primary" /> Analyse nutritionnelle
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm leading-relaxed text-foreground/90">{data.analyse_nutritionnelle}</p>
+            <p className="text-sm leading-relaxed text-foreground/90">
+              {data.analyse_nutritionnelle}
+            </p>
           </CardContent>
         </Card>
       )}
 
       {/* Recommendations */}
       {data.recommandations?.length > 0 && (
-        <Card className="shadow-sm border-0" style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out 0.4s both' }}>
+        <Card
+          className="shadow-sm border-0"
+          style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out 0.4s both' }}
+        >
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Lightbulb className="h-5 w-5 text-accent" /> Recommandations
@@ -487,7 +581,10 @@ function ResultsView({ data, onReset }: { data: ScanRepasResponse; onReset: () =
 
       {/* Hypotheses */}
       {data.hypotheses?.length > 0 && (
-        <Card className="shadow-sm border-0 bg-muted/30" style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out 0.45s both' }}>
+        <Card
+          className="shadow-sm border-0 bg-muted/30"
+          style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out 0.45s both' }}
+        >
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
               <Info className="h-4 w-4" /> Hypothèses retenues
@@ -496,7 +593,9 @@ function ResultsView({ data, onReset }: { data: ScanRepasResponse; onReset: () =
           <CardContent>
             <ul className="space-y-1">
               {data.hypotheses.map((h, i) => (
-                <li key={i} className="text-xs text-muted-foreground">— {h}</li>
+                <li key={i} className="text-xs text-muted-foreground">
+                  — {h}
+                </li>
               ))}
             </ul>
           </CardContent>
@@ -505,7 +604,10 @@ function ResultsView({ data, onReset }: { data: ScanRepasResponse; onReset: () =
 
       {/* Uncertainties */}
       {data.incertitudes?.length > 0 && (
-        <Card className="shadow-sm border-0 border-l-4 border-l-yellow-400 bg-yellow-50/50 dark:bg-yellow-900/10" style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out 0.5s both' }}>
+        <Card
+          className="shadow-sm border-0 border-l-4 border-l-yellow-400 bg-yellow-50/50 dark:bg-yellow-900/10"
+          style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out 0.5s both' }}
+        >
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2 text-yellow-700 dark:text-yellow-400">
               <AlertTriangle className="h-4 w-4" /> Incertitudes
@@ -548,7 +650,10 @@ function SummaryCard({ total }: { total: ScanRepasResponse['total'] }) {
   const fat = useCountUp(total.lipides ?? 0);
 
   return (
-    <Card className="shadow-sm border-0 overflow-hidden" style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out 0.1s both' }}>
+    <Card
+      className="shadow-sm border-0 overflow-hidden"
+      style={{ borderRadius: '1.5rem', animation: 'fadeIn 0.5s ease-out 0.1s both' }}
+    >
       <CardContent className="p-8">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="text-center space-y-1">

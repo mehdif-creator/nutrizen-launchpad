@@ -1,5 +1,5 @@
-import { useRecipesGallery } from "@/hooks/useRecipesGallery";
-import { Spinner } from "@/components/common/Spinner";
+import { useRecipesGallery } from '@/hooks/useRecipesGallery';
+import { Spinner } from '@/components/common/Spinner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getRecipeImageUrl, handleImageError } from '@/lib/images';
 
@@ -25,7 +25,9 @@ export const RecipeGallery = () => {
       <section className="py-12 md:py-16 bg-gradient-to-b from-background to-[#FFF8F2]">
         <div className="container">
           <div className="text-center">
-            <p className="text-muted-foreground">Impossible de charger les recettes. Réessayez plus tard.</p>
+            <p className="text-muted-foreground">
+              Impossible de charger les recettes. Réessayez plus tard.
+            </p>
           </div>
         </div>
       </section>
@@ -82,7 +84,9 @@ export const RecipeGallery = () => {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 text-white transform translate-y-2 group-hover:translate-y-0 transition-transform">
-                    <h3 className="font-semibold text-xs md:text-sm line-clamp-2">{recipe.title}</h3>
+                    <h3 className="font-semibold text-xs md:text-sm line-clamp-2">
+                      {recipe.title}
+                    </h3>
                   </div>
                 </div>
               ))}
@@ -109,7 +113,9 @@ export const RecipeGallery = () => {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 text-white transform translate-y-2 group-hover:translate-y-0 transition-transform">
-                    <h3 className="font-semibold text-xs md:text-sm line-clamp-2">{recipe.title}</h3>
+                    <h3 className="font-semibold text-xs md:text-sm line-clamp-2">
+                      {recipe.title}
+                    </h3>
                   </div>
                 </div>
               ))}

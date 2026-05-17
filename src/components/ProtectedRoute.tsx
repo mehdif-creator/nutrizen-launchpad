@@ -28,9 +28,7 @@ export const ProtectedRoute = ({
   const shouldCheckOnboarding =
     !requireAdmin && !skipOnboardingCheck && location.pathname !== '/app/onboarding';
 
-  const onboardingStatus = useOnboardingGuard(
-    shouldCheckOnboarding ? user?.id : undefined
-  );
+  const onboardingStatus = useOnboardingGuard(shouldCheckOnboarding ? user?.id : undefined);
 
   // Timeout fallback
   const timeoutMs = requireAdmin ? 40000 : 8000;

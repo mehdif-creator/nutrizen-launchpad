@@ -74,21 +74,29 @@ export function useAffiliateTracking() {
             return;
           }
 
-          const { error: insertError } = await (supabase as any).from('affiliate_referrals').insert({
-            affiliate_code: affCode,
-            referred_user_id: user.id,
-            converted: false,
-          });
+          const { error: insertError } = await (supabase as any)
+            .from('affiliate_referrals')
+            .insert({
+              affiliate_code: affCode,
+              referred_user_id: user.id,
+              converted: false,
+            });
 
           if (insertError) {
-            logger.error('Affiliate referral insert error', insertError instanceof Error ? insertError : new Error(String(insertError)));
+            logger.error(
+              'Affiliate referral insert error',
+              insertError instanceof Error ? insertError : new Error(String(insertError))
+            );
           } else {
             logger.info('Affiliate referral created', { affCode });
           }
 
           localStorage.setItem('nz_aff_processed', 'true');
         } catch (err) {
-          logger.error('Affiliate attribution error', err instanceof Error ? err : new Error(String(err)));
+          logger.error(
+            'Affiliate attribution error',
+            err instanceof Error ? err : new Error(String(err))
+          );
         }
       };
 

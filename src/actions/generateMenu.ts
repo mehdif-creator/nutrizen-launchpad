@@ -21,7 +21,7 @@ export async function generateMenuForUser(): Promise<GenerateMenuResult> {
   try {
     // Get current session
     const { data: session } = await supabase.auth.getSession();
-    
+
     if (!session.session) {
       throw new Error('No active session');
     }
@@ -44,8 +44,8 @@ export async function generateMenuForUser(): Promise<GenerateMenuResult> {
 
     // Invalidate weekly menu query to refetch
     if (session.session.user?.id) {
-      await queryClient.invalidateQueries({ 
-        queryKey: ['weeklyMenu', session.session.user.id] 
+      await queryClient.invalidateQueries({
+        queryKey: ['weeklyMenu', session.session.user.id],
       });
     }
 
@@ -71,15 +71,13 @@ export async function generateMenuForUser(): Promise<GenerateMenuResult> {
  */
 export async function generateMenuWithToast() {
   const result = await generateMenuForUser();
-  
+
   return {
     ...result,
-    toastTitle: result.success 
-      ? 'Menus générés avec succès' 
-      : 'Génération impossible',
+    toastTitle: result.success ? 'Menus générés avec succès' : 'Génération impossible',
     toastDescription: result.success
       ? undefined
-      : (result.message || 'Impossible de générer un menu. Réessaie plus tard.'),
+      : result.message || 'Impossible de générer un menu. Réessaie plus tard.',
     toastVariant: result.success ? 'default' : ('destructive' as const),
   };
 }

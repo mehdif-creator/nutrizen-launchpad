@@ -19,7 +19,7 @@ interface State {
 
 /**
  * Error Boundary - Protection globale contre les crashs React
- * 
+ *
  * Affiche un écran de fallback en français quand une erreur non gérée survient.
  * Particulièrement utile pour les bugs mobiles (dropdowns, hydratation, portals).
  */
@@ -35,10 +35,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     this.setState({ errorInfo });
-    
+
     // Log error for debugging (lightweight client logging)
     logger.error('Caught error', error, { componentStack: errorInfo.componentStack });
-    
+
     // Optional: send to server for mobile error tracking
     this.logErrorToServer(error, errorInfo);
   }
@@ -46,18 +46,18 @@ export class ErrorBoundary extends Component<Props, State> {
   private logErrorToServer(error: Error, errorInfo: ErrorInfo) {
     // Only log in production and with throttling
     if (import.meta.env.DEV) return;
-    
+
     try {
       // Simple throttle: max 1 error per minute per session
       const lastErrorTime = sessionStorage.getItem('lastErrorLogTime');
       const now = Date.now();
-      
+
       if (lastErrorTime && now - parseInt(lastErrorTime) < 60000) {
         return;
       }
-      
+
       sessionStorage.setItem('lastErrorLogTime', String(now));
-      
+
       // Log to console for now (could be extended to Supabase table)
       logger.error('Client error captured', error, {
         componentStack: errorInfo.componentStack?.slice(0, 500),
@@ -102,10 +102,9 @@ export class ErrorBoundary extends Component<Props, State> {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-center text-muted-foreground">
-                Quelque chose ne s'est pas passé comme prévu. 
-                Rechargez la page pour réessayer.
+                Quelque chose ne s'est pas passé comme prévu. Rechargez la page pour réessayer.
               </p>
-              
+
               {import.meta.env.DEV && this.state.error && (
                 <div className="bg-muted/50 rounded-lg p-3 text-xs font-mono overflow-auto max-h-32">
                   <p className="text-destructive font-semibold">{this.state.error.message}</p>
@@ -118,19 +117,11 @@ export class ErrorBoundary extends Component<Props, State> {
               )}
 
               <div className="flex flex-col sm:flex-row gap-3">
-                <Button 
-                  onClick={this.handleReload} 
-                  className="flex-1"
-                  variant="default"
-                >
+                <Button onClick={this.handleReload} className="flex-1" variant="default">
                   <RefreshCw className="mr-2 h-4 w-4" />
                   Recharger la page
                 </Button>
-                <Button 
-                  onClick={this.handleGoHome} 
-                  variant="outline"
-                  className="flex-1"
-                >
+                <Button onClick={this.handleGoHome} variant="outline" className="flex-1">
                   <Home className="mr-2 h-4 w-4" />
                   Tableau de bord
                 </Button>

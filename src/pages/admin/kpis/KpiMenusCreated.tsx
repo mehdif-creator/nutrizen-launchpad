@@ -24,17 +24,29 @@ export default function KpiMenusCreated() {
   const { from, to } = getDateRange(dateRange);
   const filters = { dateFrom: from, dateTo: to, granularity };
 
-  const { data: summary, isLoading: loadingSummary, refetch: refetchSummary } = useQuery({
+  const {
+    data: summary,
+    isLoading: loadingSummary,
+    refetch: refetchSummary,
+  } = useQuery({
     queryKey: ['kpi-menus-summary', from, to],
     queryFn: () => fetchMenusSummary(filters),
   });
 
-  const { data: timeseries, isLoading: loadingTimeseries, refetch: refetchTimeseries } = useQuery({
+  const {
+    data: timeseries,
+    isLoading: loadingTimeseries,
+    refetch: refetchTimeseries,
+  } = useQuery({
     queryKey: ['kpi-menus-timeseries', from, to, granularity],
     queryFn: () => fetchMenusTimeseries(filters),
   });
 
-  const { data: topCreators, isLoading: loadingTopCreators, refetch: refetchTopCreators } = useQuery({
+  const {
+    data: topCreators,
+    isLoading: loadingTopCreators,
+    refetch: refetchTopCreators,
+  } = useQuery({
     queryKey: ['kpi-menus-top-creators', from, to],
     queryFn: () => fetchTopMenuCreators(filters),
   });

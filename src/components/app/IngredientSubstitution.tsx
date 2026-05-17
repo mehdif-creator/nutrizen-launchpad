@@ -10,7 +10,10 @@ interface IngredientSubstitutionProps {
   onSubstitute?: (newIngredient: string) => void;
 }
 
-export const IngredientSubstitution = ({ ingredient, onSubstitute }: IngredientSubstitutionProps) => {
+export const IngredientSubstitution = ({
+  ingredient,
+  onSubstitute,
+}: IngredientSubstitutionProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [substitutions, setSubstitutions] = useState<string[]>([]);
@@ -20,7 +23,7 @@ export const IngredientSubstitution = ({ ingredient, onSubstitute }: IngredientS
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('suggest-substitution', {
-        body: { ingredient }
+        body: { ingredient },
       });
 
       if (error) throw error;

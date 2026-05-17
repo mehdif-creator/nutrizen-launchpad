@@ -25,7 +25,7 @@ export const ValueStack = ({ onCtaClick }: ValueStackProps) => {
     { name: 'Pack M', credits: 120, price: '9,99 €', bonus: '+20 bonus' },
     { name: 'Pack L', credits: 300, price: '19,99 €', bonus: '+50 bonus' },
   ];
-  
+
   return (
     <section id="valeur" className="py-16 bg-muted/30">
       <div className="container max-w-5xl">
@@ -107,21 +107,27 @@ export const ValueStack = ({ onCtaClick }: ValueStackProps) => {
                   <Zap className="w-4 h-4 text-accent flex-shrink-0" />
                   <span className="text-sm">Changer une recette (Swap)</span>
                 </div>
-                <span className="text-xs font-medium bg-accent/10 text-accent px-2 py-1 rounded-full">1 crédit</span>
+                <span className="text-xs font-medium bg-accent/10 text-accent px-2 py-1 rounded-full">
+                  1 crédit
+                </span>
               </div>
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <Zap className="w-4 h-4 text-accent flex-shrink-0" />
                   <span className="text-sm">InspiFrigo / ScanRepas</span>
                 </div>
-                <span className="text-xs font-medium bg-accent/10 text-accent px-2 py-1 rounded-full">2 crédits</span>
+                <span className="text-xs font-medium bg-accent/10 text-accent px-2 py-1 rounded-full">
+                  2 crédits
+                </span>
               </div>
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <Zap className="w-4 h-4 text-accent flex-shrink-0" />
                   <span className="text-sm">Substitutions d'ingrédients</span>
                 </div>
-                <span className="text-xs font-medium bg-accent/10 text-accent px-2 py-1 rounded-full">1 crédit</span>
+                <span className="text-xs font-medium bg-accent/10 text-accent px-2 py-1 rounded-full">
+                  1 crédit
+                </span>
               </div>
             </div>
 
@@ -134,9 +140,7 @@ export const ValueStack = ({ onCtaClick }: ValueStackProps) => {
                     <div className="text-xs font-bold text-accent">{pack.name}</div>
                     <div className="text-sm font-semibold">{pack.credits}</div>
                     <div className="text-xs text-muted-foreground">{pack.price}</div>
-                    {pack.bonus && (
-                      <div className="text-[10px] text-accent">{pack.bonus}</div>
-                    )}
+                    {pack.bonus && <div className="text-[10px] text-accent">{pack.bonus}</div>}
                   </div>
                 ))}
               </div>

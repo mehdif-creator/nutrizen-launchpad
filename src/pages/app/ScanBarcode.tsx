@@ -51,7 +51,7 @@ export default function ScanBarcode() {
       readerRef.current = null;
     }
     if (videoRef.current?.srcObject) {
-      (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
+      (videoRef.current.srcObject as MediaStream).getTracks().forEach((t) => t.stop());
       videoRef.current.srcObject = null;
     }
     setScanning(false);
@@ -126,7 +126,7 @@ export default function ScanBarcode() {
         }
       });
     } catch {
-      setError('Impossible d\'accéder à la caméra. Vérifiez les permissions.');
+      setError("Impossible d'accéder à la caméra. Vérifiez les permissions.");
       setScanning(false);
     }
   };
@@ -157,10 +157,12 @@ export default function ScanBarcode() {
   };
 
   useEffect(() => {
-    return () => { stopScanning(); };
+    return () => {
+      stopScanning();
+    };
   }, [stopScanning]);
 
-  const macro = (v: number | null) => v != null ? Math.round(v * 10) / 10 : '—';
+  const macro = (v: number | null) => (v != null ? Math.round(v * 10) / 10 : '—');
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/30">
@@ -168,7 +170,9 @@ export default function ScanBarcode() {
       <main className="flex-1 container py-8 max-w-2xl">
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold mb-2">Scan Code-Barres 📷</h1>
-          <p className="text-muted-foreground">Scannez un produit pour voir ses informations nutritionnelles</p>
+          <p className="text-muted-foreground">
+            Scannez un produit pour voir ses informations nutritionnelles
+          </p>
           <div className="flex items-center justify-center gap-2 mt-3 text-sm text-muted-foreground bg-muted/50 px-4 py-2 rounded-full w-fit mx-auto">
             <Sparkles className="h-4 w-4 text-primary" />
             <span>Coût : 1 crédit par scan</span>
@@ -185,8 +189,10 @@ export default function ScanBarcode() {
                   {/* Scanning overlay */}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <div className="w-64 h-40 border-2 border-primary rounded-lg relative overflow-hidden">
-                      <div className="absolute left-0 right-0 h-0.5 bg-primary animate-bounce" 
-                        style={{ animation: 'scanLine 2s ease-in-out infinite' }} />
+                      <div
+                        className="absolute left-0 right-0 h-0.5 bg-primary animate-bounce"
+                        style={{ animation: 'scanLine 2s ease-in-out infinite' }}
+                      />
                     </div>
                   </div>
                   <div className="absolute bottom-4 left-0 right-0 text-center">
@@ -222,7 +228,13 @@ export default function ScanBarcode() {
             <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
             <p className="font-semibold mb-2">Erreur</p>
             <p className="text-muted-foreground mb-4">{error}</p>
-            <Button onClick={() => { setError(null); startScanning(); }} className="gap-2">
+            <Button
+              onClick={() => {
+                setError(null);
+                startScanning();
+              }}
+              className="gap-2"
+            >
               <RotateCcw className="h-4 w-4" /> Réessayer
             </Button>
           </Card>
@@ -233,17 +245,25 @@ export default function ScanBarcode() {
           <Card className="overflow-hidden animate-in fade-in slide-in-from-bottom-4">
             {product.imageUrl && (
               <div className="h-48 bg-muted">
-                <img src={product.imageUrl} alt={product.name} className="w-full h-full object-contain" />
+                <img
+                  src={product.imageUrl}
+                  alt={product.name}
+                  className="w-full h-full object-contain"
+                />
               </div>
             )}
             <CardHeader>
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <CardTitle className="text-xl">{product.name}</CardTitle>
-                  {product.brand && <p className="text-sm text-muted-foreground mt-1">{product.brand}</p>}
+                  {product.brand && (
+                    <p className="text-sm text-muted-foreground mt-1">{product.brand}</p>
+                  )}
                 </div>
                 {product.nutriscore && NUTRISCORE_COLORS[product.nutriscore] && (
-                  <Badge className={`text-lg px-3 py-1 font-bold ${NUTRISCORE_COLORS[product.nutriscore]}`}>
+                  <Badge
+                    className={`text-lg px-3 py-1 font-bold ${NUTRISCORE_COLORS[product.nutriscore]}`}
+                  >
                     {product.nutriscore.toUpperCase()}
                   </Badge>
                 )}
@@ -262,7 +282,9 @@ export default function ScanBarcode() {
                 ].map((item) => (
                   <div key={item.label} className="bg-muted/50 rounded-lg p-3 text-center">
                     <p className="text-xs text-muted-foreground">{item.label}</p>
-                    <p className="font-semibold">{item.value} <span className="text-xs font-normal">{item.unit}</span></p>
+                    <p className="font-semibold">
+                      {item.value} <span className="text-xs font-normal">{item.unit}</span>
+                    </p>
                   </div>
                 ))}
               </div>
@@ -272,7 +294,14 @@ export default function ScanBarcode() {
                   <Save className="h-4 w-4" />
                   {saving ? 'Sauvegarde...' : 'Sauvegarder dans mes aliments'}
                 </Button>
-                <Button variant="outline" onClick={() => { setProduct(null); startScanning(); }} className="gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setProduct(null);
+                    startScanning();
+                  }}
+                  className="gap-2"
+                >
                   <RotateCcw className="h-4 w-4" />
                   Nouveau scan
                 </Button>

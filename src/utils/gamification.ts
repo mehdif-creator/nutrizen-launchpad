@@ -4,7 +4,13 @@ import { createLogger } from '@/lib/logger';
 const logger = createLogger('Gamification');
 
 export interface PointsAction {
-  type: 'daily_login' | 'meal_generated' | 'meal_completed' | 'meal_swap' | 'referral' | 'weekly_completion';
+  type:
+    | 'daily_login'
+    | 'meal_generated'
+    | 'meal_completed'
+    | 'meal_swap'
+    | 'referral'
+    | 'weekly_completion';
   userId: string;
 }
 
@@ -104,7 +110,10 @@ export async function checkAndAwardWeeklyBonus(userId: string, weekOf: string): 
 
     return false;
   } catch (error) {
-    logger.error('Error checking weekly bonus', error instanceof Error ? error : new Error(String(error)));
+    logger.error(
+      'Error checking weekly bonus',
+      error instanceof Error ? error : new Error(String(error))
+    );
     return false;
   }
 }

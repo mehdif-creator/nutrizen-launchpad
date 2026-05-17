@@ -152,7 +152,17 @@ export default function Contact() {
             </div>
 
             {/* Honeypot — hidden from humans, bots fill it */}
-            <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', top: '-9999px', opacity: 0, height: 0, overflow: 'hidden' }}>
+            <div
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                left: '-9999px',
+                top: '-9999px',
+                opacity: 0,
+                height: 0,
+                overflow: 'hidden',
+              }}
+            >
               <label htmlFor="website">Website</label>
               <input
                 id="website"
@@ -188,10 +198,16 @@ export default function Contact() {
             <h2 className="font-semibold mb-4">Autres moyens de contact</h2>
             <div className="space-y-2 text-sm">
               <p>
-                📧 Email : <a href="mailto:contact@nutrizen.fr" className="text-primary hover:underline">contact@nutrizen.fr</a>
+                📧 Email :{' '}
+                <a href="mailto:contact@nutrizen.fr" className="text-primary hover:underline">
+                  contact@nutrizen.fr
+                </a>
               </p>
               <p>
-                💬 Support : <a href="mailto:support@nutrizen.fr" className="text-primary hover:underline">support@nutrizen.fr</a>
+                💬 Support :{' '}
+                <a href="mailto:support@nutrizen.fr" className="text-primary hover:underline">
+                  support@nutrizen.fr
+                </a>
               </p>
             </div>
           </div>

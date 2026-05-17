@@ -16,42 +16,50 @@ const defaultTestimonials: Testimonial[] = [
   {
     name: 'Camille, 29 ans, Paris',
     profession: 'Chargée de communication',
-    quote: "Je rentrais du travail sans savoir quoi cuisiner et je finissais par commander à livrer. En 3 semaines, je suis passée à 0 commande par mois — sans effort particulier.",
+    quote:
+      'Je rentrais du travail sans savoir quoi cuisiner et je finissais par commander à livrer. En 3 semaines, je suis passée à 0 commande par mois — sans effort particulier.',
     rating: 5,
   },
   {
     name: 'Julien, 41 ans, Strasbourg',
     profession: 'Comptable',
-    quote: "On jetait environ 30€ de nourriture par semaine sans s'en rendre compte. Depuis qu'on planifie avec NutriZen, notre budget courses a baissé de 180€ par mois.",
+    quote:
+      "On jetait environ 30€ de nourriture par semaine sans s'en rendre compte. Depuis qu'on planifie avec NutriZen, notre budget courses a baissé de 180€ par mois.",
     rating: 5,
   },
   {
     name: 'Amandine, 35 ans, Toulouse',
     profession: 'Enseignante',
-    quote: "J'avais 6 recettes en rotation depuis 3 ans. En 2 mois, j'en ai découvert plus de 40 nouvelles que toute ma famille apprécie. La variété a complètement changé notre rapport au repas.",
+    quote:
+      "J'avais 6 recettes en rotation depuis 3 ans. En 2 mois, j'en ai découvert plus de 40 nouvelles que toute ma famille apprécie. La variété a complètement changé notre rapport au repas.",
     rating: 5,
   },
   {
     name: 'Romain, 38 ans, Lyon',
     profession: 'Ingénieur',
-    quote: "Je passais 45 minutes chaque dimanche à planifier la semaine sur un carnet. NutriZen fait ça en 3 minutes. J'ai récupéré du temps que je n'avais pas.",
+    quote:
+      "Je passais 45 minutes chaque dimanche à planifier la semaine sur un carnet. NutriZen fait ça en 3 minutes. J'ai récupéré du temps que je n'avais pas.",
     rating: 5,
   },
   {
     name: 'Nathalie, 44 ans, Bordeaux',
     profession: 'Pharmacienne',
-    quote: "En 6 semaines de planification, j'ai perdu 4kg sans régime et sans me priver. Juste en mangeant des choses choisies plutôt que subies.",
+    quote:
+      "En 6 semaines de planification, j'ai perdu 4kg sans régime et sans me priver. Juste en mangeant des choses choisies plutôt que subies.",
     rating: 5,
   },
   {
     name: 'Éric, 33 ans, Nantes',
     profession: 'Graphiste indépendant',
-    quote: "Mon plus grand problème c'était le gaspillage. On cuisinait sans plan et on jetait. En 1 mois de NutriZen : zéro aliment jeté, liste de courses au centime.",
+    quote:
+      "Mon plus grand problème c'était le gaspillage. On cuisinait sans plan et on jetait. En 1 mois de NutriZen : zéro aliment jeté, liste de courses au centime.",
     rating: 5,
   },
 ];
 
-export const CommunityTestimonials = ({ testimonials = defaultTestimonials }: CommunityTestimonialsProps) => {
+export const CommunityTestimonials = ({
+  testimonials = defaultTestimonials,
+}: CommunityTestimonialsProps) => {
   return (
     <section className="py-16 bg-secondary/30">
       <div className="container">
@@ -81,9 +89,7 @@ export const CommunityTestimonials = ({ testimonials = defaultTestimonials }: Co
               </div>
 
               {/* Quote */}
-              <p className="text-sm text-foreground mb-5 leading-[1.7]">
-                "{t.quote}"
-              </p>
+              <p className="text-sm text-foreground mb-5 leading-[1.7]">"{t.quote}"</p>
 
               {/* Author with orange left border */}
               <div className="border-l-2 border-accent pl-3">
@@ -104,7 +110,9 @@ export const CommunityTestimonials = ({ testimonials = defaultTestimonials }: Co
                   <Star key={i} className="w-4 h-4 fill-accent text-accent" />
                 ))}
               </div>
-              <span className="text-xs text-muted-foreground">Basé sur +1 200 avis vérifiés — mis à jour chaque semaine</span>
+              <span className="text-xs text-muted-foreground">
+                Basé sur +1 200 avis vérifiés — mis à jour chaque semaine
+              </span>
             </div>
           </div>
           <p className="text-xs text-muted-foreground italic mt-2">

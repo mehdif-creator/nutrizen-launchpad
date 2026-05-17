@@ -44,26 +44,26 @@ export function MealCard({
   carbs,
   fats,
   servings = 1,
-  'data-onboarding-target': dataOnboardingTarget
+  'data-onboarding-target': dataOnboardingTarget,
 }: MealCardProps) {
   const [imageFailed, setImageFailed] = useState(false);
   const effectiveSize = effectivePortions != null ? effectivePortions.toFixed(1) : null;
-  
+
   const displayImageUrl = getRecipeImageUrl({ image_url: imageUrl, image_path: imagePath });
-  
+
   const onImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     handleImageError(e);
     setImageFailed(true);
   };
-  
+
   return (
-    <div 
+    <div
       className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden group hover:shadow-lg transition-all"
       data-onboarding-target={dataOnboardingTarget}
     >
       <div className="h-32 bg-muted relative overflow-hidden">
-        <img 
-          src={displayImageUrl} 
+        <img
+          src={displayImageUrl}
           alt={title}
           className={`w-full h-full object-cover ${imageFailed ? 'opacity-60' : ''}`}
           onError={onImgError}
@@ -80,18 +80,19 @@ export function MealCard({
       <div className="p-4 space-y-2">
         <div className="text-xs text-muted-foreground font-medium">{day}</div>
         <div className="font-semibold leading-tight line-clamp-2">{title}</div>
-        
+
         {/* Household portions badge */}
         {effectiveSize != null && (householdAdults > 1 || householdChildren > 0) && (
           <Badge variant="secondary" className="text-xs">
             <Users className="h-3 w-3 mr-1" />
             {householdAdults > 0 && `${householdAdults} adulte${householdAdults > 1 ? 's' : ''}`}
             {householdAdults > 0 && householdChildren > 0 && ' + '}
-            {householdChildren > 0 && `${householdChildren} enfant${householdChildren > 1 ? 's' : ''}`}
+            {householdChildren > 0 &&
+              `${householdChildren} enfant${householdChildren > 1 ? 's' : ''}`}
             <span className="ml-1 opacity-70">(≈ {effectiveSize})</span>
           </Badge>
         )}
-        
+
         <div className="text-xs text-muted-foreground flex items-center gap-3">
           <span className="inline-flex items-center gap-1">
             <Clock className="h-3.5 w-3.5" />
@@ -103,9 +104,9 @@ export function MealCard({
             {kcal} kcal
           </span>
         </div>
-        
+
         {/* Macros badge */}
-        <RecipeMacrosBadge 
+        <RecipeMacrosBadge
           calories={kcal * servings}
           proteins={proteins}
           carbs={carbs}
@@ -113,27 +114,23 @@ export function MealCard({
           servings={servings}
         />
         <div className="flex items-center gap-2 pt-2">
-          <Button 
-            onClick={onValidate}
-            size="sm" 
-            className="flex-1 min-h-[44px]"
-          >
+          <Button onClick={onValidate} size="sm" className="flex-1 min-h-[44px]">
             Valider
           </Button>
-          <Button 
+          <Button
             onClick={onSwap}
-            size="sm" 
+            size="sm"
             variant="outline"
             disabled={swapsRemaining <= 0}
             className="min-h-[44px]"
           >
-            Swap {swapsRemaining > 0 ? `(${swapsRemaining})` : "(0)"}
+            Swap {swapsRemaining > 0 ? `(${swapsRemaining})` : '(0)'}
           </Button>
         </div>
-        <Button 
+        <Button
           onClick={onViewRecipe}
-          size="sm" 
-          variant="ghost" 
+          size="sm"
+          variant="ghost"
           className="w-full text-xs min-h-[44px]"
         >
           Voir la recette →

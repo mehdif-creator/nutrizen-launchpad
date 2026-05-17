@@ -24,17 +24,29 @@ export default function KpiArpu() {
   const { from, to } = getDateRange(dateRange);
   const filters = { dateFrom: from, dateTo: to, granularity };
 
-  const { data: summary, isLoading: loadingSummary, refetch: refetchSummary } = useQuery({
+  const {
+    data: summary,
+    isLoading: loadingSummary,
+    refetch: refetchSummary,
+  } = useQuery({
     queryKey: ['kpi-arpu-summary', from, to],
     queryFn: () => fetchArpuSummary(filters),
   });
 
-  const { data: timeseries, isLoading: loadingTimeseries, refetch: refetchTimeseries } = useQuery({
+  const {
+    data: timeseries,
+    isLoading: loadingTimeseries,
+    refetch: refetchTimeseries,
+  } = useQuery({
     queryKey: ['kpi-arpu-timeseries', from, to, granularity],
     queryFn: () => fetchArpuTimeseries(filters),
   });
 
-  const { data: byPlan, isLoading: loadingByPlan, refetch: refetchByPlan } = useQuery({
+  const {
+    data: byPlan,
+    isLoading: loadingByPlan,
+    refetch: refetchByPlan,
+  } = useQuery({
     queryKey: ['kpi-arpu-by-plan', from, to],
     queryFn: () => fetchMrrByPlan(filters),
   });
@@ -55,7 +67,9 @@ export default function KpiArpu() {
     }
   };
 
-  const change = summary ? ((summary.arpu_current - summary.arpu_previous) / (summary.arpu_previous || 1)) * 100 : 0;
+  const change = summary
+    ? ((summary.arpu_current - summary.arpu_previous) / (summary.arpu_previous || 1)) * 100
+    : 0;
 
   return (
     <KpiDetailLayout

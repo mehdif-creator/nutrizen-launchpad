@@ -22,7 +22,7 @@ export const LeadMagnet = ({ copy }: LeadMagnetProps) => {
   const { toast } = useToast();
 
   const title = copy?.title || 'Batch-cooking 90 minutes';
-  const text = copy?.text || 'Prépare ta semaine en une session, gagne du temps et de l\'énergie.';
+  const text = copy?.text || "Prépare ta semaine en une session, gagne du temps et de l'énergie.";
   const cta = copy?.cta || 'Recevoir le guide gratuit';
   const source = copy?.source || 'landing_lead_magnet';
 
@@ -32,17 +32,25 @@ export const LeadMagnet = ({ copy }: LeadMagnetProps) => {
     try {
       leadSchema.parse({ email });
     } catch (error) {
-      toast({ title: "Erreur", description: "Veuillez entrer un email valide", variant: "destructive" });
+      toast({
+        title: 'Erreur',
+        description: 'Veuillez entrer un email valide',
+        variant: 'destructive',
+      });
       return;
     }
 
     const lastSubmissions = localStorage.getItem('lead_submissions');
     const now = Date.now();
     let submissions: number[] = lastSubmissions ? JSON.parse(lastSubmissions) : [];
-    submissions = submissions.filter(time => now - time < 3600000);
+    submissions = submissions.filter((time) => now - time < 3600000);
 
     if (submissions.length >= 3) {
-      toast({ title: "Trop de tentatives", description: "Veuillez réessayer dans une heure", variant: "destructive" });
+      toast({
+        title: 'Trop de tentatives',
+        description: 'Veuillez réessayer dans une heure',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -58,11 +66,18 @@ export const LeadMagnet = ({ copy }: LeadMagnetProps) => {
       submissions.push(now);
       localStorage.setItem('lead_submissions', JSON.stringify(submissions));
 
-      toast({ title: '✅ Guide envoyé !', description: 'Vérifie ta boîte mail, ton guide arrive dans quelques instants.' });
+      toast({
+        title: '✅ Guide envoyé !',
+        description: 'Vérifie ta boîte mail, ton guide arrive dans quelques instants.',
+      });
       setEmail('');
     } catch (error: any) {
       console.error('Error submitting lead:', error);
-      toast({ title: "Erreur", description: error.message || "Une erreur est survenue. Veuillez réessayer.", variant: "destructive" });
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Une erreur est survenue. Veuillez réessayer.',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -76,12 +91,8 @@ export const LeadMagnet = ({ copy }: LeadMagnetProps) => {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-primary to-accent rounded-full mb-4">
               <Download className="w-8 h-8 text-white" />
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              📘 {title}
-            </h2>
-            <p className="text-lg text-muted-foreground">
-              {text}
-            </p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">📘 {title}</h2>
+            <p className="text-lg text-muted-foreground">{text}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">

@@ -24,17 +24,29 @@ export default function KpiMenusPerUser() {
   const { from, to } = getDateRange(dateRange);
   const filters = { dateFrom: from, dateTo: to, granularity };
 
-  const { data: summary, isLoading: loadingSummary, refetch: refetchSummary } = useQuery({
+  const {
+    data: summary,
+    isLoading: loadingSummary,
+    refetch: refetchSummary,
+  } = useQuery({
     queryKey: ['kpi-menus-per-user-summary', from, to],
     queryFn: () => fetchMenusPerUserSummary(filters),
   });
 
-  const { data: distribution, isLoading: loadingDistribution, refetch: refetchDistribution } = useQuery({
+  const {
+    data: distribution,
+    isLoading: loadingDistribution,
+    refetch: refetchDistribution,
+  } = useQuery({
     queryKey: ['kpi-menus-per-user-distribution', from, to],
     queryFn: () => fetchMenusPerUserDistribution(filters),
   });
 
-  const { data: timeseries, isLoading: loadingTimeseries, refetch: refetchTimeseries } = useQuery({
+  const {
+    data: timeseries,
+    isLoading: loadingTimeseries,
+    refetch: refetchTimeseries,
+  } = useQuery({
     queryKey: ['kpi-menus-per-user-timeseries', from, to, granularity],
     queryFn: () => fetchMenusTimeseries(filters),
   });

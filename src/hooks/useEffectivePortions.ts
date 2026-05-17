@@ -43,11 +43,15 @@ export function useEffectivePortions(userId: string | undefined) {
 
       // Cast the JSONB response to our interface
       const result = data as unknown as EffectivePortions;
-      
+
       return {
         effective_servings_per_meal: result.effective_servings_per_meal || 2,
         rounded_servings: result.rounded_servings || 2,
-        servings_breakdown: result.servings_breakdown || { adults: 1, children: 0, kid_portion_ratio: 0.6 },
+        servings_breakdown: result.servings_breakdown || {
+          adults: 1,
+          children: 0,
+          kid_portion_ratio: 0.6,
+        },
         portion_strategy: result.portion_strategy || 'household',
         profile_complete: result.profile_complete || false,
       };

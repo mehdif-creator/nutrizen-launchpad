@@ -28,11 +28,8 @@ export function GamificationHeader() {
           <span className="text-sm font-bold text-orange-500">{state.streak_days}</span>
         </div>
       )}
-      
-      <Badge 
-        variant="outline" 
-        className={`flex items-center gap-1.5 px-3 py-1 ${colorClass}`}
-      >
+
+      <Badge variant="outline" className={`flex items-center gap-1.5 px-3 py-1 ${colorClass}`}>
         <Trophy className="h-3.5 w-3.5" />
         <span className="font-semibold">{levelName}</span>
         <span className="text-xs opacity-70">• {state.total_points} pts</span>

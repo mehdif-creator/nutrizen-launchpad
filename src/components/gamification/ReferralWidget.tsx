@@ -15,7 +15,7 @@ interface ReferralWidgetProps {
 
 export function ReferralWidget({ referralCode, activeReferrals }: ReferralWidgetProps) {
   const [copied, setCopied] = useState(false);
-  
+
   const referralUrl = `${window.location.origin}?ref=${referralCode}`;
 
   const handleCopy = async () => {
@@ -48,22 +48,9 @@ export function ReferralWidget({ referralCode, activeReferrals }: ReferralWidget
         <div className="space-y-2">
           <label className="text-sm text-muted-foreground">Votre lien de recommandation</label>
           <div className="flex gap-2">
-            <Input
-              value={referralUrl}
-              readOnly
-              className="font-mono text-xs"
-            />
-            <Button
-              onClick={handleCopy}
-              size="icon"
-              variant="outline"
-              className="flex-shrink-0"
-            >
-              {copied ? (
-                <Check className="h-4 w-4 text-green-500" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
+            <Input value={referralUrl} readOnly className="font-mono text-xs" />
+            <Button onClick={handleCopy} size="icon" variant="outline" className="flex-shrink-0">
+              {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
             </Button>
           </div>
         </div>
@@ -72,7 +59,9 @@ export function ReferralWidget({ referralCode, activeReferrals }: ReferralWidget
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm"><strong>{activeReferrals}</strong> filleul{activeReferrals > 1 ? 's' : ''}</span>
+            <span className="text-sm">
+              <strong>{activeReferrals}</strong> filleul{activeReferrals > 1 ? 's' : ''}
+            </span>
           </div>
         </div>
 
@@ -83,8 +72,14 @@ export function ReferralWidget({ referralCode, activeReferrals }: ReferralWidget
             <p className="font-semibold">Commission de 20 %</p>
           </div>
           <ul className="text-xs text-muted-foreground space-y-0.5">
-            <li>• Chaque abonnement payé via votre lien = <span className="text-primary font-medium">20 % pour vous</span></li>
-            <li>• Commission <span className="text-primary font-medium">récurrente</span> tant que l'abonné reste actif</li>
+            <li>
+              • Chaque abonnement payé via votre lien ={' '}
+              <span className="text-primary font-medium">20 % pour vous</span>
+            </li>
+            <li>
+              • Commission <span className="text-primary font-medium">récurrente</span> tant que
+              l'abonné reste actif
+            </li>
             <li>• Paiement par virement dès 50 €</li>
           </ul>
         </div>

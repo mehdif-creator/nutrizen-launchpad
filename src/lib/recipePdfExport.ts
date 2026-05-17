@@ -59,9 +59,13 @@ export function exportRecipePdf(recipe: RecipePdfData): void {
 
   // ── Tags ──
   const tags = [
-    recipe.difficulty_level === 'beginner' ? 'Débutant' :
-      recipe.difficulty_level === 'intermediate' ? 'Intermédiaire' :
-        recipe.difficulty_level === 'expert' ? 'Expert' : null,
+    recipe.difficulty_level === 'beginner'
+      ? 'Débutant'
+      : recipe.difficulty_level === 'intermediate'
+        ? 'Intermédiaire'
+        : recipe.difficulty_level === 'expert'
+          ? 'Expert'
+          : null,
     recipe.cuisine_type,
     recipe.meal_type,
     recipe.diet_type,
@@ -123,7 +127,10 @@ export function exportRecipePdf(recipe: RecipePdfData): void {
   // ── Ingrédients ──
   const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
   if (ingredients.length > 0) {
-    if (y > 240) { doc.addPage(); y = MARGIN; }
+    if (y > 240) {
+      doc.addPage();
+      y = MARGIN;
+    }
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(TEAL.r, TEAL.g, TEAL.b);
@@ -134,9 +141,14 @@ export function exportRecipePdf(recipe: RecipePdfData): void {
     doc.setFontSize(9);
     doc.setTextColor(DARK.r, DARK.g, DARK.b);
     for (const ing of ingredients) {
-      if (y > 275) { doc.addPage(); y = MARGIN; }
-      const text = typeof ing === 'string' ? ing :
-        `${ing.quantity ?? ''}${ing.unit ? ' ' + ing.unit : ''} ${ing.name || ing.ingredient || ''}`.trim();
+      if (y > 275) {
+        doc.addPage();
+        y = MARGIN;
+      }
+      const text =
+        typeof ing === 'string'
+          ? ing
+          : `${ing.quantity ?? ''}${ing.unit ? ' ' + ing.unit : ''} ${ing.name || ing.ingredient || ''}`.trim();
       doc.text(`•  ${text}`, MARGIN + 2, y);
       y += 5;
     }
@@ -146,7 +158,10 @@ export function exportRecipePdf(recipe: RecipePdfData): void {
   // ── Instructions ──
   const instructions = Array.isArray(recipe.instructions) ? recipe.instructions : [];
   if (instructions.length > 0) {
-    if (y > 230) { doc.addPage(); y = MARGIN; }
+    if (y > 230) {
+      doc.addPage();
+      y = MARGIN;
+    }
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(TEAL.r, TEAL.g, TEAL.b);
@@ -157,7 +172,10 @@ export function exportRecipePdf(recipe: RecipePdfData): void {
     doc.setFontSize(9);
     doc.setTextColor(DARK.r, DARK.g, DARK.b);
     instructions.forEach((inst: any, i: number) => {
-      if (y > 270) { doc.addPage(); y = MARGIN; }
+      if (y > 270) {
+        doc.addPage();
+        y = MARGIN;
+      }
       const text = typeof inst === 'string' ? inst : inst.step || inst.instruction || '';
       const lines = doc.splitTextToSize(`${i + 1}. ${text}`, CONTENT_W - 4);
       doc.text(lines, MARGIN + 2, y);

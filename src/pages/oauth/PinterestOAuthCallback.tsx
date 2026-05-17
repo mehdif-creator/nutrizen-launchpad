@@ -15,14 +15,16 @@ const PinterestOAuthCallback: React.FC = () => {
     const state = searchParams.get('state');
 
     if (!code || !state) {
-      setErrorMessage("Missing code or state parameters in callback URL.");
+      setErrorMessage('Missing code or state parameters in callback URL.');
       setStatus('error');
       return;
     }
 
     const exchangeCode = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         const headers: Record<string, string> = {};
         if (session?.access_token) {
           headers['Authorization'] = `Bearer ${session.access_token}`;
@@ -36,11 +38,11 @@ const PinterestOAuthCallback: React.FC = () => {
           setStatus('success');
           setTimeout(() => navigate('/admin/automation/settings'), 2000);
         } else {
-          setErrorMessage(data.message ?? "Unknown error during Pinterest connection.");
+          setErrorMessage(data.message ?? 'Unknown error during Pinterest connection.');
           setStatus('error');
         }
       } catch {
-        setErrorMessage("Unable to reach the server. Please try again.");
+        setErrorMessage('Unable to reach the server. Please try again.');
         setStatus('error');
       }
     };
@@ -61,7 +63,9 @@ const PinterestOAuthCallback: React.FC = () => {
         {status === 'success' && (
           <>
             <CheckCircle className="w-12 h-12 text-green-500" />
-            <p className="text-foreground text-xl font-semibold">Pinterest connected successfully!</p>
+            <p className="text-foreground text-xl font-semibold">
+              Pinterest connected successfully!
+            </p>
             <p className="text-muted-foreground">Redirecting to settings...</p>
           </>
         )}

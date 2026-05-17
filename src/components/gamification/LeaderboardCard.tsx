@@ -80,14 +80,10 @@ export function LeaderboardCard() {
             <div
               key={entry.user_id}
               className={`flex items-center gap-3 py-2 px-3 rounded-lg ${
-                isCurrentUser
-                  ? 'bg-primary/10 border border-primary/20'
-                  : 'bg-muted/50'
+                isCurrentUser ? 'bg-primary/10 border border-primary/20' : 'bg-muted/50'
               }`}
             >
-              <span className="text-lg font-bold w-10 text-center">
-                {rankIcon(entry.rank)}
-              </span>
+              <span className="text-lg font-bold w-10 text-center">{rankIcon(entry.rank)}</span>
               <Avatar className="h-8 w-8">
                 <AvatarImage src={entry.avatar_url || undefined} />
                 <AvatarFallback className="text-xs">
@@ -95,7 +91,9 @@ export function LeaderboardCard() {
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <span className={`text-sm font-medium truncate block ${isCurrentUser ? 'text-primary' : ''}`}>
+                <span
+                  className={`text-sm font-medium truncate block ${isCurrentUser ? 'text-primary' : ''}`}
+                >
                   {entry.display_name || 'Anonyme'}
                   {isCurrentUser && ' (vous)'}
                 </span>

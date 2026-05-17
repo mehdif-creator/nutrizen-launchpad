@@ -20,7 +20,7 @@ export async function createUser(
 ): Promise<AdminActionResult> {
   try {
     const { data: session } = await supabase.auth.getSession();
-    
+
     if (!session.session) {
       throw new Error('No active session');
     }
@@ -28,11 +28,11 @@ export async function createUser(
     logger.info('Creating user', { email });
 
     const { data, error } = await supabase.functions.invoke('admin-create-user', {
-      body: { 
+      body: {
         email,
         password,
         full_name: fullName,
-        initial_credits: initialCredits
+        initial_credits: initialCredits,
       },
       headers: {
         Authorization: `Bearer ${session.session.access_token}`,
@@ -68,7 +68,7 @@ export async function manageUserCredits(
 ): Promise<AdminActionResult> {
   try {
     const { data: session } = await supabase.auth.getSession();
-    
+
     if (!session.session) {
       throw new Error('No active session');
     }
@@ -76,10 +76,10 @@ export async function manageUserCredits(
     logger.info('Managing credits for user', { userId });
 
     const { data, error } = await supabase.functions.invoke('admin-manage-credits', {
-      body: { 
+      body: {
         user_id: userId,
         credits,
-        operation
+        operation,
       },
       headers: {
         Authorization: `Bearer ${session.session.access_token}`,
@@ -111,7 +111,7 @@ export async function manageUserCredits(
 export async function deleteUser(userId: string): Promise<AdminActionResult> {
   try {
     const { data: session } = await supabase.auth.getSession();
-    
+
     if (!session.session) {
       throw new Error('No active session');
     }
@@ -119,8 +119,8 @@ export async function deleteUser(userId: string): Promise<AdminActionResult> {
     logger.info('Deleting user', { userId });
 
     const { data, error } = await supabase.functions.invoke('admin-delete-user', {
-      body: { 
-        user_id: userId
+      body: {
+        user_id: userId,
       },
       headers: {
         Authorization: `Bearer ${session.session.access_token}`,
@@ -155,7 +155,7 @@ export async function resetUserAccount(
 ): Promise<AdminActionResult> {
   try {
     const { data: session } = await supabase.auth.getSession();
-    
+
     if (!session.session) {
       throw new Error('No active session');
     }
@@ -163,9 +163,9 @@ export async function resetUserAccount(
     logger.info('Resetting user', { email });
 
     const { data, error } = await supabase.functions.invoke('admin-reset-user', {
-      body: { 
+      body: {
         email,
-        extendTrialDays 
+        extendTrialDays,
       },
       headers: {
         Authorization: `Bearer ${session.session.access_token}`,

@@ -29,12 +29,14 @@ export function useReferralTracking() {
         logger.info('Referral code captured', { refCode });
 
         // Track click (anonymous, non-blocking)
-        supabase.functions.invoke('referral-intake', {
-          body: { 
-            referralCode: refCode, 
-            action: 'track_click',
-          },
-        }).catch(err => logger.debug('Click tracking error', { error: String(err) }));
+        supabase.functions
+          .invoke('referral-intake', {
+            body: {
+              referralCode: refCode,
+              action: 'track_click',
+            },
+          })
+          .catch((err) => logger.debug('Click tracking error', { error: String(err) }));
       }
       // Affiliate codes are handled by useAffiliateTracking
     }
@@ -49,7 +51,7 @@ export function useReferralTracking() {
 
     if (storedRefCode && !processedFlag) {
       logger.info('Processing referral code for user', { refCode: storedRefCode });
-      
+
       // Apply attribution via edge function
       const applyAttribution = async () => {
         try {
@@ -60,8 +62,8 @@ export function useReferralTracking() {
             headers: {
               Authorization: `Bearer ${session.session.access_token}`,
             },
-            body: { 
-              referralCode: storedRefCode, 
+            body: {
+              referralCode: storedRefCode,
               action: 'apply_attribution',
             },
           });

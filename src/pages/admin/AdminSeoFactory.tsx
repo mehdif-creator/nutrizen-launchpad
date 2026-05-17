@@ -3,7 +3,16 @@ import { AppFooter } from '@/components/app/AppFooter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { ArrowLeft, RefreshCw, FileText, Search, ImageIcon, Wrench, Square, CirclePlay } from 'lucide-react';
+import {
+  ArrowLeft,
+  RefreshCw,
+  FileText,
+  Search,
+  ImageIcon,
+  Wrench,
+  Square,
+  CirclePlay,
+} from 'lucide-react';
 import { callEdgeFunction } from '@/lib/edgeFn';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
@@ -43,7 +52,8 @@ function getArticleSortDate(article: SeoArticle): number {
 export default function AdminSeoFactory() {
   const { articles, loading, refetch, deleteArticle } = useSeoArticles();
   const { stats, fetchItems: fetchQueueItems } = useArticleQueue();
-  const { autoMode, toggleAutoMode, isRunning, stopProcessing } = useQueueProcessor(fetchQueueItems);
+  const { autoMode, toggleAutoMode, isRunning, stopProcessing } =
+    useQueueProcessor(fetchQueueItems);
   const [detailArticle, setDetailArticle] = useState<SeoArticle | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
@@ -67,17 +77,26 @@ export default function AdminSeoFactory() {
       const count = data?.refreshed_count ?? 0;
       const total = data?.total_processed ?? 0;
       toast({
-        title: count > 0
-          ? `✅ ${count} article(s) mis à jour sur ${total} traités`
-          : `ℹ️ ${total} articles traités — aucune image expirée trouvée`,
+        title:
+          count > 0
+            ? `✅ ${count} article(s) mis à jour sur ${total} traités`
+            : `ℹ️ ${total} articles traités — aucune image expirée trouvée`,
       });
 
       if (data?.errors?.length) {
-        toast({ title: `⚠️ ${data.errors.length} erreur(s)`, description: data.errors[0], variant: 'destructive' });
+        toast({
+          title: `⚠️ ${data.errors.length} erreur(s)`,
+          description: data.errors[0],
+          variant: 'destructive',
+        });
       }
       await refetch();
     } catch (err: any) {
-      toast({ title: 'Erreur de régénération', description: err?.message || 'Erreur inconnue', variant: 'destructive' });
+      toast({
+        title: 'Erreur de régénération',
+        description: err?.message || 'Erreur inconnue',
+        variant: 'destructive',
+      });
     } finally {
       setIsRefreshing(false);
     }
@@ -101,7 +120,7 @@ export default function AdminSeoFactory() {
     }
 
     if (statusFilter.length > 0) {
-      list = list.filter(a => statusFilter.includes(a.status));
+      list = list.filter((a) => statusFilter.includes(a.status));
     }
 
     list = [...list].sort((a, b) => {
@@ -119,10 +138,10 @@ export default function AdminSeoFactory() {
   }, [articles, search, statusFilter, sortBy]);
 
   const allStatuses = Object.keys(STATUS_LABELS);
-  const completedCount = articles.filter(a => COMPLETED_STATUSES.has(a.status)).length;
+  const completedCount = articles.filter((a) => COMPLETED_STATUSES.has(a.status)).length;
 
   const toggleStatus = (s: string) => {
-    setStatusFilter(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+    setStatusFilter((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
   };
 
   return (
@@ -131,37 +150,68 @@ export default function AdminSeoFactory() {
         {/* Header */}
         <div className="mb-6 flex items-center gap-4">
           <Link to="/admin">
-            <Button variant="ghost" size="icon"><ArrowLeft className="h-5 w-5" /></Button>
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
           </Link>
           <h1 className="text-3xl font-bold flex-1">SEO Factory</h1>
-          <Button variant="outline" size="sm" onClick={async () => {
-            setIsCleaning(true);
-            try {
-              const data = await callEdgeFunction<{ total: number; fixed: number }>('seo-cleanup-articles', {});
-              toast({ title: `🧹 ${data?.fixed || 0} article(s) nettoyé(s) sur ${data?.total || 0}` });
-              await refetch();
-            } catch (err: any) {
-              toast({ title: 'Erreur nettoyage', description: err?.message, variant: 'destructive' });
-            } finally { setIsCleaning(false); }
-          }} disabled={isCleaning}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              setIsCleaning(true);
+              try {
+                const data = await callEdgeFunction<{ total: number; fixed: number }>(
+                  'seo-cleanup-articles',
+                  {}
+                );
+                toast({
+                  title: `🧹 ${data?.fixed || 0} article(s) nettoyé(s) sur ${data?.total || 0}`,
+                });
+                await refetch();
+              } catch (err: any) {
+                toast({
+                  title: 'Erreur nettoyage',
+                  description: err?.message,
+                  variant: 'destructive',
+                });
+              } finally {
+                setIsCleaning(false);
+              }
+            }}
+            disabled={isCleaning}
+          >
             <Wrench className="mr-2 h-4 w-4" />
             {isCleaning ? 'Nettoyage…' : '🧹 Nettoyer'}
           </Button>
-          <Button variant="outline" size="sm" onClick={handleRefreshAllImages} disabled={isRefreshing}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefreshAllImages}
+            disabled={isRefreshing}
+          >
             <ImageIcon className="mr-2 h-4 w-4" />
             {isRefreshing ? 'Régénération…' : '🖼️ Images'}
           </Button>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
-            <RefreshCw className="mr-2 h-4 w-4" />Actualiser
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Actualiser
           </Button>
           {/* Queue stop/resume - accessible from any tab */}
           {autoMode || isRunning ? (
             <Button variant="destructive" size="sm" onClick={stopProcessing} className="gap-1.5">
-              <Square className="h-3.5 w-3.5" />Stopper
+              <Square className="h-3.5 w-3.5" />
+              Stopper
             </Button>
           ) : stats.pending > 0 ? (
-            <Button variant="default" size="sm" onClick={() => toggleAutoMode(true)} className="gap-1.5 bg-green-600 hover:bg-green-700">
-              <CirclePlay className="h-3.5 w-3.5" />Reprendre ({stats.pending})
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => toggleAutoMode(true)}
+              className="gap-1.5 bg-green-600 hover:bg-green-700"
+            >
+              <CirclePlay className="h-3.5 w-3.5" />
+              Reprendre ({stats.pending})
             </Button>
           ) : null}
         </div>
@@ -186,12 +236,12 @@ export default function AdminSeoFactory() {
                 <Input
                   placeholder="Rechercher un mot-clé…"
                   value={search}
-                  onChange={e => setSearch(e.target.value)}
+                  onChange={(e) => setSearch(e.target.value)}
                   className="pl-9"
                 />
               </div>
               <div className="flex gap-1.5 flex-wrap items-center">
-                {allStatuses.map(s => (
+                {allStatuses.map((s) => (
                   <Button
                     key={s}
                     variant={statusFilter.includes(s) ? 'default' : 'outline'}
@@ -206,7 +256,7 @@ export default function AdminSeoFactory() {
               <select
                 className="border rounded-md px-2 py-1 text-sm bg-background"
                 value={sortBy}
-                onChange={e => setSortBy(e.target.value as any)}
+                onChange={(e) => setSortBy(e.target.value as any)}
               >
                 <option value="date">Plus récent</option>
                 <option value="score">Score SEO</option>
@@ -220,11 +270,15 @@ export default function AdminSeoFactory() {
             ) : filteredArticles.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <FileText className="mx-auto h-12 w-12 mb-3 opacity-40" />
-                <p>{articles.length === 0 ? 'Aucun article SEO. Ajoutez un mot-clé pour démarrer.' : 'Aucun résultat pour ce filtre.'}</p>
+                <p>
+                  {articles.length === 0
+                    ? 'Aucun article SEO. Ajoutez un mot-clé pour démarrer.'
+                    : 'Aucun résultat pour ce filtre.'}
+                </p>
               </div>
             ) : (
               <div className="space-y-3">
-                {filteredArticles.map(a => (
+                {filteredArticles.map((a) => (
                   <SeoArticleCard
                     key={a.id}
                     article={a}
@@ -244,16 +298,18 @@ export default function AdminSeoFactory() {
           </TabsContent>
 
           <TabsContent value="completed" className="space-y-3">
-            {filteredArticles.filter(a => COMPLETED_STATUSES.has(a.status)).map(a => (
-              <SeoArticleCard
-                key={a.id}
-                article={a}
-                onRefresh={refetch}
-                onQueueRefresh={fetchQueueItems}
-                onDelete={deleteArticle}
-                onOpenDetail={setDetailArticle}
-              />
-            ))}
+            {filteredArticles
+              .filter((a) => COMPLETED_STATUSES.has(a.status))
+              .map((a) => (
+                <SeoArticleCard
+                  key={a.id}
+                  article={a}
+                  onRefresh={refetch}
+                  onQueueRefresh={fetchQueueItems}
+                  onDelete={deleteArticle}
+                  onOpenDetail={setDetailArticle}
+                />
+              ))}
           </TabsContent>
         </Tabs>
       </main>
@@ -264,7 +320,9 @@ export default function AdminSeoFactory() {
         article={detailArticle}
         open={detailArticle !== null}
         onClose={() => setDetailArticle(null)}
-        onRefresh={() => { refetch(); }}
+        onRefresh={() => {
+          refetch();
+        }}
       />
     </div>
   );

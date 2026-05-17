@@ -4,7 +4,7 @@ const columns = [
   {
     emoji: '🕐',
     title: 'Vous perdez du temps à décider',
-    text: 'Vous passez plus de temps à décider quoi cuisiner qu\'à cuisiner. Chaque soir c\'est la même question sans bonne réponse.',
+    text: "Vous passez plus de temps à décider quoi cuisiner qu'à cuisiner. Chaque soir c'est la même question sans bonne réponse.",
   },
   {
     emoji: '🛒',

@@ -39,16 +39,32 @@ export default function SharedRecipe() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) { setError('Lien invalide.'); setLoading(false); return; }
+    if (!token) {
+      setError('Lien invalide.');
+      setLoading(false);
+      return;
+    }
     (async () => {
       try {
-        const { data: rpcData, error: rpcError } = await supabase.rpc('get_shared_recipe', { p_token: token });
-        if (rpcError) { setError('Impossible de charger la recette.'); return; }
+        const { data: rpcData, error: rpcError } = await supabase.rpc('get_shared_recipe', {
+          p_token: token,
+        });
+        if (rpcError) {
+          setError('Impossible de charger la recette.');
+          return;
+        }
         const result = rpcData as unknown as SharedRecipeData;
-        if (result?.error) { setError(result.error); return; }
+        if (result?.error) {
+          setError(result.error);
+          return;
+        }
         if (result?.success) setData(result);
         else setError('Recette introuvable.');
-      } catch { setError('Erreur de connexion.'); } finally { setLoading(false); }
+      } catch {
+        setError('Erreur de connexion.');
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [token]);
 
@@ -70,8 +86,15 @@ export default function SharedRecipe() {
           <CardContent className="p-8">
             <div className="text-5xl mb-4">😕</div>
             <h1 className="text-xl font-bold mb-2">Recette introuvable</h1>
-            <p className="text-muted-foreground mb-6">{error || 'Ce lien est invalide ou a expiré.'}</p>
-            <Link to="/"><Button><ArrowLeft className="h-4 w-4 mr-2" />Retour à l'accueil</Button></Link>
+            <p className="text-muted-foreground mb-6">
+              {error || 'Ce lien est invalide ou a expiré.'}
+            </p>
+            <Link to="/">
+              <Button>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Retour à l'accueil
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       </div>
@@ -92,7 +115,9 @@ export default function SharedRecipe() {
             <img src={nutrizenLogo} alt="NutriZen" className="h-8" />
           </Link>
           <a href={ctaUrl}>
-            <Button size="sm" className="text-xs">Essayer gratuitement</Button>
+            <Button size="sm" className="text-xs">
+              Essayer gratuitement
+            </Button>
           </a>
         </div>
       </header>
@@ -100,7 +125,10 @@ export default function SharedRecipe() {
       <main className="container max-w-3xl mx-auto px-4 py-8">
         {/* Recipe Hero */}
         {recipe.image_url && (
-          <div className="rounded-2xl overflow-hidden mb-6 shadow-lg" style={{ animation: 'fadeSlideIn 0.5s ease-out' }}>
+          <div
+            className="rounded-2xl overflow-hidden mb-6 shadow-lg"
+            style={{ animation: 'fadeSlideIn 0.5s ease-out' }}
+          >
             <img
               src={recipe.image_url}
               alt={recipe.title}
@@ -112,7 +140,11 @@ export default function SharedRecipe() {
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-2 mb-3">
             {shared_by.avatar_url ? (
-              <img src={shared_by.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover border-2 border-primary" />
+              <img
+                src={shared_by.avatar_url}
+                alt=""
+                className="h-8 w-8 rounded-full object-cover border-2 border-primary"
+              />
             ) : (
               <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
                 <UtensilsCrossed className="h-4 w-4 text-primary" />
@@ -158,21 +190,38 @@ export default function SharedRecipe() {
         {/* Macros */}
         {(recipe.proteins_g || recipe.carbs_g || recipe.fats_g) && (
           <div className="flex justify-center gap-6 mb-8 text-sm text-muted-foreground">
-            {recipe.proteins_g && <span>Protéines: <strong>{Math.round(recipe.proteins_g)}g</strong></span>}
-            {recipe.carbs_g && <span>Glucides: <strong>{Math.round(recipe.carbs_g)}g</strong></span>}
-            {recipe.fats_g && <span>Lipides: <strong>{Math.round(recipe.fats_g)}g</strong></span>}
+            {recipe.proteins_g && (
+              <span>
+                Protéines: <strong>{Math.round(recipe.proteins_g)}g</strong>
+              </span>
+            )}
+            {recipe.carbs_g && (
+              <span>
+                Glucides: <strong>{Math.round(recipe.carbs_g)}g</strong>
+              </span>
+            )}
+            {recipe.fats_g && (
+              <span>
+                Lipides: <strong>{Math.round(recipe.fats_g)}g</strong>
+              </span>
+            )}
           </div>
         )}
 
         {/* Social Share */}
         <div className="text-center mb-8">
           <p className="text-sm text-muted-foreground mb-3">Partager cette recette</p>
-          <SocialShareButtons url={shareUrl} text={`Découvre cette recette : ${recipe.title} sur NutriZen 🍽️`} />
+          <SocialShareButtons
+            url={shareUrl}
+            text={`Découvre cette recette : ${recipe.title} sur NutriZen 🍽️`}
+          />
         </div>
 
         {/* CTA */}
         <div className="text-center py-8 bg-primary/5 rounded-2xl mb-8">
-          <h2 className="text-xl font-bold mb-2">Découvre cette recette et bien d'autres sur NutriZen</h2>
+          <h2 className="text-xl font-bold mb-2">
+            Découvre cette recette et bien d'autres sur NutriZen
+          </h2>
           <p className="text-muted-foreground mb-4 text-sm">
             Menus personnalisés, liste de courses automatique, scan nutritionnel…
           </p>

@@ -39,7 +39,8 @@ export function RecipeMacrosCard({
   const [viewMode, setViewMode] = useState<'portion' | 'total'>('portion');
 
   // Check if we have any macro data
-  const hasMacros = calories !== undefined || proteins !== undefined || carbs !== undefined || fats !== undefined;
+  const hasMacros =
+    calories !== undefined || proteins !== undefined || carbs !== undefined || fats !== undefined;
 
   // Macros props are per-serving; multiply by servings for total
   const multiplier = viewMode === 'portion' ? 1 : servings;
@@ -64,7 +65,7 @@ export function RecipeMacrosCard({
           Analyse nutritionnelle en cours…
         </p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => (
+          {[1, 2, 3, 4].map((i) => (
             <Skeleton key={i} className="h-20 rounded-lg" />
           ))}
         </div>
@@ -83,11 +84,7 @@ export function RecipeMacrosCard({
             Les informations nutritionnelles ne sont pas encore disponibles pour cette recette.
           </p>
           {onRecompute && (
-            <Button 
-              onClick={onRecompute} 
-              variant="outline"
-              disabled={isRecomputing}
-            >
+            <Button onClick={onRecompute} variant="outline" disabled={isRecomputing}>
               <RefreshCw className={`h-4 w-4 mr-2 ${isRecomputing ? 'animate-spin' : ''}`} />
               {isRecomputing ? 'Calcul en cours...' : 'Recalculer les macros'}
             </Button>
@@ -104,7 +101,7 @@ export function RecipeMacrosCard({
           <Flame className="h-5 w-5 text-primary" />
           Valeurs nutritionnelles
         </h2>
-        
+
         {/* Toggle between per portion and total */}
         <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
           <Button
@@ -145,9 +142,7 @@ export function RecipeMacrosCard({
               <Flame className="h-4 w-4 text-primary" />
               <span className="text-sm text-muted-foreground">Calories</span>
             </div>
-            <div className="text-2xl font-bold text-primary">
-              {displayValues.calories}
-            </div>
+            <div className="text-2xl font-bold text-primary">{displayValues.calories}</div>
             <div className="text-xs text-muted-foreground">kcal</div>
           </div>
         )}
@@ -187,7 +182,9 @@ export function RecipeMacrosCard({
       </div>
 
       {/* Secondary macros */}
-      {(displayValues.fibers !== null || displayValues.sugars !== null || displayValues.salt !== null) && (
+      {(displayValues.fibers !== null ||
+        displayValues.sugars !== null ||
+        displayValues.salt !== null) && (
         <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t">
           {displayValues.fibers !== null && (
             <Badge variant="secondary" className="text-xs">
@@ -209,21 +206,15 @@ export function RecipeMacrosCard({
 
       {/* Portion indicator */}
       <div className="mt-4 text-xs text-muted-foreground text-center">
-        {viewMode === 'portion' 
+        {viewMode === 'portion'
           ? `Valeurs pour 1 portion (recette pour ${parseFloat(servings.toFixed(1))} portions)`
-          : `Valeurs totales pour ${parseFloat(servings.toFixed(1))} portions`
-        }
+          : `Valeurs totales pour ${parseFloat(servings.toFixed(1))} portions`}
       </div>
 
       {/* Recompute button if available */}
       {onRecompute && (
         <div className="mt-4 pt-4 border-t text-center">
-          <Button 
-            onClick={onRecompute} 
-            variant="ghost"
-            size="sm"
-            disabled={isRecomputing}
-          >
+          <Button onClick={onRecompute} variant="ghost" size="sm" disabled={isRecomputing}>
             <RefreshCw className={`h-4 w-4 mr-2 ${isRecomputing ? 'animate-spin' : ''}`} />
             {isRecomputing ? 'Calcul en cours...' : 'Recalculer'}
           </Button>

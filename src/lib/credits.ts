@@ -23,8 +23,10 @@ export async function checkAndConsumeCredits(
   cost: number = 1
 ): Promise<CreditsCheckResult> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     if (!user) {
       return {
         success: false,
@@ -87,7 +89,7 @@ export async function getCreditsBalance(userId: string): Promise<{
 
     const subscription = data?.subscription_credits ?? 0;
     const lifetime = data?.lifetime_credits ?? 0;
-    
+
     return {
       subscription,
       lifetime,
@@ -98,4 +100,3 @@ export async function getCreditsBalance(userId: string): Promise<{
     return null;
   }
 }
-

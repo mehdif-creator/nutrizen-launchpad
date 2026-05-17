@@ -20,9 +20,7 @@ export function useFeatureFlags() {
 
   const fetchFlags = async () => {
     try {
-      const { data, error } = await supabase
-        .from('feature_flags')
-        .select('key, enabled');
+      const { data, error } = await supabase.from('feature_flags').select('key, enabled');
 
       if (error) {
         console.error('Error fetching feature flags:', error);
@@ -30,7 +28,7 @@ export function useFeatureFlags() {
       }
 
       const fetchedFlags: FeatureFlags = { ...DEFAULT_FLAGS };
-      
+
       data?.forEach((flag) => {
         fetchedFlags[flag.key] = flag.enabled ?? DEFAULT_FLAGS[flag.key] ?? false;
       });

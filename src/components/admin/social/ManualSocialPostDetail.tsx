@@ -7,16 +7,33 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
-  Copy, ExternalLink, Download, CheckCircle2, Archive, RotateCcw,
-  FileText, ImageIcon, Globe, Sparkles, ClipboardCopy, ChefHat, ChevronDown,
-  UtensilsCrossed, ListOrdered, Video,
+  Copy,
+  ExternalLink,
+  Download,
+  CheckCircle2,
+  Archive,
+  RotateCcw,
+  FileText,
+  ImageIcon,
+  Globe,
+  Sparkles,
+  ClipboardCopy,
+  ChefHat,
+  ChevronDown,
+  UtensilsCrossed,
+  ListOrdered,
+  Video,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { ManualSocialPost } from '@/hooks/useManualSocialPosts';
 import { getEffectiveDescription, getBoardName } from '@/hooks/useManualSocialPosts';
 import {
-  getIngredients, getPreparationSteps, hasRecipeData,
-  formatIngredientsText, formatPreparationText, buildTikTokScript,
+  getIngredients,
+  getPreparationSteps,
+  hasRecipeData,
+  formatIngredientsText,
+  formatPreparationText,
+  buildTikTokScript,
 } from '@/lib/recipePostHelpers';
 
 interface Props {
@@ -50,7 +67,9 @@ export function ManualSocialPostDetail({
     return (
       <Card className="p-12 text-center">
         <FileText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-        <p className="text-muted-foreground font-medium">Sélectionnez un post pour voir les détails</p>
+        <p className="text-muted-foreground font-medium">
+          Sélectionnez un post pour voir les détails
+        </p>
       </Card>
     );
   }
@@ -97,7 +116,9 @@ export function ManualSocialPostDetail({
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <StatusBadge status={post.status} />
               {post.platform_target && (
-                <Badge variant="outline" className="text-xs capitalize">{post.platform_target}</Badge>
+                <Badge variant="outline" className="text-xs capitalize">
+                  {post.platform_target}
+                </Badge>
               )}
               {post.source_workflow && (
                 <span className="text-xs text-muted-foreground">via {post.source_workflow}</span>
@@ -118,7 +139,11 @@ export function ManualSocialPostDetail({
             <span className="text-muted-foreground">Créé le</span>
             <p className="font-medium">
               {new Date(post.created_at).toLocaleDateString('fr-FR', {
-                day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
               })}
             </p>
           </div>
@@ -127,7 +152,11 @@ export function ManualSocialPostDetail({
               <span className="text-muted-foreground">Publié le</span>
               <p className="font-medium">
                 {new Date(post.posted_at).toLocaleDateString('fr-FR', {
-                  day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
                 })}
               </p>
             </div>
@@ -149,7 +178,11 @@ export function ManualSocialPostDetail({
           <div>
             <div className="flex items-center justify-between mb-1">
               <span className="text-sm font-medium">Titre</span>
-              <Button variant="ghost" size="sm" onClick={() => copyToClipboard(post.title || '', 'Titre')}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => copyToClipboard(post.title || '', 'Titre')}
+              >
                 <Copy className="mr-1.5 h-3.5 w-3.5" />
                 Copier le titre
               </Button>
@@ -165,7 +198,11 @@ export function ManualSocialPostDetail({
                   <Sparkles className="mr-1.5 h-3.5 w-3.5" />
                   Générer la description par défaut
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => copyToClipboard(effectiveDesc, 'Description')}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => copyToClipboard(effectiveDesc, 'Description')}
+                >
                   <Copy className="mr-1.5 h-3.5 w-3.5" />
                   Copier la description
                 </Button>
@@ -174,7 +211,9 @@ export function ManualSocialPostDetail({
             <p className="text-sm bg-muted rounded-md px-3 py-2 whitespace-pre-wrap">
               {effectiveDesc}
               {!post.description && (
-                <span className="text-xs text-muted-foreground ml-2">(générée automatiquement)</span>
+                <span className="text-xs text-muted-foreground ml-2">
+                  (générée automatiquement)
+                </span>
               )}
             </p>
           </div>
@@ -209,7 +248,10 @@ export function ManualSocialPostDetail({
                 url={post.image_9x16_url}
                 label="Pinterest 9:16"
                 emptyLabel="Aucun visuel Pinterest disponible"
-                onDownload={() => post.image_9x16_url && downloadImage(post.image_9x16_url, `${post.title || 'post'}-9x16.jpg`)}
+                onDownload={() =>
+                  post.image_9x16_url &&
+                  downloadImage(post.image_9x16_url, `${post.title || 'post'}-9x16.jpg`)
+                }
               />
             </TabsContent>
             <TabsContent value="4x5">
@@ -217,7 +259,10 @@ export function ManualSocialPostDetail({
                 url={post.image_4x5_url}
                 label="Instagram 4:5"
                 emptyLabel="Aucun visuel Instagram disponible"
-                onDownload={() => post.image_4x5_url && downloadImage(post.image_4x5_url, `${post.title || 'post'}-4x5.jpg`)}
+                onDownload={() =>
+                  post.image_4x5_url &&
+                  downloadImage(post.image_4x5_url, `${post.title || 'post'}-4x5.jpg`)
+                }
               />
             </TabsContent>
           </Tabs>
@@ -246,7 +291,10 @@ export function ManualSocialPostDetail({
           <h3 className="text-sm font-medium mb-2">Notes internes</h3>
           <Textarea
             value={notes}
-            onChange={e => { setNotes(e.target.value); setNotesDirty(true); }}
+            onChange={(e) => {
+              setNotes(e.target.value);
+              setNotesDirty(true);
+            }}
             placeholder="Ajoutez des notes sur ce post…"
             rows={3}
           />
@@ -384,7 +432,9 @@ function RecipeSection({
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-muted-foreground italic bg-muted/50 rounded-md px-3 py-2">Aucun ingrédient disponible</p>
+            <p className="text-sm text-muted-foreground italic bg-muted/50 rounded-md px-3 py-2">
+              Aucun ingrédient disponible
+            </p>
           )}
         </div>
 
@@ -413,7 +463,9 @@ function RecipeSection({
               ))}
             </ol>
           ) : (
-            <p className="text-sm text-muted-foreground italic bg-muted/50 rounded-md px-3 py-2">Aucune préparation disponible</p>
+            <p className="text-sm text-muted-foreground italic bg-muted/50 rounded-md px-3 py-2">
+              Aucune préparation disponible
+            </p>
           )}
         </div>
 

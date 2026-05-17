@@ -38,9 +38,9 @@ export const Header = ({ onCtaClick }: HeaderProps) => {
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center hover:opacity-80 transition-tech">
-          <img 
+          <img
             src={new URL('@/assets/nutrizen-main-logo.png', import.meta.url).href}
-            alt="NutriZen Logo" 
+            alt="NutriZen Logo"
             className="h-10 md:h-14 w-auto max-w-[120px]"
           />
         </Link>
@@ -122,66 +122,67 @@ export const Header = ({ onCtaClick }: HeaderProps) => {
       </div>
 
       {/* Mobile Menu - rendered via portal to escape sticky stacking context */}
-      {mobileMenuOpen && createPortal(
-        <div className="md:hidden fixed inset-0 z-[9999] bg-background overflow-y-auto pt-20">
-          {/* Close button */}
-          <button
-            onClick={() => setMobileMenuOpen(false)}
-            className="absolute top-4 right-4 p-3 min-h-[44px] min-w-[44px] flex items-center justify-center"
-            aria-label="Fermer le menu"
-          >
-            <X size={24} />
-          </button>
-          <nav className="container py-6 flex flex-col gap-1">
-            {[
-              { action: () => scrollToSection('avantages'), label: t('header.advantages') },
-              { action: () => scrollToSection('comment'), label: t('header.howItWorks') },
-              { action: () => scrollToSection('exemples'), label: t('header.examples') },
-              { action: () => scrollToSection('tarifs'), label: t('header.pricing') },
-              { action: () => scrollToSection('faq'), label: t('header.faq') },
-            ].map(({ action, label }) => (
-              <button
-                key={label}
-                onClick={action}
-                className="text-left text-base font-medium text-muted-foreground hover:text-foreground py-3 px-2 min-h-[48px] flex items-center border-b border-border/50"
-              >
-                {label}
-              </button>
-            ))}
-            <Link
-              to="/blog"
-              className="text-left text-base font-medium text-muted-foreground hover:text-foreground py-3 px-2 min-h-[48px] flex items-center border-b border-border/50"
+      {mobileMenuOpen &&
+        createPortal(
+          <div className="md:hidden fixed inset-0 z-[9999] bg-background overflow-y-auto pt-20">
+            {/* Close button */}
+            <button
               onClick={() => setMobileMenuOpen(false)}
+              className="absolute top-4 right-4 p-3 min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label="Fermer le menu"
             >
-              {t('header.blog')}
-            </Link>
-            {user ? (
+              <X size={24} />
+            </button>
+            <nav className="container py-6 flex flex-col gap-1">
+              {[
+                { action: () => scrollToSection('avantages'), label: t('header.advantages') },
+                { action: () => scrollToSection('comment'), label: t('header.howItWorks') },
+                { action: () => scrollToSection('exemples'), label: t('header.examples') },
+                { action: () => scrollToSection('tarifs'), label: t('header.pricing') },
+                { action: () => scrollToSection('faq'), label: t('header.faq') },
+              ].map(({ action, label }) => (
+                <button
+                  key={label}
+                  onClick={action}
+                  className="text-left text-base font-medium text-muted-foreground hover:text-foreground py-3 px-2 min-h-[48px] flex items-center border-b border-border/50"
+                >
+                  {label}
+                </button>
+              ))}
               <Link
-                to="/app/dashboard"
+                to="/blog"
                 className="text-left text-base font-medium text-muted-foreground hover:text-foreground py-3 px-2 min-h-[48px] flex items-center border-b border-border/50"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Mon espace
+                {t('header.blog')}
               </Link>
-            ) : (
-              <Link
-                to="/auth/login"
-                className="text-left text-base font-medium text-muted-foreground hover:text-foreground py-3 px-2 min-h-[48px] flex items-center border-b border-border/50"
-                onClick={() => setMobileMenuOpen(false)}
+              {user ? (
+                <Link
+                  to="/app/dashboard"
+                  className="text-left text-base font-medium text-muted-foreground hover:text-foreground py-3 px-2 min-h-[48px] flex items-center border-b border-border/50"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Mon espace
+                </Link>
+              ) : (
+                <Link
+                  to="/auth/login"
+                  className="text-left text-base font-medium text-muted-foreground hover:text-foreground py-3 px-2 min-h-[48px] flex items-center border-b border-border/50"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {t('header.login')}
+                </Link>
+              )}
+              <Button
+                onClick={handlePrimaryCta}
+                className="w-full bg-gradient-to-r from-primary to-accent text-white mt-4 min-h-[52px] text-base"
               >
-                {t('header.login')}
-              </Link>
-            )}
-            <Button
-              onClick={handlePrimaryCta}
-              className="w-full bg-gradient-to-r from-primary to-accent text-white mt-4 min-h-[52px] text-base"
-            >
-              {user ? 'Mon espace' : 'Commencer gratuitement'}
-            </Button>
-          </nav>
-        </div>,
-        document.body
-      )}
+                {user ? 'Mon espace' : 'Commencer gratuitement'}
+              </Button>
+            </nav>
+          </div>,
+          document.body
+        )}
     </header>
   );
 };

@@ -23,11 +23,11 @@ export function useAutoMenuGeneration() {
 
     try {
       const { data: session } = await supabase.auth.getSession();
-      
+
       if (!session.session) {
-        setState({ 
-          status: 'error', 
-          errorMessage: 'Session expirée. Veuillez vous reconnecter.' 
+        setState({
+          status: 'error',
+          errorMessage: 'Session expirée. Veuillez vous reconnecter.',
         });
         return false;
       }
@@ -52,20 +52,22 @@ export function useAutoMenuGeneration() {
             const body = await (error as any).context.json();
             console.error('[generateMenu] Error body:', body);
           }
-        } catch (_) { /* ignore parse error */ }
+        } catch (_) {
+          /* ignore parse error */
+        }
         logger.error('Error', error);
-        setState({ 
-          status: 'error', 
-          errorMessage: error.message || 'Erreur lors de la génération du menu.' 
+        setState({
+          status: 'error',
+          errorMessage: error.message || 'Erreur lors de la génération du menu.',
         });
         return false;
       }
 
       if (data?.success === false) {
         logger.error('Generation failed', new Error(data.message));
-        setState({ 
-          status: 'error', 
-          errorMessage: data.message || 'Impossible de générer un menu avec vos préférences.' 
+        setState({
+          status: 'error',
+          errorMessage: data.message || 'Impossible de générer un menu avec vos préférences.',
         });
         return false;
       }
@@ -74,25 +76,26 @@ export function useAutoMenuGeneration() {
 
       // Invalidate queries to refresh data
       if (session.session.user?.id) {
-        await queryClient.invalidateQueries({ 
-          queryKey: ['weeklyMenu', session.session.user.id] 
+        await queryClient.invalidateQueries({
+          queryKey: ['weeklyMenu', session.session.user.id],
         });
-        await queryClient.invalidateQueries({ 
-          queryKey: ['dashboardStats'] 
+        await queryClient.invalidateQueries({
+          queryKey: ['dashboardStats'],
         });
       }
 
-      setState({ 
-        status: 'success', 
-        menuId: data.menu_id 
+      setState({
+        status: 'success',
+        menuId: data.menu_id,
       });
-      
+
       return true;
     } catch (error) {
       logger.error('Exception', error instanceof Error ? error : new Error(String(error)));
-      setState({ 
-        status: 'error', 
-        errorMessage: error instanceof Error ? error.message : 'Une erreur inattendue est survenue.' 
+      setState({
+        status: 'error',
+        errorMessage:
+          error instanceof Error ? error.message : 'Une erreur inattendue est survenue.',
       });
       return false;
     }

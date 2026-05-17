@@ -77,7 +77,10 @@ async function streamChat({
         if (line.endsWith('\r')) line = line.slice(0, -1);
         if (!line.startsWith('data: ')) continue;
         const json = line.slice(6).trim();
-        if (json === '[DONE]') { onDone(); return; }
+        if (json === '[DONE]') {
+          onDone();
+          return;
+        }
         try {
           const parsed = JSON.parse(json);
           const content = parsed.choices?.[0]?.delta?.content;
@@ -124,19 +127,23 @@ export function NutriZenChatbot() {
 
     // Poll for wallet changes (user_wallets removed from Realtime for security)
     const pollInterval = window.setInterval(fetchCredits, 15_000);
-    return () => { window.clearInterval(pollInterval); };
+    return () => {
+      window.clearInterval(pollInterval);
+    };
   }, [user?.id]);
 
   // Welcome message
   useEffect(() => {
     if (isOpen && !initialized.current) {
       initialized.current = true;
-      setMessages([{
-        id: 'welcome',
-        role: 'assistant',
-        mode: 'support',
-        content: '👋 Bonjour ! Je suis votre assistant NutriZen. Comment puis-je vous aider ?',
-      }]);
+      setMessages([
+        {
+          id: 'welcome',
+          role: 'assistant',
+          mode: 'support',
+          content: '👋 Bonjour ! Je suis votre assistant NutriZen. Comment puis-je vous aider ?',
+        },
+      ]);
     }
     if (isOpen) setTimeout(() => inputRef.current?.focus(), 150);
   }, [isOpen]);
@@ -146,42 +153,52 @@ export function NutriZenChatbot() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const switchMode = useCallback((newMode: Mode) => {
-    if (newMode === mode) return;
-    setMode(newMode);
-    setMessages(prev => [...prev, {
-      id: `switch-${Date.now()}`,
-      role: 'system-notice',
-      mode: newMode,
-      content: newMode === 'nutrition'
-        ? `🥗 Mode **Assistant Nutrition** activé — ${CHAT_NUTRITION_COST} crédits par message`
-        : '🔧 Retour au **Support technique** — gratuit',
-    }]);
-  }, [mode]);
+  const switchMode = useCallback(
+    (newMode: Mode) => {
+      if (newMode === mode) return;
+      setMode(newMode);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `switch-${Date.now()}`,
+          role: 'system-notice',
+          mode: newMode,
+          content:
+            newMode === 'nutrition'
+              ? `🥗 Mode **Assistant Nutrition** activé — ${CHAT_NUTRITION_COST} crédits par message`
+              : '🔧 Retour au **Support technique** — gratuit',
+        },
+      ]);
+    },
+    [mode]
+  );
 
   const sendMessage = useCallback(async () => {
     const text = input.trim();
     if (!text || isLoading) return;
 
     if (mode === 'nutrition' && credits < CHAT_NUTRITION_COST) {
-      setMessages(prev => [...prev, {
-        id: `credit-warn-${Date.now()}`,
-        role: 'system-notice',
-        mode,
-        content: `⚡ Crédits insuffisants. Contactez le support pour recharger vos crédits.`,
-      }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `credit-warn-${Date.now()}`,
+          role: 'system-notice',
+          mode,
+          content: `⚡ Crédits insuffisants. Contactez le support pour recharger vos crédits.`,
+        },
+      ]);
       return;
     }
 
     const userMsg: ChatMessage = { id: `u-${Date.now()}`, role: 'user', mode, content: text };
-    setMessages(prev => [...prev, userMsg]);
+    setMessages((prev) => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
 
     const conversationHistory = messages
-      .filter(m => (m.role === 'user' || m.role === 'assistant') && m.mode === mode)
+      .filter((m) => (m.role === 'user' || m.role === 'assistant') && m.mode === mode)
       .slice(-10)
-      .map(m => ({ role: m.role, content: m.content }));
+      .map((m) => ({ role: m.role, content: m.content }));
 
     let assistantContent = '';
 
@@ -191,30 +208,33 @@ export function NutriZenChatbot() {
       onDelta: (chunk) => {
         assistantContent += chunk;
         const content = assistantContent;
-        setMessages(prev => {
+        setMessages((prev) => {
           const last = prev[prev.length - 1];
           if (last?.role === 'assistant' && last.id.startsWith('stream-')) {
-            return prev.map((m, i) => i === prev.length - 1 ? { ...m, content } : m);
+            return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content } : m));
           }
           return [...prev, { id: `stream-${Date.now()}`, role: 'assistant', mode, content }];
         });
       },
       onDone: () => {
         setIsLoading(false);
-        if (mode === 'nutrition') setCredits(c => Math.max(0, c - CHAT_NUTRITION_COST));
+        if (mode === 'nutrition') setCredits((c) => Math.max(0, c - CHAT_NUTRITION_COST));
       },
       onError: (err) => {
         setIsLoading(false);
         const isCredits = err.message === 'INSUFFICIENT_CREDITS';
-        setMessages(prev => [...prev, {
-          id: `err-${Date.now()}`,
-          role: 'assistant',
-          mode,
-          content: isCredits
-            ? '❌ Crédits insuffisants pour l\'Assistant Nutrition. Rechargez vos crédits dans votre profil.'
-            : 'Une erreur est survenue. Veuillez réessayer.',
-          isError: true,
-        }]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `err-${Date.now()}`,
+            role: 'assistant',
+            mode,
+            content: isCredits
+              ? "❌ Crédits insuffisants pour l'Assistant Nutrition. Rechargez vos crédits dans votre profil."
+              : 'Une erreur est survenue. Veuillez réessayer.',
+            isError: true,
+          },
+        ]);
       },
     });
   }, [input, isLoading, mode, credits, messages]);
@@ -236,7 +256,7 @@ export function NutriZenChatbot() {
         size="icon"
         className={cn(
           'fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg transition-transform hover:scale-105 md:bottom-6 max-md:bottom-[84px]',
-          'bg-gradient-to-br from-primary to-primary/80 text-primary-foreground',
+          'bg-gradient-to-br from-primary to-primary/80 text-primary-foreground'
         )}
       >
         {isOpen ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
@@ -244,7 +264,8 @@ export function NutriZenChatbot() {
 
       {/* Chat window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-[380px] max-w-[calc(100vw-2rem)] max-md:bottom-[148px] rounded-2xl border border-border bg-background shadow-2xl flex flex-col animate-in slide-in-from-bottom-4 fade-in duration-300"
+        <div
+          className="fixed bottom-24 right-6 z-50 w-[380px] max-w-[calc(100vw-2rem)] max-md:bottom-[148px] rounded-2xl border border-border bg-background shadow-2xl flex flex-col animate-in slide-in-from-bottom-4 fade-in duration-300"
           style={{ height: 'min(560px, calc(100vh - 8rem))' }}
         >
           {/* Header */}
@@ -267,10 +288,14 @@ export function NutriZenChatbot() {
 
             {/* Mode toggle */}
             <div className="flex gap-1 rounded-lg bg-primary-foreground/10 p-1">
-              {([
+              {[
                 { key: 'support' as Mode, label: '🔧 Support', sub: 'Gratuit' },
-                { key: 'nutrition' as Mode, label: '🥗 Nutrition', sub: `${CHAT_NUTRITION_COST} crédits` },
-              ]).map(({ key, label, sub }) => (
+                {
+                  key: 'nutrition' as Mode,
+                  label: '🥗 Nutrition',
+                  sub: `${CHAT_NUTRITION_COST} crédits`,
+                },
+              ].map(({ key, label, sub }) => (
                 <button
                   key={key}
                   onClick={() => switchMode(key)}
@@ -278,7 +303,7 @@ export function NutriZenChatbot() {
                     'flex-1 rounded-md py-1.5 text-center transition-all text-xs',
                     mode === key
                       ? 'bg-primary-foreground text-primary font-bold shadow-sm'
-                      : 'text-primary-foreground/70 hover:text-primary-foreground',
+                      : 'text-primary-foreground/70 hover:text-primary-foreground'
                   )}
                 >
                   <div>{label}</div>
@@ -295,26 +320,35 @@ export function NutriZenChatbot() {
                 if (msg.role === 'system-notice') {
                   return (
                     <div className="text-center text-xs text-muted-foreground py-2">
-                      <span className="inline"><ReactMarkdown>{msg.content}</ReactMarkdown></span>
+                      <span className="inline">
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </span>
                     </div>
                   );
                 }
                 const isUser = msg.role === 'user';
                 return (
-                  <div key={msg.id} className={cn('flex gap-2', isUser ? 'justify-end' : 'justify-start')}>
+                  <div
+                    key={msg.id}
+                    className={cn('flex gap-2', isUser ? 'justify-end' : 'justify-start')}
+                  >
                     {!isUser && (
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs">
                         {msg.mode === 'nutrition' ? '🥗' : '🔧'}
                       </div>
                     )}
-                    <div className={cn(
-                      'max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm',
-                      isUser
-                        ? 'bg-primary text-primary-foreground rounded-br-md'
-                        : 'bg-muted text-foreground rounded-bl-md',
-                      msg.isError && 'bg-destructive/10 text-destructive',
-                    )}>
-                      <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:m-0"><ReactMarkdown>{msg.content}</ReactMarkdown></div>
+                    <div
+                      className={cn(
+                        'max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm',
+                        isUser
+                          ? 'bg-primary text-primary-foreground rounded-br-md'
+                          : 'bg-muted text-foreground rounded-bl-md',
+                        msg.isError && 'bg-destructive/10 text-destructive'
+                      )}
+                    >
+                      <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:m-0">
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
                     </div>
                   </div>
                 );
@@ -327,8 +361,12 @@ export function NutriZenChatbot() {
                     {mode === 'nutrition' ? '🥗' : '🔧'}
                   </div>
                   <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3 flex gap-1">
-                    {[0, 1, 2].map(i => (
-                      <div key={i} className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: `${i * 150}ms` }} />
+                    {[0, 1, 2].map((i) => (
+                      <div
+                        key={i}
+                        className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce"
+                        style={{ animationDelay: `${i * 150}ms` }}
+                      />
                     ))}
                   </div>
                 </div>
@@ -344,7 +382,11 @@ export function NutriZenChatbot() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={mode === 'support' ? 'Posez votre question technique…' : 'Demandez un conseil nutritionnel…'}
+              placeholder={
+                mode === 'support'
+                  ? 'Posez votre question technique…'
+                  : 'Demandez un conseil nutritionnel…'
+              }
               rows={1}
               className="flex-1 resize-none rounded-xl border border-input bg-muted/50 px-3.5 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring max-h-24 overflow-y-auto"
             />
@@ -356,10 +398,14 @@ export function NutriZenChatbot() {
                 'h-10 w-10 rounded-xl shrink-0',
                 mode === 'nutrition'
                   ? 'bg-accent hover:bg-accent/90 text-accent-foreground'
-                  : 'bg-primary hover:bg-primary/90',
+                  : 'bg-primary hover:bg-primary/90'
               )}
             >
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
             </Button>
           </div>
 

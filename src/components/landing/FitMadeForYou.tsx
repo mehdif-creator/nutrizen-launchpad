@@ -9,7 +9,7 @@ const columns = [
   {
     emoji: '📊',
     title: 'Vous comptez vos macros manuellement',
-    text: "MyFitnessPal, calculs à la main, estimations approximatives... Ça prend 20 à 30 minutes par jour pour un résultat peu fiable.",
+    text: 'MyFitnessPal, calculs à la main, estimations approximatives... Ça prend 20 à 30 minutes par jour pour un résultat peu fiable.',
   },
   {
     emoji: '🍳',

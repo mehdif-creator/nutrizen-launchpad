@@ -19,7 +19,7 @@ export const Guarantee = () => {
       text: 'Conforme RGPD',
     },
   ];
-  
+
   return (
     <section className="py-12 bg-gradient-to-br from-primary/5 to-accent/5">
       <div className="container">

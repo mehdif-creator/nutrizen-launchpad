@@ -73,7 +73,10 @@ describe('formatPortions', () => {
 
 describe('scaleNutrition', () => {
   it('scales all fields and rounds', () => {
-    const result = scaleNutrition({ calories: 100, proteins: 20, carbs: 30, fats: 10, fibers: 5 }, 3.1);
+    const result = scaleNutrition(
+      { calories: 100, proteins: 20, carbs: 30, fats: 10, fibers: 5 },
+      3.1
+    );
     expect(result.calories).toBe(310);
     expect(result.proteins).toBe(62);
     expect(result.carbs).toBe(93);
@@ -82,7 +85,10 @@ describe('scaleNutrition', () => {
   });
 
   it('handles null values', () => {
-    const result = scaleNutrition({ calories: null, proteins: 20, carbs: null, fats: null, fibers: null }, 2);
+    const result = scaleNutrition(
+      { calories: null, proteins: 20, carbs: null, fats: null, fibers: null },
+      2
+    );
     expect(result.calories).toBeNull();
     expect(result.proteins).toBe(40);
   });

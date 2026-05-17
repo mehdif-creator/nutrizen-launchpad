@@ -69,7 +69,7 @@ export const formatLocalDate = (
 ): string => {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   const userTimezone = getUserTimezone();
-  
+
   return dateObj.toLocaleString('fr-FR', {
     timeZone: userTimezone,
     ...options,

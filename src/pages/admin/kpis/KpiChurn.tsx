@@ -24,17 +24,29 @@ export default function KpiChurn() {
   const { from, to } = getDateRange(dateRange);
   const filters = { dateFrom: from, dateTo: to, granularity };
 
-  const { data: summary, isLoading: loadingSummary, refetch: refetchSummary } = useQuery({
+  const {
+    data: summary,
+    isLoading: loadingSummary,
+    refetch: refetchSummary,
+  } = useQuery({
     queryKey: ['kpi-churn-summary', from, to],
     queryFn: () => fetchChurnSummary(filters),
   });
 
-  const { data: timeseries, isLoading: loadingTimeseries, refetch: refetchTimeseries } = useQuery({
+  const {
+    data: timeseries,
+    isLoading: loadingTimeseries,
+    refetch: refetchTimeseries,
+  } = useQuery({
     queryKey: ['kpi-churn-timeseries', from, to, granularity],
     queryFn: () => fetchChurnTimeseries(filters),
   });
 
-  const { data: byPlan, isLoading: loadingByPlan, refetch: refetchByPlan } = useQuery({
+  const {
+    data: byPlan,
+    isLoading: loadingByPlan,
+    refetch: refetchByPlan,
+  } = useQuery({
     queryKey: ['kpi-churn-by-plan', from, to],
     queryFn: () => fetchMrrByPlan(filters),
   });

@@ -45,7 +45,7 @@ const SUBSTITUTION_COST = getFeatureCost('substitutions'); // 1 credit (from fea
 export function SubstitutionsTab({ recipeId, ingredients }: SubstitutionsTabProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  
+
   const [selectedIngredient, setSelectedIngredient] = useState<string>('');
   const [substitutions, setSubstitutions] = useState<Substitution[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,10 +54,12 @@ export function SubstitutionsTab({ recipeId, ingredients }: SubstitutionsTabProp
   const [creditsInfo, setCreditsInfo] = useState({ current: 0, required: SUBSTITUTION_COST });
 
   // Normalize ingredients to strings
-  const ingredientNames = ingredients.map(ing => {
-    if (typeof ing === 'string') return ing;
-    return ing.name || ing.ingredient || '';
-  }).filter(Boolean);
+  const ingredientNames = ingredients
+    .map((ing) => {
+      if (typeof ing === 'string') return ing;
+      return ing.name || ing.ingredient || '';
+    })
+    .filter(Boolean);
 
   const handleFindSubstitutions = async () => {
     if (!selectedIngredient || !user?.id) return;
@@ -125,7 +127,7 @@ export function SubstitutionsTab({ recipeId, ingredients }: SubstitutionsTabProp
       }
     } catch (error: any) {
       console.error('Error finding substitutions:', error);
-      
+
       // Check if the error message indicates insufficient credits
       const errorMsg = error?.message || '';
       if (errorMsg.includes('insuffisant') || errorMsg.includes('INSUFFICIENT')) {
@@ -183,10 +185,7 @@ export function SubstitutionsTab({ recipeId, ingredients }: SubstitutionsTabProp
                 ))}
               </SelectContent>
             </Select>
-            <Button
-              onClick={handleFindSubstitutions}
-              disabled={!selectedIngredient || isLoading}
-            >
+            <Button onClick={handleFindSubstitutions} disabled={!selectedIngredient || isLoading}>
               {isLoading ? (
                 <RefreshCw className="h-4 w-4 animate-spin" />
               ) : (
@@ -200,7 +199,7 @@ export function SubstitutionsTab({ recipeId, ingredients }: SubstitutionsTabProp
         {/* Loading state */}
         {isLoading && (
           <div className="space-y-3">
-            {[1, 2, 3].map(i => (
+            {[1, 2, 3].map((i) => (
               <Card key={i} className="p-4">
                 <Skeleton className="h-5 w-32 mb-2" />
                 <Skeleton className="h-4 w-full" />
@@ -232,11 +231,7 @@ export function SubstitutionsTab({ recipeId, ingredients }: SubstitutionsTabProp
                       </p>
                     )}
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleCopy(sub.name, idx)}
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => handleCopy(sub.name, idx)}>
                     {copiedIndex === idx ? (
                       <Check className="h-4 w-4 text-green-500" />
                     ) : (

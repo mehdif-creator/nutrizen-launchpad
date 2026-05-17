@@ -10,7 +10,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useEffectivePortions } from '@/hooks/useEffectivePortions';
-import { getHouseholdPortionFactor, formatHouseholdDisplay, scaleNutrition, getScaleFactor } from '@/lib/portions';
+import {
+  getHouseholdPortionFactor,
+  formatHouseholdDisplay,
+  scaleNutrition,
+  getScaleFactor,
+} from '@/lib/portions';
 import { getRecipeImageUrl, handleImageError } from '@/lib/images';
 import { RecipeMacrosBadge } from '@/components/app/RecipeMacrosBadge';
 import { format, parseISO } from 'date-fns';
@@ -43,7 +48,7 @@ export default function DayMenu() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { data: portions } = useEffectivePortions(user?.id);
-  
+
   const [dayData, setDayData] = useState<DayMenuData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -55,16 +60,16 @@ export default function DayMenu() {
   useEffect(() => {
     const loadDayMenu = async () => {
       if (!user?.id || !date) return;
-      
+
       try {
         // Call RPC to get day menu data
         const { data, error } = await supabase.rpc('get_day_menu', {
           p_user_id: user.id,
           p_date: date,
         });
-        
+
         if (error) throw error;
-        
+
         if (data) {
           setDayData(data as unknown as DayMenuData);
         }
@@ -83,9 +88,7 @@ export default function DayMenu() {
     loadDayMenu();
   }, [user?.id, date, toast]);
 
-  const formattedDate = date 
-    ? format(parseISO(date), "EEEE d MMMM yyyy", { locale: fr })
-    : '';
+  const formattedDate = date ? format(parseISO(date), 'EEEE d MMMM yyyy', { locale: fr }) : '';
 
   if (loading) {
     return (
@@ -118,23 +121,19 @@ export default function DayMenu() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
       <AppHeader />
-      
+
       <main className="flex-1 px-4 sm:px-6 lg:px-10 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/app')}
-            className="mb-6"
-          >
+          <Button variant="ghost" onClick={() => navigate('/app')} className="mb-6">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Retour au tableau de bord
           </Button>
-          
+
           <div className="mb-8">
             <h1 className="text-2xl sm:text-3xl font-bold mb-2">Menu du jour</h1>
             <p className="text-muted-foreground capitalize">{formattedDate}</p>
-            
+
             {/* Household info */}
             {(householdAdults > 1 || householdChildren > 0) && (
               <div className="mt-3">
@@ -153,7 +152,9 @@ export default function DayMenu() {
               mealType="lunch"
               recipe={dayData.lunch}
               effectivePortions={effectivePortions}
-              onViewRecipe={(id) => navigate(`/app/recipes/${id}?portions=${effectivePortions.toFixed(2)}`)}
+              onViewRecipe={(id) =>
+                navigate(`/app/recipes/${id}?portions=${effectivePortions.toFixed(2)}`)
+              }
               onGenerateMeal={() => {
                 toast({
                   title: 'Bientôt disponible',
@@ -161,13 +162,15 @@ export default function DayMenu() {
                 });
               }}
             />
-            
+
             {/* Dinner */}
             <MealCard
               mealType="dinner"
               recipe={dayData.dinner}
               effectivePortions={effectivePortions}
-              onViewRecipe={(id) => navigate(`/app/recipes/${id}?portions=${effectivePortions.toFixed(2)}`)}
+              onViewRecipe={(id) =>
+                navigate(`/app/recipes/${id}?portions=${effectivePortions.toFixed(2)}`)
+              }
               onGenerateMeal={() => {
                 toast({
                   title: 'Bientôt disponible',
@@ -178,7 +181,7 @@ export default function DayMenu() {
           </div>
         </div>
       </main>
-      
+
       <AppFooter />
     </div>
   );
@@ -192,11 +195,17 @@ interface MealCardProps {
   onGenerateMeal: () => void;
 }
 
-function MealCard({ mealType, recipe, effectivePortions, onViewRecipe, onGenerateMeal }: MealCardProps) {
+function MealCard({
+  mealType,
+  recipe,
+  effectivePortions,
+  onViewRecipe,
+  onGenerateMeal,
+}: MealCardProps) {
   const Icon = mealType === 'lunch' ? Sun : Moon;
   const label = mealType === 'lunch' ? 'Déjeuner' : 'Dîner';
   const iconColor = mealType === 'lunch' ? 'text-orange-500' : 'text-purple-500';
-  
+
   // Empty state
   if (!recipe) {
     return (
@@ -205,7 +214,7 @@ function MealCard({ mealType, recipe, effectivePortions, onViewRecipe, onGenerat
           <Icon className={`h-5 w-5 ${iconColor}`} />
           <h2 className="text-lg font-semibold">{label}</h2>
         </div>
-        
+
         <div className="text-center py-8 border-2 border-dashed border-muted-foreground/30 rounded-xl">
           <ChefHat className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
           <p className="text-muted-foreground mb-4">
@@ -219,42 +228,45 @@ function MealCard({ mealType, recipe, effectivePortions, onViewRecipe, onGenerat
       </Card>
     );
   }
-  
+
   // Scale nutrition based on effective portions
   const baseServings = recipe.base_servings || 1;
   const scaleFactor = getScaleFactor(effectivePortions, baseServings);
-  const scaledNutrition = scaleNutrition({
-    calories: recipe.calories,
-    proteins: recipe.proteins_g,
-    carbs: recipe.carbs_g,
-    fats: recipe.fats_g,
-  }, scaleFactor);
-  
-  const imageUrl = getRecipeImageUrl({ 
-    image_url: recipe.image_url, 
-    image_path: recipe.image_path 
+  const scaledNutrition = scaleNutrition(
+    {
+      calories: recipe.calories,
+      proteins: recipe.proteins_g,
+      carbs: recipe.carbs_g,
+      fats: recipe.fats_g,
+    },
+    scaleFactor
+  );
+
+  const imageUrl = getRecipeImageUrl({
+    image_url: recipe.image_url,
+    image_path: recipe.image_path,
   });
-  
+
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <div className="flex items-center gap-2 p-4 border-b">
         <Icon className={`h-5 w-5 ${iconColor}`} />
         <h2 className="text-lg font-semibold">{label}</h2>
       </div>
-      
+
       {/* Recipe Image */}
       <div className="h-48 bg-muted relative overflow-hidden">
-        <img 
+        <img
           src={imageUrl}
           alt={recipe.title}
           className="w-full h-full object-cover"
           onError={handleImageError}
         />
       </div>
-      
+
       <div className="p-4 space-y-4">
         <h3 className="font-semibold text-lg leading-tight">{recipe.title}</h3>
-        
+
         {/* Quick stats */}
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <span className="flex items-center gap-1">
@@ -270,7 +282,7 @@ function MealCard({ mealType, recipe, effectivePortions, onViewRecipe, onGenerat
             {effectivePortions.toFixed(1)} portions
           </span>
         </div>
-        
+
         {/* Macros */}
         <RecipeMacrosBadge
           calories={scaledNutrition.calories || 0}
@@ -279,13 +291,10 @@ function MealCard({ mealType, recipe, effectivePortions, onViewRecipe, onGenerat
           fats={scaledNutrition.fats}
           servings={1} // Already scaled
         />
-        
+
         {/* Actions */}
         <div className="flex gap-2 pt-2">
-          <Button 
-            className="flex-1"
-            onClick={() => onViewRecipe(recipe.recipe_id)}
-          >
+          <Button className="flex-1" onClick={() => onViewRecipe(recipe.recipe_id)}>
             Voir la recette
           </Button>
           <Button variant="outline">

@@ -25,9 +25,11 @@ export default function ReferralRedirect() {
     logger.info('Referral code captured from /i/ route', { code });
 
     // Track click (non-blocking)
-    supabase.functions.invoke('referral-intake', {
-      body: { referralCode: code, action: 'track_click' },
-    }).catch(err => logger.debug('Click tracking error', { error: String(err) }));
+    supabase.functions
+      .invoke('referral-intake', {
+        body: { referralCode: code, action: 'track_click' },
+      })
+      .catch((err) => logger.debug('Click tracking error', { error: String(err) }));
 
     // Redirect to home with ?ref= so the existing tracking hook also fires
     // Redirect to pricing section to encourage signup

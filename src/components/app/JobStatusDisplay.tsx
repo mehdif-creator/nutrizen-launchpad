@@ -16,18 +16,13 @@ interface JobStatusDisplayProps {
 }
 
 const DEFAULT_MESSAGES = {
-  queued: 'En file d\'attente...',
+  queued: "En file d'attente...",
   running: 'Traitement en cours...',
   success: 'Termine avec succes !',
   error: 'Une erreur est survenue.',
 };
 
-export function JobStatusDisplay({
-  status,
-  error,
-  onRetry,
-  messages = {},
-}: JobStatusDisplayProps) {
+export function JobStatusDisplay({ status, error, onRetry, messages = {} }: JobStatusDisplayProps) {
   const displayMessages = { ...DEFAULT_MESSAGES, ...messages };
 
   if (status === 'idle') {
@@ -58,9 +53,7 @@ export function JobStatusDisplay({
           {status === 'success' && (
             <>
               <CheckCircle className="h-12 w-12 text-green-500" />
-              <p className="text-lg font-semibold text-green-600">
-                {displayMessages.success}
-              </p>
+              <p className="text-lg font-semibold text-green-600">{displayMessages.success}</p>
             </>
           )}
 
@@ -71,11 +64,7 @@ export function JobStatusDisplay({
                 <p className="text-lg font-semibold text-destructive mb-1">
                   {displayMessages.error}
                 </p>
-                {error && (
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {error}
-                  </p>
-                )}
+                {error && <p className="text-sm text-muted-foreground mb-4">{error}</p>}
                 {onRetry && (
                   <Button onClick={onRetry} variant="outline" className="gap-2">
                     <RefreshCw className="h-4 w-4" />

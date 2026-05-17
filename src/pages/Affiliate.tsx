@@ -1,11 +1,18 @@
-import { useState, useEffect } from "react";
-import { Header } from "@/components/landing/Header";
-import { Footer } from "@/components/landing/Footer";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { useState, useEffect } from 'react';
+import { Header } from '@/components/landing/Header';
+import { Footer } from '@/components/landing/Footer';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
 import {
   Users,
   Euro,
@@ -18,11 +25,11 @@ import {
   Rocket,
   ShieldCheck,
   LogIn,
-} from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
-import { useNavigate, Link } from "react-router-dom";
+} from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import { useNavigate, Link } from 'react-router-dom';
 
 interface Commission {
   id: string;
@@ -35,16 +42,16 @@ interface Commission {
 }
 
 function anonymizeUserId(userId: string): string {
-  return userId.slice(0, 3) + "***";
+  return userId.slice(0, 3) + '***';
 }
 
-type ProgramState = "anonymous" | "loading" | "not_enrolled" | "active" | "inactive";
+type ProgramState = 'anonymous' | 'loading' | 'not_enrolled' | 'active' | 'inactive';
 
 export default function Affiliate() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [programState, setProgramState] = useState<ProgramState>("loading");
-  const [affiliateCode, setAffiliateCode] = useState("");
+  const [programState, setProgramState] = useState<ProgramState>('loading');
+  const [affiliateCode, setAffiliateCode] = useState('');
   const [copied, setCopied] = useState(false);
   const [activating, setActivating] = useState(false);
   const [activeConversions, setActiveConversions] = useState(0);
@@ -56,13 +63,13 @@ export default function Affiliate() {
   useEffect(() => {
     // CRITICAL: wait for auth to fully resolve before deciding state
     if (authLoading) {
-      setProgramState("loading");
+      setProgramState('loading');
       return;
     }
     if (!user) {
-      setProgramState("anonymous");
+      setProgramState('anonymous');
       // Reset any stale data from a previous session
-      setAffiliateCode("");
+      setAffiliateCode('');
       setActiveConversions(0);
       setMonthlyCommission(0);
       setTotalEarnings(0);
@@ -75,32 +82,32 @@ export default function Affiliate() {
 
   const checkEnrollment = async () => {
     if (!user) return;
-    setProgramState("loading");
+    setProgramState('loading');
     try {
       const db = supabase as any;
       const { data: existing } = await db
-        .from("affiliates")
-        .select("affiliate_code, is_active")
-        .eq("user_id", user.id)
+        .from('affiliates')
+        .select('affiliate_code, is_active')
+        .eq('user_id', user.id)
         .maybeSingle();
 
       if (!existing) {
-        setProgramState("not_enrolled");
+        setProgramState('not_enrolled');
         return;
       }
 
       if (!existing.is_active) {
-        setProgramState("inactive");
+        setProgramState('inactive');
         setAffiliateCode(existing.affiliate_code);
         return;
       }
 
       setAffiliateCode(existing.affiliate_code);
       await loadStats(existing.affiliate_code);
-      setProgramState("active");
+      setProgramState('active');
     } catch (error) {
-      console.error("Error checking affiliate enrollment:", error);
-      setProgramState("not_enrolled");
+      console.error('Error checking affiliate enrollment:', error);
+      setProgramState('not_enrolled');
     }
   };
 
@@ -109,24 +116,24 @@ export default function Affiliate() {
     setActivating(true);
     try {
       const db = supabase as any;
-      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-      let code = "AFF";
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let code = 'AFF';
       for (let i = 0; i < 8; i++) {
         code += chars.charAt(Math.floor(Math.random() * chars.length));
       }
 
-      const { error } = await db.from("affiliates").insert({
+      const { error } = await db.from('affiliates').insert({
         user_id: user.id,
         affiliate_code: code,
       });
 
       if (error) {
-        if (error.code === "23505") {
-          let code2 = "AFF";
+        if (error.code === '23505') {
+          let code2 = 'AFF';
           for (let i = 0; i < 8; i++) {
             code2 += chars.charAt(Math.floor(Math.random() * chars.length));
           }
-          await db.from("affiliates").insert({
+          await db.from('affiliates').insert({
             user_id: user.id,
             affiliate_code: code2,
           });
@@ -136,11 +143,11 @@ export default function Affiliate() {
         }
       }
 
-      toast.success("Programme activé ! Votre lien est prêt.");
+      toast.success('Programme activé ! Votre lien est prêt.');
       setAffiliateCode(code);
-      setProgramState("active");
+      setProgramState('active');
     } catch (error) {
-      console.error("Error activating affiliate:", error);
+      console.error('Error activating affiliate:', error);
       toast.error("Erreur lors de l'activation");
     } finally {
       setActivating(false);
@@ -151,18 +158,18 @@ export default function Affiliate() {
     const db = supabase as any;
 
     const { data: referrals } = await db
-      .from("affiliate_referrals")
-      .select("id")
-      .eq("affiliate_code", code)
-      .eq("converted", true);
+      .from('affiliate_referrals')
+      .select('id')
+      .eq('affiliate_code', code)
+      .eq('converted', true);
 
     setActiveConversions(referrals?.length || 0);
 
     const { data: allCommissions } = await db
-      .from("affiliate_commissions")
-      .select("*")
-      .eq("affiliate_code", code)
-      .order("created_at", { ascending: false });
+      .from('affiliate_commissions')
+      .select('*')
+      .eq('affiliate_code', code)
+      .order('created_at', { ascending: false });
 
     if (allCommissions) {
       setCommissions(allCommissions as Commission[]);
@@ -170,15 +177,18 @@ export default function Affiliate() {
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       const monthly = allCommissions
-        .filter((c: any) => c.status === "pending" && c.created_at >= monthStart)
+        .filter((c: any) => c.status === 'pending' && c.created_at >= monthStart)
         .reduce((sum: number, c: any) => sum + c.commission_amount_cents, 0);
       setMonthlyCommission(monthly / 100);
 
-      const total = allCommissions.reduce((sum: number, c: any) => sum + c.commission_amount_cents, 0);
+      const total = allCommissions.reduce(
+        (sum: number, c: any) => sum + c.commission_amount_cents,
+        0
+      );
       setTotalEarnings(total / 100);
 
       const pending = allCommissions
-        .filter((c: any) => c.status === "pending")
+        .filter((c: any) => c.status === 'pending')
         .reduce((sum: number, c: any) => sum + c.commission_amount_cents, 0);
       setPendingPayout(pending / 100);
     }
@@ -189,18 +199,18 @@ export default function Affiliate() {
     try {
       await navigator.clipboard.writeText(link);
       setCopied(true);
-      toast.success("Lien copié !");
+      toast.success('Lien copié !');
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error("Erreur lors de la copie");
+      toast.error('Erreur lors de la copie');
     }
   };
 
   // --- LOADING ---
-  if (programState === "loading") {
+  if (programState === 'loading') {
     return (
       <div className="min-h-screen flex flex-col">
-        <Header onCtaClick={() => navigate("/auth/signup")} />
+        <Header onCtaClick={() => navigate('/auth/signup')} />
         <main className="flex-1 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </main>
@@ -211,7 +221,7 @@ export default function Affiliate() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header onCtaClick={() => navigate("/auth/signup")} />
+      <Header onCtaClick={() => navigate('/auth/signup')} />
 
       {/* Auth-aware banner for authenticated users */}
       {user && (
@@ -233,22 +243,30 @@ export default function Affiliate() {
         <div className="container px-4">
           {/* Hero */}
           <div className="max-w-4xl mx-auto text-center mb-12">
-            <h1 className="text-3xl md:text-5xl font-bold mb-4">Programme de Recommandation NutriZen</h1>
+            <h1 className="text-3xl md:text-5xl font-bold mb-4">
+              Programme de Recommandation NutriZen
+            </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-6">
-              Gagnez jusqu'à <span className="font-bold text-primary">20 % de commission récurrente</span> sur chaque
-              abonnement payé
+              Gagnez jusqu'à{' '}
+              <span className="font-bold text-primary">20 % de commission récurrente</span> sur
+              chaque abonnement payé
             </p>
 
             {/* CTA based on state — ANONYMOUS */}
-            {programState === "anonymous" && (
+            {programState === 'anonymous' && (
               <div className="space-y-3">
-                <Button size="lg" onClick={() => navigate("/auth/signup")}>
+                <Button size="lg" onClick={() => navigate('/auth/signup')}>
                   <Rocket className="h-5 w-5 mr-2" />
                   Créer un compte pour rejoindre le programme
                 </Button>
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                   <span>Déjà un compte ?</span>
-                  <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => navigate("/auth/login")}>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="p-0 h-auto"
+                    onClick={() => navigate('/auth/login')}
+                  >
                     <LogIn className="h-4 w-4 mr-1" />
                     Se connecter
                   </Button>
@@ -257,7 +275,7 @@ export default function Affiliate() {
             )}
 
             {/* CTA — NOT ENROLLED */}
-            {programState === "not_enrolled" && (
+            {programState === 'not_enrolled' && (
               <div className="space-y-3">
                 <Button size="lg" onClick={handleActivate} disabled={activating}>
                   {activating ? (
@@ -279,7 +297,7 @@ export default function Affiliate() {
             )}
 
             {/* INACTIVE */}
-            {programState === "inactive" && (
+            {programState === 'inactive' && (
               <Card className="max-w-md mx-auto p-6 bg-destructive/5 border-destructive/20">
                 <p className="text-sm text-destructive font-medium">
                   Votre programme a été désactivé. Contactez le support pour plus d'informations.
@@ -294,8 +312,8 @@ export default function Affiliate() {
               <h2 className="text-2xl font-semibold mb-4">Comment ça marche ?</h2>
               <div className="space-y-4 text-muted-foreground">
                 <p>
-                  Le programme de recommandation NutriZen vous permet de gagner des commissions en € en recommandant
-                  notre service.
+                  Le programme de recommandation NutriZen vous permet de gagner des commissions en €
+                  en recommandant notre service.
                 </p>
                 <div className="grid md:grid-cols-3 gap-4 mt-6">
                   <div className="text-center p-4 bg-background rounded-lg">
@@ -325,7 +343,7 @@ export default function Affiliate() {
           </div>
 
           {/* Active dashboard — ONLY for programState === 'active' */}
-          {programState === "active" && affiliateCode && (
+          {programState === 'active' && affiliateCode && (
             <div className="max-w-4xl mx-auto space-y-6">
               {/* Affiliate Link */}
               <Card className="p-6">
@@ -336,8 +354,17 @@ export default function Affiliate() {
                     readOnly
                     className="font-mono text-xs md:text-sm"
                   />
-                  <Button onClick={copyAffiliateLink} size="icon" variant="outline" className="flex-shrink-0">
-                    {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
+                  <Button
+                    onClick={copyAffiliateLink}
+                    size="icon"
+                    variant="outline"
+                    className="flex-shrink-0"
+                  >
+                    {copied ? (
+                      <Check className="h-4 w-4 text-primary" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
@@ -360,7 +387,9 @@ export default function Affiliate() {
                     <p className="text-sm text-muted-foreground">Commission mensuelle</p>
                     <TrendingUp className="h-5 w-5 text-primary" />
                   </div>
-                  <p className="text-3xl font-bold text-primary">{monthlyCommission.toFixed(2)} €</p>
+                  <p className="text-3xl font-bold text-primary">
+                    {monthlyCommission.toFixed(2)} €
+                  </p>
                   <p className="text-xs text-muted-foreground mt-1">Ce mois-ci (en attente)</p>
                 </Card>
 
@@ -390,15 +419,15 @@ export default function Affiliate() {
                   <li className="flex items-start gap-2">
                     <span className="text-primary">✓</span>
                     <span>
-                      Vous gagnez <strong className="text-foreground">20 % de commission</strong> sur chaque abonnement
-                      payé via votre lien
+                      Vous gagnez <strong className="text-foreground">20 % de commission</strong>{' '}
+                      sur chaque abonnement payé via votre lien
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary">✓</span>
                     <span>
-                      La commission est <strong className="text-foreground">récurrente</strong> : vous continuez à
-                      gagner tant que l'abonnement reste actif
+                      La commission est <strong className="text-foreground">récurrente</strong> :
+                      vous continuez à gagner tant que l'abonnement reste actif
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
@@ -411,7 +440,9 @@ export default function Affiliate() {
               {/* Commission History */}
               {commissions.length > 0 && (
                 <Card className="p-4 md:p-6">
-                  <h3 className="text-lg md:text-xl font-semibold mb-4">Historique des commissions</h3>
+                  <h3 className="text-lg md:text-xl font-semibold mb-4">
+                    Historique des commissions
+                  </h3>
 
                   {/* Desktop table */}
                   <div className="hidden md:block overflow-x-auto">
@@ -429,13 +460,15 @@ export default function Affiliate() {
                         {commissions.map((c) => (
                           <TableRow key={c.id}>
                             <TableCell>
-                              {new Date(c.created_at).toLocaleDateString("fr-FR", {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
+                              {new Date(c.created_at).toLocaleDateString('fr-FR', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
                               })}
                             </TableCell>
-                            <TableCell className="font-mono text-sm">{anonymizeUserId(c.referred_user_id)}</TableCell>
+                            <TableCell className="font-mono text-sm">
+                              {anonymizeUserId(c.referred_user_id)}
+                            </TableCell>
                             <TableCell className="text-right">
                               {(c.subscription_amount_cents / 100).toFixed(2)} €
                             </TableCell>
@@ -445,21 +478,25 @@ export default function Affiliate() {
                             <TableCell className="text-right">
                               <Badge
                                 variant={
-                                  c.status === "paid"
-                                    ? "default"
-                                    : c.status === "rejected"
-                                      ? "destructive"
-                                      : "secondary"
+                                  c.status === 'paid'
+                                    ? 'default'
+                                    : c.status === 'rejected'
+                                      ? 'destructive'
+                                      : 'secondary'
                                 }
                                 className={
-                                  c.status === "paid"
-                                    ? "bg-primary text-primary-foreground"
-                                    : c.status === "rejected"
-                                      ? ""
-                                      : "bg-accent/10 text-accent border-accent/30"
+                                  c.status === 'paid'
+                                    ? 'bg-primary text-primary-foreground'
+                                    : c.status === 'rejected'
+                                      ? ''
+                                      : 'bg-accent/10 text-accent border-accent/30'
                                 }
                               >
-                                {c.status === "paid" ? "Payé" : c.status === "rejected" ? "Rejeté" : "En attente"}
+                                {c.status === 'paid'
+                                  ? 'Payé'
+                                  : c.status === 'rejected'
+                                    ? 'Rejeté'
+                                    : 'En attente'}
                               </Badge>
                             </TableCell>
                           </TableRow>
@@ -471,28 +508,39 @@ export default function Affiliate() {
                   {/* Mobile card list */}
                   <div className="md:hidden space-y-3">
                     {commissions.map((c) => (
-                      <div key={c.id} className="p-4 rounded-lg border border-border bg-muted/30 space-y-2">
+                      <div
+                        key={c.id}
+                        className="p-4 rounded-lg border border-border bg-muted/30 space-y-2"
+                      >
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-muted-foreground">
-                            {new Date(c.created_at).toLocaleDateString("fr-FR", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
+                            {new Date(c.created_at).toLocaleDateString('fr-FR', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
                             })}
                           </span>
                           <Badge
                             variant={
-                              c.status === "paid" ? "default" : c.status === "rejected" ? "destructive" : "secondary"
+                              c.status === 'paid'
+                                ? 'default'
+                                : c.status === 'rejected'
+                                  ? 'destructive'
+                                  : 'secondary'
                             }
                             className={
-                              c.status === "paid"
-                                ? "bg-primary text-primary-foreground"
-                                : c.status === "rejected"
-                                  ? ""
-                                  : "bg-accent/10 text-accent border-accent/30"
+                              c.status === 'paid'
+                                ? 'bg-primary text-primary-foreground'
+                                : c.status === 'rejected'
+                                  ? ''
+                                  : 'bg-accent/10 text-accent border-accent/30'
                             }
                           >
-                            {c.status === "paid" ? "Payé" : c.status === "rejected" ? "Rejeté" : "En attente"}
+                            {c.status === 'paid'
+                              ? 'Payé'
+                              : c.status === 'rejected'
+                                ? 'Rejeté'
+                                : 'En attente'}
                           </Badge>
                         </div>
                         <div className="flex items-center justify-between">
@@ -516,9 +564,11 @@ export default function Affiliate() {
           )}
 
           {/* Benefits — visible for anonymous and not_enrolled */}
-          {(programState === "anonymous" || programState === "not_enrolled") && (
+          {(programState === 'anonymous' || programState === 'not_enrolled') && (
             <div className="max-w-4xl mx-auto mt-12">
-              <h2 className="text-2xl font-semibold text-center mb-8">Pourquoi rejoindre le programme ?</h2>
+              <h2 className="text-2xl font-semibold text-center mb-8">
+                Pourquoi rejoindre le programme ?
+              </h2>
               <div className="grid md:grid-cols-3 gap-6">
                 <Card className="p-6 text-center">
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
@@ -535,7 +585,9 @@ export default function Affiliate() {
                     <TrendingUp className="h-6 w-6 text-primary" />
                   </div>
                   <h3 className="font-semibold mb-2">Produit qui cartonne</h3>
-                  <p className="text-sm text-muted-foreground">NutriZen aide déjà les familles à mieux manger</p>
+                  <p className="text-sm text-muted-foreground">
+                    NutriZen aide déjà les familles à mieux manger
+                  </p>
                 </Card>
 
                 <Card className="p-6 text-center">

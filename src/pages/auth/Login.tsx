@@ -12,7 +12,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+
   // Support redirect after login (e.g. from /credits)
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirect');
@@ -62,7 +62,8 @@ export default function Login() {
     if (error) {
       toast({
         title: 'Connexion',
-        description: 'Une erreur est survenue lors de la connexion avec Google. Veuillez réessayer.',
+        description:
+          'Une erreur est survenue lors de la connexion avec Google. Veuillez réessayer.',
         variant: 'destructive',
       });
     }
@@ -74,14 +75,14 @@ export default function Login() {
         <div className="bg-card rounded-2xl shadow-card p-5 sm:p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold mb-2 text-foreground">Connexion</h1>
-            <p className="text-muted-foreground">
-              Accède à ton espace NutriZen
-            </p>
+            <p className="text-muted-foreground">Accède à ton espace NutriZen</p>
           </div>
 
           <div className="mb-6 p-4 bg-accent/10 dark:bg-accent/20 rounded-lg">
             <p className="text-sm text-center text-foreground">
-              <strong>Nouveau membre ?</strong> Après votre inscription, vous recevrez un email avec un lien magique pour accéder à votre espace (vérifiez vos spam si vous ne le recevez pas).
+              <strong>Nouveau membre ?</strong> Après votre inscription, vous recevrez un email avec
+              un lien magique pour accéder à votre espace (vérifiez vos spam si vous ne le recevez
+              pas).
             </p>
           </div>
 
@@ -99,7 +100,7 @@ export default function Login() {
                 />
               </div>
 
-          <Button type="submit" className="w-full min-h-[52px]" disabled={loading}>
+              <Button type="submit" className="w-full min-h-[52px]" disabled={loading}>
                 <Mail className="mr-2 h-4 w-4" />
                 {loading ? 'Envoi...' : 'Recevoir un nouveau lien magique'}
               </Button>
@@ -114,12 +115,7 @@ export default function Login() {
               </div>
             </div>
 
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={handleGoogleLogin}
-            >
+            <Button type="button" variant="outline" className="w-full" onClick={handleGoogleLogin}>
               <Chrome className="mr-2 h-4 w-4" />
               Google
             </Button>

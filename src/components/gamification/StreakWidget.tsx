@@ -51,12 +51,14 @@ export function StreakWidget({ currentStreak, longestStreak }: StreakWidgetProps
           {/* Next milestone */}
           {currentStreak < 7 && (
             <p className="text-sm text-muted-foreground">
-              ⚡ Plus que <span className="font-semibold text-foreground">{daysUntil7} jours</span> pour +1 crédit
+              ⚡ Plus que <span className="font-semibold text-foreground">{daysUntil7} jours</span>{' '}
+              pour +1 crédit
             </p>
           )}
           {currentStreak >= 7 && currentStreak < 30 && (
             <p className="text-sm text-muted-foreground">
-              🔥 Plus que <span className="font-semibold text-foreground">{daysUntil30} jours</span> pour le badge Gold +10pts
+              🔥 Plus que <span className="font-semibold text-foreground">{daysUntil30} jours</span>{' '}
+              pour le badge Gold +10pts
             </p>
           )}
           {currentStreak >= 30 && (
@@ -70,8 +72,8 @@ export function StreakWidget({ currentStreak, longestStreak }: StreakWidgetProps
             <motion.div
               className="h-full bg-gradient-to-r from-orange-500 to-red-500"
               initial={{ width: 0 }}
-              animate={{ 
-                width: `${Math.min(100, (currentStreak / (currentStreak < 7 ? 7 : 30)) * 100)}%`
+              animate={{
+                width: `${Math.min(100, (currentStreak / (currentStreak < 7 ? 7 : 30)) * 100)}%`,
               }}
               transition={{ duration: 0.5 }}
             />

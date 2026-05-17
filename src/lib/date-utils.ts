@@ -36,10 +36,7 @@ export const toUTC = (date: Date): Date => {
 /**
  * Format a date in French locale with Paris timezone
  */
-export const formatParisDate = (
-  date: Date | string,
-  formatStr: string = 'PP'
-): string => {
+export const formatParisDate = (date: Date | string, formatStr: string = 'PP'): string => {
   const parisDate = toParisTime(date);
   return format(parisDate, formatStr, { locale: fr });
 };
@@ -75,7 +72,7 @@ export const formatLocalDate = (
 ): string => {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   const userTimezone = getUserTimezone();
-  
+
   return dateObj.toLocaleString('fr-FR', {
     timeZone: userTimezone,
     ...formatOptions,

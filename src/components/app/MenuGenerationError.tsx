@@ -41,14 +41,14 @@ export function MenuGenerationError({
       case 'NO_RECIPES_IN_DB':
         return {
           title: 'Base de recettes vide',
-          description: 'Aucune recette n\'est disponible actuellement.',
+          description: "Aucune recette n'est disponible actuellement.",
           suggestion: 'Contacte le support pour signaler ce problème.',
           showRestrictions: false,
         };
       default:
         return {
           title: 'Erreur de génération',
-          description: message || 'Une erreur inattendue s\'est produite.',
+          description: message || "Une erreur inattendue s'est produite.",
           suggestion: 'Réessaie dans quelques instants.',
           showRestrictions: false,
         };
@@ -66,9 +66,7 @@ export function MenuGenerationError({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-sm text-destructive/80">
-          {content.description}
-        </p>
+        <p className="text-sm text-destructive/80">{content.description}</p>
 
         {content.showRestrictions && restrictions.length > 0 && (
           <div className="p-3 bg-muted rounded-lg">
@@ -77,7 +75,7 @@ export function MenuGenerationError({
             </p>
             <div className="flex flex-wrap gap-2">
               {restrictions.map((restriction) => (
-                <span 
+                <span
                   key={restriction}
                   className="px-2 py-1 text-xs bg-secondary text-secondary-foreground rounded-full"
                 >
@@ -88,17 +86,11 @@ export function MenuGenerationError({
           </div>
         )}
 
-        <p className="text-sm text-muted-foreground">
-          💡 {content.suggestion}
-        </p>
+        <p className="text-sm text-muted-foreground">💡 {content.suggestion}</p>
 
         <div className="flex flex-col sm:flex-row gap-2 pt-2">
           {onRetry && (
-            <Button 
-              onClick={onRetry} 
-              disabled={retrying}
-              className="flex-1"
-            >
+            <Button onClick={onRetry} disabled={retrying} className="flex-1">
               <RefreshCw className={`h-4 w-4 mr-2 ${retrying ? 'animate-spin' : ''}`} />
               {retrying ? 'Régénération...' : 'Réessayer'}
             </Button>

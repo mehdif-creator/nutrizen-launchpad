@@ -30,7 +30,7 @@ export function WeekMenuCard({
   else if (isError) state = 'error';
   else if (!week?.menu_exists) state = 'empty';
 
-  const weekStartDate = week?.week_start 
+  const weekStartDate = week?.week_start
     ? format(parseISO(week.week_start), 'd MMMM', { locale: fr })
     : '';
 
@@ -51,24 +51,18 @@ export function WeekMenuCard({
       <div className="space-y-3">
         {/* Week info */}
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">
-            Semaine du {weekStartDate}
-          </span>
-          <span className="text-sm font-medium">
-            {week?.meals_count || 0} repas
-          </span>
+          <span className="text-sm text-muted-foreground">Semaine du {weekStartDate}</span>
+          <span className="text-sm font-medium">{week?.meals_count || 0} repas</span>
         </div>
 
         {/* Today's meals */}
         {todayMeal?.exists && (
           <div className="p-3 bg-muted/50 rounded-lg space-y-2">
-            <div className="text-xs font-medium text-muted-foreground uppercase">
-              Aujourd'hui
-            </div>
+            <div className="text-xs font-medium text-muted-foreground uppercase">Aujourd'hui</div>
             {todayMeal.lunch_title && (
               <div className="flex items-center gap-2">
                 <ChefHat className="h-4 w-4 text-orange-500" />
-                <Link 
+                <Link
                   to={`/app/recipe/${todayMeal.lunch_recipe_id}`}
                   className="text-sm hover:underline truncate"
                 >
@@ -79,7 +73,7 @@ export function WeekMenuCard({
             {todayMeal.dinner_title && (
               <div className="flex items-center gap-2">
                 <ChefHat className="h-4 w-4 text-purple-500" />
-                <Link 
+                <Link
                   to={`/app/recipe/${todayMeal.dinner_recipe_id}`}
                   className="text-sm hover:underline truncate"
                 >
@@ -91,9 +85,7 @@ export function WeekMenuCard({
         )}
 
         {!todayMeal?.exists && week?.menu_exists && (
-          <p className="text-xs text-muted-foreground">
-            Aucun repas planifié pour aujourd'hui.
-          </p>
+          <p className="text-xs text-muted-foreground">Aucun repas planifié pour aujourd'hui.</p>
         )}
 
         {/* Action */}
@@ -103,12 +95,7 @@ export function WeekMenuCard({
               Voir ma semaine
             </Button>
           </Link>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={onGenerateMenu}
-            disabled={generating}
-          >
+          <Button variant="ghost" size="sm" onClick={onGenerateMenu} disabled={generating}>
             {generating ? 'Génération...' : 'Régénérer'}
           </Button>
         </div>

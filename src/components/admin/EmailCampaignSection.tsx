@@ -49,9 +49,12 @@ export function EmailCampaignSection({ embedded = false }: { embedded?: boolean 
   const fetchStatus = async () => {
     setLoading(true);
     try {
-      const data = await callEdgeFunction<CampaignStatus & { success: boolean }>('brevo-onboarding', {
-        action: 'get_status',
-      });
+      const data = await callEdgeFunction<CampaignStatus & { success: boolean }>(
+        'brevo-onboarding',
+        {
+          action: 'get_status',
+        }
+      );
       setStatus(data);
     } catch (err: any) {
       console.error('Failed to fetch email status:', err);
@@ -60,7 +63,9 @@ export function EmailCampaignSection({ embedded = false }: { embedded?: boolean 
     }
   };
 
-  useEffect(() => { fetchStatus(); }, []);
+  useEffect(() => {
+    fetchStatus();
+  }, []);
 
   const handleSetupTemplates = async () => {
     setSetupLoading(true);
@@ -92,10 +97,29 @@ export function EmailCampaignSection({ embedded = false }: { embedded?: boolean 
 
   const statusBadge = (s: string) => {
     switch (s) {
-      case 'sent': return <Badge className="bg-primary/10 text-primary border-primary/20"><CheckCircle className="w-3 h-3 mr-1" />Envoyé</Badge>;
-      case 'pending': return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />En attente</Badge>;
-      case 'error': return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1" />Erreur</Badge>;
-      default: return <Badge variant="outline">{s}</Badge>;
+      case 'sent':
+        return (
+          <Badge className="bg-primary/10 text-primary border-primary/20">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Envoyé
+          </Badge>
+        );
+      case 'pending':
+        return (
+          <Badge variant="secondary">
+            <Clock className="w-3 h-3 mr-1" />
+            En attente
+          </Badge>
+        );
+      case 'error':
+        return (
+          <Badge variant="destructive">
+            <AlertCircle className="w-3 h-3 mr-1" />
+            Erreur
+          </Badge>
+        );
+      default:
+        return <Badge variant="outline">{s}</Badge>;
     }
   };
 
@@ -108,7 +132,7 @@ export function EmailCampaignSection({ embedded = false }: { embedded?: boolean 
   const wrapperProps = embedded ? {} : { className: 'p-6' };
 
   return (
-    <Wrapper {...wrapperProps as any}>
+    <Wrapper {...(wrapperProps as any)}>
       {!embedded && (
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold flex items-center gap-2">
@@ -135,18 +159,30 @@ export function EmailCampaignSection({ embedded = false }: { embedded?: boolean 
       {/* Templates */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Templates d'emails</h3>
-          <Button variant="outline" size="sm" onClick={handleSetupTemplates} disabled={setupLoading}>
+          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+            Templates d'emails
+          </h3>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSetupTemplates}
+            disabled={setupLoading}
+          >
             <Settings className="h-4 w-4 mr-1" />
             {setupLoading ? 'Création...' : 'Créer dans Brevo'}
           </Button>
         </div>
         <div className="space-y-2">
           {(status?.templates || []).map((tmpl) => (
-            <div key={tmpl.key} className="flex items-center justify-between p-3 rounded-lg border bg-card">
+            <div
+              key={tmpl.key}
+              className="flex items-center justify-between p-3 rounded-lg border bg-card"
+            >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs shrink-0">{delayLabel(tmpl.delay_days)}</Badge>
+                  <Badge variant="outline" className="text-xs shrink-0">
+                    {delayLabel(tmpl.delay_days)}
+                  </Badge>
                   <span className="font-medium text-sm truncate">{tmpl.subject}</span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 truncate">{tmpl.preheader}</p>
@@ -163,7 +199,8 @@ export function EmailCampaignSection({ embedded = false }: { embedded?: boolean 
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-            Emails planifiés ({status?.scheduled?.filter(s => s.status === 'pending').length || 0} en attente)
+            Emails planifiés ({status?.scheduled?.filter((s) => s.status === 'pending').length || 0}{' '}
+            en attente)
           </h3>
           <Button variant="outline" size="sm" onClick={handleSendScheduled}>
             <Send className="h-4 w-4 mr-1" />
@@ -173,7 +210,10 @@ export function EmailCampaignSection({ embedded = false }: { embedded?: boolean 
         {status?.scheduled && status.scheduled.length > 0 ? (
           <div className="space-y-1">
             {status.scheduled.slice(0, 10).map((s) => (
-              <div key={s.id} className="flex items-center justify-between py-2 px-3 rounded border text-sm">
+              <div
+                key={s.id}
+                className="flex items-center justify-between py-2 px-3 rounded border text-sm"
+              >
                 <div className="flex items-center gap-2">
                   {statusBadge(s.status)}
                   <span className="text-muted-foreground">{s.template_key}</span>
@@ -199,13 +239,21 @@ export function EmailCampaignSection({ embedded = false }: { embedded?: boolean 
         {status?.recent_events && status.recent_events.length > 0 ? (
           <div className="space-y-1">
             {status.recent_events.slice(0, 8).map((evt) => (
-              <div key={evt.id} className="flex items-center justify-between py-2 px-3 rounded border text-sm">
+              <div
+                key={evt.id}
+                className="flex items-center justify-between py-2 px-3 rounded border text-sm"
+              >
                 <div className="flex items-center gap-2">
                   {statusBadge(evt.status)}
                   <span className="text-muted-foreground">{evt.event_type}</span>
                 </div>
                 <span className="text-xs text-muted-foreground">
-                  {new Date(evt.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                  {new Date(evt.created_at).toLocaleDateString('fr-FR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
                 </span>
               </div>
             ))}

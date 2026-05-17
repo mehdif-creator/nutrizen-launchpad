@@ -36,9 +36,7 @@ export function ProgressionCardV2() {
   const nextThreshold = getNextLevelThreshold(state.level, levels);
   const xpInLevel = state.total_points - currentThreshold;
   const xpNeeded = nextThreshold - currentThreshold;
-  const progress = xpNeeded > 0
-    ? Math.min(100, Math.round((xpInLevel / xpNeeded) * 100))
-    : 100;
+  const progress = xpNeeded > 0 ? Math.min(100, Math.round((xpInLevel / xpNeeded) * 100)) : 100;
 
   const levelName = getLevelName(state.level, levels);
 
@@ -71,7 +69,9 @@ export function ProgressionCardV2() {
         <div className="space-y-1">
           <Progress value={progress} className="h-2" />
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{xpInLevel} / {xpNeeded} pts</span>
+            <span>
+              {xpInLevel} / {xpNeeded} pts
+            </span>
             {state.level < 10 && <span>Prochain : {nextThreshold} pts</span>}
           </div>
         </div>

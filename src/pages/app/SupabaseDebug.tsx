@@ -7,7 +7,16 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { CheckCircle2, XCircle, Loader2, RefreshCw, Database, Image, User, Shield } from 'lucide-react';
+import {
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  RefreshCw,
+  Database,
+  Image,
+  User,
+  Shield,
+} from 'lucide-react';
 
 interface TestResult {
   status: 'pending' | 'success' | 'error';
@@ -41,7 +50,7 @@ export default function SupabaseDebug() {
     try {
       const { data: session, error } = await supabase.auth.getUser();
       if (error) throw error;
-      setTests(prev => ({
+      setTests((prev) => ({
         ...prev,
         auth: {
           status: 'success',
@@ -51,7 +60,7 @@ export default function SupabaseDebug() {
       }));
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      setTests(prev => ({
+      setTests((prev) => ({
         ...prev,
         auth: {
           status: 'error',
@@ -63,13 +72,9 @@ export default function SupabaseDebug() {
 
     // Test 2: DB Read
     try {
-      const { data, error } = await supabase
-        .from('recipes')
-        .select('id, title')
-        .limit(1)
-        .single();
+      const { data, error } = await supabase.from('recipes').select('id, title').limit(1).single();
       if (error) throw error;
-      setTests(prev => ({
+      setTests((prev) => ({
         ...prev,
         dbRead: {
           status: 'success',
@@ -79,7 +84,7 @@ export default function SupabaseDebug() {
       }));
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      setTests(prev => ({
+      setTests((prev) => ({
         ...prev,
         dbRead: {
           status: 'error',
@@ -94,12 +99,9 @@ export default function SupabaseDebug() {
       const testValue = new Date().toISOString();
       const { error } = await supabase
         .from('profiles')
-        .upsert(
-          { id: user.id, updated_at: testValue },
-          { onConflict: 'id' }
-        );
+        .upsert({ id: user.id, updated_at: testValue }, { onConflict: 'id' });
       if (error) throw error;
-      setTests(prev => ({
+      setTests((prev) => ({
         ...prev,
         dbWrite: {
           status: 'success',
@@ -109,7 +111,7 @@ export default function SupabaseDebug() {
       }));
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      setTests(prev => ({
+      setTests((prev) => ({
         ...prev,
         dbWrite: {
           status: 'error',
@@ -121,13 +123,11 @@ export default function SupabaseDebug() {
 
     // Test 4: Storage access
     try {
-      const { data } = supabase.storage
-        .from('recipe-images')
-        .getPublicUrl('test-placeholder.jpg');
-      
+      const { data } = supabase.storage.from('recipe-images').getPublicUrl('test-placeholder.jpg');
+
       const testUrl = data?.publicUrl;
       if (testUrl) {
-        setTests(prev => ({
+        setTests((prev) => ({
           ...prev,
           storage: {
             status: 'success',
@@ -136,11 +136,11 @@ export default function SupabaseDebug() {
           },
         }));
       } else {
-        throw new Error('Impossible de générer l\'URL');
+        throw new Error("Impossible de générer l'URL");
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      setTests(prev => ({
+      setTests((prev) => ({
         ...prev,
         storage: {
           status: 'error',
@@ -165,7 +165,8 @@ export default function SupabaseDebug() {
   }
 
   const StatusIcon = ({ status }: { status: TestResult['status'] }) => {
-    if (status === 'pending') return <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />;
+    if (status === 'pending')
+      return <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />;
     if (status === 'success') return <CheckCircle2 className="h-5 w-5 text-green-500" />;
     return <XCircle className="h-5 w-5 text-destructive" />;
   };
@@ -218,8 +219,8 @@ export default function SupabaseDebug() {
                   result.status === 'success'
                     ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900'
                     : result.status === 'error'
-                    ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900'
-                    : 'bg-muted/50 border-muted'
+                      ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900'
+                      : 'bg-muted/50 border-muted'
                 }`}
               >
                 <StatusIcon status={result.status} />
@@ -232,12 +233,16 @@ export default function SupabaseDebug() {
                         result.status === 'success'
                           ? 'default'
                           : result.status === 'error'
-                          ? 'destructive'
-                          : 'secondary'
+                            ? 'destructive'
+                            : 'secondary'
                       }
                       className="text-xs"
                     >
-                      {result.status === 'success' ? 'OK' : result.status === 'error' ? 'ERREUR' : '...'}
+                      {result.status === 'success'
+                        ? 'OK'
+                        : result.status === 'error'
+                          ? 'ERREUR'
+                          : '...'}
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">{result.message}</p>
@@ -275,7 +280,8 @@ export default function SupabaseDebug() {
 
           <div className="text-center text-xs text-muted-foreground">
             <p>
-              Si des tests échouent, vérifie les politiques RLS et les permissions Storage dans Supabase.
+              Si des tests échouent, vérifie les politiques RLS et les permissions Storage dans
+              Supabase.
             </p>
           </div>
         </div>

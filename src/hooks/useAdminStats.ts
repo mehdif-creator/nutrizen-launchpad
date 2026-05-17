@@ -24,7 +24,8 @@ export function useAdminReferralFunnel(dateFrom?: string, dateTo?: string) {
     queryKey: ['admin-referral-funnel', dateFrom, dateTo],
     queryFn: async (): Promise<ReferralFunnelStats> => {
       const { data, error } = await supabase.rpc('rpc_admin_referral_funnel', {
-        p_date_from: dateFrom || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        p_date_from:
+          dateFrom || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         p_date_to: dateTo || new Date().toISOString().split('T')[0],
       });
 
@@ -44,7 +45,8 @@ export function useAdminConversionFunnel(dateFrom?: string, dateTo?: string) {
     queryKey: ['admin-conversion-funnel', dateFrom, dateTo],
     queryFn: async (): Promise<ConversionFunnelStats> => {
       const { data, error } = await supabase.rpc('rpc_admin_conversion_funnel', {
-        p_date_from: dateFrom || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        p_date_from:
+          dateFrom || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         p_date_to: dateTo || new Date().toISOString().split('T')[0],
       });
 

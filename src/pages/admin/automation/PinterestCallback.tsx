@@ -22,7 +22,9 @@ const PinterestCallback: React.FC = () => {
 
     const callEdgeFunction = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         const headers: Record<string, string> = {};
         if (session?.access_token) {
           headers['Authorization'] = `Bearer ${session.access_token}`;
@@ -36,11 +38,11 @@ const PinterestCallback: React.FC = () => {
           setStatus('success');
           setTimeout(() => navigate('/admin/automation/settings'), 2000);
         } else {
-          setErrorMessage(data.message ?? "Erreur inconnue lors de la connexion Pinterest.");
+          setErrorMessage(data.message ?? 'Erreur inconnue lors de la connexion Pinterest.');
           setStatus('error');
         }
       } catch {
-        setErrorMessage("Impossible de contacter le serveur. Réessaie.");
+        setErrorMessage('Impossible de contacter le serveur. Réessaie.');
         setStatus('error');
       }
     };

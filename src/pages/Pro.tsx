@@ -23,7 +23,7 @@ export default function Pro() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  
+
   useReferralTracking();
   useSeoMeta(proCopy.seo.title, proCopy.seo.description);
 
@@ -33,17 +33,25 @@ export default function Pro() {
     try {
       leadSchema.parse({ email });
     } catch (error) {
-      toast({ title: "Erreur", description: "Veuillez entrer un email valide", variant: "destructive" });
+      toast({
+        title: 'Erreur',
+        description: 'Veuillez entrer un email valide',
+        variant: 'destructive',
+      });
       return;
     }
 
     const lastSubmissions = localStorage.getItem('lead_submissions');
     const now = Date.now();
     let submissions: number[] = lastSubmissions ? JSON.parse(lastSubmissions) : [];
-    submissions = submissions.filter(time => now - time < 3600000);
-    
+    submissions = submissions.filter((time) => now - time < 3600000);
+
     if (submissions.length >= 3) {
-      toast({ title: "Trop de tentatives", description: "Veuillez réessayer dans une heure", variant: "destructive" });
+      toast({
+        title: 'Trop de tentatives',
+        description: 'Veuillez réessayer dans une heure',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -59,11 +67,18 @@ export default function Pro() {
       submissions.push(now);
       localStorage.setItem('lead_submissions', JSON.stringify(submissions));
 
-      toast({ title: "Inscription réussie !", description: "Nous vous tiendrons informé du lancement de NutriZen Pro" });
+      toast({
+        title: 'Inscription réussie !',
+        description: 'Nous vous tiendrons informé du lancement de NutriZen Pro',
+      });
       setEmail('');
     } catch (error: any) {
       console.error('Error submitting lead:', error);
-      toast({ title: "Erreur", description: error.message || "Une erreur est survenue. Veuillez réessayer.", variant: "destructive" });
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Une erreur est survenue. Veuillez réessayer.',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -72,7 +87,7 @@ export default function Pro() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header onCtaClick={() => navigate('/auth/signup')} />
-      
+
       <main className="flex-1">
         {/* Hero Section */}
         <section className="py-20 bg-gradient-to-br from-primary/10 via-accent/5 to-background">
@@ -84,15 +99,16 @@ export default function Pro() {
               <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 {proCopy.hero.h1}
               </h1>
-              <p className="text-xl md:text-2xl text-muted-foreground">
-                {proCopy.hero.subtitle}
-              </p>
-              
+              <p className="text-xl md:text-2xl text-muted-foreground">{proCopy.hero.subtitle}</p>
+
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-8">
                 {proCopy.miniCards.map((card, index) => {
                   const Icon = miniCardIcons[index % miniCardIcons.length];
                   return (
-                    <div key={card.label} className="flex flex-col items-center gap-2 p-4 bg-background rounded-lg">
+                    <div
+                      key={card.label}
+                      className="flex flex-col items-center gap-2 p-4 bg-background rounded-lg"
+                    >
                       <Icon className="h-8 w-8 text-primary" />
                       <span className="text-sm font-medium">{card.label}</span>
                     </div>
@@ -109,12 +125,8 @@ export default function Pro() {
             <div className="max-w-2xl mx-auto">
               <div className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-2xl p-8 md:p-12 shadow-elegant">
                 <div className="text-center space-y-4 mb-8">
-                  <h2 className="text-3xl md:text-4xl font-bold">
-                    {proCopy.waitlist.title}
-                  </h2>
-                  <p className="text-lg text-muted-foreground">
-                    {proCopy.waitlist.text}
-                  </p>
+                  <h2 className="text-3xl md:text-4xl font-bold">{proCopy.waitlist.title}</h2>
+                  <p className="text-lg text-muted-foreground">{proCopy.waitlist.text}</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -153,7 +165,7 @@ export default function Pro() {
               <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
                 Fonctionnalités à venir
               </h2>
-              
+
               <div className="space-y-8">
                 {proCopy.features.map((feature, index) => (
                   <div key={feature.title} className="flex gap-6 items-start">

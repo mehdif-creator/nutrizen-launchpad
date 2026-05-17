@@ -51,9 +51,7 @@ export function ActivityFeedV2() {
               <span className="text-sm">{getLabel(event.event_type)}</span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-primary">
-                +{event.xp_delta} pts
-              </span>
+              <span className="text-sm font-medium text-primary">+{event.xp_delta} pts</span>
               <span className="text-xs text-muted-foreground">
                 {formatDistanceToNow(new Date(event.created_at!), {
                   addSuffix: true,

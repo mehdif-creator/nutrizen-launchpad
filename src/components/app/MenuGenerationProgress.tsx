@@ -21,14 +21,14 @@ const GENERATION_STEPS = [
 ];
 
 const LOADING_MESSAGES = [
-  "On dresse la table...",
-  "On affine le menu comme un chef...",
-  "On consulte le guide Michelin...",
-  "Deux secondes, on fait chauffer les fourneaux...",
-  "On prépare ta semaine aux petits oignons...",
-  "On équilibre les macros au gramme près...",
-  "On sélectionne les meilleures recettes...",
-  "Patience, la perfection prend du temps...",
+  'On dresse la table...',
+  'On affine le menu comme un chef...',
+  'On consulte le guide Michelin...',
+  'Deux secondes, on fait chauffer les fourneaux...',
+  'On prépare ta semaine aux petits oignons...',
+  'On équilibre les macros au gramme près...',
+  'On sélectionne les meilleures recettes...',
+  'Patience, la perfection prend du temps...',
 ];
 
 /**
@@ -77,7 +77,7 @@ export function MenuGenerationProgress({
     if (status !== 'generating') return;
 
     const interval = setInterval(() => {
-      setLoadingMessage(prev => {
+      setLoadingMessage((prev) => {
         const currentIndex = LOADING_MESSAGES.indexOf(prev);
         const nextIndex = (currentIndex + 1) % LOADING_MESSAGES.length;
         return LOADING_MESSAGES[nextIndex];
@@ -94,13 +94,21 @@ export function MenuGenerationProgress({
 
   if (status === 'success') {
     return (
-      <div className={cn("min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5 p-4", className)}>
+      <div
+        className={cn(
+          'min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5 p-4',
+          className
+        )}
+      >
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center space-y-4">
             <div className="flex justify-center">
               <div className="relative">
                 <CheckCircle2 className="h-16 w-16 text-primary" />
-                <div className="absolute -inset-2 rounded-full bg-primary/20 animate-ping" style={{ animationDuration: '2s' }} />
+                <div
+                  className="absolute -inset-2 rounded-full bg-primary/20 animate-ping"
+                  style={{ animationDuration: '2s' }}
+                />
               </div>
             </div>
             <h2 className="text-2xl font-bold">Ton menu est prêt ! 🎉</h2>
@@ -113,7 +121,12 @@ export function MenuGenerationProgress({
 
   if (status === 'error') {
     return (
-      <div className={cn("min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5 p-4", className)}>
+      <div
+        className={cn(
+          'min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5 p-4',
+          className
+        )}
+      >
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <div className="mx-auto w-14 h-14 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
@@ -123,9 +136,7 @@ export function MenuGenerationProgress({
           </CardHeader>
           <CardContent className="space-y-4">
             {errorMessage && (
-              <p className="text-center text-sm text-muted-foreground">
-                {errorMessage}
-              </p>
+              <p className="text-center text-sm text-muted-foreground">{errorMessage}</p>
             )}
             <div className="flex flex-col gap-3">
               {onRetry && (
@@ -151,13 +162,21 @@ export function MenuGenerationProgress({
   const progressPercent = Math.min(95, (elapsedTime / totalDuration) * 100);
 
   return (
-    <div className={cn("min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5 p-4", className)}>
+    <div
+      className={cn(
+        'min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5 p-4',
+        className
+      )}
+    >
       <Card className="w-full max-w-md">
         <CardHeader className="text-center pb-2">
           <div className="flex justify-center mb-4">
             <div className="relative">
               <Sparkles className="h-14 w-14 text-primary animate-pulse" />
-              <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" style={{ animationDuration: '2s' }} />
+              <div
+                className="absolute inset-0 rounded-full bg-primary/20 animate-ping"
+                style={{ animationDuration: '2s' }}
+              />
             </div>
           </div>
           <CardTitle className="text-xl">Génération de ton menu...</CardTitle>
@@ -178,20 +197,24 @@ export function MenuGenerationProgress({
               const isCurrent = index === currentStepIndex;
 
               return (
-                <div 
-                  key={step.key} 
+                <div
+                  key={step.key}
                   className={cn(
-                    "flex items-center gap-3 p-2 rounded-lg transition-all",
-                    isCurrent && "bg-primary/5",
-                    isCompleted && "opacity-60"
+                    'flex items-center gap-3 p-2 rounded-lg transition-all',
+                    isCurrent && 'bg-primary/5',
+                    isCompleted && 'opacity-60'
                   )}
                 >
-                  <div className={cn(
-                    "w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium",
-                    isCompleted ? "bg-primary text-primary-foreground" :
-                    isCurrent ? "bg-primary/20 text-primary" :
-                    "bg-muted text-muted-foreground"
-                  )}>
+                  <div
+                    className={cn(
+                      'w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium',
+                      isCompleted
+                        ? 'bg-primary text-primary-foreground'
+                        : isCurrent
+                          ? 'bg-primary/20 text-primary'
+                          : 'bg-muted text-muted-foreground'
+                    )}
+                  >
                     {isCompleted ? (
                       <CheckCircle2 className="h-4 w-4" />
                     ) : isCurrent ? (
@@ -200,11 +223,13 @@ export function MenuGenerationProgress({
                       index + 1
                     )}
                   </div>
-                  <span className={cn(
-                    "text-sm",
-                    isCurrent && "font-medium",
-                    !isCompleted && !isCurrent && "text-muted-foreground"
-                  )}>
+                  <span
+                    className={cn(
+                      'text-sm',
+                      isCurrent && 'font-medium',
+                      !isCompleted && !isCurrent && 'text-muted-foreground'
+                    )}
+                  >
                     {step.label}
                   </span>
                 </div>
@@ -214,9 +239,7 @@ export function MenuGenerationProgress({
 
           {/* Rotating message */}
           <div className="text-center pt-2 border-t">
-            <p className="text-sm text-muted-foreground italic">
-              {loadingMessage}
-            </p>
+            <p className="text-sm text-muted-foreground italic">{loadingMessage}</p>
             {showExtendedMessage && (
               <p className="text-xs text-muted-foreground mt-2">
                 Encore quelques secondes, on finalise ton menu...

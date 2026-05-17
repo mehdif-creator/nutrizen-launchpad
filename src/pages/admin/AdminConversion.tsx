@@ -5,15 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAdminConversionFunnel } from '@/hooks/useAdminStats';
-import { 
-  UserPlus, 
-  ClipboardCheck, 
-  CalendarDays, 
+import {
+  UserPlus,
+  ClipboardCheck,
+  CalendarDays,
   CreditCard,
   ArrowLeft,
   RefreshCw,
   ArrowRight,
-  TrendingUp
+  TrendingUp,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
@@ -75,9 +75,7 @@ export default function AdminConversion() {
             </Link>
             <div>
               <h1 className="text-3xl font-bold">Funnel de Conversion</h1>
-              <p className="text-muted-foreground">
-                Parcours utilisateur: inscription → achat
-              </p>
+              <p className="text-muted-foreground">Parcours utilisateur: inscription → achat</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -104,9 +102,7 @@ export default function AdminConversion() {
               <TrendingUp className="h-5 w-5" />
               Funnel de conversion
             </CardTitle>
-            <CardDescription>
-              Période: {period} derniers jours
-            </CardDescription>
+            <CardDescription>Période: {period} derniers jours</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -124,7 +120,7 @@ export default function AdminConversion() {
               <div className="flex items-center justify-between gap-2">
                 {funnelSteps.map((step, index) => (
                   <div key={step.label} className="flex-1 flex items-center gap-2">
-                    <Card 
+                    <Card
                       className="flex-1 p-4 text-center border-2 hover:border-primary/50 transition-colors"
                       style={{
                         opacity: step.value > 0 ? 1 : 0.5,
@@ -156,11 +152,10 @@ export default function AdminConversion() {
             <p className="text-3xl font-bold text-primary">
               {stats?.signups && stats.first_credit_purchase
                 ? ((stats.first_credit_purchase / stats.signups) * 100).toFixed(1)
-                : 0}%
+                : 0}
+              %
             </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Inscription → Premier achat
-            </p>
+            <p className="text-xs text-muted-foreground mt-1">Inscription → Premier achat</p>
           </Card>
 
           <Card className="p-6">
@@ -168,21 +163,16 @@ export default function AdminConversion() {
             <p className="text-3xl font-bold text-amber-500">
               {stats?.signups && stats.onboarding_completed
                 ? (100 - stats.conversion_signup_to_onboarding).toFixed(1)
-                : 0}%
+                : 0}
+              %
             </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Inscriptions sans onboarding
-            </p>
+            <p className="text-xs text-muted-foreground mt-1">Inscriptions sans onboarding</p>
           </Card>
 
           <Card className="p-6">
             <p className="text-sm text-muted-foreground mb-1">Utilisateurs engagés</p>
-            <p className="text-3xl font-bold text-green-500">
-              {stats?.first_menu_generated || 0}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Ont généré au moins 1 menu
-            </p>
+            <p className="text-3xl font-bold text-green-500">{stats?.first_menu_generated || 0}</p>
+            <p className="text-xs text-muted-foreground mt-1">Ont généré au moins 1 menu</p>
           </Card>
         </div>
       </main>

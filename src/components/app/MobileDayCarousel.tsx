@@ -42,7 +42,10 @@ function MobileMealCard({
   swapping?: boolean;
 }) {
   const navigate = useNavigate();
-  const imageUrl = getRecipeImageUrl({ image_url: recipe.image_url, image_path: recipe.image_path });
+  const imageUrl = getRecipeImageUrl({
+    image_url: recipe.image_url,
+    image_path: recipe.image_path,
+  });
 
   return (
     <Card className="rounded-2xl border shadow-sm overflow-hidden">
@@ -96,9 +99,10 @@ function MobileMealCard({
             size="sm"
             className="flex-1 text-xs"
             onClick={() => {
-              const pf = recipe.portion_factor && recipe.portion_factor > 0
-                ? `?portions=${recipe.portion_factor.toFixed(2)}`
-                : '';
+              const pf =
+                recipe.portion_factor && recipe.portion_factor > 0
+                  ? `?portions=${recipe.portion_factor.toFixed(2)}`
+                  : '';
               navigate(`/app/recipes/${recipe.recipe_id}${pf}`);
             }}
           >
@@ -155,7 +159,8 @@ export function MobileDayCarousel({
         <Badge variant="secondary" className="text-xs">
           <Users className="h-3 w-3 mr-1" />
           {householdAdults} adulte{householdAdults > 1 ? 's' : ''}
-          {householdChildren > 0 && ` + ${householdChildren} enfant${householdChildren > 1 ? 's' : ''}`}
+          {householdChildren > 0 &&
+            ` + ${householdChildren} enfant${householdChildren > 1 ? 's' : ''}`}
           <span className="ml-1 opacity-70">(≈ {effectiveSize})</span>
         </Badge>
       )}
@@ -196,10 +201,7 @@ export function MobileDayCarousel({
       </div>
 
       {/* Single day view with fade */}
-      <div
-        key={selected}
-        className="space-y-4 animate-in fade-in duration-150"
-      >
+      <div key={selected} className="space-y-4 animate-in fade-in duration-150">
         {selectedDay.lunch && (
           <MobileMealCard
             recipe={selectedDay.lunch}

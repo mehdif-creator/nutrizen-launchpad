@@ -11,7 +11,7 @@ import AutomationSettings from './automation/AutomationSettings';
 import PinterestCallback from './automation/PinterestCallback';
 
 const AutomationIndex: React.FC = () => {
-  const fetchInitialData = useAutomationStore(state => state.fetchInitialData);
+  const fetchInitialData = useAutomationStore((state) => state.fetchInitialData);
 
   useEffect(() => {
     fetchInitialData();
