@@ -17,8 +17,14 @@ import { checkRateLimit as checkRL, rateLimitExceededResponse } from '../_shared
 
 /** Strict plan-key → env-var mapping. New plans + legacy plans. */
 const PLAN_ENV_KEYS: Record<string, string> = {
+  // Monthly (legacy keys kept stable for analytics + existing flows)
   starter: "STRIPE_PRICE_STARTER_MONTHLY",
   premium: "STRIPE_PRICE_PREMIUM_MONTHLY",
+  starter_monthly: "STRIPE_PRICE_STARTER_MONTHLY",
+  premium_monthly: "STRIPE_PRICE_PREMIUM_MONTHLY",
+  // Annual (20% discount vs monthly × 12)
+  starter_yearly: "STRIPE_PRICE_STARTER_YEARLY",
+  premium_yearly: "STRIPE_PRICE_PREMIUM_YEARLY",
   // Legacy plans (grandfathered - kept for existing subscribers)
   essentiel: "STRIPE_PRICE_ESSENTIEL_MONTHLY",
   essentiel_monthly: "STRIPE_PRICE_ESSENTIEL_MONTHLY",
@@ -26,10 +32,14 @@ const PLAN_ENV_KEYS: Record<string, string> = {
   equilibre: "STRIPE_PRICE_EQUILIBRE",
 };
 
-/** Plan metadata for new plans */
-const PLAN_META: Record<string, { tier: string; credits: number; rollover_cap: number; priority: boolean }> = {
-  starter: { tier: 'starter', credits: 80, rollover_cap: 20, priority: false },
-  premium: { tier: 'premium', credits: 200, rollover_cap: 80, priority: true },
+/** Plan metadata for new plans. credits/rollover do NOT change with billing interval. */
+const PLAN_META: Record<string, { tier: string; credits: number; rollover_cap: number; priority: boolean; interval: 'month' | 'year' }> = {
+  starter:         { tier: 'starter', credits: 80,  rollover_cap: 20, priority: false, interval: 'month' },
+  starter_monthly: { tier: 'starter', credits: 80,  rollover_cap: 20, priority: false, interval: 'month' },
+  starter_yearly:  { tier: 'starter', credits: 80,  rollover_cap: 20, priority: false, interval: 'year'  },
+  premium:         { tier: 'premium', credits: 200, rollover_cap: 80, priority: true,  interval: 'month' },
+  premium_monthly: { tier: 'premium', credits: 200, rollover_cap: 80, priority: true,  interval: 'month' },
+  premium_yearly:  { tier: 'premium', credits: 200, rollover_cap: 80, priority: true,  interval: 'year'  },
 };
 
 const VALID_PLAN_KEYS = Object.keys(PLAN_ENV_KEYS);
