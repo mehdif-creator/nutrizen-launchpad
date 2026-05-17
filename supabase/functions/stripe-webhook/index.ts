@@ -783,7 +783,10 @@ async function updateSubscriptionRecord(
   };
 
   const status = subscription.status;
-  const priceId = subscription.items.data[0]?.price.id;
+  const priceItem = subscription.items.data[0]?.price;
+  const priceId = priceItem?.id;
+  const billingInterval: 'month' | 'year' =
+    priceItem?.recurring?.interval === 'year' ? 'year' : 'month';
 
   const upsertData = {
     user_id: userId,
@@ -791,6 +794,7 @@ async function updateSubscriptionRecord(
     stripe_subscription_id: subscriptionId,
     status,
     plan: priceId,
+    billing_interval: billingInterval,
     trial_start: safeTimestamp(subscription.trial_start),
     trial_end: safeTimestamp(subscription.trial_end),
     current_period_end: safeTimestamp(subscription.current_period_end),

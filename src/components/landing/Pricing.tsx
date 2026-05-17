@@ -1,8 +1,20 @@
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check, Sparkles, Shield, Crown, Star, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
+import { BillingToggle } from '@/components/landing/BillingToggle';
+import {
+  PLANS,
+  getTotalPrice,
+  getEffectiveMonthlyPrice,
+  getYearlySavings,
+  getPlanKey,
+  formatEUR,
+  type BillingInterval,
+  type PlanTier,
+} from '@/config/pricing';
 
 interface ComparisonCopy {
   without: string[];
@@ -28,38 +40,90 @@ const defaultComparison: ComparisonCopy = {
   ],
 };
 
+/** Price block for a paid plan card. Switches between monthly and yearly display. */
+const PriceBlock = ({
+  tier,
+  interval,
+  accent = 'primary',
+}: {
+  tier: PlanTier;
+  interval: BillingInterval;
+  accent?: 'primary' | 'accent';
+}) => {
+  const total = getTotalPrice(tier, interval);
+  const effectiveMonthly = getEffectiveMonthlyPrice(tier, interval);
+  const yearlySavings = getYearlySavings(tier);
+  const monthly = PLANS[tier].monthlyPrice;
+  const accentClass = accent === 'accent' ? 'text-accent' : 'text-primary';
+
+  if (interval === 'month') {
+    return (
+      <>
+        <div className="flex items-baseline justify-center gap-1">
+          <span className="text-4xl font-bold">{formatEUR(monthly)}</span>
+          <span className="text-sm text-muted-foreground">/ mois</span>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div className="flex items-baseline justify-center gap-1">
+        <span className="text-4xl font-bold">{formatEUR(total)}</span>
+        <span className="text-sm text-muted-foreground">/ an</span>
+      </div>
+      <p className="text-xs text-muted-foreground mt-1">
+        Soit {formatEUR(effectiveMonthly)}/mois · facturé annuellement
+      </p>
+      <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-green-500/10 px-3 py-1">
+        <span className="text-xs font-bold text-green-600">
+          −20% · économisez {formatEUR(yearlySavings, { showCents: false })}/an
+        </span>
+      </div>
+      <p className={`text-xs ${accentClass} font-medium mt-1`}>≈ 2 mois offerts</p>
+    </>
+  );
+};
+
 export const Pricing = ({
   onCtaClick,
   pricingNote,
   comparison = defaultComparison,
 }: PricingProps) => {
   const navigate = useNavigate();
+  const [interval, setInterval] = useState<BillingInterval>('month');
 
-  const handleCheckout = (plan: string) => {
-    if (plan === 'free') {
+  const handleCheckout = (tier: PlanTier | 'free') => {
+    if (tier === 'free') {
       onCtaClick();
-    } else {
-      navigate(`/auth/signup?plan=${plan}`);
+      return;
     }
+    const planKey = getPlanKey(tier, interval);
+    navigate(`/auth/signup?plan=${planKey}`);
   };
 
   return (
     <section id="tarifs" className="py-16 bg-gradient-to-b from-background to-secondary/20">
       <div className="container">
-        <div className="text-center mb-12 animate-fade-in">
+        <div className="text-center mb-10 animate-fade-in">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Choisis ton niveau de confort nutritionnel
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-2">
             Plus tu automatises, plus tu gagnes du temps. Les crédits déclenchent les actions IA.
           </p>
-          <p className="text-sm text-muted-foreground">Prix TTC.</p>
+          <p className="text-sm text-muted-foreground">Prix TTC. Sans engagement.</p>
+        </div>
+
+        {/* Billing interval toggle */}
+        <div className="flex justify-center mb-10">
+          <BillingToggle value={interval} onChange={setInterval} />
         </div>
 
         {/* Sans vs Avec comparison bar */}
         <div className="max-w-4xl mx-auto mb-12 rounded-2xl border border-border bg-muted/30 p-6 md:p-8">
           <div className="grid md:grid-cols-[1fr_auto_1fr] gap-6 md:gap-0">
-            {/* Sans NutriZen */}
             <div className="space-y-3 md:pr-8">
               <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">
                 Sans NutriZen
@@ -72,7 +136,6 @@ export const Pricing = ({
               ))}
             </div>
 
-            {/* VS divider */}
             <div className="hidden md:flex flex-col items-center justify-center">
               <div className="w-px h-full bg-border relative">
                 <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-muted/80 border border-border rounded-full px-2.5 py-1 text-xs font-bold text-muted-foreground">
@@ -86,7 +149,6 @@ export const Pricing = ({
               </span>
             </div>
 
-            {/* Avec NutriZen */}
             <div className="space-y-3 md:pl-8">
               <p className="text-xs font-bold uppercase tracking-wider text-green-500 mb-4">
                 Avec NutriZen
@@ -108,14 +170,11 @@ export const Pricing = ({
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {/* FREE — Je découvre */}
+          {/* FREE */}
           <Card className="p-6 md:p-8 relative border border-muted/50 opacity-90 hover:opacity-100 transition-opacity">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-              <Badge variant="secondary" className="text-xs font-bold">
-                Découverte
-              </Badge>
+              <Badge variant="secondary" className="text-xs font-bold">Découverte</Badge>
             </div>
-
             <div className="text-center mb-6 pt-4">
               <h3 className="text-2xl font-bold mb-1">Je découvre</h3>
               <p className="text-xs text-muted-foreground mb-3">Fonctionnalités limitées</p>
@@ -126,11 +185,9 @@ export const Pricing = ({
                 14 crédits offerts (une seule fois)
               </p>
             </div>
-
             <p className="text-xs text-muted-foreground text-center mb-4 italic">
               Fonctionnalités limitées — sans liste de courses ni macros
             </p>
-
             <div className="space-y-3 mb-8">
               {[
                 "Jusqu'à 2 semaines de menus",
@@ -143,19 +200,13 @@ export const Pricing = ({
                 </div>
               ))}
             </div>
-
-            <Button
-              onClick={() => handleCheckout('free')}
-              variant="outline"
-              className="w-full"
-              size="lg"
-            >
+            <Button onClick={() => handleCheckout('free')} variant="outline" className="w-full" size="lg">
               Commencer gratuitement
             </Button>
             <p className="text-xs text-muted-foreground text-center mt-2">Sans carte bancaire</p>
           </Card>
 
-          {/* STARTER — Je simplifie */}
+          {/* STARTER */}
           <Card className="p-6 md:p-8 relative border-2 border-primary/20 hover:border-primary/40 transition-colors">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
               <Badge variant="secondary" className="text-xs font-bold">
@@ -163,25 +214,12 @@ export const Pricing = ({
                 Essentiel
               </Badge>
             </div>
-
             <div className="text-center mb-6 pt-4">
               <h3 className="text-2xl font-bold mb-1">Je simplifie</h3>
-              <p className="text-sm text-muted-foreground italic mb-3">
-                Mange mieux dès cette semaine. Sans effort.
-              </p>
-              <div className="flex items-baseline justify-center gap-1">
-                <span className="text-4xl font-bold">12,99€</span>
-                <span className="text-sm text-muted-foreground">/ mois</span>
-              </div>
-              <p className="text-xs text-green-500 font-medium mt-1">
-                Soit 3,25€/semaine — moins qu'un café
-              </p>
-              <p className="text-xs text-muted-foreground italic mt-1">
-                Nos utilisateurs économisent en moyenne 200€/mois en courses
-              </p>
-              <p className="text-sm text-primary font-medium mt-2">80 crédits / mois</p>
+              <p className="text-sm text-muted-foreground italic mb-3">{PLANS.starter.tagline}</p>
+              <PriceBlock tier="starter" interval={interval} accent="primary" />
+              <p className="text-sm text-primary font-medium mt-3">80 crédits / mois</p>
             </div>
-
             <div className="space-y-3 mb-8">
               {[
                 'Menus de la semaine en 30 secondes, adaptés à ton profil',
@@ -195,18 +233,17 @@ export const Pricing = ({
                 </div>
               ))}
             </div>
-
             <Button
               onClick={() => handleCheckout('starter')}
               variant="outline"
               className="w-full border-primary text-primary hover:bg-primary/10"
               size="lg"
             >
-              Choisir Starter
+              Choisir Starter {interval === 'year' ? '· annuel' : ''}
             </Button>
           </Card>
 
-          {/* PREMIUM — Je reprends le contrôle */}
+          {/* PREMIUM */}
           <Card className="p-6 md:p-8 relative border-2 border-accent shadow-lg ring-2 ring-accent/20 hover:ring-accent/40 transition-all">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
               <Badge className="bg-accent text-white text-xs font-bold flex items-center gap-1">
@@ -214,25 +251,12 @@ export const Pricing = ({
                 Recommandé
               </Badge>
             </div>
-
             <div className="text-center mb-6 pt-4">
               <h3 className="text-2xl font-bold mb-1">Je reprends le contrôle</h3>
-              <p className="text-sm text-muted-foreground italic mb-3">
-                Le système complet. Mange bien, dépense moins.
-              </p>
-              <div className="flex items-baseline justify-center gap-1">
-                <span className="text-4xl font-bold">19,99€</span>
-                <span className="text-sm text-muted-foreground">/ mois</span>
-              </div>
-              <p className="text-xs text-green-500 font-medium mt-1">
-                Soit 5€/semaine — moins qu'un déjeuner
-              </p>
-              <p className="text-xs text-muted-foreground italic mt-1">
-                Économisez jusqu'à 2 400€/an sur votre budget courses
-              </p>
-              <p className="text-sm text-accent font-medium mt-2">200 crédits / mois</p>
+              <p className="text-sm text-muted-foreground italic mb-3">{PLANS.premium.tagline}</p>
+              <PriceBlock tier="premium" interval={interval} accent="accent" />
+              <p className="text-sm text-accent font-medium mt-3">200 crédits / mois</p>
             </div>
-
             <div className="space-y-3 mb-8">
               {[
                 '200 crédits/mois — menus + scans + ajustements illimités',
@@ -246,13 +270,12 @@ export const Pricing = ({
                 </div>
               ))}
             </div>
-
             <Button
               onClick={() => handleCheckout('premium')}
               className="w-full bg-accent hover:bg-accent/90 text-white"
               size="lg"
             >
-              Passer en Premium
+              Passer en Premium {interval === 'year' ? '· annuel' : ''}
             </Button>
             <p className="text-xs text-muted-foreground text-center mt-2">
               Annulable à tout moment
@@ -260,14 +283,11 @@ export const Pricing = ({
           </Card>
         </div>
 
-        {/* ROI summary line */}
         <p className="text-center text-sm text-muted-foreground italic mt-10 max-w-xl mx-auto">
-          Pour 12,99€/mois, la plupart de nos utilisateurs économisent plus de{' '}
-          <span className="font-bold text-accent not-italic">15x</span> ce montant sur leur budget
-          courses.
+          Pour {formatEUR(PLANS.starter.monthlyPrice)}/mois, la plupart de nos utilisateurs économisent plus de{' '}
+          <span className="font-bold text-accent not-italic">15×</span> ce montant sur leur budget courses.
         </p>
 
-        {/* Trust indicators */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-8 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4 text-green-500" />

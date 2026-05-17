@@ -136,7 +136,10 @@ Deno.serve(async (req) => {
     }
 
     const subscriptionEnd = new Date(sub.current_period_end * 1000).toISOString();
-    const priceId = sub.items.data[0]?.price.id;
+    const priceItem = sub.items.data[0]?.price;
+    const priceId = priceItem?.id;
+    const billingInterval: 'month' | 'year' =
+      priceItem?.recurring?.interval === 'year' ? 'year' : 'month';
 
     // Get plan tier from price metadata with legacy fallback
     let planTier = 'unknown';
@@ -147,19 +150,25 @@ Deno.serve(async (req) => {
       logStep("WARN: Could not retrieve price metadata");
     }
 
-    // Fallback: map known price IDs from env vars (legacy + current)
+    // Fallback: map known price IDs from env vars (legacy + current, monthly + yearly)
     if (planTier === 'unknown') {
       const priceToTierMap: Record<string, string> = {};
-      const starterPrice = Deno.env.get('STRIPE_PRICE_STARTER_MONTHLY');
-      const premiumPrice = Deno.env.get('STRIPE_PRICE_PREMIUM_MONTHLY');
-      const essentielPrice = Deno.env.get('STRIPE_PRICE_ESSENTIEL_MONTHLY');
-      const famillePrice = Deno.env.get('STRIPE_PRICE_FAMILLE_MONTHLY');
-      if (starterPrice) priceToTierMap[starterPrice] = 'starter';
-      if (premiumPrice) priceToTierMap[premiumPrice] = 'premium';
-      if (essentielPrice) priceToTierMap[essentielPrice] = 'starter'; // legacy → starter
-      if (famillePrice) priceToTierMap[famillePrice] = 'premium'; // legacy → premium
+      const starterMonthly  = Deno.env.get('STRIPE_PRICE_STARTER_MONTHLY');
+      const starterYearly   = Deno.env.get('STRIPE_PRICE_STARTER_YEARLY');
+      const premiumMonthly  = Deno.env.get('STRIPE_PRICE_PREMIUM_MONTHLY');
+      const premiumYearly   = Deno.env.get('STRIPE_PRICE_PREMIUM_YEARLY');
+      const essentielMonth  = Deno.env.get('STRIPE_PRICE_ESSENTIEL_MONTHLY');
+      const essentielYear   = Deno.env.get('STRIPE_PRICE_ESSENTIEL_YEARLY');
+      const famillePrice    = Deno.env.get('STRIPE_PRICE_FAMILLE_MONTHLY');
+      if (starterMonthly) priceToTierMap[starterMonthly] = 'starter';
+      if (starterYearly)  priceToTierMap[starterYearly]  = 'starter';
+      if (premiumMonthly) priceToTierMap[premiumMonthly] = 'premium';
+      if (premiumYearly)  priceToTierMap[premiumYearly]  = 'premium';
+      if (essentielMonth) priceToTierMap[essentielMonth] = 'starter'; // legacy → starter
+      if (essentielYear)  priceToTierMap[essentielYear]  = 'starter'; // legacy → starter
+      if (famillePrice)   priceToTierMap[famillePrice]   = 'premium'; // legacy → premium
       planTier = priceToTierMap[priceId] || 'starter'; // active subscriber never gets 'unknown'
-      logStep("Resolved tier via env fallback", { priceId, planTier });
+      logStep("Resolved tier via env fallback", { priceId, planTier, billingInterval });
     }
 
     // Update profile + subscription
@@ -168,18 +177,20 @@ Deno.serve(async (req) => {
       user_id: user.id,
       status: sub.status,
       plan: planTier,
+      billing_interval: billingInterval,
       stripe_customer_id: customerId,
       stripe_subscription_id: sub.id,
       current_period_end: subscriptionEnd,
     }, { onConflict: 'user_id' });
 
-    logStep("Subscription found", { status: sub.status, planTier });
+    logStep("Subscription found", { status: sub.status, planTier, billingInterval });
 
     return new Response(JSON.stringify({
       subscribed: true,
       status: sub.status,
       plan: planTier,
       plan_tier: planTier,
+      billing_interval: billingInterval,
       subscription_end: subscriptionEnd,
       trial_end: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
       current_period_end: subscriptionEnd,
