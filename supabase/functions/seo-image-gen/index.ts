@@ -28,7 +28,8 @@ async function refinePrompt(rawDirection: string, articleContext: string): Promi
     headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: "gpt-5",
-      max_completion_tokens: 500,
+      max_completion_tokens: 2000,
+      reasoning_effort: "minimal",
       messages: [
         { role: "system", content: IMAGE_REFINEMENT_SYSTEM },
         { role: "user", content: `Refine this image direction into an optimized DALL-E 3 prompt.\n\nRAW DIRECTION: "${rawDirection}"\nARTICLE CONTEXT: "${articleContext}"\n\nReturn only the refined DALL-E 3 prompt string.` },

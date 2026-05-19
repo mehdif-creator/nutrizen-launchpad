@@ -15,7 +15,8 @@ async function callOpenAI(systemPrompt: string, userPrompt: string, _temperature
     headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: "gpt-5",
-      max_completion_tokens: maxTokens,
+      max_completion_tokens: Math.max(maxTokens * 2, 8000),
+      reasoning_effort: "minimal",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
