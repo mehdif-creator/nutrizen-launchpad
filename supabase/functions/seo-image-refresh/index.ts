@@ -127,19 +127,12 @@ async function generateAndStore(
   const binary = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
   const buffer = binary.buffer;
 
-  const imageResponse = await fetch(temporaryUrl);
-  if (!imageResponse.ok) {
-    console.error(`[seo-image-refresh] Download failed ${imageResponse.status} for article ${articleId}`);
-    return null;
-  }
-
-  const buffer = await imageResponse.arrayBuffer();
-  const fileName = `seo-${articleId}-${imageIndex}-${Date.now()}.jpg`;
+  const fileName = `seo-${articleId}-${imageIndex}-${Date.now()}.png`;
 
   const { error: uploadError } = await adminClient.storage
     .from("seo-images")
     .upload(fileName, buffer, {
-      contentType: "image/jpeg",
+      contentType: "image/png",
       upsert: true,
       cacheControl: "31536000",
     });
