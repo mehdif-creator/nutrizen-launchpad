@@ -90,6 +90,11 @@ async function generateAndStore(
     return null;
   }
 
+  const normalizedSize =
+    size === "1792x1024" ? "1536x1024" :
+    size === "1024x1792" ? "1024x1536" :
+    size;
+
   const generationResponse = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
     headers: {
@@ -97,42 +102,37 @@ async function generateAndStore(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "dall-e-3",
+      model: "gpt-image-1",
       prompt: prompt.slice(0, 4000),
       n: 1,
-      size,
-      quality: "standard",
-      response_format: "url",
+      size: normalizedSize,
+      quality: "high",
     }),
   });
 
   if (!generationResponse.ok) {
     const details = await generationResponse.text();
-    console.error(`[seo-image-refresh] DALL-E error ${generationResponse.status}:`, details);
+    console.error(`[seo-image-refresh] gpt-image-1 error ${generationResponse.status}:`, details);
     return null;
   }
 
   const generationData = await generationResponse.json();
-  const temporaryUrl = generationData?.data?.[0]?.url as string | undefined;
+  const b64 = generationData?.data?.[0]?.b64_json as string | undefined;
 
-  if (!temporaryUrl) {
-    console.error("[seo-image-refresh] No URL returned by DALL-E");
+  if (!b64) {
+    console.error("[seo-image-refresh] No image returned by gpt-image-1");
     return null;
   }
 
-  const imageResponse = await fetch(temporaryUrl);
-  if (!imageResponse.ok) {
-    console.error(`[seo-image-refresh] Download failed ${imageResponse.status} for article ${articleId}`);
-    return null;
-  }
+  const binary = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  const buffer = binary.buffer;
 
-  const buffer = await imageResponse.arrayBuffer();
-  const fileName = `seo-${articleId}-${imageIndex}-${Date.now()}.jpg`;
+  const fileName = `seo-${articleId}-${imageIndex}-${Date.now()}.png`;
 
   const { error: uploadError } = await adminClient.storage
     .from("seo-images")
     .upload(fileName, buffer, {
-      contentType: "image/jpeg",
+      contentType: "image/png",
       upsert: true,
       cacheControl: "31536000",
     });
