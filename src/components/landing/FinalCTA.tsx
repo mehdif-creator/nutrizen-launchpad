@@ -1,6 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { BillingToggle } from '@/components/landing/BillingToggle';
+import { formatEUR, getEffectiveMonthlyPrice, getPlanKey, getTotalPrice, type BillingInterval } from '@/config/pricing';
 import type { FinalCTACopy } from '@/config/marketingCopy';
 
 interface FinalCTAProps {
@@ -10,6 +13,17 @@ interface FinalCTAProps {
 
 export const FinalCTA = ({ onCtaClick, copy }: FinalCTAProps) => {
   const navigate = useNavigate();
+  const [interval, setInterval] = useState<BillingInterval>('month');
+
+  const starterPlanKey = getPlanKey('starter', interval);
+  const starterPriceLabel =
+    interval === 'year'
+      ? `${formatEUR(getTotalPrice('starter', 'year'))}/an`
+      : `${formatEUR(getTotalPrice('starter', 'month'))}/mois`;
+  const starterSubLabel =
+    interval === 'year'
+      ? `Soit ${formatEUR(getEffectiveMonthlyPrice('starter', 'year'))}/mois · 2 mois offerts`
+      : 'Remboursé si pas satisfait dans les 30 jours';
 
   return (
     <section className="py-24 bg-gradient-to-br from-accent/10 to-primary/10">
@@ -32,15 +46,16 @@ export const FinalCTA = ({ onCtaClick, copy }: FinalCTAProps) => {
             {/* Paid card */}
             <Card className="p-6 border-2 border-accent text-center space-y-4 shadow-[0_0_20px_hsl(24_95%_52%/0.15)]">
               <p className="font-semibold text-lg">Je me lance vraiment</p>
+              <BillingToggle value={interval} onChange={setInterval} className="mx-auto" />
               <Button
-                onClick={() => navigate('/auth/signup?plan=starter')}
+                onClick={() => navigate(`/auth/signup?plan=${starterPlanKey}`)}
                 size="lg"
                 className="w-full bg-accent hover:bg-accent/90 text-white"
               >
-                Commencer — 12,99€/mois
+                Commencer — {starterPriceLabel}
               </Button>
               <p className="text-xs text-muted-foreground">
-                Remboursé si pas satisfait dans les 30 jours
+                {starterSubLabel}
               </p>
             </Card>
           </div>
