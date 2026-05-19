@@ -6,68 +6,53 @@ function getAdminClient() {
   return createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 }
 
-const IMAGE_REFINEMENT_SYSTEM = `
-You are a visual art director for NutriZen, a French nutrition app.
-You write optimized DALL-E 3 prompts that produce lifestyle photography consistent with the NutriZen brand.
+const STYLE_SUFFIX =
+  "Professional French food lifestyle photography, soft natural lighting, bright airy clean background, soft greens and warm whites palette, natural wood tones, modern French kitchen aesthetic. Absolutely no text, no words, no letters, no captions, no labels, no logos, no watermark. High resolution.";
 
-NUTRIZEN VISUAL IDENTITY:
-- Style: realistic lifestyle photography, bright and airy, clean backgrounds
-- Color palette: soft greens, warm whites, natural wood tones, fresh food colors
-- Mood: positive, approachable, modern French kitchen or dining aesthetic
-- NEVER include: ANY text, words, letters, numbers, captions, labels, titles, logos, watermarks, measuring tapes, scales, before/after imagery
-- CRITICAL: The image must contain ABSOLUTELY NO TEXT of any kind. No overlays, no captions, no labels, no words whatsoever.
-
-OUTPUT FORMAT: Return ONLY a refined DALL-E 3 prompt string ending with:
-"Professional food lifestyle photography, soft natural lighting, absolutely no text, no words, no letters, no captions, no watermark, high resolution, French aesthetic."
-`;
-
-async function refinePrompt(rawDirection: string, articleContext: string): Promise<string> {
-  const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "gpt-5",
-      max_completion_tokens: 2000,
-      reasoning_effort: "minimal",
-      messages: [
-        { role: "system", content: IMAGE_REFINEMENT_SYSTEM },
-        { role: "user", content: `Refine this image direction into an optimized DALL-E 3 prompt.\n\nRAW DIRECTION: "${rawDirection}"\nARTICLE CONTEXT: "${articleContext}"\n\nReturn only the refined DALL-E 3 prompt string.` },
-      ],
-    }),
-  });
-  if (!res.ok) throw new Error(`OpenAI refinement error ${res.status}`);
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content?.trim() || rawDirection;
+function buildPrompt(rawPrompt: string, context: string): string {
+  const base = rawPrompt?.trim() || "Healthy balanced meal on a white ceramic plate with fresh colorful vegetables";
+  return `${base}. Context: ${context}. ${STYLE_SUFFIX}`;
 }
 
-async function generateImage(prompt: string, size: string): Promise<string> {
-  const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
-  // gpt-image-1 supported sizes: 1024x1024, 1024x1536, 1536x1024, auto
-  const normalizedSize =
-    size === "1792x1024" ? "1536x1024" :
-    size === "1024x1792" ? "1024x1536" :
-    size;
-  const res = await fetch("https://api.openai.com/v1/images/generations", {
+async function generateImageViaGateway(prompt: string): Promise<string> {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
-    headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "gpt-image-1",
-      prompt,
-      n: 1,
-      size: normalizedSize,
-      quality: "high",
+      model: "google/gemini-2.5-flash-image",
+      messages: [{ role: "user", content: prompt }],
+      modalities: ["image", "text"],
     }),
   });
+
   if (!res.ok) {
     const errText = await res.text();
-    console.error("[seo-image-gen] gpt-image-1 error:", res.status, errText);
-    throw new Error(`gpt-image-1 error ${res.status}: ${errText}`);
+    console.error("[seo-image-gen] Gateway error:", res.status, errText);
+    if (res.status === 429) throw new Error("Rate limit atteint sur le AI Gateway. Réessayez dans une minute.");
+    if (res.status === 402) throw new Error("Crédits AI Gateway épuisés. Ajoutez des crédits dans Settings > Workspace > Usage.");
+    throw new Error(`AI Gateway error ${res.status}: ${errText.slice(0, 200)}`);
   }
+
   const data = await res.json();
-  const b64 = data.data?.[0]?.b64_json;
-  if (!b64) throw new Error("gpt-image-1: empty image response");
-  return `data:image/png;base64,${b64}`;
+  const dataUrl = data?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+  if (!dataUrl || !dataUrl.startsWith("data:")) {
+    throw new Error("AI Gateway: empty image response");
+  }
+  return dataUrl;
+}
+
+function dataUrlToBytes(dataUrl: string): { bytes: Uint8Array; mime: string } {
+  const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) throw new Error("Invalid data URL");
+  const mime = match[1];
+  const b64 = match[2];
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return { bytes, mime };
 }
 
 Deno.serve(async (req) => {
@@ -77,7 +62,6 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    // --- JWT validation + admin role check ---
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
@@ -89,11 +73,6 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Invalid or expired token" }), { status: 401, headers: corsHeaders });
     }
     await requireAdmin(adminClient, user.id);
-    // --- end auth ---
-
-    if (!Deno.env.get("OPENAI_API_KEY")) {
-      return new Response(JSON.stringify({ error: "OPENAI_API_KEY not configured" }), { status: 500, headers: corsHeaders });
-    }
 
     const { article_id } = await req.json();
     if (!article_id) {
@@ -109,54 +88,71 @@ Deno.serve(async (req) => {
 
     const outline = article.outline as any;
     const articleContext = `${outline.title || ""} - ${outline.meta_description || ""}`;
-    const imageUrls: { url: string; alt: string; type: string }[] = [];
 
-    // Helper: download DALL-E image and store permanently in Supabase Storage
-    async function storeImage(tempUrl: string, imgIndex: number): Promise<string> {
-      try {
-        const imgResponse = await fetch(tempUrl);
-        if (!imgResponse.ok) throw new Error(`Download failed: ${imgResponse.status}`);
-        const imgBuffer = await imgResponse.arrayBuffer();
-        const fileName = `seo-${article_id}-${imgIndex}-${Date.now()}.png`;
-        const { error: uploadError } = await adminClient.storage
-          .from("seo-images")
-          .upload(fileName, imgBuffer, {
-            contentType: "image/png",
-            upsert: false,
-            cacheControl: "31536000",
-          });
-        if (uploadError) {
-          console.error("[seo-image-gen] Storage upload failed:", uploadError);
-          return tempUrl; // fallback to temporary URL
-        }
-        const { data: { publicUrl } } = adminClient.storage.from("seo-images").getPublicUrl(fileName);
-        return publicUrl;
-      } catch (err) {
-        console.error("[seo-image-gen] Store image failed:", err);
-        return tempUrl;
+    async function storeImage(dataUrl: string, imgIndex: number): Promise<string> {
+      const { bytes, mime } = dataUrlToBytes(dataUrl);
+      const ext = mime.includes("jpeg") || mime.includes("jpg") ? "jpg" : "png";
+      const fileName = `seo-${article_id}-${imgIndex}-${Date.now()}.${ext}`;
+      const { error: uploadError } = await adminClient.storage
+        .from("seo-images")
+        .upload(fileName, bytes, {
+          contentType: mime,
+          upsert: false,
+          cacheControl: "31536000",
+        });
+      if (uploadError) {
+        console.error("[seo-image-gen] Storage upload failed:", uploadError);
+        throw new Error(`Storage upload failed: ${uploadError.message}`);
       }
+      const { data: { publicUrl } } = adminClient.storage.from("seo-images").getPublicUrl(fileName);
+      return publicUrl;
     }
 
-    let imgIdx = 0;
+    // Build job list: hero + up to 2 sections (to keep total runtime safe)
+    type Job = { prompt: string; alt: string; type: "hero" | "section" };
+    const jobs: Job[] = [];
 
     if (outline.hero_image_prompt) {
-      console.log("[seo-image-gen] Generating hero image...");
-      const refinedPrompt = await refinePrompt(outline.hero_image_prompt, articleContext);
-      const tempUrl = await generateImage(refinedPrompt, "1792x1024");
-      const permanentUrl = await storeImage(tempUrl, imgIdx++);
-      imageUrls.push({ url: permanentUrl, alt: outline.hero_image_alt || "", type: "hero" });
+      jobs.push({
+        prompt: buildPrompt(outline.hero_image_prompt, articleContext),
+        alt: outline.hero_image_alt || "",
+        type: "hero",
+      });
     }
 
     const sectionsWithImages = (outline.sections || [])
       .filter((s: any) => s.image_prompt)
-      .slice(0, 3);
+      .slice(0, 2);
 
     for (const section of sectionsWithImages) {
-      console.log(`[seo-image-gen] Generating section image for: ${section.h2}`);
-      const refinedPrompt = await refinePrompt(section.image_prompt, `${articleContext} - Section: ${section.h2}`);
-      const tempUrl = await generateImage(refinedPrompt, "1024x1024");
-      const permanentUrl = await storeImage(tempUrl, imgIdx++);
-      imageUrls.push({ url: permanentUrl, alt: section.image_alt || section.h2, type: "section" });
+      jobs.push({
+        prompt: buildPrompt(section.image_prompt, `${articleContext} - Section: ${section.h2}`),
+        alt: section.image_alt || section.h2,
+        type: "section",
+      });
+    }
+
+    console.log(`[seo-image-gen] Generating ${jobs.length} images in parallel via AI Gateway...`);
+
+    // Parallel generation + upload
+    const results = await Promise.all(
+      jobs.map(async (job, idx) => {
+        try {
+          const dataUrl = await generateImageViaGateway(job.prompt);
+          const publicUrl = await storeImage(dataUrl, idx);
+          console.log(`[seo-image-gen] ✓ Image ${idx} (${job.type}) done`);
+          return { url: publicUrl, alt: job.alt, type: job.type };
+        } catch (err) {
+          console.error(`[seo-image-gen] ✗ Image ${idx} (${job.type}) failed:`, err);
+          return null;
+        }
+      })
+    );
+
+    const imageUrls = results.filter((r): r is { url: string; alt: string; type: string } => r !== null);
+
+    if (imageUrls.length === 0) {
+      throw new Error("All image generations failed");
     }
 
     await adminClient.from("seo_articles").update({
@@ -165,7 +161,7 @@ Deno.serve(async (req) => {
       error_message: null,
     }).eq("id", article_id);
 
-    return new Response(JSON.stringify({ article_id, image_urls: imageUrls }), {
+    return new Response(JSON.stringify({ article_id, image_urls: imageUrls, count: imageUrls.length }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
