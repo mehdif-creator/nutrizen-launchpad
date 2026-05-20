@@ -14,23 +14,23 @@ export const HomeHero = ({ onCtaClick }: HomeHeroProps) => {
         <img
           src={homeHeroImage}
           alt="Homme souriant préparant des repas équilibrés avec NutriZen"
-          className="absolute right-0 top-0 h-full w-full object-cover object-right md:w-[65%] lg:w-[60%]"
+          className="absolute right-0 top-0 h-full w-full object-cover object-center md:object-right md:w-[65%] lg:w-[60%]"
           width={1280}
           height={1280}
           fetchPriority="high"
           decoding="sync"
           loading="eager"
         />
-        {/* Gradient fade left -> image */}
+        {/* Desktop: gradient fade left -> image */}
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 hidden md:block"
           style={{
             background:
               'linear-gradient(90deg, #0d1f1a 0%, #0d1f1a 35%, rgba(13,31,26,0.85) 50%, rgba(13,31,26,0.2) 70%, rgba(13,31,26,0) 100%)',
           }}
         />
-        {/* Mobile bottom fade */}
-        <div className="absolute inset-0 md:hidden bg-gradient-to-t from-[#0d1f1a] via-[#0d1f1a]/80 to-[#0d1f1a]/20" />
+        {/* Mobile: voile sombre uniforme pour lisibilité du texte tout en gardant l'image visible */}
+        <div className="absolute inset-0 md:hidden bg-[#0d1f1a]/70" />
       </div>
 
       <div className="container relative z-10 py-16 md:py-24 lg:py-32">
