@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCreditPacks } from '@/hooks/useCreditPacks';
 import { ZenCreditsDisplay } from '@/components/app/ZenCreditsDisplay';
 import { CREDIT_COSTS_DISPLAY } from '@/lib/featureCosts';
+import { trackInitiateCheckout } from '@/lib/metaPixel';
 
 export default function Credits() {
   const { user } = useAuth();
