@@ -5,6 +5,7 @@ import { CheckCircle, Loader2, Chrome, AlertCircle, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { trackPurchase } from '@/lib/metaPixel';
 
 export default function PostCheckout() {
   const [searchParams] = useSearchParams();
