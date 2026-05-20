@@ -32,6 +32,13 @@ export default function Credits() {
 
     setBuying(pack.id);
     try {
+      trackInitiateCheckout({
+        content_ids: [pack.id],
+        content_type: 'product',
+        currency: pack.currency?.toUpperCase() || 'EUR',
+        value: pack.price_cents / 100,
+        num_items: 1,
+      });
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { price_id: pack.stripe_price_id, mode: 'payment' },
       });
