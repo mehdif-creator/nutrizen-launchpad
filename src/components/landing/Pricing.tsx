@@ -15,6 +15,7 @@ import {
   type BillingInterval,
   type PlanTier,
 } from '@/config/pricing';
+import { trackInitiateCheckout, trackLead } from '@/lib/metaPixel';
 
 interface ComparisonCopy {
   without: string[];
