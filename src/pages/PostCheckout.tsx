@@ -60,6 +60,10 @@ export default function PostCheckout() {
 
       if (data.ready === true && data.redirect) {
         // Token consumed, redirect to magic link
+        trackPurchase({
+          content_type: 'subscription',
+          currency: 'EUR',
+        });
         setStatus('redirecting');
         if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
         window.location.href = data.redirect;
