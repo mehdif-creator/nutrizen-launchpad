@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCreditPacks } from '@/hooks/useCreditPacks';
 import { ZenCreditsDisplay } from '@/components/app/ZenCreditsDisplay';
 import { CREDIT_COSTS_DISPLAY } from '@/lib/featureCosts';
+import { trackInitiateCheckout } from '@/lib/metaPixel';
 
 export default function Credits() {
   const { user } = useAuth();
@@ -31,6 +32,13 @@ export default function Credits() {
 
     setBuying(pack.id);
     try {
+      trackInitiateCheckout({
+        content_ids: [pack.id],
+        content_type: 'product',
+        currency: pack.currency?.toUpperCase() || 'EUR',
+        value: pack.price_cents / 100,
+        num_items: 1,
+      });
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { price_id: pack.stripe_price_id, mode: 'payment' },
       });

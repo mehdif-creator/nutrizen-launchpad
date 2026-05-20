@@ -187,10 +187,10 @@ export function CookieConsent({ className }: CookieConsentProps) {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="marketing" className="text-sm font-medium">
-                    Cookies marketing
+                    Cookies marketing (Meta, etc.)
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Permettent des publicités personnalisées
+                    Permettent le suivi des conversions et publicités personnalisées
                   </p>
                 </div>
                 <Switch

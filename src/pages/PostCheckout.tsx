@@ -5,6 +5,7 @@ import { CheckCircle, Loader2, Chrome, AlertCircle, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { trackPurchase } from '@/lib/metaPixel';
 
 export default function PostCheckout() {
   const [searchParams] = useSearchParams();
@@ -59,6 +60,10 @@ export default function PostCheckout() {
 
       if (data.ready === true && data.redirect) {
         // Token consumed, redirect to magic link
+        trackPurchase({
+          content_type: 'subscription',
+          currency: 'EUR',
+        });
         setStatus('redirecting');
         if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
         window.location.href = data.redirect;
