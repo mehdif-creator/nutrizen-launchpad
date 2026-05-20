@@ -49,7 +49,16 @@ export const FinalCTA = ({ onCtaClick, copy }: FinalCTAProps) => {
               <p className="font-semibold text-lg">Je me lance vraiment</p>
               <BillingToggle value={interval} onChange={setInterval} className="mx-auto" />
               <Button
-                onClick={() => navigate(`/auth/signup?plan=${starterPlanKey}`)}
+                onClick={() => {
+                  trackInitiateCheckout({
+                    content_ids: [starterPlanKey],
+                    content_type: 'product',
+                    currency: 'EUR',
+                    value: interval === 'year' ? getTotalPrice('starter', 'year') : getTotalPrice('starter', 'month'),
+                    num_items: 1,
+                  });
+                  navigate(`/auth/signup?plan=${starterPlanKey}`);
+                }}
                 size="lg"
                 className="w-full bg-accent hover:bg-accent/90 text-white"
               >
