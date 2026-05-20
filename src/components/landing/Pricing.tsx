@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Check, Sparkles, Shield, Crown, Star, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
-import { BillingToggle } from '@/components/landing/BillingToggle';
+import { useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Check, Sparkles, Shield, Crown, Star, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { BillingToggle } from "@/components/landing/BillingToggle";
 import {
   PLANS,
   getTotalPrice,
@@ -14,8 +14,8 @@ import {
   formatEUR,
   type BillingInterval,
   type PlanTier,
-} from '@/config/pricing';
-import { trackInitiateCheckout, trackLead } from '@/lib/metaPixel';
+} from "@/config/pricing";
+import { trackInitiateCheckout, trackLead } from "@/lib/metaPixel";
 
 interface ComparisonCopy {
   without: string[];
@@ -30,14 +30,14 @@ interface PricingProps {
 
 const defaultComparison: ComparisonCopy = {
   without: [
-    '~45 min/soir à décider quoi cuisiner',
-    '~200€/mois gaspillés en courses non planifiées',
-    '21 décisions alimentaires par semaine',
+    "~45 min/soir à décider quoi cuisiner",
+    "~200€/mois gaspillés en courses non planifiées",
+    "21 décisions alimentaires par semaine",
   ],
   with: [
     "5 minutes le dimanche — c'est tout",
-    'Économie moyenne de 200€/mois sur les courses',
-    '1 décision par semaine',
+    "Économie moyenne de 200€/mois sur les courses",
+    "1 décision par semaine",
   ],
 };
 
@@ -45,19 +45,19 @@ const defaultComparison: ComparisonCopy = {
 const PriceBlock = ({
   tier,
   interval,
-  accent = 'primary',
+  accent = "primary",
 }: {
   tier: PlanTier;
   interval: BillingInterval;
-  accent?: 'primary' | 'accent';
+  accent?: "primary" | "accent";
 }) => {
   const total = getTotalPrice(tier, interval);
   const effectiveMonthly = getEffectiveMonthlyPrice(tier, interval);
   const yearlySavings = getYearlySavings(tier);
   const monthly = PLANS[tier].monthlyPrice;
-  const accentClass = accent === 'accent' ? 'text-accent' : 'text-primary';
+  const accentClass = accent === "accent" ? "text-accent" : "text-primary";
 
-  if (interval === 'month') {
+  if (interval === "month") {
     return (
       <>
         <div className="flex items-baseline justify-center gap-1">
@@ -87,17 +87,13 @@ const PriceBlock = ({
   );
 };
 
-export const Pricing = ({
-  onCtaClick,
-  pricingNote,
-  comparison = defaultComparison,
-}: PricingProps) => {
+export const Pricing = ({ onCtaClick, pricingNote, comparison = defaultComparison }: PricingProps) => {
   const navigate = useNavigate();
-  const [interval, setInterval] = useState<BillingInterval>('month');
+  const [interval, setInterval] = useState<BillingInterval>("month");
 
-  const handleCheckout = (tier: PlanTier | 'free') => {
-    if (tier === 'free') {
-      trackLead({ content_name: 'Free Trial Landing' });
+  const handleCheckout = (tier: PlanTier | "free") => {
+    if (tier === "free") {
+      trackLead({ content_name: "Free Trial Landing" });
       onCtaClick();
       return;
     }
@@ -105,8 +101,8 @@ export const Pricing = ({
     const price = getTotalPrice(tier, interval);
     trackInitiateCheckout({
       content_ids: [planKey],
-      content_type: 'product',
-      currency: 'EUR',
+      content_type: "product",
+      currency: "EUR",
       value: price,
       num_items: 1,
     });
@@ -117,9 +113,7 @@ export const Pricing = ({
     <section id="tarifs" className="py-16 bg-gradient-to-b from-background to-secondary/20">
       <div className="container">
         <div className="text-center mb-10 animate-fade-in">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Choisis ton niveau de confort nutritionnel
-          </h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Choisis ton niveau de confort nutritionnel</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-2">
             Plus tu automatises, plus tu gagnes du temps. Les crédits déclenchent les actions IA.
           </p>
@@ -135,9 +129,7 @@ export const Pricing = ({
         <div className="max-w-4xl mx-auto mb-12 rounded-2xl border border-border bg-muted/30 p-6 md:p-8">
           <div className="grid md:grid-cols-[1fr_auto_1fr] gap-6 md:gap-0">
             <div className="space-y-3 md:pr-8">
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">
-                Sans NutriZen
-              </p>
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">Sans NutriZen</p>
               {comparison.without.map((line) => (
                 <div key={line} className="flex items-start gap-2">
                   <X className="w-4 h-4 text-destructive/60 flex-shrink-0 mt-0.5" />
@@ -160,9 +152,7 @@ export const Pricing = ({
             </div>
 
             <div className="space-y-3 md:pl-8">
-              <p className="text-xs font-bold uppercase tracking-wider text-green-500 mb-4">
-                Avec NutriZen
-              </p>
+              <p className="text-xs font-bold uppercase tracking-wider text-green-500 mb-4">Avec NutriZen</p>
               {comparison.with.map((line) => (
                 <div key={line} className="flex items-start gap-2">
                   <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
@@ -183,7 +173,9 @@ export const Pricing = ({
           {/* FREE */}
           <Card className="p-6 md:p-8 relative border border-muted/50 opacity-90 hover:opacity-100 transition-opacity">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-              <Badge variant="secondary" className="text-xs font-bold">Découverte</Badge>
+              <Badge variant="secondary" className="text-xs font-bold">
+                Découverte
+              </Badge>
             </div>
             <div className="text-center mb-6 pt-4">
               <h3 className="text-2xl font-bold mb-1">Je découvre</h3>
@@ -191,26 +183,20 @@ export const Pricing = ({
               <div className="flex items-baseline justify-center gap-1">
                 <span className="text-4xl font-bold">0€</span>
               </div>
-              <p className="text-sm text-primary font-medium mt-2">
-                14 crédits offerts (une seule fois)
-              </p>
+              <p className="text-sm text-primary font-medium mt-2">14 crédits offerts (une seule fois)</p>
             </div>
-            <p className="text-xs text-muted-foreground text-center mb-4 italic">
-              Fonctionnalités limitées — sans liste de courses ni macros
-            </p>
+            <p className="text-xs text-muted-foreground text-center mb-4 italic">Idéal pour commencer</p>
             <div className="space-y-3 mb-8">
-              {[
-                "Jusqu'à 2 semaines de menus",
-                'Profil + allergies pris en compte',
-                'Liste de courses automatique',
-              ].map((f) => (
-                <div key={f} className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                  <span className="text-sm text-muted-foreground">{f}</span>
-                </div>
-              ))}
+              {["Jusqu'à 2 semaines de menus", "Profil + allergies pris en compte", "Liste de courses automatique"].map(
+                (f) => (
+                  <div key={f} className="flex items-start gap-3">
+                    <Check className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-muted-foreground">{f}</span>
+                  </div>
+                ),
+              )}
             </div>
-            <Button onClick={() => handleCheckout('free')} variant="outline" className="w-full" size="lg">
+            <Button onClick={() => handleCheckout("free")} variant="outline" className="w-full" size="lg">
               Commencer gratuitement
             </Button>
             <p className="text-xs text-muted-foreground text-center mt-2">Sans carte bancaire</p>
@@ -232,9 +218,9 @@ export const Pricing = ({
             </div>
             <div className="space-y-3 mb-8">
               {[
-                'Menus de la semaine en 30 secondes, adaptés à ton profil',
-                'Liste de courses prête à imprimer',
-                '80 crédits/mois pour swaps, scans frigo, macros',
+                "Menus de la semaine en 30 secondes, adaptés à ton profil",
+                "Liste de courses prête à imprimer",
+                "80 crédits/mois pour swaps, scans frigo, macros",
                 "Rollover jusqu'à 20 crédits non utilisés",
               ].map((f) => (
                 <div key={f} className="flex items-start gap-3">
@@ -244,12 +230,12 @@ export const Pricing = ({
               ))}
             </div>
             <Button
-              onClick={() => handleCheckout('starter')}
+              onClick={() => handleCheckout("starter")}
               variant="outline"
               className="w-full border-primary text-primary hover:bg-primary/10"
               size="lg"
             >
-              Choisir Starter {interval === 'year' ? '· annuel' : ''}
+              Choisir Starter {interval === "year" ? "· annuel" : ""}
             </Button>
           </Card>
 
@@ -269,10 +255,10 @@ export const Pricing = ({
             </div>
             <div className="space-y-3 mb-8">
               {[
-                '200 crédits/mois — menus + scans + ajustements illimités',
-                'Priorité de génération : résultats plus rapides',
+                "200 crédits/mois — menus + scans + ajustements illimités",
+                "Priorité de génération : résultats plus rapides",
                 "Rollover jusqu'à 80 crédits",
-                '-10% sur les packs de crédits supplémentaires',
+                "-10% sur les packs de crédits supplémentaires",
               ].map((f) => (
                 <div key={f} className="flex items-start gap-3">
                   <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
@@ -281,20 +267,18 @@ export const Pricing = ({
               ))}
             </div>
             <Button
-              onClick={() => handleCheckout('premium')}
+              onClick={() => handleCheckout("premium")}
               className="w-full bg-accent hover:bg-accent/90 text-white"
               size="lg"
             >
-              Passer en Premium {interval === 'year' ? '· annuel' : ''}
+              Passer en Premium {interval === "year" ? "· annuel" : ""}
             </Button>
-            <p className="text-xs text-muted-foreground text-center mt-2">
-              Annulable à tout moment
-            </p>
+            <p className="text-xs text-muted-foreground text-center mt-2">Annulable à tout moment</p>
           </Card>
         </div>
 
         <p className="text-center text-sm text-muted-foreground italic mt-10 max-w-xl mx-auto">
-          Pour {formatEUR(PLANS.starter.monthlyPrice)}/mois, la plupart de nos utilisateurs économisent plus de{' '}
+          Pour {formatEUR(PLANS.starter.monthlyPrice)}/mois, la plupart de nos utilisateurs économisent plus de{" "}
           <span className="font-bold text-accent not-italic">15×</span> ce montant sur leur budget courses.
         </p>
 
