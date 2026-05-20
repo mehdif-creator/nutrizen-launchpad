@@ -1,6 +1,6 @@
-import { Button } from '@/components/ui/button';
-import { Star, Check, Shield, ArrowRight, TrendingDown, Leaf } from 'lucide-react';
-import fitHeroImage from '@/assets/fit-hero.jpg';
+import { Button } from "@/components/ui/button";
+import { Star, Check, Shield, ArrowRight, TrendingDown, Leaf } from "lucide-react";
+import fitHeroImage from "@/assets/fit-hero.jpg";
 
 interface FitHeroProps {
   onCtaClick: () => void;
@@ -14,23 +14,23 @@ export const FitHero = ({ onCtaClick }: FitHeroProps) => {
         <img
           src={fitHeroImage}
           alt="Sportif préparant un repas fit avec NutriZen"
-          className="absolute right-0 top-0 h-full w-full object-cover object-center md:object-right md:w-[65%] lg:w-[60%]"
+          className="absolute right-0 top-0 h-full w-full object-cover object-right md:w-[65%] lg:w-[60%]"
           width={1280}
           height={1280}
           fetchPriority="high"
           decoding="sync"
           loading="eager"
         />
-        {/* Desktop: gradient fade left -> image */}
+        {/* Gradient fade left -> image */}
         <div
-          className="absolute inset-0 hidden md:block"
+          className="absolute inset-0"
           style={{
             background:
-              'linear-gradient(90deg, #0d1f1a 0%, #0d1f1a 35%, rgba(13,31,26,0.85) 50%, rgba(13,31,26,0.2) 70%, rgba(13,31,26,0) 100%)',
+              "linear-gradient(90deg, #0d1f1a 0%, #0d1f1a 35%, rgba(13,31,26,0.85) 50%, rgba(13,31,26,0.2) 70%, rgba(13,31,26,0) 100%)",
           }}
         />
-        {/* Mobile: voile sombre uniforme pour lisibilité du texte tout en gardant l'image visible */}
-        <div className="absolute inset-0 md:hidden bg-[#0d1f1a]/70" />
+        {/* Mobile bottom fade */}
+        <div className="absolute inset-0 md:hidden bg-gradient-to-t from-[#0d1f1a] via-[#0d1f1a]/80 to-[#0d1f1a]/20" />
       </div>
 
       <div className="container relative z-10 py-16 md:py-24 lg:py-32">
@@ -54,7 +54,7 @@ export const FitHero = ({ onCtaClick }: FitHeroProps) => {
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.05] tracking-tight">
-              Mange pour{' '}
+              Mange pour{" "}
               <span className="relative text-emerald-400">
                 performer
                 <svg
@@ -78,19 +78,19 @@ export const FitHero = ({ onCtaClick }: FitHeroProps) => {
             </h1>
 
             <p className="text-base md:text-lg text-white/70 leading-relaxed">
-              NutriZen Fit crée des plans de nutrition adaptés à tes objectifs et à ton mode de vie,
-              avec des recettes simples, un suivi intelligent et des ajustements en temps réel.
+              NutriZen Fit crée des plans de nutrition adaptés à tes objectifs et à ton mode de vie, avec des recettes
+              simples, un suivi intelligent et des ajustements en temps réel.
             </p>
 
             <ul className="space-y-3 pt-2">
               {[
                 {
-                  bold: 'Objectifs sur mesure',
-                  text: ': perte de poids, prise de muscle, maintien',
+                  bold: "Objectifs sur mesure",
+                  text: ": perte de poids, prise de muscle, maintien",
                 },
-                { bold: 'Plans & recettes adaptés', text: ' à tes goûts et ton emploi du temps' },
-                { bold: 'Suivi intelligent', text: ': calories, macros, progression, habitudes' },
-                { bold: 'Coaching IA', text: " qui s'ajuste à tes résultats" },
+                { bold: "Plans & recettes adaptés", text: " à tes goûts et ton emploi du temps" },
+                { bold: "Suivi intelligent", text: ": calories, macros, progression, habitudes" },
+                { bold: "Coaching IA", text: " qui s'ajuste à tes résultats" },
               ].map((item, i) => (
                 <li key={i} className="flex items-start gap-3 text-sm md:text-base">
                   <span className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
@@ -130,11 +130,10 @@ export const FitHero = ({ onCtaClick }: FitHeroProps) => {
                   ))}
                 </div>
                 <span className="font-semibold text-white">4,8/5</span>
-                <span className="text-white/60 text-sm">sur Trustpilot</span>
+                <span className="text-white/60 text-sm"></span>
               </div>
               <p className="text-xs md:text-sm text-white/50">
-                +2 000 utilisateurs accompagnés • Résultats concrets • N°1 en nutrition
-                personnalisée
+                +2 000 utilisateurs accompagnés • Résultats concrets • N°1 en nutrition personnalisée
               </p>
             </div>
           </div>
