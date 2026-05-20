@@ -97,10 +97,19 @@ export const Pricing = ({
 
   const handleCheckout = (tier: PlanTier | 'free') => {
     if (tier === 'free') {
+      trackLead({ content_name: 'Free Trial Landing' });
       onCtaClick();
       return;
     }
     const planKey = getPlanKey(tier, interval);
+    const price = getTotalPrice(tier, interval);
+    trackInitiateCheckout({
+      content_ids: [planKey],
+      content_type: 'product',
+      currency: 'EUR',
+      value: price,
+      num_items: 1,
+    });
     navigate(`/auth/signup?plan=${planKey}`);
   };
 
