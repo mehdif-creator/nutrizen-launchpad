@@ -42,19 +42,28 @@ export function trackPinterestEvent(
     // Silently fail if pixel is blocked
   }
 }
+/**
+ * Generate a unique event_id for Pinterest event deduplication.
+ * Format: {prefix}-{timestamp}-{random}
+ */
+function generateEventId(prefix: string): string {
+  const ts = Date.now().toString(36);
+  const rand = Math.random().toString(36).slice(2, 10);
+  return `${prefix}-${ts}-${rand}`;
+}
 
 /**
  * Track page visit (standard Pinterest page event)
  */
 export function trackPageVisit(): void {
-  trackPinterestEvent('pagevisit');
+  trackPinterestEvent('pagevisit', { event_id: generateEventId('pv') });
 }
 
 /**
  * Track signup — when a user creates an account (free or paid)
  */
 export function trackSignup(params?: Record<string, unknown>): void {
-  trackPinterestEvent('signup', params);
+  trackPinterestEvent('signup', { event_id: generateEventId('signup'), ...(params || {}) });
 }
 
 /**
@@ -68,6 +77,7 @@ export function trackCheckout(params: {
   product_ids?: string[];
 }): void {
   trackPinterestEvent('checkout', {
+    event_id: params.order_id || generateEventId('checkout'),
     value: params.value || 0,
     currency: params.currency || 'EUR',
     order_quantity: params.order_quantity || 1,
@@ -86,6 +96,7 @@ export function trackAddToCart(params: {
   product_id?: string;
 }): void {
   trackPinterestEvent('addtocart', {
+    event_id: generateEventId('atc'),
     value: params.value || 0,
     currency: params.currency || 'EUR',
     order_quantity: params.order_quantity || 1,
@@ -96,23 +107,28 @@ export function trackAddToCart(params: {
 /**
  * Track lead — when user starts free trial or expresses interest
  */
-export function trackLead(params?: Record<string, unknown>): void {
-  trackPinterestEvent('lead', params);
+export function trackLead(params?: { lead_type?: string; [key: string]: unknown }): void {
+  trackPinterestEvent('lead', {
+    event_id: generateEventId('lead'),
+    lead_type: params?.lead_type || 'Free Trial',
+    ...(params || {}),
+  });
 }
 
 /**
  * Track search — when user searches on the site
  */
 export function trackSearch(params?: { search_query?: string }): void {
-  trackPinterestEvent('search', params);
+  trackPinterestEvent('search', { event_id: generateEventId('search'), ...(params || {}) });
 }
 
 /**
  * Track view category — when user browses a section (recipes, blog, etc.)
  */
 export function trackViewCategory(params?: { product_category?: string }): void {
-  trackPinterestEvent('viewcategory', params);
+  trackPinterestEvent('viewcategory', { event_id: generateEventId('vc'), ...(params || {}) });
 }
+
 
 /**
  * Track custom event
