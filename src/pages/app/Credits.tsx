@@ -13,6 +13,7 @@ import { useCreditPacks } from '@/hooks/useCreditPacks';
 import { ZenCreditsDisplay } from '@/components/app/ZenCreditsDisplay';
 import { CREDIT_COSTS_DISPLAY } from '@/lib/featureCosts';
 import { trackInitiateCheckout } from '@/lib/metaPixel';
+import { trackAddToCart as trackPinterestAddToCart } from '@/lib/pinterestPixel';
 
 export default function Credits() {
   const { user } = useAuth();
