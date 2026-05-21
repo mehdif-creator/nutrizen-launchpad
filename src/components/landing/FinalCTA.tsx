@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { BillingToggle } from '@/components/landing/BillingToggle';
 import { formatEUR, getEffectiveMonthlyPrice, getPlanKey, getTotalPrice, type BillingInterval } from '@/config/pricing';
 import { trackInitiateCheckout } from '@/lib/metaPixel';
+import { trackCheckout as trackPinterestCheckout } from '@/lib/pinterestPixel';
 import type { FinalCTACopy } from '@/config/marketingCopy';
 
 interface FinalCTAProps {
