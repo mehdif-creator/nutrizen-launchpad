@@ -116,6 +116,7 @@ export default function Signup() {
       }
 
       // Redirect to Stripe — do NOT reset loading (page is navigating away)
+      trackPinterestSignup({ plan });
       window.location.href = data.url;
     } catch (err: any) {
       clearTimeout(timeoutId);
