@@ -12,8 +12,8 @@ declare global {
   interface Window {
     pintrk?: (
       command: string,
-      event?: string,
-      params?: Record<string, unknown>
+      eventOrValue?: string,
+      paramsOrEmail?: Record<string, unknown> | string
     ) => void;
   }
 }
