@@ -164,6 +164,7 @@ export default function Signup() {
       }
 
       setEmailSent(true);
+      trackPinterestSignup({ plan: 'free' });
     } catch {
       toast({
         variant: 'destructive',
