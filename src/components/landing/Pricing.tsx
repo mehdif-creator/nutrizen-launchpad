@@ -16,6 +16,7 @@ import {
   type PlanTier,
 } from "@/config/pricing";
 import { trackInitiateCheckout, trackLead } from "@/lib/metaPixel";
+import { trackCheckout as trackPinterestCheckout, trackLead as trackPinterestLead } from "@/lib/pinterestPixel";
 
 interface ComparisonCopy {
   without: string[];
@@ -94,6 +95,7 @@ export const Pricing = ({ onCtaClick, pricingNote, comparison = defaultCompariso
   const handleCheckout = (tier: PlanTier | "free") => {
     if (tier === "free") {
       trackLead({ content_name: "Free Trial Landing" });
+      trackPinterestLead({ content_name: "Free Trial Landing" });
       onCtaClick();
       return;
     }
@@ -105,6 +107,12 @@ export const Pricing = ({ onCtaClick, pricingNote, comparison = defaultCompariso
       currency: "EUR",
       value: price,
       num_items: 1,
+    });
+    trackPinterestCheckout({
+      value: price,
+      currency: "EUR",
+      order_quantity: 1,
+      product_ids: [planKey],
     });
     navigate(`/auth/signup?plan=${planKey}`);
   };

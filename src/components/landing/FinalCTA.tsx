@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { BillingToggle } from '@/components/landing/BillingToggle';
 import { formatEUR, getEffectiveMonthlyPrice, getPlanKey, getTotalPrice, type BillingInterval } from '@/config/pricing';
 import { trackInitiateCheckout } from '@/lib/metaPixel';
+import { trackCheckout as trackPinterestCheckout } from '@/lib/pinterestPixel';
 import type { FinalCTACopy } from '@/config/marketingCopy';
 
 interface FinalCTAProps {
@@ -50,12 +51,19 @@ export const FinalCTA = ({ onCtaClick, copy }: FinalCTAProps) => {
               <BillingToggle value={interval} onChange={setInterval} className="mx-auto" />
               <Button
                 onClick={() => {
+                  const value = interval === 'year' ? getTotalPrice('starter', 'year') : getTotalPrice('starter', 'month');
                   trackInitiateCheckout({
                     content_ids: [starterPlanKey],
                     content_type: 'product',
                     currency: 'EUR',
-                    value: interval === 'year' ? getTotalPrice('starter', 'year') : getTotalPrice('starter', 'month'),
+                    value,
                     num_items: 1,
+                  });
+                  trackPinterestCheckout({
+                    value,
+                    currency: 'EUR',
+                    order_quantity: 1,
+                    product_ids: [starterPlanKey],
                   });
                   navigate(`/auth/signup?plan=${starterPlanKey}`);
                 }}

@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { trackPurchase } from '@/lib/metaPixel';
+import { trackCheckout as trackPinterestCheckout } from '@/lib/pinterestPixel';
 
 export default function PostCheckout() {
   const [searchParams] = useSearchParams();
@@ -62,6 +63,9 @@ export default function PostCheckout() {
         // Token consumed, redirect to magic link
         trackPurchase({
           content_type: 'subscription',
+          currency: 'EUR',
+        });
+        trackPinterestCheckout({
           currency: 'EUR',
         });
         setStatus('redirecting');

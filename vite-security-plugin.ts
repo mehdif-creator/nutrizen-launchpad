@@ -42,12 +42,12 @@ export function securityHeadersPlugin(): Plugin {
             // inline scripts at runtime. Removing it breaks GTM without a server-side tagging
             // infrastructure. The XSS risk is mitigated by the object-src, base-uri, and
             // form-action directives below. Track the GTM server-side migration as a future task.
-            "script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.googletagmanager.com https://www.googletagmanager.com https://connect.facebook.net",
-            "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.google-analytics.com https://*.googletagmanager.com https://*.facebook.com",
+            "script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.googletagmanager.com https://www.googletagmanager.com https://connect.facebook.net https://s.pinimg.com",
+            "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.google-analytics.com https://*.googletagmanager.com https://*.facebook.com https://*.pinterest.com https://ct.pinterest.com",
             "img-src 'self' https://*.supabase.co https://storage.googleapis.com data: blob: https:",
             "style-src 'self' 'unsafe-inline'",
             "font-src 'self' data:",
-            "frame-src https://js.stripe.com https://*.googletagmanager.com https://*.facebook.com",
+            "frame-src https://js.stripe.com https://*.googletagmanager.com https://*.facebook.com https://*.pinterest.com",
             isDev ? "frame-ancestors *" : "frame-ancestors 'none'",
             "base-uri 'self'",
             "form-action 'self'",

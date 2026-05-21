@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Shield, CheckCircle, Mail } from 'lucide-react';
+import { trackSignup as trackPinterestSignup } from '@/lib/pinterestPixel';
 
 import {
   PLANS,
@@ -115,6 +116,7 @@ export default function Signup() {
       }
 
       // Redirect to Stripe — do NOT reset loading (page is navigating away)
+      trackPinterestSignup({ plan });
       window.location.href = data.url;
     } catch (err: any) {
       clearTimeout(timeoutId);
@@ -162,6 +164,7 @@ export default function Signup() {
       }
 
       setEmailSent(true);
+      trackPinterestSignup({ plan: 'free' });
     } catch {
       toast({
         variant: 'destructive',
