@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Shield, CheckCircle, Mail } from 'lucide-react';
+import { trackSignup as trackPinterestSignup } from '@/lib/pinterestPixel';
 
 import {
   PLANS,
