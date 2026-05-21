@@ -65,6 +65,9 @@ export default function PostCheckout() {
           content_type: 'subscription',
           currency: 'EUR',
         });
+        trackPinterestCheckout({
+          currency: 'EUR',
+        });
         setStatus('redirecting');
         if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
         window.location.href = data.redirect;
