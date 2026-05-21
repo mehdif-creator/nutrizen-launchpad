@@ -16,6 +16,7 @@ import {
   type PlanTier,
 } from "@/config/pricing";
 import { trackInitiateCheckout, trackLead } from "@/lib/metaPixel";
+import { trackCheckout as trackPinterestCheckout, trackLead as trackPinterestLead } from "@/lib/pinterestPixel";
 
 interface ComparisonCopy {
   without: string[];
