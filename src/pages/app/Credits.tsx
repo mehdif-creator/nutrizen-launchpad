@@ -40,6 +40,12 @@ export default function Credits() {
         value: pack.price_cents / 100,
         num_items: 1,
       });
+      trackPinterestAddToCart({
+        product_id: pack.id,
+        currency: pack.currency?.toUpperCase() || 'EUR',
+        value: pack.price_cents / 100,
+        order_quantity: 1,
+      });
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { price_id: pack.stripe_price_id, mode: 'payment' },
       });
