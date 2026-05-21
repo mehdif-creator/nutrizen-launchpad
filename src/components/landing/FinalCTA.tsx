@@ -51,12 +51,19 @@ export const FinalCTA = ({ onCtaClick, copy }: FinalCTAProps) => {
               <BillingToggle value={interval} onChange={setInterval} className="mx-auto" />
               <Button
                 onClick={() => {
+                  const value = interval === 'year' ? getTotalPrice('starter', 'year') : getTotalPrice('starter', 'month');
                   trackInitiateCheckout({
                     content_ids: [starterPlanKey],
                     content_type: 'product',
                     currency: 'EUR',
-                    value: interval === 'year' ? getTotalPrice('starter', 'year') : getTotalPrice('starter', 'month'),
+                    value,
                     num_items: 1,
+                  });
+                  trackPinterestCheckout({
+                    value,
+                    currency: 'EUR',
+                    order_quantity: 1,
+                    product_ids: [starterPlanKey],
                   });
                   navigate(`/auth/signup?plan=${starterPlanKey}`);
                 }}
