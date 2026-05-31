@@ -17,13 +17,13 @@ const CallbackSchema = z.object({
   idempotency_key: z.string(),
 });
 
-// Verify HMAC signature from n8n
+// Verify HMAC signature from n8n (fail-closed: always required)
 function verifySignature(payload: string, signature: string | null, secret: string): boolean {
   if (!signature || !secret) {
-    console.warn('[job-callback] No signature or secret configured');
-    return !secret; // If no secret configured, skip validation
+    console.warn('[job-callback] Missing signature or secret');
+    return false;
   }
-  
+
   try {
     const hmac = createHmac('sha256', secret);
     hmac.update(payload);
