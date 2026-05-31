@@ -21,257 +21,27 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
 import { KpiCardLink } from '@/components/admin/kpis/KpiCardLink';
 import { EmailCampaignSection } from '@/components/admin/EmailCampaignSection';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-interface Stats {
-  totalUsers: number;
-  activeSubscribers: number;
-  trialUsers: number;
-  totalPoints: number;
-  totalMealPlans: number;
-  totalRatings: number;
-  openTickets: number;
-  mrr: number;
-  arpu: number;
-  churnRate: number;
-  conversionRate: number;
-  newUsersThisMonth: number;
-  newUsersThisWeek: number;
-  canceledSubscriptions: number;
-  avgMealPlansPerUser: number;
-  avgRatingScore: number;
-}
+import {
+  useAdminDashboardStats,
+  fmtEUR,
+  fmtPct,
+  fmtNum,
+  fmtDec,
+} from '@/hooks/useAdminDashboardStats';
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<Stats>({
-    totalUsers: 0,
-    activeSubscribers: 0,
-    trialUsers: 0,
-    totalPoints: 0,
-    totalMealPlans: 0,
-    totalRatings: 0,
-    openTickets: 0,
-    mrr: 0,
-    arpu: 0,
-    churnRate: 0,
-    conversionRate: 0,
-    newUsersThisMonth: 0,
-    newUsersThisWeek: 0,
-    canceledSubscriptions: 0,
-    avgMealPlansPerUser: 0,
-    avgRatingScore: 0,
-  });
-  const [loading, setLoading] = useState(true);
+  const { data, loading, error, refresh } = useAdminDashboardStats();
   const [mailingOpen, setMailingOpen] = useState(false);
-  const { toast } = useToast();
 
-  const refreshTimerRef = useRef<number | null>(null);
+  const f = data?.financial;
+  const u = data?.users;
+  const eng = data?.engagement;
 
-  const fetchStats = useCallback(async () => {
-    const safeQuery = async <T,>(
-      fn: () => Promise<T> | PromiseLike<T>,
-      fallback: T
-    ): Promise<T> => {
-      try {
-        return await fn();
-      } catch {
-        return fallback;
-      }
-    };
-
-    try {
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const startOfWeek = new Date(now);
-      startOfWeek.setDate(now.getDate() - 7);
-
-      const [
-        totalUsers,
-        activeSubscribers,
-        trialUsers,
-        canceledSubscriptions,
-        newUsersThisMonth,
-        newUsersThisWeek,
-        totalPoints,
-        totalMealPlans,
-        ratingsObj,
-        openTickets,
-      ] = await Promise.all([
-        safeQuery(
-          async () =>
-            (await supabase.from('profiles').select('*', { count: 'exact', head: true })).count ??
-            0,
-          0
-        ),
-        safeQuery(
-          async () =>
-            (
-              await supabase
-                .from('subscriptions' as any)
-                .select('*', { count: 'exact', head: true })
-                .eq('status', 'active')
-            ).count ?? 0,
-          0
-        ),
-        safeQuery(
-          async () =>
-            (
-              await supabase
-                .from('subscriptions' as any)
-                .select('*', { count: 'exact', head: true })
-                .eq('status', 'trialing')
-            ).count ?? 0,
-          0
-        ),
-        safeQuery(
-          async () =>
-            (
-              await supabase
-                .from('subscriptions' as any)
-                .select('*', { count: 'exact', head: true })
-                .eq('status', 'canceled')
-            ).count ?? 0,
-          0
-        ),
-        safeQuery(
-          async () =>
-            (
-              await supabase
-                .from('profiles')
-                .select('*', { count: 'exact', head: true })
-                .gte('created_at', startOfMonth.toISOString())
-            ).count ?? 0,
-          0
-        ),
-        safeQuery(
-          async () =>
-            (
-              await supabase
-                .from('profiles')
-                .select('*', { count: 'exact', head: true })
-                .gte('created_at', startOfWeek.toISOString())
-            ).count ?? 0,
-          0
-        ),
-        safeQuery(async () => {
-          const r = await supabase.from('user_points' as any).select('total_points');
-          return (
-            (r.data as any[])?.reduce((s: number, u: any) => s + (u.total_points || 0), 0) ?? 0
-          );
-        }, 0),
-        safeQuery(
-          async () =>
-            (await supabase.from('meal_plans').select('*', { count: 'exact', head: true })).count ??
-            0,
-          0
-        ),
-        safeQuery(
-          async () => {
-            const r = await supabase.from('meal_ratings').select('stars', { count: 'exact' });
-            return {
-              count: r.count ?? 0,
-              avg:
-                r.data && r.data.length > 0
-                  ? r.data.reduce((s, rr) => s + (rr.stars || 0), 0) / r.data.length
-                  : 0,
-            };
-          },
-          { count: 0, avg: 0 }
-        ),
-        safeQuery(
-          async () =>
-            (
-              await supabase
-                .from('support_tickets' as any)
-                .select('*', { count: 'exact', head: true })
-                .eq('status', 'open')
-            ).count ?? 0,
-          0
-        ),
-      ]);
-
-      const pricePerMonth = 19.99;
-      const mrr = activeSubscribers * pricePerMonth;
-      const arpu = totalUsers > 0 ? mrr / totalUsers : 0;
-      const totalSubs = activeSubscribers + canceledSubscriptions;
-      const churnRate = totalSubs > 0 ? (canceledSubscriptions / totalSubs) * 100 : 0;
-      const conversionRate = totalUsers > 0 ? (activeSubscribers / totalUsers) * 100 : 0;
-      const avgMealPlansPerUser = totalUsers > 0 ? totalMealPlans / totalUsers : 0;
-
-      setStats({
-        totalUsers,
-        activeSubscribers,
-        trialUsers,
-        totalPoints,
-        totalMealPlans,
-        totalRatings: ratingsObj.count,
-        openTickets,
-        mrr,
-        arpu,
-        churnRate,
-        conversionRate,
-        newUsersThisMonth,
-        newUsersThisWeek,
-        canceledSubscriptions,
-        avgMealPlansPerUser,
-        avgRatingScore: ratingsObj.avg,
-      });
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de charger les statistiques',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
-
-  const scheduleRefresh = useCallback(() => {
-    if (refreshTimerRef.current) return;
-
-    refreshTimerRef.current = window.setTimeout(() => {
-      refreshTimerRef.current = null;
-      fetchStats();
-    }, 800);
-  }, [fetchStats]);
-
-  useEffect(() => {
-    fetchStats();
-
-    // Poll for changes (sensitive tables removed from Realtime for security)
-    const pollInterval = window.setInterval(() => {
-      fetchStats();
-    }, 30_000);
-
-    // Keep Realtime only for tables still published
-    const channel = supabase
-      .channel('admin_dashboard_changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'meal_plans' },
-        scheduleRefresh
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'meal_ratings' },
-        scheduleRefresh
-      )
-      .subscribe();
-
-    return () => {
-      window.clearInterval(pollInterval);
-      if (refreshTimerRef.current) window.clearTimeout(refreshTimerRef.current);
-      supabase.removeChannel(channel);
-    };
-  }, [fetchStats, scheduleRefresh]);
-
-  if (loading) {
+  if (loading && !data) {
     return (
       <div className="min-h-screen flex flex-col">
         <main className="flex-1 container py-8">
@@ -287,11 +57,17 @@ export default function AdminDashboard() {
       <main className="flex-1 container py-8">
         <div className="mb-8 flex items-center justify-between">
           <h1 className="text-4xl font-bold">Dashboard Administrateur</h1>
-          <Button onClick={fetchStats} variant="outline">
+          <Button onClick={refresh} variant="outline">
             <TrendingUp className="mr-2 h-4 w-4" />
             Actualiser
           </Button>
         </div>
+        {error && (
+          <div className="mb-4 text-sm text-muted-foreground">
+            Certaines statistiques n'ont pas pu être chargées.
+          </div>
+        )}
+
 
         {/* Revenue Metrics */}
         <div className="mb-6">
