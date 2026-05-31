@@ -1648,6 +1648,27 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_prices: {
+        Row: {
+          amount_eur: number
+          billing_interval: string
+          plan_key: string
+          updated_at: string
+        }
+        Insert: {
+          amount_eur: number
+          billing_interval: string
+          plan_key: string
+          updated_at?: string
+        }
+        Update: {
+          amount_eur?: number
+          billing_interval?: string
+          plan_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       preferences: {
         Row: {
           age: number | null
