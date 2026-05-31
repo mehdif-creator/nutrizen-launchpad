@@ -76,7 +76,7 @@ export default function AdminDashboard() {
             <KpiCardLink
               to="/admin/kpis/mrr"
               title="MRR"
-              value={`${stats.mrr.toFixed(2)}€`}
+              value={fmtEUR(f?.mrr ?? null)}
               subtitle="Revenue mensuel récurrent"
               icon={Euro}
               iconColor="text-green-500"
@@ -84,7 +84,7 @@ export default function AdminDashboard() {
             <KpiCardLink
               to="/admin/kpis/arpu"
               title="ARPU"
-              value={`${stats.arpu.toFixed(2)}€`}
+              value={fmtEUR(f?.arpu ?? null)}
               subtitle="Revenue moyen par utilisateur"
               icon={BarChart3}
               iconColor="text-blue-500"
@@ -92,7 +92,7 @@ export default function AdminDashboard() {
             <KpiCardLink
               to="/admin/kpis/conversion"
               title="Taux de conversion"
-              value={`${stats.conversionRate.toFixed(1)}%`}
+              value={fmtPct(f?.trialToPaidConversionRate ?? null)}
               subtitle="Trial → Paid"
               icon={Percent}
               iconColor="text-purple-500"
@@ -100,8 +100,8 @@ export default function AdminDashboard() {
             <KpiCardLink
               to="/admin/kpis/churn"
               title="Taux de churn"
-              value={`${stats.churnRate.toFixed(1)}%`}
-              subtitle={`${stats.canceledSubscriptions} annulations`}
+              value={fmtPct(f?.churnRate ?? null)}
+              subtitle={`${fmtNum(f?.cancellationsCount ?? null)} annulations`}
               icon={UserMinus}
               iconColor="text-red-500"
             />
@@ -115,15 +115,15 @@ export default function AdminDashboard() {
             <KpiCardLink
               to="/admin/kpis/users-total"
               title="Utilisateurs totaux"
-              value={stats.totalUsers}
-              subtitle={`${stats.trialUsers} en essai`}
+              value={fmtNum(u?.totalUsers ?? null)}
+              subtitle={`${fmtNum(u?.trialUsers ?? null)} en essai`}
               icon={Users}
               iconColor="text-primary"
             />
             <KpiCardLink
               to="/admin/kpis/subscribers-active"
               title="Abonnés actifs"
-              value={stats.activeSubscribers}
+              value={fmtNum(u?.activeSubscribers ?? null)}
               subtitle="Payants"
               icon={Crown}
               iconColor="text-accent"
@@ -131,15 +131,15 @@ export default function AdminDashboard() {
             <KpiCardLink
               to="/admin/kpis/new-users"
               title="Nouveaux ce mois"
-              value={stats.newUsersThisMonth}
-              subtitle={`${stats.newUsersThisWeek} cette semaine`}
+              value={fmtNum(u?.newUsersThisMonth ?? null)}
+              subtitle={`${fmtNum(u?.newUsersThisWeek ?? null)} cette semaine`}
               icon={UserPlus}
               iconColor="text-blue-500"
             />
             <KpiCardLink
               to="/admin/kpis/tickets-open"
               title="Tickets ouverts"
-              value={stats.openTickets}
+              value={fmtNum(u?.openTickets ?? null)}
               subtitle="Support en attente"
               icon={Ticket}
               iconColor="text-orange-500"
@@ -154,7 +154,7 @@ export default function AdminDashboard() {
             <KpiCardLink
               to="/admin/kpis/menus-created"
               title="Menus créés"
-              value={stats.totalMealPlans}
+              value={fmtNum(eng?.totalMenusCreated ?? null)}
               subtitle="Total"
               icon={Calendar}
               iconColor="text-green-500"
@@ -162,7 +162,7 @@ export default function AdminDashboard() {
             <KpiCardLink
               to="/admin/kpis/menus-per-user"
               title="Menus/utilisateur"
-              value={stats.avgMealPlansPerUser.toFixed(1)}
+              value={fmtDec(eng?.menusPerUserAvg ?? null, 1)}
               subtitle="Moyenne"
               icon={Activity}
               iconColor="text-purple-500"
@@ -170,21 +170,22 @@ export default function AdminDashboard() {
             <KpiCardLink
               to="/admin/kpis/ratings"
               title="Notations"
-              value={stats.totalRatings}
-              subtitle={`${stats.avgRatingScore.toFixed(1)} ⭐ moyenne`}
+              value={fmtNum(eng?.ratingsCount ?? null)}
+              subtitle={`${fmtDec(eng?.ratingsAvg ?? null, 1)} ⭐ moyenne`}
               icon={Star}
               iconColor="text-yellow-500"
             />
             <KpiCardLink
               to="/admin/kpis/points-total"
               title="Points totaux"
-              value={stats.totalPoints.toLocaleString()}
+              value={fmtNum(eng?.totalPoints ?? null)}
               subtitle="Gamification"
               icon={Star}
               iconColor="text-amber-500"
             />
           </div>
         </div>
+
 
         {/* Mailing Dialog */}
         <Dialog open={mailingOpen} onOpenChange={setMailingOpen}>
