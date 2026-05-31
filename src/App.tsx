@@ -4,6 +4,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { useReferralTracking } from '@/hooks/useReferralTracking';
 import { useAffiliateTracking } from '@/hooks/useAffiliateTracking';
+import { usePageTracking } from '@/hooks/usePageTracking';
 
 // Eager: always needed on first render
 import Index from './pages/Index';
