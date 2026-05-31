@@ -106,6 +106,8 @@ const App = () => {
   useReferralTracking();
   // Track affiliate codes from URL
   useAffiliateTracking();
+  // Track SPA page views (Meta Pixel + Pinterest Tag)
+  usePageTracking();
 
   return (
     <Suspense
