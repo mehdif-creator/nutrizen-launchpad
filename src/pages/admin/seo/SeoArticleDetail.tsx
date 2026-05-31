@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/app/Progress';
 import type { SeoArticle } from './types';
 import { cn } from '@/lib/utils';
+import DOMPurify from 'isomorphic-dompurify';
 
 interface Props {
   article: SeoArticle | null;
@@ -73,7 +74,7 @@ export function SeoArticleDetail({ article, open, onClose, onRefresh }: Props) {
               <>
                 <div
                   className="border rounded-md p-4 prose prose-sm max-w-none dark:prose-invert overflow-auto max-h-96"
-                  dangerouslySetInnerHTML={{ __html: article.draft_html }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.draft_html) }}
                 />
                 <details className="mt-2">
                   <summary className="cursor-pointer text-sm text-muted-foreground">

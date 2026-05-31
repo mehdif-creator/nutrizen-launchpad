@@ -13,6 +13,7 @@ import { SocialShareButtons } from '@/components/share/SocialShareButtons';
 import { useBlogArticleBySlug, useBlogArticles } from '@/hooks/useBlogArticles';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { getCategoryLabel } from '@/lib/categoryMapping';
+import DOMPurify from 'isomorphic-dompurify';
 
 const BLOG_FALLBACK_IMAGE = '/img/hero-default.jpg';
 
@@ -355,7 +356,7 @@ export default function BlogPost() {
           {/* Article Content */}
           <article
             className="article-content prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-a:text-primary"
-            dangerouslySetInnerHTML={{ __html: htmlContent }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(htmlContent) }}
           />
 
           {/* FAQ from draft_meta if not in HTML */}

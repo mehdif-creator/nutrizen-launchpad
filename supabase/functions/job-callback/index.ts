@@ -17,13 +17,13 @@ const CallbackSchema = z.object({
   idempotency_key: z.string(),
 });
 
-// Verify HMAC signature from n8n
+// Verify HMAC signature from n8n (fail-closed: always required)
 function verifySignature(payload: string, signature: string | null, secret: string): boolean {
   if (!signature || !secret) {
-    console.warn('[job-callback] No signature or secret configured');
-    return !secret; // If no secret configured, skip validation
+    console.warn('[job-callback] Missing signature or secret');
+    return false;
   }
-  
+
   try {
     const hmac = createHmac('sha256', secret);
     hmac.update(payload);
@@ -47,13 +47,22 @@ Deno.serve(async (req) => {
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const hmacSecret = Deno.env.get('HMAC_SECRET') || '';
 
+  // Fail-closed: require HMAC_SECRET to be configured
+  if (!hmacSecret) {
+    console.error('[job-callback] HMAC_SECRET not configured — rejecting request');
+    return new Response(
+      JSON.stringify({ success: false, error: 'Server misconfiguration' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
     // Read raw body for signature verification
     const rawBody = await req.text();
-    
-    // Verify signature
+
+    // Verify signature (always enforced)
     const signature = req.headers.get('x-n8n-signature');
-    if (hmacSecret && !verifySignature(rawBody, signature, hmacSecret)) {
+    if (!verifySignature(rawBody, signature, hmacSecret)) {
       console.error('[job-callback] Invalid signature');
       return new Response(
         JSON.stringify({ success: false, error: 'Invalid signature' }),
