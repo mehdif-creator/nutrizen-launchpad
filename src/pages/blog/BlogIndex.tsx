@@ -11,6 +11,7 @@ import { useBlogArticles, BlogArticle } from '@/hooks/useBlogArticles';
 import { useSeoMeta } from '@/hooks/useSeoMeta';
 import { Search, X } from 'lucide-react';
 import { getCategoryLabel } from '@/lib/categoryMapping';
+import DOMPurify from 'isomorphic-dompurify';
 
 function formatDate(dateStr: string | null) {
   if (!dateStr) return '';
@@ -30,9 +31,10 @@ function normalize(str: string): string {
 
 function highlightText(text: string, query: string): string {
   if (!query.trim() || !text) return text;
+  const safe = DOMPurify.sanitize(text, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
   const escaped = query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const regex = new RegExp(`(${escaped})`, 'gi');
-  return text.replace(regex, '<mark class="bg-yellow-200 rounded-sm px-0.5">$1</mark>');
+  return safe.replace(regex, '<mark class="bg-yellow-200 rounded-sm px-0.5">$1</mark>');
 }
 
 function getReadingTime(article: BlogArticle): number {
