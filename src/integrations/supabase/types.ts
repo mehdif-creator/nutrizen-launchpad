@@ -5700,6 +5700,7 @@ export type Database = {
         Args: { p_date_from?: string; p_date_to?: string }
         Returns: Json
       }
+      rpc_admin_dashboard_stats: { Args: never; Returns: Json }
       rpc_admin_referral_funnel: {
         Args: { p_date_from?: string; p_date_to?: string }
         Returns: Json
