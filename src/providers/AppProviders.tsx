@@ -34,6 +34,7 @@ export function AppProviders({ children }: AppProvidersProps) {
             <LanguageProvider>
               <AuthProvider>
                 <TooltipProvider>
+                  <AdminLiveListener />
                   {children}
                   <Toaster />
                   <CookieConsent />
