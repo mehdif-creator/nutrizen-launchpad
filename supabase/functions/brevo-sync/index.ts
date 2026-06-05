@@ -131,9 +131,13 @@ Deno.serve(async (req) => {
       updateEnabled: true, // Update if exists
     };
 
-    // Add to list if configured
+    // Add to list if configured (robust parse: handles quotes, brackets, CSV)
     if (brevoListId) {
-      brevoContact.listIds = [parseInt(brevoListId, 10)];
+      const cleaned = brevoListId.trim().replace(/^["'\[]+|["'\]]+$/g, '');
+      const ids = cleaned.split(',').map((s) => Number(s.trim().replace(/^["']|["']$/g, '')))
+        .filter((n) => Number.isFinite(n) && Number.isInteger(n) && n > 0);
+      if (ids.length > 0) brevoContact.listIds = ids;
+      else console.error(`[brevo-sync] BREVO_LIST_ID invalid (raw=${JSON.stringify(brevoListId)})`);
     }
 
     console.log(`[brevo-sync] Syncing contact: ${profile.email.substring(0, 3)}***`);
