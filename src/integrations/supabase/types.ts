@@ -5883,6 +5883,10 @@ export type Database = {
         Args: { p_name: string; p_secret: string }
         Returns: string
       }
+      verify_marketing_sync_secret: {
+        Args: { p_secret: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
