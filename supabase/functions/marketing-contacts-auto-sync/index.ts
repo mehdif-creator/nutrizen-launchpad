@@ -109,12 +109,37 @@ Deno.serve(async (req) => {
     const brevoListId = Deno.env.get('BREVO_LIST_ID');
     const requireOptIn = (Deno.env.get('REQUIRE_MARKETING_OPT_IN') || '').toLowerCase() === 'true';
 
+    const admin = createClient(supabaseUrl, serviceKey);
+
+    // ---- Shared-secret gate (required) ----
+    // The function runs with verify_jwt=false because it's called by pg_net
+    // (DB trigger + pg_cron) which has no Supabase user session.
+    // It is protected by an internal shared secret stored in private.app_settings
+    // (only readable via the SECURITY DEFINER RPC public.verify_marketing_sync_secret,
+    // granted to service_role only). The trigger and cron send it in the
+    // `x-internal-sync-secret` header. Any caller without that header is rejected.
+    const presented = req.headers.get('x-internal-sync-secret') || '';
+    if (!presented) {
+      return json({ success: false, error: 'unauthorized' }, 401);
+    }
+    const { data: isValid, error: verifyErr } = await admin.rpc(
+      'verify_marketing_sync_secret',
+      { p_secret: presented },
+    );
+    if (verifyErr) {
+      console.error('[auto-sync] secret verification failed', verifyErr);
+      return json({ success: false, error: 'server_misconfigured' }, 500);
+    }
+    if (isValid !== true) {
+      console.warn('[auto-sync] rejected: bad internal secret');
+      return json({ success: false, error: 'unauthorized' }, 401);
+    }
+
     if (!brevoApiKey) {
       console.log('[auto-sync] BREVO_API_KEY missing — skipping (no-op).');
       return json({ success: true, skipped: true, reason: 'brevo_not_configured' });
     }
 
-    const admin = createClient(supabaseUrl, serviceKey);
     const listIds = brevoListId ? [parseInt(brevoListId, 10)] : undefined;
 
     const body = await req.json().catch(() => ({}));
