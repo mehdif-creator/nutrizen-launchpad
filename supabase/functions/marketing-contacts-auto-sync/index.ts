@@ -36,6 +36,26 @@ interface ContactRow {
   brevo_sync_status: string | null;
 }
 
+function parseBrevoListIds(raw: string | undefined): number[] | undefined {
+  if (!raw) return undefined;
+  const cleaned = raw.trim().replace(/^["'\[]+|["'\]]+$/g, '');
+  if (!cleaned) {
+    console.warn('[auto-sync] BREVO_LIST_ID empty after trim — skipping listIds');
+    return undefined;
+  }
+  const ids = cleaned
+    .split(',')
+    .map((s) => s.trim().replace(/^["']|["']$/g, ''))
+    .filter(Boolean)
+    .map((s) => Number(s))
+    .filter((n) => Number.isFinite(n) && Number.isInteger(n) && n > 0);
+  if (ids.length === 0) {
+    console.error(`[auto-sync] BREVO_LIST_ID invalid (raw=${JSON.stringify(raw)}) — skipping listIds`);
+    return undefined;
+  }
+  return ids;
+}
+
 async function pushOne(
   admin: ReturnType<typeof createClient>,
   brevoApiKey: string,
@@ -57,17 +77,29 @@ async function pushOne(
       attributes: attrs,
       updateEnabled: true,
     };
-    if (listIds) payload.listIds = listIds;
+    if (listIds && listIds.length > 0) {
+      const safe = listIds.filter((v) => typeof v === 'number' && Number.isFinite(v));
+      if (safe.length > 0) payload.listIds = safe;
+    }
 
-    const resp = await fetch('https://api.brevo.com/v3/contacts', {
-      method: 'POST',
-      headers: {
-        'accept': 'application/json',
-        'api-key': brevoApiKey,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
+    const body = JSON.stringify(payload);
+    let resp!: Response;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      resp = await fetch('https://api.brevo.com/v3/contacts', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'api-key': brevoApiKey,
+          'content-type': 'application/json',
+        },
+        body,
+      });
+      if (resp.status !== 429) break;
+      const retryAfter = Math.min(Number(resp.headers.get('retry-after')) || (attempt + 1), 5);
+      await resp.text().catch(() => '');
+      await new Promise((r) => setTimeout(r, retryAfter * 1000));
+    }
+
     const text = await resp.text();
     let parsed: any = {};
     try { parsed = JSON.parse(text); } catch { /* ignore */ }
@@ -83,10 +115,11 @@ async function pushOne(
       return { ok: true };
     }
 
-    const err = `HTTP ${resp.status}: ${text.slice(0, 500)}`;
+    const err = `HTTP ${resp.status}: ${text.slice(0, 400)} | payload=${body.slice(0, 200)}`;
+    console.error('[auto-sync] brevo error', err);
     await admin.from('marketing_contacts').update({
       brevo_sync_status: 'error',
-      brevo_last_error: err,
+      brevo_last_error: err.slice(0, 1000),
     }).eq('user_id', row.user_id);
     return { ok: false, error: err };
   } catch (e: any) {
