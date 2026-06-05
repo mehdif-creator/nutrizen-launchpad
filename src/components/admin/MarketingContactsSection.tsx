@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +7,7 @@ import { Users, RefreshCw, Download, Send, Database } from 'lucide-react';
 import { callEdgeFunction } from '@/lib/edgeFn';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { broadcastAdminInvalidate } from '@/lib/adminLive';
 
 interface Stats {
   auth_users: number;
@@ -17,40 +19,42 @@ interface Stats {
 }
 
 export function MarketingContactsSection() {
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const qc = useQueryClient();
 
-  const fetchStats = async () => {
-    setLoading(true);
-    try {
+  const {
+    data: stats = null,
+    isFetching: loading,
+    refetch,
+  } = useQuery<Stats | null>({
+    queryKey: ['marketing-contacts', 'stats'],
+    queryFn: async () => {
       const res = await callEdgeFunction<{ stats: Stats }>('marketing-contacts-admin', {
         action: 'stats',
       });
-      setStats(res.stats);
-    } catch (e: any) {
-      toast.error(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+      return res.stats;
+    },
+    refetchOnWindowFocus: true,
+    refetchInterval: 60_000,
+    staleTime: 15_000,
+  });
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
+  const fetchStats = () => refetch();
 
   const run = async (action: string, label: string, payload: any = {}) => {
     setBusy(action);
     try {
       const res = await callEdgeFunction<any>('marketing-contacts-admin', { action, ...payload });
       toast.success(`${label}: ${JSON.stringify(res).slice(0, 200)}`);
-      fetchStats();
+      await qc.invalidateQueries({ queryKey: ['marketing-contacts'] });
+      broadcastAdminInvalidate(`marketing-contacts:${action}`);
     } catch (e: any) {
       toast.error(e.message);
     } finally {
       setBusy(null);
     }
   };
+
 
   const exportCsv = async () => {
     setBusy('export');
