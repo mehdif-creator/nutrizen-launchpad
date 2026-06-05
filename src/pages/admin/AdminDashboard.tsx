@@ -35,7 +35,7 @@ import {
 } from '@/hooks/useAdminDashboardStats';
 
 export default function AdminDashboard() {
-  const { data, loading, error, refresh } = useAdminDashboardStats();
+  const { data, loading, isFetching, error, refresh } = useAdminDashboardStats();
   const [mailingOpen, setMailingOpen] = useState(false);
 
   const f = data?.financial;
@@ -58,8 +58,8 @@ export default function AdminDashboard() {
       <main className="flex-1 container py-8">
         <div className="mb-8 flex items-center justify-between">
           <h1 className="text-4xl font-bold">Dashboard Administrateur</h1>
-          <Button onClick={refresh} variant="outline">
-            <TrendingUp className="mr-2 h-4 w-4" />
+          <Button onClick={refresh} variant="outline" disabled={isFetching}>
+            <TrendingUp className={`mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
             Actualiser
           </Button>
         </div>
