@@ -173,7 +173,8 @@ Deno.serve(async (req) => {
       return json({ success: true, skipped: true, reason: 'brevo_not_configured' });
     }
 
-    const listIds = brevoListId ? [parseInt(brevoListId, 10)] : undefined;
+    const listIds = parseBrevoListIds(brevoListId);
+    console.log(`[auto-sync] listIds resolved=${JSON.stringify(listIds)} (raw=${JSON.stringify(brevoListId)})`);
 
     const body = await req.json().catch(() => ({}));
     const action = (body.action as string) || (body.user_id ? 'single' : 'retry_batch');
