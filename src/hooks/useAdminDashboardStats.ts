@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { broadcastAdminInvalidate } from '@/lib/adminLive';
 
 export interface AdminDashboardStats {
   financial: {
@@ -28,76 +30,70 @@ export interface AdminDashboardStats {
 }
 
 const POLL_MS = 45_000;
-const THROTTLE_MS = 1_500;
 
+async function fetchDashboardStats(): Promise<AdminDashboardStats> {
+  const { data, error } = await supabase.rpc('rpc_admin_dashboard_stats' as any);
+  if (error) throw error;
+  return data as unknown as AdminDashboardStats;
+}
+
+/**
+ * Centralized admin dashboard stats hook.
+ *
+ * Uses TanStack Query so it benefits from the global refetchOnWindowFocus +
+ * refetchOnReconnect config and the AdminLiveListener invalidation layer
+ * (route change, cross-tab broadcast, manual refresh).
+ *
+ * Also subscribes to Supabase Realtime on the KPI source tables; every change
+ * triggers a cross-tab broadcast so all open admin tabs revalidate together.
+ */
 export function useAdminDashboardStats() {
-  const [data, setData] = useState<AdminDashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const inFlight = useRef(false);
-  const lastFetch = useRef(0);
-  const pendingTimer = useRef<number | null>(null);
+  const qc = useQueryClient();
+  const lastBroadcast = useRef(0);
 
-  const fetchNow = useCallback(async () => {
-    if (inFlight.current) return;
-    inFlight.current = true;
-    try {
-      const { data: res, error: err } = await supabase.rpc('rpc_admin_dashboard_stats' as any);
-      if (err) throw err;
-      setData(res as unknown as AdminDashboardStats);
-      setError(null);
-      lastFetch.current = Date.now();
-    } catch (e: any) {
-      setError(e?.message ?? 'unknown_error');
-    } finally {
-      inFlight.current = false;
-      setLoading(false);
-    }
-  }, []);
-
-  const refresh = useCallback(() => {
-    const since = Date.now() - lastFetch.current;
-    if (since >= THROTTLE_MS) {
-      fetchNow();
-      return;
-    }
-    if (pendingTimer.current) return;
-    pendingTimer.current = window.setTimeout(() => {
-      pendingTimer.current = null;
-      fetchNow();
-    }, THROTTLE_MS - since);
-  }, [fetchNow]);
+  const query = useQuery({
+    queryKey: ['admin', 'dashboard-stats'],
+    queryFn: fetchDashboardStats,
+    refetchInterval: POLL_MS,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    staleTime: 15_000,
+  });
 
   useEffect(() => {
-    fetchNow();
-
-    const poll = window.setInterval(fetchNow, POLL_MS);
-    const onFocus = () => refresh();
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') refresh();
+    const onRealtime = () => {
+      // Throttle realtime fan-out to one broadcast per second.
+      const now = Date.now();
+      if (now - lastBroadcast.current < 1000) return;
+      lastBroadcast.current = now;
+      broadcastAdminInvalidate('realtime:dashboard');
     };
-    window.addEventListener('focus', onFocus);
-    document.addEventListener('visibilitychange', onVisible);
 
     const channel = supabase
       .channel('admin_dashboard_stats')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'meal_plans' }, refresh)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'meal_ratings' }, refresh)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, refresh)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, refresh)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_points' }, refresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'meal_plans' }, onRealtime)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'meal_ratings' }, onRealtime)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, onRealtime)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, onRealtime)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_points' }, onRealtime)
       .subscribe();
 
     return () => {
-      window.clearInterval(poll);
-      window.removeEventListener('focus', onFocus);
-      document.removeEventListener('visibilitychange', onVisible);
-      if (pendingTimer.current) window.clearTimeout(pendingTimer.current);
       supabase.removeChannel(channel);
     };
-  }, [fetchNow, refresh]);
+  }, []);
 
-  return { data, loading, error, refresh: fetchNow };
+  const refresh = useCallback(() => {
+    qc.invalidateQueries({ queryKey: ['admin', 'dashboard-stats'] });
+    broadcastAdminInvalidate('manual:refresh');
+  }, [qc]);
+
+  return {
+    data: query.data ?? null,
+    loading: query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
+    refresh,
+  };
 }
 
 // Formatting helpers (French locale)
