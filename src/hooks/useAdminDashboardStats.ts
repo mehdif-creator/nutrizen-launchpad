@@ -15,6 +15,8 @@ export interface AdminDashboardStats {
     totalUsers: number | null;
     activeSubscribers: number | null;
     trialUsers: number | null;
+    trialUsersStripe?: number | null;
+    trialUsersImplicit?: number | null;
     newUsersThisMonth: number | null;
     newUsersThisWeek: number | null;
     openTickets: number | null;
@@ -83,14 +85,16 @@ export function useAdminDashboardStats() {
     };
   }, []);
 
-  const refresh = useCallback(() => {
-    qc.invalidateQueries({ queryKey: ['admin', 'dashboard-stats'] });
+  const refresh = useCallback(async () => {
     broadcastAdminInvalidate('manual:refresh');
-  }, [qc]);
+    await qc.invalidateQueries({ queryKey: ['admin', 'dashboard-stats'] });
+    await query.refetch();
+  }, [qc, query]);
 
   return {
     data: query.data ?? null,
     loading: query.isLoading,
+    isFetching: query.isFetching,
     error: query.error ? (query.error as Error).message : null,
     refresh,
   };
