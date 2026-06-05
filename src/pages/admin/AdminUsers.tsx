@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search, RefreshCw, Trash2, AlertTriangle } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { resetUserAccount, deleteUser } from '@/actions/adminActions';
@@ -20,6 +21,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { toFrenchDate } from '@/lib/date-utils';
+import { broadcastAdminInvalidate } from '@/lib/adminLive';
 
 interface UserData {
   id: string;
@@ -32,81 +34,74 @@ interface UserData {
   trial_end?: string;
 }
 
+async function fetchAdminUsers(): Promise<UserData[]> {
+  const [
+    { data: profiles, error: profilesError },
+    { data: subscriptions, error: subsError },
+    { data: wallets, error: walletsError },
+  ] = await Promise.all([
+    supabase.from('profiles').select('id, email, full_name, created_at'),
+    supabase.from('subscriptions').select('user_id, status, plan, trial_end'),
+    supabase
+      .from('user_wallets')
+      .select('user_id, credits_total, subscription_credits, lifetime_credits'),
+  ]);
+
+  if (profilesError) throw profilesError;
+  if (subsError) throw subsError;
+  if (walletsError) throw walletsError;
+
+  return (
+    profiles?.map((profile) => {
+      const sub = subscriptions?.find((s) => s.user_id === profile.id);
+      const wallet = wallets?.find((w) => w.user_id === profile.id);
+      const creditsTotal =
+        (wallet as any)?.credits_total ??
+        ((wallet as any)?.subscription_credits ?? 0) + ((wallet as any)?.lifetime_credits ?? 0);
+      return {
+        ...profile,
+        subscription_status: sub?.status || 'none',
+        subscription_plan: sub?.plan || null,
+        trial_end: sub?.trial_end || null,
+        credits: Number(creditsTotal) || 0,
+      };
+    }) || []
+  );
+}
+
 export default function AdminUsers() {
-  const [users, setUsers] = useState<UserData[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [resettingUserId, setResettingUserId] = useState<string | null>(null);
   const { toast } = useToast();
+  const qc = useQueryClient();
+
+  const {
+    data: users = [],
+    isLoading: loading,
+  } = useQuery({
+    queryKey: ['admin', 'users-list'],
+    queryFn: fetchAdminUsers,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+    staleTime: 10_000,
+  });
 
   const fetchUsers = useCallback(async () => {
-    try {
-      const [
-        { data: profiles, error: profilesError },
-        { data: subscriptions, error: subsError },
-        { data: wallets, error: walletsError },
-      ] = await Promise.all([
-        supabase.from('profiles').select('id, email, full_name, created_at'),
-        supabase.from('subscriptions').select('user_id, status, plan, trial_end'),
-        supabase
-          .from('user_wallets')
-          .select('user_id, credits_total, subscription_credits, lifetime_credits'),
-      ]);
-
-      if (profilesError) throw profilesError;
-      if (subsError) throw subsError;
-      if (walletsError) throw walletsError;
-
-      const usersWithSubs =
-        profiles?.map((profile) => {
-          const sub = subscriptions?.find((s) => s.user_id === profile.id);
-          const wallet = wallets?.find((w) => w.user_id === profile.id);
-
-          const creditsTotal =
-            (wallet as any)?.credits_total ??
-            ((wallet as any)?.subscription_credits ?? 0) + ((wallet as any)?.lifetime_credits ?? 0);
-
-          return {
-            ...profile,
-            subscription_status: sub?.status || 'none',
-            subscription_plan: sub?.plan || null,
-            trial_end: sub?.trial_end || null,
-            credits: Number(creditsTotal) || 0,
-          };
-        }) || [];
-
-      setUsers(usersWithSubs);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de charger les utilisateurs',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
+    await qc.invalidateQueries({ queryKey: ['admin', 'users-list'] });
+    broadcastAdminInvalidate('admin-users:mutation');
+  }, [qc]);
 
   const handleCreditsUpdated = useCallback(
     ({ userId, newCredits }: { userId: string; previousCredits: number; newCredits: number }) => {
-      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, credits: newCredits } : u)));
+      qc.setQueryData<UserData[]>(['admin', 'users-list'], (prev) =>
+        (prev ?? []).map((u) => (u.id === userId ? { ...u, credits: newCredits } : u))
+      );
+      broadcastAdminInvalidate('admin-users:credits');
     },
-    []
+    [qc]
   );
 
-  useEffect(() => {
-    fetchUsers();
 
-    // Poll for changes (sensitive tables removed from Realtime for security)
-    const pollInterval = window.setInterval(() => {
-      fetchUsers();
-    }, 30_000);
-
-    return () => {
-      window.clearInterval(pollInterval);
-    };
-  }, [fetchUsers]);
 
   const filteredUsers = users.filter(
     (user) =>
