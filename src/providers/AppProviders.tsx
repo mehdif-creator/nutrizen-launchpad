@@ -10,6 +10,7 @@ import { LanguageProvider } from '@/contexts/LanguageContext';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { CookieConsent } from '@/components/common/CookieConsent';
 import { InstallBanner } from '@/components/app/InstallBanner';
+import { AdminLiveListener } from '@/components/admin/AdminLiveListener';
 
 interface AppProvidersProps {
   children: React.ReactNode;
