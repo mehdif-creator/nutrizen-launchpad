@@ -127,7 +127,17 @@ Deno.serve(async (req) => {
       if (error) return json({ error: error.message }, 500);
 
       let synced = 0, failed = 0;
-      const listIds = brevoListId ? [parseInt(brevoListId, 10)] : undefined;
+      const listIds = (() => {
+        if (!brevoListId) return undefined;
+        const cleaned = brevoListId.trim().replace(/^["'\[]+|["'\]]+$/g, '');
+        const ids = cleaned.split(',').map((s) => Number(s.trim().replace(/^["']|["']$/g, '')))
+          .filter((n) => Number.isFinite(n) && Number.isInteger(n) && n > 0);
+        if (ids.length === 0) {
+          console.error(`[admin] BREVO_LIST_ID invalid (raw=${JSON.stringify(brevoListId)})`);
+          return undefined;
+        }
+        return ids;
+      })();
 
       for (const r of rows || []) {
         try {
