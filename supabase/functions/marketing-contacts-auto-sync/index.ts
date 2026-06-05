@@ -112,26 +112,26 @@ Deno.serve(async (req) => {
     const admin = createClient(supabaseUrl, serviceKey);
 
     // ---- Shared-secret gate (required) ----
-    // The function is verify_jwt=false because it's called by pg_net (no user session).
-    // We protect it with an internal shared secret stored in private.app_settings
-    // and sent by the DB trigger / cron in the `x-internal-sync-secret` header.
+    // The function runs with verify_jwt=false because it's called by pg_net
+    // (DB trigger + pg_cron) which has no Supabase user session.
+    // It is protected by an internal shared secret stored in private.app_settings
+    // (only readable via the SECURITY DEFINER RPC public.verify_marketing_sync_secret,
+    // granted to service_role only). The trigger and cron send it in the
+    // `x-internal-sync-secret` header. Any caller without that header is rejected.
     const presented = req.headers.get('x-internal-sync-secret') || '';
-    const { data: secretRow, error: secretErr } = await admin
-      .schema('private' as any)
-      .from('app_settings')
-      .select('value')
-      .eq('key', 'marketing_sync_internal_secret')
-      .maybeSingle();
-    const expected = (secretRow as any)?.value as string | undefined;
-    if (secretErr || !expected) {
-      console.error('[auto-sync] internal secret not configured');
+    if (!presented) {
+      return json({ success: false, error: 'unauthorized' }, 401);
+    }
+    const { data: isValid, error: verifyErr } = await admin.rpc(
+      'verify_marketing_sync_secret',
+      { p_secret: presented },
+    );
+    if (verifyErr) {
+      console.error('[auto-sync] secret verification failed', verifyErr);
       return json({ success: false, error: 'server_misconfigured' }, 500);
     }
-    // constant-time-ish compare
-    if (presented.length !== expected.length ||
-        !crypto.subtle ||
-        ![...presented].reduce((acc, c, i) => acc & (c.charCodeAt(0) === expected.charCodeAt(i) ? 1 : 0), 1)) {
-      console.warn('[auto-sync] rejected: bad or missing internal secret');
+    if (isValid !== true) {
+      console.warn('[auto-sync] rejected: bad internal secret');
       return json({ success: false, error: 'unauthorized' }, 401);
     }
 
