@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { KpiCardLink } from '@/components/admin/kpis/KpiCardLink';
 import { EmailCampaignSection } from '@/components/admin/EmailCampaignSection';
+import { MarketingContactsSection } from '@/components/admin/MarketingContactsSection';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   useAdminDashboardStats,
@@ -199,6 +200,11 @@ export default function AdminDashboard() {
             <EmailCampaignSection embedded />
           </DialogContent>
         </Dialog>
+
+        <div className="mb-6">
+          <MarketingContactsSection />
+        </div>
+
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

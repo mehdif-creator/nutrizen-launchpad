@@ -1331,6 +1331,60 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_contacts: {
+        Row: {
+          brevo_contact_exists: boolean | null
+          brevo_last_error: string | null
+          brevo_sync_status: string
+          brevo_synced_at: string | null
+          created_at: string
+          email: string
+          full_name: string | null
+          last_seen_at: string
+          marketing_opt_in: boolean | null
+          provider: string | null
+          providers: string[] | null
+          raw_metadata: Json | null
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brevo_contact_exists?: boolean | null
+          brevo_last_error?: string | null
+          brevo_sync_status?: string
+          brevo_synced_at?: string | null
+          created_at?: string
+          email: string
+          full_name?: string | null
+          last_seen_at?: string
+          marketing_opt_in?: boolean | null
+          provider?: string | null
+          providers?: string[] | null
+          raw_metadata?: Json | null
+          source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brevo_contact_exists?: boolean | null
+          brevo_last_error?: string | null
+          brevo_sync_status?: string
+          brevo_synced_at?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          last_seen_at?: string
+          marketing_opt_in?: boolean | null
+          provider?: string | null
+          providers?: string[] | null
+          raw_metadata?: Json | null
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       meal_plans: {
         Row: {
           created_at: string | null
@@ -5020,6 +5074,10 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      extract_auth_providers: {
+        Args: { raw_app_meta: Json }
+        Returns: string[]
+      }
       extract_name: { Args: { line: string }; Returns: string }
       extract_qty_g: { Args: { line: string }; Returns: number }
       fn_award_event: {
@@ -5770,6 +5828,7 @@ export type Database = {
       }
       rpc_get_referral_stats: { Args: { p_user_id: string }; Returns: Json }
       rpc_get_user_dashboard: { Args: { p_user_id: string }; Returns: Json }
+      rpc_marketing_contacts_stats: { Args: never; Returns: Json }
       rpc_record_referral_event: {
         Args: {
           p_event_type: string
