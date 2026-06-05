@@ -200,6 +200,11 @@ export default function AdminDashboard() {
           </DialogContent>
         </Dialog>
 
+        <div className="mb-6">
+          <MarketingContactsSection />
+        </div>
+
+
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="p-6">
