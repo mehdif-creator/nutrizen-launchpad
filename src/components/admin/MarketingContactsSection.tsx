@@ -112,6 +112,13 @@ export function MarketingContactsSection() {
         </div>
       )}
 
+      <p className="text-xs text-muted-foreground mb-3">
+        Sync automatique activée : chaque nouveau contact est poussé vers Brevo via un
+        trigger DB + edge function, avec une reprise automatique toutes les 5 minutes
+        pour les statuts <em>pending</em> et <em>error</em>. Règle actuelle : tous les
+        utilisateurs Auth sont synchronisés (pas d'opt-in UI à ce jour). Les boutons
+        ci-dessous restent disponibles comme outils manuels de secours.
+      </p>
       <div className="flex flex-wrap gap-2">
         <Button
           variant="outline"

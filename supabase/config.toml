@@ -287,3 +287,7 @@ verify_jwt = false
 [functions.nutrizen-chat.rate_limit]
 limit = 60
 period = "1h"
+
+[functions.marketing-contacts-auto-sync]
+verify_jwt = false
+
