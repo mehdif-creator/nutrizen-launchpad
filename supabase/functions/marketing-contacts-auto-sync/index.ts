@@ -109,12 +109,37 @@ Deno.serve(async (req) => {
     const brevoListId = Deno.env.get('BREVO_LIST_ID');
     const requireOptIn = (Deno.env.get('REQUIRE_MARKETING_OPT_IN') || '').toLowerCase() === 'true';
 
+    const admin = createClient(supabaseUrl, serviceKey);
+
+    // ---- Shared-secret gate (required) ----
+    // The function is verify_jwt=false because it's called by pg_net (no user session).
+    // We protect it with an internal shared secret stored in private.app_settings
+    // and sent by the DB trigger / cron in the `x-internal-sync-secret` header.
+    const presented = req.headers.get('x-internal-sync-secret') || '';
+    const { data: secretRow, error: secretErr } = await admin
+      .schema('private' as any)
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'marketing_sync_internal_secret')
+      .maybeSingle();
+    const expected = (secretRow as any)?.value as string | undefined;
+    if (secretErr || !expected) {
+      console.error('[auto-sync] internal secret not configured');
+      return json({ success: false, error: 'server_misconfigured' }, 500);
+    }
+    // constant-time-ish compare
+    if (presented.length !== expected.length ||
+        !crypto.subtle ||
+        ![...presented].reduce((acc, c, i) => acc & (c.charCodeAt(0) === expected.charCodeAt(i) ? 1 : 0), 1)) {
+      console.warn('[auto-sync] rejected: bad or missing internal secret');
+      return json({ success: false, error: 'unauthorized' }, 401);
+    }
+
     if (!brevoApiKey) {
       console.log('[auto-sync] BREVO_API_KEY missing — skipping (no-op).');
       return json({ success: true, skipped: true, reason: 'brevo_not_configured' });
     }
 
-    const admin = createClient(supabaseUrl, serviceKey);
     const listIds = brevoListId ? [parseInt(brevoListId, 10)] : undefined;
 
     const body = await req.json().catch(() => ({}));
