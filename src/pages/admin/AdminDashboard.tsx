@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { KpiCardLink } from '@/components/admin/kpis/KpiCardLink';
 import { EmailCampaignSection } from '@/components/admin/EmailCampaignSection';
+import { MarketingContactsSection } from '@/components/admin/MarketingContactsSection';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   useAdminDashboardStats,
