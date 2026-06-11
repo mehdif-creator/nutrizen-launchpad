@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useBlogArticles, BlogArticle } from '@/hooks/useBlogArticles';
 import { useSeoMeta } from '@/hooks/useSeoMeta';
+import { SeoHead } from '@/components/seo/SeoHead';
 import { Search, X } from 'lucide-react';
 import { getCategoryLabel } from '@/lib/categoryMapping';
 import DOMPurify from 'isomorphic-dompurify';
