@@ -369,8 +369,8 @@ export default function BlogPost() {
               description:
                 (article.outline as any)?.meta_description || article.excerpt || undefined,
               image: heroImage || undefined,
-              datePublished: article.published_at || article.updated_at || undefined,
-              dateModified: article.updated_at || article.published_at || undefined,
+              datePublished: article.published_at || undefined,
+              dateModified: article.published_at || undefined,
               author: {
                 '@type': 'Person',
                 name: article.author || 'Équipe NutriZen',
