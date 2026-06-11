@@ -184,7 +184,7 @@ export const mainCopy: PageMarketingCopy = {
 // =====================================================
 export const fitCopy: PageMarketingCopy = {
   seo: {
-    title: 'NutriZen Fit — Macros automatiques, menus performance, meal prep',
+    title: 'NutriZen Fit — Macros auto, menus performance & meal prep',
     description:
       'Calcul TDEE + macros personnalisées. Menus optimisés protéines pour sèche, prise de masse ou maintenance. Meal prep intégré. +4 000 sportifs.',
   },
