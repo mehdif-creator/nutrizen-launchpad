@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useReferralTracking } from '@/hooks/useReferralTracking';
 import { useSeoMeta } from '@/hooks/useSeoMeta';
+import { SeoHead } from '@/components/seo/SeoHead';
 import { mainCopy } from '@/config/marketingCopy';
 
 // Eager: above the fold
