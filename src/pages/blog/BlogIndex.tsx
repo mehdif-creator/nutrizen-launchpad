@@ -156,6 +156,27 @@ export default function BlogIndex() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SeoHead
+        title="Blog NutriZen — Conseils nutrition & recettes healthy"
+        description="Découvrez nos articles nutrition, astuces cuisine et guides pratiques pour manger sainement au quotidien."
+        canonicalPath="/blog"
+        ogType="website"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Blog',
+          name: 'Blog NutriZen',
+          url: 'https://mynutrizen.fr/blog',
+          inLanguage: 'fr-FR',
+          publisher: {
+            '@type': 'Organization',
+            name: 'NutriZen',
+            logo: {
+              '@type': 'ImageObject',
+              url: 'https://mynutrizen.fr/icons/icon-192.png',
+            },
+          },
+        }}
+      />
       {user ? <AppHeader /> : <Header onCtaClick={() => {}} />}
 
       <main className="flex-1 container py-16">
