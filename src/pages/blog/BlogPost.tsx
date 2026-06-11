@@ -415,6 +415,14 @@ export default function BlogPost() {
             </section>
           )}
 
+          {/* Author bio block (E-E-A-T) */}
+          <AuthorBio
+            name={article.author || 'Équipe NutriZen'}
+            title="Experts en nutrition & coachs santé NutriZen"
+            avatarUrl="/icons/icon-192.png"
+            linkedinUrl="https://www.linkedin.com/company/nutrizen"
+          />
+
           {/* Horizontal scrollable related articles carousel */}
           {carouselArticles.length > 0 && (
             <section className="mt-12">
