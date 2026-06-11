@@ -203,7 +203,7 @@ export default function Dashboard() {
 
   const loading = statsLoading || menuLoading;
 
-  const handleSwap = async (recipeId: string, mealType: "lunch" | "dinner", dayIndex: number) => {
+  const handleSwap = useCallback(async (recipeId: string, mealType: "lunch" | "dinner", dayIndex: number) => {
     if (!user?.id || !menu || swapping) return;
 
     // Generate unique request_id for idempotency (prevents double-charge on double-click)
