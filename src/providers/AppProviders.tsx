@@ -29,25 +29,27 @@ interface AppProvidersProps {
 export function AppProviders({ children }: AppProvidersProps) {
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <ThemeProvider>
-            <LanguageProvider>
-              <AuthProvider>
-                <TooltipProvider>
-                  <AdminLiveListener />
-                  {children}
-                  <Toaster />
-                  <CookieConsent />
-                  <InstallBanner />
-                  {/* Only show React Query devtools in development */}
-                  {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
-                </TooltipProvider>
-              </AuthProvider>
-            </LanguageProvider>
-          </ThemeProvider>
-        </BrowserRouter>
-      </QueryClientProvider>
+      <HelmetProvider>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <ThemeProvider>
+              <LanguageProvider>
+                <AuthProvider>
+                  <TooltipProvider>
+                    <AdminLiveListener />
+                    {children}
+                    <Toaster />
+                    <CookieConsent />
+                    <InstallBanner />
+                    {/* Only show React Query devtools in development */}
+                    {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
+                  </TooltipProvider>
+                </AuthProvider>
+              </LanguageProvider>
+            </ThemeProvider>
+          </BrowserRouter>
+        </QueryClientProvider>
+      </HelmetProvider>
     </ErrorBoundary>
   );
 }
