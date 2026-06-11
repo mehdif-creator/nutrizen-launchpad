@@ -14,6 +14,8 @@ import { useBlogArticleBySlug, useBlogArticles } from '@/hooks/useBlogArticles';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { getCategoryLabel } from '@/lib/categoryMapping';
 import DOMPurify from 'isomorphic-dompurify';
+import { SeoHead } from '@/components/seo/SeoHead';
+import { AuthorBio } from '@/components/blog/AuthorBio';
 
 const BLOG_FALLBACK_IMAGE = '/img/hero-default.jpg';
 
