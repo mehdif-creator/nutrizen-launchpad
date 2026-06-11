@@ -302,7 +302,7 @@ export default function Dashboard() {
     } finally {
       setSwapping(false);
     }
-  };
+  }, [user?.id, menu, swapping, stats.credits_zen, toast, invalidateAll]);
 
   const handleValidateMeal = async (recipeId: string, mealType: "lunch" | "dinner") => {
     try {
