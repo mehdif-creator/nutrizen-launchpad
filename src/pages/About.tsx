@@ -115,38 +115,26 @@ const FAQ_ITEMS = [
 export default function About() {
   const navigate = useNavigate();
 
-  // SEO: set title & meta (React Router project — no next/head)
-  useEffect(() => {
-    document.title = PAGE_TITLE;
-    const setMeta = (name: string, content: string) => {
-      let el = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null;
-      if (!el) {
-        el = document.createElement('meta');
-        el.name = name;
-        document.head.appendChild(el);
-      }
-      el.content = content;
-    };
-    const setOg = (property: string, content: string) => {
-      let el = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement | null;
-      if (!el) {
-        el = document.createElement('meta');
-        el.setAttribute('property', property);
-        document.head.appendChild(el);
-      }
-      el.content = content;
-    };
-    setMeta('description', PAGE_DESCRIPTION);
-    setOg('og:title', PAGE_TITLE);
-    setOg('og:description', PAGE_DESCRIPTION);
-    setOg('og:type', 'website');
-  }, []);
-
   return (
     <div className="min-h-screen flex flex-col">
+      <SeoHead
+        title={PAGE_TITLE}
+        description={PAGE_DESCRIPTION}
+        canonicalPath="/a-propos"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: FAQ_ITEMS.map((it) => ({
+            '@type': 'Question',
+            name: it.q,
+            acceptedAnswer: { '@type': 'Answer', text: it.a },
+          })),
+        }}
+      />
       <Header onCtaClick={() => navigate('/auth/signup')} />
 
       <main className="flex-1">
+
         {/* ── 1. Hero ──────────────────────────────────────── */}
         <section className="py-20 md:py-28 bg-gradient-to-b from-primary/10 to-background">
           <div className="container max-w-4xl text-center space-y-6">
