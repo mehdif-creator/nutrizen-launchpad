@@ -1,0 +1,22 @@
+# NutriZen
+
+> NutriZen génère des menus nutritionnels personnalisés (perte de poids, prise de masse, performance, famille) avec recettes adaptées et liste de courses automatique, en 30 secondes.
+
+NutriZen est une application web française qui aide à arrêter de se demander "qu'est-ce qu'on mange ce soir ?". Le profil utilisateur (objectifs, allergies, foyer, équipement, temps de préparation) est utilisé pour générer un plan repas hebdomadaire complet, avec swap de recettes en 1 clic et liste de courses agrégée.
+
+## Pages
+
+- [Accueil](/): présentation, fonctionnalités, tarifs et FAQ.
+- [À propos](/a-propos): mission, valeurs et fonctionnement de NutriZen.
+- [NutriZen Fit](/fit): menus performance, macros automatiques et meal prep.
+- [NutriZen Mum](/mum): menus famille adaptés aux enfants difficiles.
+- [NutriZen Pro](/pro): offre pour professionnels de la nutrition.
+- [Affiliation](/affiliate): programme de parrainage 20% récurrent.
+- [Contact](/contact): support et questions.
+- [Blog](/blog): articles nutrition, recettes et conseils.
+
+## Optional
+
+- [Mentions légales](/legal/mentions-legales)
+- [Politique de confidentialité](/legal/confidentialite)
+- [Conditions générales](/legal/cgv)
