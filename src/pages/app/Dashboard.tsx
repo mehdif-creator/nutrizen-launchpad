@@ -51,7 +51,7 @@ export default function Dashboard() {
   const isMobile = useIsMobile();
 
   /** Invalidate all dashboard-related queries at once */
-  const invalidateAll = () => {
+  const invalidateAll = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["weeklyMenu"] });
     queryClient.invalidateQueries({ queryKey: ["weeklyRecipesByDay"] });
     queryClient.invalidateQueries({ queryKey: ["dashboardStats"] });
@@ -59,7 +59,7 @@ export default function Dashboard() {
     queryClient.invalidateQueries({ queryKey: ["gamification"] });
     queryClient.invalidateQueries({ queryKey: ["shoppingList"] });
     queryClient.invalidateQueries({ queryKey: ["effectivePortions"] });
-  };
+  }, [queryClient]);
 
   // Use custom hooks for data fetching with realtime
   const { stats, isLoading: statsLoading } = useDashboardStats(user?.id);
