@@ -417,7 +417,7 @@ export default function Dashboard() {
     }
   };
 
-  const handleCopyLink = async () => {
+  const handleCopyLink = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(referralUrl);
       toast({
@@ -431,7 +431,7 @@ export default function Dashboard() {
         variant: "destructive",
       });
     }
-  };
+  }, [referralUrl, toast]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
