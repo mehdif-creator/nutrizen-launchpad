@@ -169,6 +169,6 @@ export function useWeeklyMenu(userId: string | undefined) {
     days: Array.isArray(query.data?.days) ? query.data!.days : [],
     householdAdults: query.data?.household?.adults ?? 1,
     householdChildren: query.data?.household?.children ?? 0,
-    hasMenu: !!query.data && query.data.days.length > 0,
+    hasMenu: !!query.data && Array.isArray(query.data.days) && query.data.days.length > 0,
   };
 }
