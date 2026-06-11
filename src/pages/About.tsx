@@ -27,7 +27,7 @@ import {
   Eye,
   AlertTriangle,
 } from 'lucide-react';
-import { useEffect } from 'react';
+import { SeoHead } from '@/components/seo/SeoHead';
 
 // ── Config ──────────────────────────────────────────────────────────
 const SUPPORT_EMAIL = 'support@mynutrizen.fr';
