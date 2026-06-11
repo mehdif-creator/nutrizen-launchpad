@@ -153,6 +153,15 @@ const Index = () => {
               'query-input': 'required name=search_term_string',
             },
           },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: mainCopy.faq.items.map((it) => ({
+              '@type': 'Question',
+              name: it.question,
+              acceptedAnswer: { '@type': 'Answer', text: it.answer },
+            })),
+          },
         ]}
       />
       <AnnouncementBar />
