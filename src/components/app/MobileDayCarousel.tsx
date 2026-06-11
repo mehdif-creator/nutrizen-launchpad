@@ -57,6 +57,10 @@ function MobileMealCard({
           <img
             src={imageUrl}
             alt={recipe.title}
+            loading="lazy"
+            decoding="async"
+            width="400"
+            height="176"
             className="w-full h-full object-cover"
             onError={handleImageError}
           />

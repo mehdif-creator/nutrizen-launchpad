@@ -14,7 +14,7 @@ import { StreakBar } from "@/components/app/StreakBar";
 import { ZenCreditsDisplay } from "@/components/app/ZenCreditsDisplay";
 import { InsufficientCreditsModal } from "@/components/app/InsufficientCreditsModal";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useStreakUpdate } from "@/hooks/useStreakUpdate";
 import { Navigate, useNavigate, Link } from "react-router-dom";
@@ -51,7 +51,7 @@ export default function Dashboard() {
   const isMobile = useIsMobile();
 
   /** Invalidate all dashboard-related queries at once */
-  const invalidateAll = () => {
+  const invalidateAll = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["weeklyMenu"] });
     queryClient.invalidateQueries({ queryKey: ["weeklyRecipesByDay"] });
     queryClient.invalidateQueries({ queryKey: ["dashboardStats"] });
@@ -59,7 +59,7 @@ export default function Dashboard() {
     queryClient.invalidateQueries({ queryKey: ["gamification"] });
     queryClient.invalidateQueries({ queryKey: ["shoppingList"] });
     queryClient.invalidateQueries({ queryKey: ["effectivePortions"] });
-  };
+  }, [queryClient]);
 
   // Use custom hooks for data fetching with realtime
   const { stats, isLoading: statsLoading } = useDashboardStats(user?.id);
@@ -203,7 +203,7 @@ export default function Dashboard() {
 
   const loading = statsLoading || menuLoading;
 
-  const handleSwap = async (recipeId: string, mealType: "lunch" | "dinner", dayIndex: number) => {
+  const handleSwap = useCallback(async (recipeId: string, mealType: "lunch" | "dinner", dayIndex: number) => {
     if (!user?.id || !menu || swapping) return;
 
     // Generate unique request_id for idempotency (prevents double-charge on double-click)
@@ -302,9 +302,9 @@ export default function Dashboard() {
     } finally {
       setSwapping(false);
     }
-  };
+  }, [user?.id, menu, swapping, stats.credits_zen, toast, invalidateAll]);
 
-  const handleValidateMeal = async (recipeId: string, mealType: "lunch" | "dinner") => {
+  const handleValidateMeal = useCallback(async (recipeId: string, mealType: "lunch" | "dinner") => {
     try {
       const { error } = await supabase.functions.invoke("meal-validated", {
         body: { recipe_id: recipeId, meal_type: mealType },
@@ -326,7 +326,7 @@ export default function Dashboard() {
         description: error.message || "Impossible de valider le repas.",
       });
     }
-  };
+  }, [toast, invalidateAll]);
 
   const profileComplete = portions?.profile_complete === true;
   const profileLoading = !portions;
@@ -417,7 +417,7 @@ export default function Dashboard() {
     }
   };
 
-  const handleCopyLink = async () => {
+  const handleCopyLink = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(referralUrl);
       toast({
@@ -431,7 +431,7 @@ export default function Dashboard() {
         variant: "destructive",
       });
     }
-  };
+  }, [referralUrl, toast]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">

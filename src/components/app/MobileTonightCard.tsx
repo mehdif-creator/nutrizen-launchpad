@@ -44,6 +44,11 @@ export function MobileTonightCard({
           <img
             src={imageUrl}
             alt={meal.title}
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+            width="600"
+            height="160"
             className="w-full h-full object-cover"
             onError={handleImageError}
           />
