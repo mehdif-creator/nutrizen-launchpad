@@ -348,8 +348,12 @@ export default function BlogPost() {
               <img
                 src={heroImage}
                 alt={heroAlt}
+                width="1200"
+                height="630"
                 className="w-full h-64 md:h-96 object-cover"
                 loading="eager"
+                fetchPriority="high"
+                decoding="async"
                 onError={withImageFallback}
               />
             </figure>
