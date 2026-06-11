@@ -133,7 +133,9 @@ const App = () => {
           path="/app"
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <ErrorBoundary>
+                <Dashboard />
+              </ErrorBoundary>
             </ProtectedRoute>
           }
         />
@@ -141,7 +143,9 @@ const App = () => {
           path="/app/dashboard"
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <ErrorBoundary>
+                <Dashboard />
+              </ErrorBoundary>
             </ProtectedRoute>
           }
         />
