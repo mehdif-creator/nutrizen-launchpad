@@ -65,6 +65,10 @@ export function MealCard({
         <img
           src={displayImageUrl}
           alt={title}
+          loading="lazy"
+          decoding="async"
+          width="400"
+          height="160"
           className={`w-full h-full object-cover ${imageFailed ? 'opacity-60' : ''}`}
           onError={onImgError}
         />
