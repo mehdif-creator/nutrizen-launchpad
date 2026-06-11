@@ -124,6 +124,37 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
+      <SeoHead
+        title={mainCopy.seo.title}
+        description={mainCopy.seo.description}
+        canonicalPath="/"
+        ogType="website"
+        jsonLd={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'Organization',
+            name: 'NutriZen',
+            url: 'https://mynutrizen.fr',
+            logo: 'https://mynutrizen.fr/icons/icon-192.png',
+            sameAs: [
+              'https://www.pinterest.com/nutrizen_fr',
+              'https://www.instagram.com/nutrizen_fr',
+            ],
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'WebSite',
+            name: 'NutriZen',
+            url: 'https://mynutrizen.fr',
+            inLanguage: 'fr-FR',
+            potentialAction: {
+              '@type': 'SearchAction',
+              target: 'https://mynutrizen.fr/blog?q={search_term_string}',
+              'query-input': 'required name=search_term_string',
+            },
+          },
+        ]}
+      />
       <AnnouncementBar />
       <PreHeader />
       <Header onCtaClick={handleCtaClick} />
