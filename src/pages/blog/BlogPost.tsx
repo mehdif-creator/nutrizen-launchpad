@@ -14,6 +14,8 @@ import { useBlogArticleBySlug, useBlogArticles } from '@/hooks/useBlogArticles';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { getCategoryLabel } from '@/lib/categoryMapping';
 import DOMPurify from 'isomorphic-dompurify';
+import { SeoHead } from '@/components/seo/SeoHead';
+import { AuthorBio } from '@/components/blog/AuthorBio';
 
 const BLOG_FALLBACK_IMAGE = '/img/hero-default.jpg';
 
@@ -353,6 +355,42 @@ export default function BlogPost() {
             </figure>
           )}
 
+          {/* Per-route SEO + BlogPosting JSON-LD (E-E-A-T / GEO) */}
+          <SeoHead
+            title={(article.outline as any)?.meta_title || article.title}
+            description={(article.outline as any)?.meta_description || article.excerpt || ''}
+            canonicalPath={`/blog/${article.slug}`}
+            ogType="article"
+            ogImage={heroImage || undefined}
+            jsonLd={{
+              '@context': 'https://schema.org',
+              '@type': 'BlogPosting',
+              headline: h1 || article.title,
+              description:
+                (article.outline as any)?.meta_description || article.excerpt || undefined,
+              image: heroImage || undefined,
+              datePublished: article.published_at || undefined,
+              dateModified: article.published_at || undefined,
+              author: {
+                '@type': 'Person',
+                name: article.author || 'Équipe NutriZen',
+              },
+              publisher: {
+                '@type': 'Organization',
+                name: 'NutriZen',
+                logo: {
+                  '@type': 'ImageObject',
+                  url: 'https://mynutrizen.fr/icons/icon-192.png',
+                },
+              },
+              mainEntityOfPage: {
+                '@type': 'WebPage',
+                '@id': `https://mynutrizen.fr/blog/${article.slug}`,
+              },
+              inLanguage: 'fr-FR',
+            }}
+          />
+
           {/* Article Content */}
           <article
             className="article-content prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-a:text-primary"
@@ -376,6 +414,14 @@ export default function BlogPost() {
               </div>
             </section>
           )}
+
+          {/* Author bio block (E-E-A-T) */}
+          <AuthorBio
+            name={article.author || 'Équipe NutriZen'}
+            title="Experts en nutrition & coachs santé NutriZen"
+            avatarUrl="/icons/icon-192.png"
+            linkedinUrl="https://www.linkedin.com/company/nutrizen"
+          />
 
           {/* Horizontal scrollable related articles carousel */}
           {carouselArticles.length > 0 && (

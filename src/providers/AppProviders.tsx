@@ -4,6 +4,7 @@ import { queryClient } from '@/lib/queryClient';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { BrowserRouter } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
@@ -28,25 +29,27 @@ interface AppProvidersProps {
 export function AppProviders({ children }: AppProvidersProps) {
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <ThemeProvider>
-            <LanguageProvider>
-              <AuthProvider>
-                <TooltipProvider>
-                  <AdminLiveListener />
-                  {children}
-                  <Toaster />
-                  <CookieConsent />
-                  <InstallBanner />
-                  {/* Only show React Query devtools in development */}
-                  {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
-                </TooltipProvider>
-              </AuthProvider>
-            </LanguageProvider>
-          </ThemeProvider>
-        </BrowserRouter>
-      </QueryClientProvider>
+      <HelmetProvider>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <ThemeProvider>
+              <LanguageProvider>
+                <AuthProvider>
+                  <TooltipProvider>
+                    <AdminLiveListener />
+                    {children}
+                    <Toaster />
+                    <CookieConsent />
+                    <InstallBanner />
+                    {/* Only show React Query devtools in development */}
+                    {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
+                  </TooltipProvider>
+                </AuthProvider>
+              </LanguageProvider>
+            </ThemeProvider>
+          </BrowserRouter>
+        </QueryClientProvider>
+      </HelmetProvider>
     </ErrorBoundary>
   );
 }
