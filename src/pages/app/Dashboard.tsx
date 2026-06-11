@@ -304,7 +304,7 @@ export default function Dashboard() {
     }
   }, [user?.id, menu, swapping, stats.credits_zen, toast, invalidateAll]);
 
-  const handleValidateMeal = async (recipeId: string, mealType: "lunch" | "dinner") => {
+  const handleValidateMeal = useCallback(async (recipeId: string, mealType: "lunch" | "dinner") => {
     try {
       const { error } = await supabase.functions.invoke("meal-validated", {
         body: { recipe_id: recipeId, meal_type: mealType },
@@ -326,7 +326,7 @@ export default function Dashboard() {
         description: error.message || "Impossible de valider le repas.",
       });
     }
-  };
+  }, [toast, invalidateAll]);
 
   const profileComplete = portions?.profile_complete === true;
   const profileLoading = !portions;
