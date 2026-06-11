@@ -56,42 +56,79 @@ export function useGamificationState() {
   const query = useQuery({
     queryKey: ['gamification-state', user?.id],
     queryFn: async (): Promise<GamificationState> => {
-      const { data, error } = await supabase
-        .from('user_gamification_state')
-        .select('total_points, level, streak_days, last_activity_date')
-        .eq('user_id', user!.id)
-        .maybeSingle();
+      try {
+        const { data, error } = await supabase
+          .from('user_gamification_state')
+          .select('total_points, level, streak_days, last_activity_date')
+          .eq('user_id', user!.id)
+          .maybeSingle();
 
-      if (error) throw error;
-      return data ?? DEFAULT_STATE;
+        if (error) {
+          logger.error('Failed to load gamification state', error);
+          return DEFAULT_STATE;
+        }
+        if (!data || typeof data !== 'object') return DEFAULT_STATE;
+
+        // Sanitize each field — never trust remote payload shape
+        return {
+          total_points: Number.isFinite(Number(data.total_points)) ? Number(data.total_points) : 0,
+          level: Number.isFinite(Number(data.level)) ? Number(data.level) : 1,
+          streak_days: Number.isFinite(Number(data.streak_days)) ? Number(data.streak_days) : 0,
+          last_activity_date:
+            typeof data.last_activity_date === 'string' ? data.last_activity_date : null,
+        };
+      } catch (e) {
+        logger.error('Unexpected error in gamification state fetch', e);
+        return DEFAULT_STATE;
+      }
     },
     enabled: !!user,
     staleTime: 30_000,
     placeholderData: DEFAULT_STATE,
+    retry: 1,
   });
 
-  // Realtime subscription for instant updates
+  // Realtime subscription for instant updates — fully fault-tolerant
   useEffect(() => {
     if (!user) return;
 
-    const channel = supabase
-      .channel(`gam-state-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_gamification_state',
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['gamification-state', user.id] });
-        }
-      )
-      .subscribe();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
+
+    try {
+      channel = supabase
+        .channel(`gam-state-${user.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'user_gamification_state',
+            filter: `user_id=eq.${user.id}`,
+          },
+          () => {
+            if (cancelled) return;
+            try {
+              queryClient.invalidateQueries({ queryKey: ['gamification-state', user.id] });
+            } catch (e) {
+              logger.error('Failed to invalidate gamification cache', e);
+            }
+          }
+        )
+        .subscribe((status, err) => {
+          if (err) logger.error('Gamification realtime error', { status, err });
+        });
+    } catch (e) {
+      logger.error('Failed to set up gamification realtime channel', e);
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      try {
+        if (channel) supabase.removeChannel(channel);
+      } catch (e) {
+        logger.error('Failed to remove gamification channel', e);
+      }
     };
   }, [user?.id, queryClient]);
 

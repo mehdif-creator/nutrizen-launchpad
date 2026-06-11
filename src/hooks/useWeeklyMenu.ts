@@ -72,19 +72,38 @@ async function fetchWeeklyMenu(userId: string): Promise<WeeklyMenu | null> {
     return null;
   }
 
-  // Type cast payload to extract days and household
-  const payload = data.payload as {
+  // Type cast payload defensively — payload may be null, a string, or malformed JSON
+  let payload: {
     days?: WeeklyMenuDay[];
     household?: {
       adults: number;
       children: number;
       effective_size: number;
     };
-  } | null;
+  } | null = null;
+
+  try {
+    const raw = data.payload as unknown;
+    if (typeof raw === 'string') {
+      payload = JSON.parse(raw);
+    } else if (raw && typeof raw === 'object') {
+      payload = raw as typeof payload;
+    }
+  } catch (e) {
+    logger.error('Failed to parse menu payload', e);
+    payload = null;
+  }
+
+  // Defensive guard: ensure days is always a valid array
+  const safeDays: WeeklyMenuDay[] = Array.isArray(payload?.days)
+    ? (payload!.days as WeeklyMenuDay[]).filter(
+        (d): d is WeeklyMenuDay => !!d && typeof d === 'object'
+      )
+    : [];
 
   logger.debug('Menu data received', {
     menu_id: data.menu_id,
-    day_count: payload?.days?.length,
+    day_count: safeDays.length,
     used_fallback: data.used_fallback,
     household: payload?.household,
   });
@@ -93,7 +112,7 @@ async function fetchWeeklyMenu(userId: string): Promise<WeeklyMenu | null> {
     menu_id: data.menu_id,
     user_id: data.user_id,
     week_start: data.week_start,
-    days: payload?.days || [],
+    days: safeDays,
     created_at: data.created_at,
     updated_at: data.updated_at,
     used_fallback: data.used_fallback,
@@ -147,9 +166,9 @@ export function useWeeklyMenu(userId: string | undefined) {
   return {
     ...query,
     menu: query.data,
-    days: query.data?.days || [],
+    days: Array.isArray(query.data?.days) ? query.data!.days : [],
     householdAdults: query.data?.household?.adults ?? 1,
     householdChildren: query.data?.household?.children ?? 0,
-    hasMenu: !!query.data && query.data.days.length > 0,
+    hasMenu: !!query.data && Array.isArray(query.data.days) && query.data.days.length > 0,
   };
 }
