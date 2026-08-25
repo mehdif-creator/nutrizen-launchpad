@@ -88,17 +88,12 @@ const PriceBlock = ({
   );
 };
 
-export const Pricing = ({ onCtaClick, pricingNote, comparison = defaultComparison }: PricingProps) => {
+export const Pricing = ({ pricingNote, comparison = defaultComparison }: PricingProps) => {
   const navigate = useNavigate();
   const [interval, setInterval] = useState<BillingInterval>("month");
 
-  const handleCheckout = (tier: PlanTier | "free") => {
-    if (tier === "free") {
-      trackLead({ content_name: "Free Trial Landing" });
-      trackPinterestLead({ content_name: "Free Trial Landing" });
-      onCtaClick();
-      return;
-    }
+  const handleCheckout = (tier: PlanTier) => {
+
     const planKey = getPlanKey(tier, interval);
     const price = getTotalPrice(tier, interval);
     trackInitiateCheckout({
