@@ -65,7 +65,7 @@ export const mainCopy: PageMarketingCopy = {
   seo: {
     title: 'NutriZen — Arrêtez de vous demander quoi manger ce soir',
     description:
-      'NutriZen génère vos menus de la semaine en 2 minutes — adaptés à vos goûts, contraintes et budget. Liste de courses incluse. Gratuit pour commencer.',
+      'NutriZen génère vos menus de la semaine en 2 minutes — adaptés à vos goûts, contraintes et budget. Liste de courses incluse. Sans engagement.',
   },
   hero: {
     badge: 'Planification repas · Sans régime · Sans prise de tête',
@@ -82,7 +82,7 @@ export const mainCopy: PageMarketingCopy = {
         text: ': végétarien, sans gluten, intolérance lactose...',
       },
     ],
-    primaryCta: 'Créer mon premier menu gratuitement →',
+    primaryCta: 'Créer mon premier menu →',
     secondaryCta: 'Voir un exemple de menu complet',
     secondaryAction: 'example',
     socialProof: '+12 000 utilisateurs',
@@ -92,7 +92,7 @@ export const mainCopy: PageMarketingCopy = {
     floatingTop: { value: '2 min', label: 'Menu personnalisé' },
     floatingBottom: { value: '200€', label: 'Économisés/mois' },
     trustLine:
-      '⭐ 4.8/5  ·  +12 000 utilisateurs  ·  Aucune carte bancaire  ·  Annulable à tout moment',
+      '⭐ 4.8/5  ·  +12 000 utilisateurs  ·  Sans engagement  ·  Annulable à tout moment',
   },
   benefits: {
     title: 'Pourquoi choisir NutriZen ?',
@@ -174,7 +174,7 @@ export const mainCopy: PageMarketingCopy = {
   },
   finalCta: {
     headline: 'Choisissez votre première étape.',
-    button: 'Commencer gratuitement',
+    button: 'Choisir ma formule',
     subtitle: 'Rejoignez +12 000 personnes qui ont arrêté de se demander quoi manger ce soir.',
   },
 };
@@ -305,7 +305,7 @@ export const fitCopy: PageMarketingCopy = {
   },
   finalCta: {
     headline: 'Votre alimentation devrait être aussi sérieuse que votre entraînement.',
-    button: 'Calculer mes macros gratuitement',
+    button: 'Calculer mes macros',
     subtitle: "Rejoignez +4 000 sportifs qui ont arrêté de deviner ce qu'ils doivent manger.",
   },
 };
@@ -343,7 +343,7 @@ export const mumCopy: PageMarketingCopy = {
     heroImageAlt: 'Famille heureuse qui prépare un repas ensemble',
     floatingTop: { value: '10 min', label: 'Semaine planifiée' },
     floatingBottom: { value: '200€', label: 'Économisés/mois' },
-    trustLine: '⭐ 4.8/5  ·  +5 000 familles  ·  Aucune carte bancaire  ·  Annulable à tout moment',
+    trustLine: '⭐ 4.8/5  ·  +5 000 familles  ·  Sans engagement  ·  Annulable à tout moment',
   },
   benefits: {
     title: 'Pourquoi choisir NutriZen Mum ?',
@@ -428,7 +428,7 @@ export const mumCopy: PageMarketingCopy = {
   },
   finalCta: {
     headline: 'Une décision par semaine. Pas vingt et une.',
-    button: 'Voir mon premier menu famille gratuitement',
+    button: 'Voir mon premier menu famille',
     subtitle: 'Rejoignez +5 000 familles qui ont arrêté de se battre avec la question du dîner.',
   },
 };

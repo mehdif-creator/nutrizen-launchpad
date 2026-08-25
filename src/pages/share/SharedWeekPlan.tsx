@@ -110,7 +110,7 @@ export default function SharedWeekPlan() {
   });
   const ctaUrl = plan.shared_by.referral_code
     ? `https://mynutrizen.fr/auth/signup?ref=${plan.shared_by.referral_code}`
-    : 'https://mynutrizen.fr/auth/signup';
+    : 'https://mynutrizen.fr/auth/signup?plan=starter';
   const shareUrl = `${window.location.origin}/share/week/${token}`;
 
   return (

@@ -47,7 +47,7 @@ export const Hero = ({ onCtaClick, onExampleClick, copy }: HeroProps) => {
       text: '— réalistes, pas des recettes de magazine',
     },
   ];
-  const primaryCta = copy?.primaryCta || 'Créer mon menu gratuit';
+  const primaryCta = copy?.primaryCta || 'Créer mon menu personnalisé';
   const secondaryCta = copy?.secondaryCta || 'Voir un exemple de semaine';
   const socialProof = copy?.socialProof || '+2 000 familles';
   const socialProofSuffix = copy?.socialProofSuffix || 'ont retrouvé la sérénité des repas';
@@ -55,7 +55,7 @@ export const Hero = ({ onCtaClick, onExampleClick, copy }: HeroProps) => {
   const heroImageAlt = copy?.heroImageAlt || 'Maman sereine qui cuisine avec ses enfants';
   const floatingTop = copy?.floatingTop || { value: '30s', label: 'Menu personnalisé' };
   const floatingBottom = copy?.floatingBottom || { value: '5h', label: 'Économisées/semaine' };
-  const trustLine = copy?.trustLine || 'Compte gratuit à vie — Sans carte bancaire, en 30 secondes';
+  const trustLine = copy?.trustLine || 'Sans engagement — Satisfait ou remboursé 30 jours';
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-background via-secondary/30 to-background">
@@ -133,7 +133,7 @@ export const Hero = ({ onCtaClick, onExampleClick, copy }: HeroProps) => {
               <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-4 text-xs md:text-sm text-muted-foreground">
                 <div className="flex items-center gap-1.5">
                   <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                  <span>Gratuit à vie, sans engagement</span>
+                  <span>Sans engagement, annulable à tout moment</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Check className="w-4 h-4 text-primary flex-shrink-0" />

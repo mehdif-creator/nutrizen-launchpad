@@ -112,7 +112,7 @@ const Index = () => {
   useSeoMeta(mainCopy.seo.title, mainCopy.seo.description);
 
   const handleCtaClick = () => {
-    navigate('/auth/signup');
+    navigate('/auth/signup?plan=starter');
   };
 
   const handleExampleClick = () => {

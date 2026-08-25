@@ -60,7 +60,7 @@ export const PlanDisplay = () => {
   if (!subscription) return null;
 
   const isTrialing = subscription.status === 'trialing';
-  const planName = subscription.plan || 'Gratuit à vie';
+  const planName = subscription.plan || 'NutriZen';
 
   const getDaysRemaining = () => {
     if (!subscription.trial_end && !subscription.current_period_end) return null;
@@ -89,7 +89,7 @@ export const PlanDisplay = () => {
           </h3>
           <div className="flex items-center gap-2">
             <Badge variant={isTrialing ? 'secondary' : 'default'}>{planName}</Badge>
-            {isTrialing && <span className="text-sm text-muted-foreground">(Gratuit à vie)</span>}
+            
           </div>
         </div>
         <div className="flex gap-2">
@@ -114,8 +114,8 @@ export const PlanDisplay = () => {
           <div className="flex items-center gap-2 text-sm bg-orange-500/10 border border-orange-500/20 rounded-lg p-3 mb-3">
             <Sparkles className="h-4 w-4 text-orange-500" />
             <span className="text-foreground font-medium">
-              ⏰ Plus que {daysRemaining} jour{daysRemaining! > 1 ? 's' : ''} d'essai ! Profite de
-              l'offre avant qu'il ne soit trop tard.
+              ⏰ Plus que {daysRemaining} jour{daysRemaining! > 1 ? 's' : ''} d'accès ! Activez
+              votre formule pour continuer sans interruption.
             </span>
           </div>
         )}
@@ -125,7 +125,7 @@ export const PlanDisplay = () => {
             <Calendar className="h-4 w-4 text-primary" />
             <span>
               {isTrialing
-                ? `${daysRemaining} jour${daysRemaining > 1 ? 's' : ''} d'essai restant${daysRemaining > 1 ? 's' : ''}`
+                ? `${daysRemaining} jour${daysRemaining > 1 ? 's' : ''} d'accès restant${daysRemaining > 1 ? 's' : ''}`
                 : `Renouvellement dans ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''}`}
             </span>
           </div>

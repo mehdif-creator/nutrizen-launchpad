@@ -4,7 +4,7 @@ export const Guarantee = () => {
   const trustItems = [
     {
       icon: CreditCard,
-      text: 'Sans carte bancaire',
+      text: 'Annulable à tout moment',
     },
     {
       icon: Lock,

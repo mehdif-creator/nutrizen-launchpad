@@ -86,7 +86,7 @@ export default function Pro() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header onCtaClick={() => navigate('/auth/signup')} />
+      <Header onCtaClick={() => navigate('/auth/signup?plan=starter')} />
 
       <main className="flex-1">
         {/* Hero Section */}

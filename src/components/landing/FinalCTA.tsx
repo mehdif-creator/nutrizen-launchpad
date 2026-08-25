@@ -9,11 +9,11 @@ import { trackCheckout as trackPinterestCheckout } from '@/lib/pinterestPixel';
 import type { FinalCTACopy } from '@/config/marketingCopy';
 
 interface FinalCTAProps {
-  onCtaClick: () => void;
+  onCtaClick?: () => void;
   copy?: FinalCTACopy;
 }
 
-export const FinalCTA = ({ onCtaClick, copy }: FinalCTAProps) => {
+export const FinalCTA = ({ copy }: FinalCTAProps) => {
   const navigate = useNavigate();
   const [interval, setInterval] = useState<BillingInterval>('month');
 
@@ -35,19 +35,10 @@ export const FinalCTA = ({ onCtaClick, copy }: FinalCTAProps) => {
             {copy?.headline || 'Choisissez votre première étape.'}
           </h2>
 
-          <div className="grid sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
-            {/* Free card */}
-            <Card className="p-6 border-border text-center space-y-4">
-              <p className="font-semibold text-lg">Je teste d'abord</p>
-              <Button onClick={onCtaClick} variant="outline" size="lg" className="w-full">
-                Commencer gratuitement
-              </Button>
-              <p className="text-xs text-muted-foreground">Aucune carte bancaire requise</p>
-            </Card>
-
+          <div className="max-w-md mx-auto">
             {/* Paid card */}
             <Card className="p-6 border-2 border-accent text-center space-y-4 shadow-[0_0_20px_hsl(24_95%_52%/0.15)]">
-              <p className="font-semibold text-lg">Je me lance vraiment</p>
+              <p className="font-semibold text-lg">Je me lance</p>
               <BillingToggle value={interval} onChange={setInterval} className="mx-auto" />
               <Button
                 onClick={() => {
@@ -77,6 +68,7 @@ export const FinalCTA = ({ onCtaClick, copy }: FinalCTAProps) => {
               </p>
             </Card>
           </div>
+
 
           <p className="text-sm text-muted-foreground">
             {copy?.subtitle ||

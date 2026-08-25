@@ -210,7 +210,7 @@ export default function Affiliate() {
   if (programState === 'loading') {
     return (
       <div className="min-h-screen flex flex-col">
-        <Header onCtaClick={() => navigate('/auth/signup')} />
+        <Header onCtaClick={() => navigate('/auth/signup?plan=starter')} />
         <main className="flex-1 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </main>
@@ -221,7 +221,7 @@ export default function Affiliate() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header onCtaClick={() => navigate('/auth/signup')} />
+      <Header onCtaClick={() => navigate('/auth/signup?plan=starter')} />
 
       {/* Auth-aware banner for authenticated users */}
       {user && (
@@ -255,7 +255,7 @@ export default function Affiliate() {
             {/* CTA based on state — ANONYMOUS */}
             {programState === 'anonymous' && (
               <div className="space-y-3">
-                <Button size="lg" onClick={() => navigate('/auth/signup')}>
+                <Button size="lg" onClick={() => navigate('/auth/signup?plan=starter')}>
                   <Rocket className="h-5 w-5 mr-2" />
                   Créer un compte pour rejoindre le programme
                 </Button>

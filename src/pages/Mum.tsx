@@ -129,7 +129,7 @@ const Mum = () => {
   useSeoMeta(mumCopy.seo.title, mumCopy.seo.description);
 
   const handleCtaClick = () => {
-    navigate('/auth/signup');
+    navigate('/auth/signup?plan=starter');
   };
 
   const handleExampleClick = () => {

@@ -132,7 +132,7 @@ const Fit = () => {
   useSeoMeta(fitCopy.seo.title, fitCopy.seo.description);
 
   const handleCtaClick = () => {
-    navigate('/auth/signup');
+    navigate('/auth/signup?plan=starter');
   };
 
   const handleExampleClick = () => {

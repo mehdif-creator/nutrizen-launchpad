@@ -104,7 +104,7 @@ export default function SharedRecipe() {
   const { recipe, shared_by } = data;
   const ctaUrl = shared_by.referral_code
     ? `https://mynutrizen.fr/auth/signup?ref=${shared_by.referral_code}`
-    : 'https://mynutrizen.fr/auth/signup';
+    : 'https://mynutrizen.fr/auth/signup?plan=starter';
   const shareUrl = `${window.location.origin}/share/recipe/${token}`;
 
   return (

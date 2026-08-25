@@ -514,7 +514,7 @@ export default function BlogPost() {
               Laisse-nous générer tes menus et ta liste de courses automatiquement.
             </p>
             <Link to="/pricing">
-              <Button>Commencer gratuitement</Button>
+              <Button>Voir les formules</Button>
             </Link>
           </div>
 

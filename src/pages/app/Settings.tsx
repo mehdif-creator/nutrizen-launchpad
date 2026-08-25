@@ -100,10 +100,10 @@ export default function Settings() {
                 <h2 className="text-lg md:text-xl font-semibold mb-2">Mon compte</h2>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                   <Badge className="bg-gradient-to-r from-primary to-accent text-white w-fit">
-                    Gratuit à vie
+                    Mon abonnement
                   </Badge>
                   <span className="text-xs md:text-sm text-muted-foreground">
-                    Accès complet aux fonctionnalités de base
+                    Accès complet aux fonctionnalités NutriZen
                   </span>
                 </div>
               </div>
@@ -112,7 +112,7 @@ export default function Settings() {
             <div className="space-y-2 md:space-y-3">
               <div className="flex items-center justify-between py-2">
                 <span className="text-xs md:text-sm">Plan</span>
-                <span className="text-sm md:text-base font-medium">Gratuit à vie</span>
+                <span className="text-sm md:text-base font-medium">Sans engagement</span>
               </div>
               <div className="flex items-center justify-between py-2">
                 <span className="text-xs md:text-sm">Crédits Zen</span>
