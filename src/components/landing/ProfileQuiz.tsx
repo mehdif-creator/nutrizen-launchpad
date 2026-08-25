@@ -229,7 +229,7 @@ export const ProfileQuiz = () => {
   };
 
   const handleGetMenu = () => {
-    navigate('/auth/signup');
+    navigate('/auth/signup?plan=starter');
   };
 
   if (showResult && result) {

@@ -96,7 +96,7 @@ export default function Contact() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header onCtaClick={() => navigate('/auth/signup')} />
+      <Header onCtaClick={() => navigate('/auth/signup?plan=starter')} />
       <main className="flex-1 container py-16">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
