@@ -131,7 +131,7 @@ export default function About() {
           })),
         }}
       />
-      <Header onCtaClick={() => navigate('/auth/signup')} />
+      <Header onCtaClick={() => navigate('/auth/signup?plan=starter')} />
 
       <main className="flex-1">
 
@@ -315,7 +315,7 @@ export default function About() {
           <div className="container max-w-3xl text-center space-y-6">
             <h2 className="text-3xl md:text-4xl font-bold">Prêt à simplifier tes repas ?</h2>
             <Button
-              onClick={() => navigate('/auth/signup')}
+              onClick={() => navigate('/auth/signup?plan=starter')}
               size="lg"
               className="bg-gradient-to-r from-primary to-accent text-white shadow-glow hover:scale-[1.02] active:scale-[0.99] transition-tech text-lg px-12"
             >

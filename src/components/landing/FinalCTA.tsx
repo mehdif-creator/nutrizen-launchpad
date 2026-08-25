@@ -9,11 +9,11 @@ import { trackCheckout as trackPinterestCheckout } from '@/lib/pinterestPixel';
 import type { FinalCTACopy } from '@/config/marketingCopy';
 
 interface FinalCTAProps {
-  onCtaClick: () => void;
+  onCtaClick?: () => void;
   copy?: FinalCTACopy;
 }
 
-export const FinalCTA = ({ onCtaClick, copy }: FinalCTAProps) => {
+export const FinalCTA = ({ copy }: FinalCTAProps) => {
   const navigate = useNavigate();
   const [interval, setInterval] = useState<BillingInterval>('month');
 

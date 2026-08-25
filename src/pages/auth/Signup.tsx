@@ -49,7 +49,7 @@ export default function Signup() {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
-  const plan = searchParams.get('plan') ?? 'free';
+  const plan = searchParams.get('plan') ?? 'starter';
   const isPaid = (PAID_PLAN_KEYS as readonly string[]).includes(plan);
   const planInfo = isPaid ? describePlan(plan) : null;
 
