@@ -292,7 +292,7 @@ export const ProfileQuiz = () => {
                   <ChevronRight className="ml-2 w-5 h-5" />
                 </Button>
                 <p className="text-center text-sm text-muted-foreground">
-                  Gratuit, sans carte bancaire — Menu généré en 30 secondes
+                  Menu généré en 30 secondes — Sans engagement
                 </p>
               </div>
             </Card>

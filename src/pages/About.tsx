@@ -90,8 +90,8 @@ const VALUES = [
 
 const FAQ_ITEMS = [
   {
-    q: 'NutriZen est-il gratuit ?',
-    a: 'Oui, le compte de base est gratuit à vie : accès aux menus, recettes et listes de courses. Certaines fonctionnalités premium (IA, analyses avancées…) sont déblocables avec des Crédits Zen, achetables à la carte — sans abonnement obligatoire.',
+    q: 'Comment fonctionnent les formules NutriZen ?',
+    a: 'NutriZen propose deux formules payantes, Starter et Premium, avec menus personnalisés, recettes, listes de courses et crédits inclus chaque mois. Sans engagement, annulable à tout moment, et satisfait ou remboursé sous 30 jours.',
   },
   {
     q: 'Puis-je exclure des aliments ?',
@@ -321,7 +321,7 @@ export default function About() {
             >
               Créer mon premier menu
             </Button>
-            <p className="text-sm text-muted-foreground">Gratuit, sans carte bancaire.</p>
+            <p className="text-sm text-muted-foreground">Sans engagement — satisfait ou remboursé 30 jours.</p>
           </div>
         </section>
       </main>
