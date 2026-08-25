@@ -177,38 +177,8 @@ export const Pricing = ({ onCtaClick, pricingNote, comparison = defaultCompariso
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {/* FREE */}
-          <Card className="p-6 md:p-8 relative border border-muted/50 opacity-90 hover:opacity-100 transition-opacity">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-              <Badge variant="secondary" className="text-xs font-bold">
-                Découverte
-              </Badge>
-            </div>
-            <div className="text-center mb-6 pt-4">
-              <h3 className="text-2xl font-bold mb-1">Je découvre</h3>
-              <p className="text-xs text-muted-foreground mb-3">Fonctionnalités limitées</p>
-              <div className="flex items-baseline justify-center gap-1">
-                <span className="text-4xl font-bold">0€</span>
-              </div>
-              <p className="text-sm text-primary font-medium mt-2">14 crédits offerts (une seule fois)</p>
-            </div>
-            <p className="text-xs text-muted-foreground text-center mb-4 italic">Idéal pour commencer</p>
-            <div className="space-y-3 mb-8">
-              {["Jusqu'à 2 semaines de menus", "Profil + allergies pris en compte", "Liste de courses automatique"].map(
-                (f) => (
-                  <div key={f} className="flex items-start gap-3">
-                    <Check className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-muted-foreground">{f}</span>
-                  </div>
-                ),
-              )}
-            </div>
-            <Button onClick={() => handleCheckout("free")} variant="outline" className="w-full" size="lg">
-              Commencer gratuitement
-            </Button>
-            <p className="text-xs text-muted-foreground text-center mt-2">Sans carte bancaire</p>
-          </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+
 
           {/* STARTER */}
           <Card className="p-6 md:p-8 relative border-2 border-primary/20 hover:border-primary/40 transition-colors">
