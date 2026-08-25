@@ -15,8 +15,8 @@ import {
   type BillingInterval,
   type PlanTier,
 } from "@/config/pricing";
-import { trackInitiateCheckout, trackLead } from "@/lib/metaPixel";
-import { trackCheckout as trackPinterestCheckout, trackLead as trackPinterestLead } from "@/lib/pinterestPixel";
+import { trackInitiateCheckout } from "@/lib/metaPixel";
+import { trackCheckout as trackPinterestCheckout } from "@/lib/pinterestPixel";
 
 interface ComparisonCopy {
   without: string[];
@@ -24,7 +24,7 @@ interface ComparisonCopy {
 }
 
 interface PricingProps {
-  onCtaClick: () => void;
+  onCtaClick?: () => void;
   pricingNote?: string;
   comparison?: ComparisonCopy;
 }
