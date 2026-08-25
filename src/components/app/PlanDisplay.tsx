@@ -60,7 +60,7 @@ export const PlanDisplay = () => {
   if (!subscription) return null;
 
   const isTrialing = subscription.status === 'trialing';
-  const planName = subscription.plan || 'Gratuit à vie';
+  const planName = subscription.plan || 'NutriZen';
 
   const getDaysRemaining = () => {
     if (!subscription.trial_end && !subscription.current_period_end) return null;
@@ -89,7 +89,7 @@ export const PlanDisplay = () => {
           </h3>
           <div className="flex items-center gap-2">
             <Badge variant={isTrialing ? 'secondary' : 'default'}>{planName}</Badge>
-            {isTrialing && <span className="text-sm text-muted-foreground">(Gratuit à vie)</span>}
+            
           </div>
         </div>
         <div className="flex gap-2">
