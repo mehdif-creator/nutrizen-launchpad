@@ -383,6 +383,34 @@ Deno.serve(async (req) => {
             logStep("Brevo onboarding error (non-blocking)", { error: String(e) });
           }
         }
+
+        // Payment confirmed → promote the contact to the paying list (8).
+        // Pre-payment signups only sit in the lead list (2).
+        if (customerEmail) {
+          try {
+            const planTier = planMeta?.tier || 'starter';
+            const addContactUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/brevo-add-contact`;
+            await fetch(addContactUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${serviceRoleKey}`,
+              },
+              body: JSON.stringify({
+                email: customerEmail,
+                listIds: [8],
+                attributes: {
+                  PLAN: planTier,
+                  SOURCE: 'paid_subscription',
+                  CHECKOUT_PLAN: planMeta?.key || planTier,
+                },
+              }),
+            });
+            logStep("Brevo paying-list sync triggered", { planTier });
+          } catch (e) {
+            logStep("Brevo paying-list sync error (non-blocking)", { error: String(e) });
+          }
+        }
       }
     }
 
