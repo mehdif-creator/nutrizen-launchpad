@@ -103,17 +103,24 @@ export default function Signup() {
         throw new Error(errorMessage);
       }
 
-      // Sync to Brevo silently before redirect — premium account → list 8
+      // Sync to Brevo silently before redirect — NOT a customer yet.
+      // Checkout only started: tag as lead (list 2). The Stripe webhook moves
+      // the contact to the paying list (8) once the payment is confirmed.
       try {
         await supabase.functions.invoke('brevo-add-contact', {
           body: {
             email: email.trim(),
-            listIds: [8],
-            attributes: { PRENOM: '', PLAN: 'premium', SOURCE: 'app_signup' },
+            listIds: [2],
+            attributes: {
+              PRENOM: '',
+              PLAN: 'lead',
+              SOURCE: 'checkout_started',
+              CHECKOUT_PLAN: plan,
+            },
           },
         });
       } catch (brevoErr) {
-        console.warn('[Brevo] paid signup sync failed:', brevoErr);
+        console.warn('[Brevo] checkout lead sync failed:', brevoErr);
       }
 
       // Redirect to Stripe — do NOT reset loading (page is navigating away)
