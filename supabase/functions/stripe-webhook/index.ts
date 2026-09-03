@@ -402,7 +402,7 @@ Deno.serve(async (req) => {
                 attributes: {
                   PLAN: planTier,
                   SOURCE: 'paid_subscription',
-                  CHECKOUT_PLAN: planMeta?.key || planTier,
+                  CHECKOUT_PLAN: session.metadata?.plan || planTier,
                 },
               }),
             });
