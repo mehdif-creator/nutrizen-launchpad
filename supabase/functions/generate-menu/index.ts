@@ -672,6 +672,10 @@ Deno.serve(async (req) => {
     const dietTypes = [dietType];
     if (dietType === 'omnivore') dietTypes.push('végétarien', 'pescetarien');
     if (dietType === 'pescetarien') dietTypes.push('végétarien');
+    // The recipe catalog has no 'vegan' diet_type: vegan users draw from the
+    // vegetarian pool, and the hard constraints below strip eggs/dairy/honey.
+    if (dietType === 'vegan') dietTypes.push('végétarien', 'vegetarien', 'végétalien');
+    if (dietType === 'halal' || dietType === 'casher') dietTypes.push('omnivore', 'végétarien', 'pescetarien');
 
     const { data: candidateRecipes, error: candidateError } = await supabaseClient
       .from('recipes')
