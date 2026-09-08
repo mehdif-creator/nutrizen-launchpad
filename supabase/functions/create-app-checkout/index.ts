@@ -127,6 +127,7 @@ Deno.serve(async (req) => {
         payment_intent_data: {
           metadata: { supabase_user_id: user.id, pack_id: pack.id, topup_credits: String(pack.credits) },
         },
+        allow_promotion_codes: true,
         success_url: `${appBase}/app/credits?purchase=success`,
         cancel_url: `${appBase}/app/credits?purchase=canceled`,
       });
@@ -171,6 +172,7 @@ Deno.serve(async (req) => {
       subscription_data: {
         metadata: { supabase_user_id: user.id, user_id: user.id, plan: planKey, plan_tier: meta.tier },
       },
+      allow_promotion_codes: true,
       success_url: `${appBase}/app/settings?subscription=success`,
       cancel_url: `${appBase}/app/settings?subscription=canceled`,
     });
