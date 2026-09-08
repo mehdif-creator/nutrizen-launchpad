@@ -20,7 +20,7 @@ import { MobileStickyCTA } from '@/components/landing/MobileStickyCTA';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { useNavigate } from 'react-router-dom';
 import { useReferralTracking } from '@/hooks/useReferralTracking';
-import { useSeoMeta } from '@/hooks/useSeoMeta';
+import { SeoHead } from '@/components/seo/SeoHead';
 import { fitCopy } from '@/config/marketingCopy';
 
 const fitValueItems = [
@@ -129,7 +129,7 @@ const fitComparison = {
 const Fit = () => {
   const navigate = useNavigate();
   useReferralTracking();
-  useSeoMeta(fitCopy.seo.title, fitCopy.seo.description);
+  
 
   const handleCtaClick = () => {
     navigate('/auth/signup?plan=starter');
@@ -144,6 +144,11 @@ const Fit = () => {
 
   return (
     <div className="min-h-screen">
+      <SeoHead
+        title={fitCopy.seo.title}
+        description={fitCopy.seo.description}
+        canonicalPath="/fit"
+      />
       <AnnouncementBar />
       <PreHeader />
       <Header onCtaClick={handleCtaClick} />
