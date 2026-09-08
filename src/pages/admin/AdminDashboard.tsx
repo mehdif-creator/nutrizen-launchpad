@@ -138,10 +138,10 @@ export default function AdminDashboard() {
               iconColor="text-blue-500"
             />
             <KpiCardLink
-              to="/admin/kpis/tickets-open"
+              to="/admin/tickets"
               title="Tickets ouverts"
               value={fmtNum(u?.openTickets ?? null)}
-              subtitle="Support en attente"
+              subtitle="Répondre aux clients"
               icon={Ticket}
               iconColor="text-orange-500"
             />
