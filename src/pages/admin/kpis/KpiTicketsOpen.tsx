@@ -92,6 +92,15 @@ export default function KpiTicketsOpen() {
       onExport={handleExport}
       isLoading={isLoading}
     >
+      <div className="mb-6">
+        <Link to="/admin/tickets">
+          <Button>
+            <Ticket className="mr-2 h-4 w-4" />
+            Ouvrir la messagerie support (répondre / clôturer)
+          </Button>
+        </Link>
+      </div>
+
       {/* Summary Tiles */}
       <SummaryTilesGrid>
         <SummaryTile
