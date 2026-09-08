@@ -52,10 +52,13 @@ Deno.serve(async (req) => {
 
     const rawBody = await req.json()
 
-    // Validate request body with Zod before processing
+    // Validate request body with Zod before processing (strict allowlist)
     const EmitWebhookSchema = z.object({
-      event: z.string().min(1).max(100),
-    }).passthrough();
+      event: z.string().min(1).max(100).regex(/^[a-z_]+$/),
+      ts: z.number().int().positive().optional(),
+      user_id: z.string().uuid().optional(),
+      metadata: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
+    }).strict();
 
     const parseResult = EmitWebhookSchema.safeParse(rawBody);
     if (!parseResult.success) {
