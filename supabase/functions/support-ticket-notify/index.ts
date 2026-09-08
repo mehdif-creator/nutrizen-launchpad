@@ -1,4 +1,5 @@
 import { createClient } from '../_shared/deps.ts';
+import { pushToAdmins } from '../_shared/pushNotify.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -60,6 +61,14 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    // Push notification to admins (best effort)
+    await pushToAdmins(admin, {
+      title: 'Nouveau ticket support',
+      body: `${user.email ?? 'Un client'} : ${ticket.subject}`,
+      url: '/admin/tickets',
+      tag: `ticket-${ticket.id}`,
+    }).catch((e) => console.error('[support-ticket-notify] push', e));
 
     const brevoApiKey = Deno.env.get('BREVO_API_KEY');
     if (!brevoApiKey) {
