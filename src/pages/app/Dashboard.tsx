@@ -40,6 +40,7 @@ import { MobileBottomNav } from "@/components/app/MobileBottomNav";
 import { MobileTonightCard } from "@/components/app/MobileTonightCard";
 import { MobileDayCarousel } from "@/components/app/MobileDayCarousel";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { UpgradePremiumCard } from "@/components/app/UpgradePremiumCard";
 
 const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -596,6 +597,11 @@ export default function Dashboard() {
         {/* ═══ MOBILE: Crédits Zen ═══ */}
         <section className="md:hidden px-4 mb-4">
           <ZenCreditsDisplay userId={user?.id} showBuyButton={true} size="sm" />
+        </section>
+
+        {/* Abonnement — visible uniquement pour les comptes sans abonnement actif */}
+        <section className="px-4 sm:px-6 lg:px-10 mb-6">
+          <UpgradePremiumCard />
         </section>
 
         {/* Quick Links — hidden on mobile */}

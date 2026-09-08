@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCreditPacks } from '@/hooks/useCreditPacks';
 import { ZenCreditsDisplay } from '@/components/app/ZenCreditsDisplay';
+import { UpgradePremiumCard } from '@/components/app/UpgradePremiumCard';
 import { CREDIT_COSTS_DISPLAY } from '@/lib/featureCosts';
 import { trackInitiateCheckout } from '@/lib/metaPixel';
 import { trackAddToCart as trackPinterestAddToCart } from '@/lib/pinterestPixel';
@@ -46,8 +47,8 @@ export default function Credits() {
         value: pack.price_cents / 100,
         order_quantity: 1,
       });
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { price_id: pack.stripe_price_id, mode: 'payment' },
+      const { data, error } = await supabase.functions.invoke('create-app-checkout', {
+        body: { mode: 'topup', pack_id: pack.id },
       });
 
       if (error) throw error;
@@ -97,6 +98,9 @@ export default function Credits() {
 
         {/* Current balance */}
         <ZenCreditsDisplay userId={user?.id} showBuyButton={false} size="md" />
+
+        {/* Subscription upsell for non-subscribers */}
+        <UpgradePremiumCard />
 
         {/* Packs grid */}
         <section>
