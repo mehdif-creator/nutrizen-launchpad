@@ -26,27 +26,31 @@ const DEFAULT_STATS: DashboardStats = {
 };
 
 async function fetchDashboardStats(userId: string): Promise<DashboardStats> {
-  const { data, error } = await supabase
-    .from('user_dashboard_stats')
-    .select('*')
-    .eq('user_id', userId)
-    .maybeSingle();
+  const [statsRes, walletRes] = await Promise.all([
+    supabase.from('user_dashboard_stats').select('*').eq('user_id', userId).maybeSingle(),
+    supabase.from('user_wallets').select('balance').eq('user_id', userId).maybeSingle(),
+  ]);
+
+  const { data, error } = statsRes;
 
   if (error) {
     logger.error('Error fetching stats', error);
     throw error;
   }
 
+  // user_wallets.balance is the source of truth for credits
+  const walletBalance = (walletRes.data as { balance?: number } | null)?.balance ?? null;
+
   if (!data) {
     logger.warn('No stats found, returning defaults');
-    return DEFAULT_STATS;
+    return { ...DEFAULT_STATS, credits_zen: walletBalance ?? 0 };
   }
 
   return {
     temps_gagne: data.temps_gagne ?? 0,
     charge_mentale_pct: data.charge_mentale_pct ?? 0,
     serie_en_cours_set_count: data.serie_en_cours_set_count ?? 0,
-    credits_zen: data.credits_zen ?? 0,
+    credits_zen: walletBalance ?? data.credits_zen ?? 0,
     references_count: data.references_count ?? 0,
     objectif_hebdos_valide: data.objectif_hebdos_valide ?? 0,
   };
