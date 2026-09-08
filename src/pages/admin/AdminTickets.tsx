@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { PushToggle } from '@/components/common/PushToggle';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -111,6 +112,15 @@ export default function AdminTickets() {
         </div>
 
         <h1 className="text-3xl font-bold mb-6">Tickets de support</h1>
+
+        <Card className="p-4 mb-6">
+          <PushToggle
+            title="Alertes nouveaux tickets sur cet appareil"
+            description="Recevez une notification dès qu'un client envoie un message."
+          />
+        </Card>
+
+
 
         {loading ? (
           <p className="text-muted-foreground">Chargement...</p>

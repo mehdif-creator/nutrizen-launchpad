@@ -1,4 +1,5 @@
 import { createClient } from '../_shared/deps.ts';
+import { pushToUsers } from '../_shared/pushNotify.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -87,6 +88,14 @@ Deno.serve(async (req) => {
       .eq('id', ticketId);
 
     if (updateError) throw updateError;
+
+    // Push notification to the customer (best effort)
+    await pushToUsers(admin, [ticket.user_id], {
+      title: 'Réponse du support NutriZen',
+      body: reply.length > 120 ? `${reply.slice(0, 117)}…` : reply,
+      url: '/app/support',
+      tag: `ticket-${ticket.id}`,
+    }).catch((e) => console.error('[support-ticket-reply] push', e));
 
     // Send the reply by email to the customer
     let emailed = false;

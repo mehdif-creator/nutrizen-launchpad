@@ -1,6 +1,7 @@
 import { AppHeader } from '@/components/app/AppHeader';
 import { AppFooter } from '@/components/app/AppFooter';
 import { Card } from '@/components/ui/card';
+import { PushToggle } from '@/components/common/PushToggle';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ExternalLink, Download, Trash2, HelpCircle, RotateCcw } from 'lucide-react';
@@ -158,6 +159,8 @@ export default function Settings() {
           <Card className="p-4 md:p-6 mb-4 md:mb-6">
             <h2 className="text-lg md:text-xl font-semibold mb-4">Notifications</h2>
             <div className="space-y-4">
+              <PushToggle description="Soyez prévenu dès qu'une réponse du support arrive." />
+
               <div className="flex items-start sm:items-center justify-between gap-3">
                 <div className="flex-1">
                   <p className="text-sm md:text-base font-medium">Astuces hebdomadaires</p>
