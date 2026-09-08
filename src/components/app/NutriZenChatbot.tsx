@@ -274,6 +274,9 @@ export function NutriZenChatbot() {
       },
       onError: (err) => {
         setIsLoading(false);
+        if (mode === 'support') {
+          void syncSupportTicket([{ role: 'user', content: text }]);
+        }
         const isCredits = err.message === 'INSUFFICIENT_CREDITS';
         setMessages((prev) => [
           ...prev,
