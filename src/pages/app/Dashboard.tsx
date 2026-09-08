@@ -599,10 +599,11 @@ export default function Dashboard() {
           <ZenCreditsDisplay userId={user?.id} showBuyButton={true} size="sm" />
         </section>
 
-        {/* Abonnement — visible uniquement pour les comptes sans abonnement actif */}
-        <section className="px-4 sm:px-6 lg:px-10 mb-6">
+        {/* Abonnement — visible uniquement pour les comptes sans abonnement actif (mobile) */}
+        <section className="md:hidden px-4 sm:px-6 lg:px-10 mb-6">
           <UpgradePremiumCard />
         </section>
+
 
         {/* Quick Links — hidden on mobile */}
         <section className="hidden md:block px-4 sm:px-6 lg:px-10 mb-6 md:mb-8">
@@ -884,9 +885,13 @@ export default function Dashboard() {
                 Copier le lien
               </Button>
             </Card>
+
+            {/* Abonnement — visible uniquement pour les comptes sans abonnement actif (desktop) */}
+            <UpgradePremiumCard />
           </aside>
         </section>
       </main>
+
 
       <AppFooter />
       <TutorialOnboarding />
