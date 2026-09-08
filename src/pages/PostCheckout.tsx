@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Loader2, Chrome, AlertCircle, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { signInWithGoogle } from '@/lib/auth/oauth';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { trackPurchase } from '@/lib/metaPixel';
@@ -113,12 +114,7 @@ export default function PostCheckout() {
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback?from_checkout=true`,
-        },
-      });
+      const { error } = await signInWithGoogle({ callbackQuery: '?from_checkout=true' });
 
       if (error) {
         toast({

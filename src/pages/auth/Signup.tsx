@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { signInWithGoogle } from '@/lib/auth/oauth';
+import { getWebOrigin } from '@/lib/platform';
 import { Loader2, Shield, CheckCircle, Mail } from 'lucide-react';
 import { trackSignup as trackPinterestSignup } from '@/lib/pinterestPixel';
 import { trackCompleteRegistration } from '@/lib/analytics';
@@ -148,7 +150,7 @@ export default function Signup() {
       const trimmedEmail = email.trim();
       const { error } = await supabase.auth.signInWithOtp({
         email: trimmedEmail,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+        options: { emailRedirectTo: `${getWebOrigin()}/auth/callback` },
       });
       if (error) {
         toast({
@@ -187,10 +189,7 @@ export default function Signup() {
   };
 
   const handleGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
+    await signInWithGoogle();
   };
 
   return (
