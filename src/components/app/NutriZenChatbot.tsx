@@ -202,6 +202,12 @@ export function NutriZenChatbot() {
             .single();
           if (error) throw error;
           ticketIdRef.current = data.id;
+          // Notify the support team by email (best-effort)
+          void supabase.functions
+            .invoke('support-ticket-notify', {
+              body: { ticket_id: data.id, message: first },
+            })
+            .catch(() => undefined);
         } else {
           const { error } = await supabase
             .from('support_tickets')
