@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { signInWithGoogle } from '@/lib/auth/oauth';
+import { getWebOrigin } from '@/lib/platform';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,7 +27,7 @@ export default function Login() {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback${redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`,
+          emailRedirectTo: `${getWebOrigin()}/auth/callback${redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`,
         },
       });
 
@@ -48,14 +50,11 @@ export default function Login() {
   };
 
   const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback${redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
+    const { error } = await signInWithGoogle({
+      callbackQuery: redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : '',
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'consent',
       },
     });
 

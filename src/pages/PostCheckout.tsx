@@ -113,12 +113,7 @@ export default function PostCheckout() {
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback?from_checkout=true`,
-        },
-      });
+      const { error } = await signInWithGoogle({ callbackQuery: '?from_checkout=true' });
 
       if (error) {
         toast({

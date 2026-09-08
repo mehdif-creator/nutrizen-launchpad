@@ -12,6 +12,7 @@ import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { CookieConsent } from '@/components/common/CookieConsent';
 import { InstallBanner } from '@/components/app/InstallBanner';
 import { AdminLiveListener } from '@/components/admin/AdminLiveListener';
+import { NativeAuthGate } from '@/components/common/NativeAuthGate';
 
 interface AppProvidersProps {
   children: React.ReactNode;
@@ -37,7 +38,7 @@ export function AppProviders({ children }: AppProvidersProps) {
                 <AuthProvider>
                   <TooltipProvider>
                     <AdminLiveListener />
-                    {children}
+                    <NativeAuthGate>{children}</NativeAuthGate>
                     <Toaster />
                     <CookieConsent />
                     <InstallBanner />

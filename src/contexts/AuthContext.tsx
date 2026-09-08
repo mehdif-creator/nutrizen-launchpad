@@ -28,6 +28,8 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  /** True until the persisted session has been read (getSession / INITIAL_SESSION). Alias of `loading`. */
+  initializingSession: boolean;
   adminLoading: boolean;
   isAdmin: boolean;
   subscription: SubscriptionInfo | null;
@@ -294,6 +296,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user,
         session,
         loading,
+        initializingSession: loading,
         adminLoading,
         isAdmin,
         subscription,

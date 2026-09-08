@@ -148,7 +148,7 @@ export default function Signup() {
       const trimmedEmail = email.trim();
       const { error } = await supabase.auth.signInWithOtp({
         email: trimmedEmail,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+        options: { emailRedirectTo: `${getWebOrigin()}/auth/callback` },
       });
       if (error) {
         toast({
@@ -187,10 +187,7 @@ export default function Signup() {
   };
 
   const handleGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
+    await signInWithGoogle();
   };
 
   return (
