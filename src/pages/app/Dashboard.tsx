@@ -40,6 +40,7 @@ import { MobileBottomNav } from "@/components/app/MobileBottomNav";
 import { MobileTonightCard } from "@/components/app/MobileTonightCard";
 import { MobileDayCarousel } from "@/components/app/MobileDayCarousel";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { UpgradePremiumCard } from "@/components/app/UpgradePremiumCard";
 
 const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
