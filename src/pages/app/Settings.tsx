@@ -1,6 +1,7 @@
 import { AppHeader } from '@/components/app/AppHeader';
 import { AppFooter } from '@/components/app/AppFooter';
 import { Card } from '@/components/ui/card';
+import { PushToggle } from '@/components/common/PushToggle';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ExternalLink, Download, Trash2, HelpCircle, RotateCcw } from 'lucide-react';
