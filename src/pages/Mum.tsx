@@ -20,7 +20,7 @@ import { MobileStickyCTA } from '@/components/landing/MobileStickyCTA';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { useNavigate } from 'react-router-dom';
 import { useReferralTracking } from '@/hooks/useReferralTracking';
-import { useSeoMeta } from '@/hooks/useSeoMeta';
+import { SeoHead } from '@/components/seo/SeoHead';
 import { mumCopy } from '@/config/marketingCopy';
 
 const mumValueItems = [
@@ -126,7 +126,7 @@ const mumComparison = {
 const Mum = () => {
   const navigate = useNavigate();
   useReferralTracking();
-  useSeoMeta(mumCopy.seo.title, mumCopy.seo.description);
+  
 
   const handleCtaClick = () => {
     navigate('/auth/signup?plan=starter');
@@ -141,6 +141,11 @@ const Mum = () => {
 
   return (
     <div className="min-h-screen">
+      <SeoHead
+        title={mumCopy.seo.title}
+        description={mumCopy.seo.description}
+        canonicalPath="/mum"
+      />
       <AnnouncementBar />
       <PreHeader />
       <Header onCtaClick={handleCtaClick} />

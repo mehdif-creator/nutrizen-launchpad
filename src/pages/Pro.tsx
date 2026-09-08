@@ -9,7 +9,7 @@ import { Briefcase, TrendingUp, Users, Clock } from 'lucide-react';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { useReferralTracking } from '@/hooks/useReferralTracking';
-import { useSeoMeta } from '@/hooks/useSeoMeta';
+import { SeoHead } from '@/components/seo/SeoHead';
 import { proCopy } from '@/config/marketingCopy';
 
 const leadSchema = z.object({
@@ -25,7 +25,7 @@ export default function Pro() {
   const navigate = useNavigate();
 
   useReferralTracking();
-  useSeoMeta(proCopy.seo.title, proCopy.seo.description);
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,6 +86,11 @@ export default function Pro() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SeoHead
+        title={proCopy.seo.title}
+        description={proCopy.seo.description}
+        canonicalPath="/pro"
+      />
       <Header onCtaClick={() => navigate('/auth/signup?plan=starter')} />
 
       <main className="flex-1">
