@@ -292,7 +292,7 @@ export function NutriZenChatbot() {
         ]);
       },
     });
-  }, [input, isLoading, mode, credits, messages]);
+  }, [input, isLoading, mode, credits, messages, syncSupportTicket]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
