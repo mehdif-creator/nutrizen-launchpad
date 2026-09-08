@@ -50,7 +50,11 @@ export default function AdminTickets() {
 
   const loadTickets = async () => {
     try {
-      const { data, error } = await supabase.rpc('rpc_admin_list_support_tickets');
+      const { data, error } = await (
+        supabase.rpc as unknown as (
+          fn: string
+        ) => Promise<{ data: unknown; error: { message: string } | null }>
+      )('rpc_admin_list_support_tickets');
       if (error) throw error;
       setTickets((data as unknown as Ticket[]) || []);
     } catch (error) {
