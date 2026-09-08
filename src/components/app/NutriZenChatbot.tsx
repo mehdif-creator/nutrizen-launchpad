@@ -173,6 +173,52 @@ export function NutriZenChatbot() {
     [mode]
   );
 
+  // ─── Support ticket sync (support mode only) ───────────────────────────────
+  const ticketIdRef = useRef<string | null>(null);
+  const ticketMessagesRef = useRef<Array<{ role: string; content: string; at: string }>>([]);
+
+  const syncSupportTicket = useCallback(
+    async (entries: Array<{ role: string; content: string }>) => {
+      if (!user?.id) return;
+      const now = new Date().toISOString();
+      ticketMessagesRef.current = [
+        ...ticketMessagesRef.current,
+        ...entries.map((e) => ({ ...e, at: now })),
+      ];
+
+      try {
+        if (!ticketIdRef.current) {
+          const first = entries.find((e) => e.role === 'user')?.content ?? 'Demande de support';
+          const subject = first.length > 80 ? `${first.slice(0, 77)}…` : first;
+          const { data, error } = await supabase
+            .from('support_tickets')
+            .insert({
+              user_id: user.id,
+              subject,
+              status: 'open',
+              messages: ticketMessagesRef.current,
+            })
+            .select('id')
+            .single();
+          if (error) throw error;
+          ticketIdRef.current = data.id;
+        } else {
+          const { error } = await supabase
+            .from('support_tickets')
+            .update({
+              messages: ticketMessagesRef.current,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', ticketIdRef.current);
+          if (error) throw error;
+        }
+      } catch (e) {
+        console.error('[NutriZenChatbot] Support ticket sync failed:', e);
+      }
+    },
+    [user?.id]
+  );
+
   const sendMessage = useCallback(async () => {
     const text = input.trim();
     if (!text || isLoading) return;
@@ -219,9 +265,18 @@ export function NutriZenChatbot() {
       onDone: () => {
         setIsLoading(false);
         if (mode === 'nutrition') setCredits((c) => Math.max(0, c - CHAT_NUTRITION_COST));
+        if (mode === 'support') {
+          void syncSupportTicket([
+            { role: 'user', content: text },
+            { role: 'assistant', content: assistantContent },
+          ]);
+        }
       },
       onError: (err) => {
         setIsLoading(false);
+        if (mode === 'support') {
+          void syncSupportTicket([{ role: 'user', content: text }]);
+        }
         const isCredits = err.message === 'INSUFFICIENT_CREDITS';
         setMessages((prev) => [
           ...prev,
@@ -237,7 +292,7 @@ export function NutriZenChatbot() {
         ]);
       },
     });
-  }, [input, isLoading, mode, credits, messages]);
+  }, [input, isLoading, mode, credits, messages, syncSupportTicket]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
