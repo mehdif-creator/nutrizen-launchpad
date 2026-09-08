@@ -2,6 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
+// The generated Supabase types do not include push_subscriptions yet.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db = supabase as any;
+
 // Public VAPID key (safe to expose in the browser).
 const VAPID_PUBLIC_KEY =
   'BPkRXXtEEOSMgXz3Tn6p4_1prHHaYoHAYukoC6de6i-pOqYgsn0j2IMMXVD4BHdBQ-Nz5ZUHJVVt3r_d04t0pxI';
@@ -71,14 +75,14 @@ export function usePushNotifications() {
         (await reg.pushManager.getSubscription()) ??
         (await reg.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY).buffer as ArrayBuffer,
         }));
 
       const json = sub.toJSON() as { keys?: { p256dh?: string; auth?: string } };
       const p256dh = json.keys?.p256dh ?? bufferToBase64Url(sub.getKey('p256dh'));
       const authKey = json.keys?.auth ?? bufferToBase64Url(sub.getKey('auth'));
 
-      const { error: dbError } = await supabase.from('push_subscriptions').upsert(
+      const { error: dbError } = await db.from('push_subscriptions').upsert(
         {
           user_id: user.id,
           endpoint: sub.endpoint,
@@ -108,7 +112,7 @@ export function usePushNotifications() {
       const reg = await navigator.serviceWorker.getRegistration();
       const sub = await reg?.pushManager.getSubscription();
       if (sub) {
-        await supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+        await db.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
         await sub.unsubscribe();
       }
       setEnabled(false);
