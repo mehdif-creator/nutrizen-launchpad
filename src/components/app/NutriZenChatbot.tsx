@@ -265,6 +265,12 @@ export function NutriZenChatbot() {
       onDone: () => {
         setIsLoading(false);
         if (mode === 'nutrition') setCredits((c) => Math.max(0, c - CHAT_NUTRITION_COST));
+        if (mode === 'support') {
+          void syncSupportTicket([
+            { role: 'user', content: text },
+            { role: 'assistant', content: assistantContent },
+          ]);
+        }
       },
       onError: (err) => {
         setIsLoading(false);
