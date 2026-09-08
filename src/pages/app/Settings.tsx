@@ -158,6 +158,8 @@ export default function Settings() {
           <Card className="p-4 md:p-6 mb-4 md:mb-6">
             <h2 className="text-lg md:text-xl font-semibold mb-4">Notifications</h2>
             <div className="space-y-4">
+              <PushToggle description="Soyez prévenu dès qu'une réponse du support arrive." />
+
               <div className="flex items-start sm:items-center justify-between gap-3">
                 <div className="flex-1">
                   <p className="text-sm md:text-base font-medium">Astuces hebdomadaires</p>
