@@ -18,6 +18,8 @@ import { LineChartCard } from '@/components/admin/kpis/charts/LineChartCard';
 import { BarChartCard } from '@/components/admin/kpis/charts/BarChartCard';
 import { BreakdownTable } from '@/components/admin/kpis/BreakdownTable';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 
 export default function KpiTicketsOpen() {
   const [dateRange, setDateRange] = useState<DateRange>('30d');
