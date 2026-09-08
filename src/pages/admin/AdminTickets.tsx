@@ -112,6 +112,15 @@ export default function AdminTickets() {
 
         <h1 className="text-3xl font-bold mb-6">Tickets de support</h1>
 
+        <Card className="p-4 mb-6">
+          <PushToggle
+            title="Alertes nouveaux tickets sur cet appareil"
+            description="Recevez une notification dès qu'un client envoie un message."
+          />
+        </Card>
+
+
+
         {loading ? (
           <p className="text-muted-foreground">Chargement...</p>
         ) : tickets.length === 0 ? (
