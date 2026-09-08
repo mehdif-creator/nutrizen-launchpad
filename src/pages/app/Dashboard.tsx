@@ -598,6 +598,11 @@ export default function Dashboard() {
           <ZenCreditsDisplay userId={user?.id} showBuyButton={true} size="sm" />
         </section>
 
+        {/* Abonnement — visible uniquement pour les comptes sans abonnement actif */}
+        <section className="px-4 sm:px-6 lg:px-10 mb-6">
+          <UpgradePremiumCard />
+        </section>
+
         {/* Quick Links — hidden on mobile */}
         <section className="hidden md:block px-4 sm:px-6 lg:px-10 mb-6 md:mb-8">
           <h3 className="text-base md:text-lg font-semibold mb-3">Accès rapide</h3>
