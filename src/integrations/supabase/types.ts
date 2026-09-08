@@ -5780,6 +5780,20 @@ export type Database = {
         Returns: Json
       }
       rpc_admin_dashboard_stats: { Args: never; Returns: Json }
+      rpc_admin_list_support_tickets: {
+        Args: never
+        Returns: {
+          created_at: string
+          id: string
+          messages: Json
+          status: string
+          subject: string
+          updated_at: string
+          user_email: string
+          user_id: string
+          user_name: string
+        }[]
+      }
       rpc_admin_referral_funnel: {
         Args: { p_date_from?: string; p_date_to?: string }
         Returns: Json
