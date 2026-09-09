@@ -1,6 +1,17 @@
 # Correction des outils sur l’application native
 
-- [ ] Corriger l’accès aux analyses Scan Repas et Inspi Frigo depuis Capacitor, sans changer le Web.
-- [ ] Corriger le démarrage et les permissions caméra du scanner code-barres.
-- [ ] Ajouter les vérifications de non-régression et les consignes Android/iOS nécessaires.
-- [ ] Vérifier les résultats et préciser les validations nécessitant un téléphone.
+- [x] Corriger le CORS des analyses Scan Repas et Inspi Frigo ; fonctions redéployées et origines natives vérifiées.
+- [x] Brancher le scanner natif ; conserver le scanner Web avec démarrage après montage de la vidéo.
+- [x] Ajouter les tests et les consignes de permissions Android/iOS dans `docs/MOBILE_APP.md`.
+- [x] Vérifier les prérequêtes CORS et le refus HTTP 401 des analyses sans authentification.
+- [ ] Appliquer les permissions et SDK dans le clone mobile, compiler, réinstaller et valider sur téléphone.
+
+## Vérifications
+
+- 29 tests ciblés réussis : CORS, plugin natif, annulation, refus de permission, double clic, démontage et scanner Web.
+- Suite complète : 78 réussites, 5 échecs hors du périmètre, 8 tests à implémenter.
+  Les échecs concernent les attentes obsolètes des coûts de crédits (2 tests) et
+  les mocks/comportements de `ProtectedRoute` (3 tests) ; ces fichiers ne sont pas modifiés.
+- Les origines Android/iOS sont reflétées par les fonctions déployées ; une origine inconnue ne l’est pas.
+- Pas de test authentifié de bout en bout ni de validation caméra physique possible dans cet environnement.
+- Une publication Web seule ne suffit pas pour installer le nouveau plugin caméra : nouvelle compilation native nécessaire.
