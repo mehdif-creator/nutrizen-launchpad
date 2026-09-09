@@ -11,6 +11,8 @@
  */
 
 import { createClient, SupabaseClient } from './deps.ts';
+import { getCorsHeaders } from './cors.ts';
+export { getCorsHeaders } from './cors.ts';
 
 // =============================================================================
 // TYPES
@@ -44,40 +46,6 @@ export interface SecurityConfig {
 // =============================================================================
 // CONSTANTS
 // =============================================================================
-
-const ALLOWED_ORIGINS = [
-  'https://mynutrizen.fr',
-  'https://app.mynutrizen.fr',
-  'https://www.mynutrizen.fr',
-  'https://nutrizen-launchpad.lovable.app',
-  'http://localhost:5173',
-  'http://localhost:3000',
-];
-
-/** Also allow any *.lovable.app preview subdomain */
-function isAllowedOrigin(origin: string | null): boolean {
-  if (!origin) return false;
-  if (ALLOWED_ORIGINS.includes(origin)) return true;
-  // Allow Lovable preview domains
-  try {
-    const url = new URL(origin);
-    if (url.hostname.endsWith('.lovable.app')) return true;
-  } catch { /* ignore */ }
-  return false;
-}
-
-/**
- * Get CORS headers with strict origin validation
- */
-export function getCorsHeaders(origin: string | null): Record<string, string> {
-  const allowed = isAllowedOrigin(origin);
-  return {
-    'Access-Control-Allow-Origin':  allowed && origin ? origin : ALLOWED_ORIGINS[0],
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Vary': 'Origin',
-  };
-}
 
 // Legacy export for backwards compatibility - use getCorsHeaders() instead
 export const CORS_HEADERS = getCorsHeaders(null);
