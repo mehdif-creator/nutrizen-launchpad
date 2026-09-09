@@ -20,8 +20,8 @@ export const AnnouncementBar = () => {
   return (
     <div className="bg-primary text-primary-foreground text-xs sm:text-sm text-center py-2 px-4 relative">
       <span>
-        ✓ Satisfait ou remboursé 30 jours{'  '}·{'  '}✓ Sans engagement{'  '}·{'  '}✓ Paiement
-        sécurisé Stripe
+        ✓ Essai gratuit 7 jours — 11 crédits offerts, sans carte bancaire{'  '}·{'  '}✓ Sans
+        engagement{'  '}·{'  '}✓ Paiement sécurisé Stripe
       </span>
       <button
         onClick={handleDismiss}

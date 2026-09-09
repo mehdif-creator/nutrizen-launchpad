@@ -27,6 +27,14 @@ export interface PlanConfig {
 /** Annual discount applied to (monthly * 12). 0.20 = 20% off → "2 months free". */
 export const ANNUAL_DISCOUNT = 0.2;
 
+/** Free trial: 7 days, 11 credits offered, no credit card required. */
+export const TRIAL = {
+  days: 7,
+  credits: 11,
+  label: 'Essai gratuit 7 jours',
+  note: '11 crédits offerts · sans carte bancaire',
+} as const;
+
 export const PLANS: Record<PlanTier, PlanConfig> = {
   starter: {
     tier: 'starter',
