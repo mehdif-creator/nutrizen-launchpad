@@ -1,6 +1,6 @@
-import { Button } from '@/components/ui/button';
-import { Star, Check, Clock, ShoppingBag, Heart, Zap } from 'lucide-react';
-import type { HeroCopy } from '@/config/marketingCopy';
+import { Button } from "@/components/ui/button";
+import { Star, Check, Clock, ShoppingBag, Heart, Zap } from "lucide-react";
+import type { HeroCopy } from "@/config/marketingCopy";
 
 interface HeroProps {
   onCtaClick: () => void;
@@ -17,10 +17,10 @@ const iconMap = {
 
 export const Hero = ({ onCtaClick, onExampleClick, copy }: HeroProps) => {
   const handleSecondaryClick = () => {
-    if (copy?.secondaryAction === 'quiz') {
-      const element = document.getElementById('quiz-profil');
+    if (copy?.secondaryAction === "quiz") {
+      const element = document.getElementById("quiz-profil");
       if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
+        element.scrollIntoView({ behavior: "smooth" });
         return;
       }
     }
@@ -29,33 +29,33 @@ export const Hero = ({ onCtaClick, onExampleClick, copy }: HeroProps) => {
 
   const badge = copy?.badge;
   const h1 = copy?.h1 || 'Fini de te demander "On mange quoi ce soir?"';
-  const subtitle = copy?.subtitle || 'Ton menu de la semaine personnalisé en 30 secondes.';
+  const subtitle = copy?.subtitle || "Ton menu de la semaine personnalisé en 30 secondes.";
   const bullets = copy?.bullets || [
     {
-      icon: 'heart' as const,
-      bold: 'Un menu qui plaît à toute la famille',
+      icon: "heart" as const,
+      bold: "Un menu qui plaît à toute la famille",
       text: '— fini les "j\'aime pas ça"',
     },
     {
-      icon: 'shopping' as const,
-      bold: 'Ta liste de courses générée',
-      text: '— courses en 20 min chrono',
+      icon: "shopping" as const,
+      bold: "Ta liste de courses générée",
+      text: "— courses en 20 min chrono",
     },
     {
-      icon: 'clock' as const,
-      bold: 'Des recettes de 15–30 min',
-      text: '— réalistes, pas des recettes de magazine',
+      icon: "clock" as const,
+      bold: "Des recettes de 15–30 min",
+      text: "— réalistes, pas des recettes de magazine",
     },
   ];
-  const primaryCta = copy?.primaryCta || 'Créer mon menu personnalisé';
-  const secondaryCta = copy?.secondaryCta || 'Voir un exemple de semaine';
-  const socialProof = copy?.socialProof || '+2 000 familles';
-  const socialProofSuffix = copy?.socialProofSuffix || 'ont retrouvé la sérénité des repas';
-  const heroImage = copy?.heroImage || '/img/hero-default.jpg';
-  const heroImageAlt = copy?.heroImageAlt || 'Maman sereine qui cuisine avec ses enfants';
-  const floatingTop = copy?.floatingTop || { value: '30s', label: 'Menu personnalisé' };
-  const floatingBottom = copy?.floatingBottom || { value: '5h', label: 'Économisées/semaine' };
-  const trustLine = copy?.trustLine || 'Sans engagement — Satisfait ou remboursé 30 jours';
+  const primaryCta = copy?.primaryCta || "Créer mon menu personnalisé";
+  const secondaryCta = copy?.secondaryCta || "Voir un exemple de semaine";
+  const socialProof = copy?.socialProof || "+2 000 familles";
+  const socialProofSuffix = copy?.socialProofSuffix || "ont retrouvé la sérénité des repas";
+  const heroImage = copy?.heroImage || "/img/hero-default.jpg";
+  const heroImageAlt = copy?.heroImageAlt || "Maman sereine qui cuisine avec ses enfants";
+  const floatingTop = copy?.floatingTop || { value: "30s", label: "Menu personnalisé" };
+  const floatingBottom = copy?.floatingBottom || { value: "5h", label: "Économisées/semaine" };
+  const trustLine = copy?.trustLine || "Sans engagement — Satisfait ou remboursé 30 jours";
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-background via-secondary/30 to-background">
@@ -75,9 +75,7 @@ export const Hero = ({ onCtaClick, onExampleClick, copy }: HeroProps) => {
                   {badge}
                 </div>
               )}
-              <h1 className="text-[clamp(1.75rem,5vw,3rem)] md:text-5xl lg:text-6xl font-bold leading-tight">
-                {h1}
-              </h1>
+              <h1 className="text-[clamp(1.75rem,5vw,3rem)] md:text-5xl lg:text-6xl font-bold leading-tight">{h1}</h1>
               <p className="text-xl text-muted-foreground font-medium">{subtitle}</p>
               <div className="space-y-3 text-lg pt-2">
                 {bullets.map((bullet, index) => {
@@ -141,7 +139,7 @@ export const Hero = ({ onCtaClick, onExampleClick, copy }: HeroProps) => {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                  <span>+500 recettes françaises</span>
+                  <span>+5000 recettes françaises</span>
                 </div>
               </div>
             </div>
