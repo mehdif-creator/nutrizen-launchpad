@@ -105,15 +105,15 @@ export const HomeHero = ({ onCtaClick }: HomeHeroProps) => {
                 size="lg"
                 className="w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-orange-500 hover:from-emerald-400 hover:to-orange-400 text-white font-semibold text-base md:text-lg px-8 py-6 rounded-xl shadow-[0_8px_30px_rgba(251,146,60,0.3)] active:scale-[0.99] transition-all min-h-[56px] group"
               >
-                Créer mon plan personnalisé
+                Commencer mon essai gratuit 7 jours
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
 
               <div className="flex items-center gap-2 text-sm text-white/70">
                 <Shield className="w-4 h-4 text-white/50" />
-                <span>Plan 100% adapté à vous</span>
+                <span>11 crédits offerts</span>
                 <span className="text-white/30">•</span>
-                <span>Sans engagement</span>
+                <span>Sans carte bancaire</span>
               </div>
             </div>
 

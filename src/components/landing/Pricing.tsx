@@ -12,6 +12,7 @@ import {
   getYearlySavings,
   getPlanKey,
   formatEUR,
+  TRIAL,
   type BillingInterval,
   type PlanTier,
 } from "@/config/pricing";
@@ -120,7 +121,10 @@ export const Pricing = ({ pricingNote, comparison = defaultComparison }: Pricing
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-2">
             Plus tu automatises, plus tu gagnes du temps. Les crédits déclenchent les actions IA.
           </p>
-          <p className="text-sm text-muted-foreground">Prix TTC. Sans engagement.</p>
+          <p className="text-sm text-muted-foreground">
+            Essai gratuit 7 jours avec 11 crédits offerts, sans carte bancaire. Prix TTC. Sans
+            engagement.
+          </p>
         </div>
 
         {/* Billing interval toggle */}
@@ -172,8 +176,51 @@ export const Pricing = ({ pricingNote, comparison = defaultComparison }: Pricing
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
 
+          {/* ESSAI GRATUIT */}
+          <Card className="p-6 md:p-8 relative border-2 border-green-500/40 hover:border-green-500/70 transition-colors">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+              <Badge className="bg-green-600 text-white text-xs font-bold">
+                <Sparkles className="w-3 h-3 mr-1" />
+                {TRIAL.days} jours offerts
+              </Badge>
+            </div>
+            <div className="text-center mb-6 pt-4">
+              <h3 className="text-2xl font-bold mb-1">Je teste</h3>
+              <p className="text-sm text-muted-foreground italic mb-3">
+                Découvre NutriZen sans rien payer.
+              </p>
+              <div className="flex items-baseline justify-center gap-1">
+                <span className="text-4xl font-bold">0 €</span>
+                <span className="text-sm text-muted-foreground">/ {TRIAL.days} jours</span>
+              </div>
+              <p className="text-sm text-green-600 font-medium mt-3">
+                {TRIAL.credits} crédits offerts
+              </p>
+            </div>
+            <div className="space-y-3 mb-8">
+              {[
+                `${TRIAL.days} jours d'accès complet`,
+                `${TRIAL.credits} crédits offerts à l'inscription`,
+                'Aucune carte bancaire demandée',
+                'Passe à un plan payant quand tu veux',
+              ].map((f) => (
+                <div key={f} className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm">{f}</span>
+                </div>
+              ))}
+            </div>
+            <Button
+              onClick={() => navigate('/auth/signup')}
+              variant="outline"
+              className="w-full border-green-500 text-green-600 hover:bg-green-500/10"
+              size="lg"
+            >
+              Démarrer l'essai gratuit
+            </Button>
+          </Card>
 
           {/* STARTER */}
           <Card className="p-6 md:p-8 relative border-2 border-primary/20 hover:border-primary/40 transition-colors">
