@@ -43,7 +43,7 @@ export function securityHeadersPlugin(): Plugin {
             // infrastructure. The XSS risk is mitigated by the object-src, base-uri, and
             // form-action directives below. Track the GTM server-side migration as a future task.
             "script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.googletagmanager.com https://www.googletagmanager.com https://connect.facebook.net https://s.pinimg.com",
-            "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.google-analytics.com https://*.googletagmanager.com https://*.facebook.com https://*.pinterest.com https://ct.pinterest.com",
+            "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.google-analytics.com https://*.googletagmanager.com https://world.openfoodfacts.org https://*.facebook.com https://*.pinterest.com https://ct.pinterest.com",
             "img-src 'self' https://*.supabase.co https://storage.googleapis.com data: blob: https:",
             "style-src 'self' 'unsafe-inline'",
             "font-src 'self' data:",
@@ -73,7 +73,7 @@ export function securityHeadersPlugin(): Plugin {
         res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
 
         // Permissions Policy — Mirrors: public/_headers Permissions-Policy
-        res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+        res.setHeader('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()');
 
         // Cross-Origin Policies - relaxed in development
         if (!isDev) {

@@ -46,16 +46,7 @@ export default function ScanBarcode() {
     setLoading(true);
     setError(null);
     try {
-      // Look up first: a network error or unknown product must not cost a credit.
-      const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json`);
-      if (!res.ok) throw new Error('Le service produit est indisponible. Veuillez réessayer.');
-      const json = await res.json();
-      if (json.status !== 1 || !json.product) {
-        setError('Produit non trouvé dans la base Open Food Facts');
-        return;
-      }
-
-      // Consume once, only after a successful product lookup.
+      // Consume 1 credit
       const creditResult = await checkAndConsumeCredits('scan_barcode', 1);
       if (!creditResult.success) {
         if (creditResult.error_code === 'INSUFFICIENT_CREDITS') {
@@ -68,6 +59,14 @@ export default function ScanBarcode() {
           return;
         }
         throw new Error(creditResult.message || 'Erreur de crédits');
+      }
+
+      const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json`);
+      if (!res.ok) throw new Error('Le service produit est indisponible. Veuillez réessayer.');
+      const json = await res.json();
+      if (json.status !== 1 || !json.product) {
+        setError('Produit non trouvé dans la base Open Food Facts');
+        return;
       }
 
       const p = json.product;
