@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState } from 'react';
 import { AppHeader } from '@/components/app/AppHeader';
 import { AppFooter } from '@/components/app/AppFooter';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { InsufficientCreditsModal } from '@/components/app/InsufficientCreditsModal';
 import { checkAndConsumeCredits } from '@/lib/credits';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 
 const NUTRISCORE_COLORS: Record<string, string> = {
   a: 'bg-green-600 text-white',
@@ -35,28 +36,12 @@ interface ProductData {
 
 export default function ScanBarcode() {
   const { user } = useAuth();
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [scanning, setScanning] = useState(false);
   const [product, setProduct] = useState<ProductData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
   const [creditsInfo, setCreditsInfo] = useState({ current: 0, required: 1 });
-  const readerRef = useRef<any>(null);
-
-  const stopScanning = useCallback(() => {
-    if (readerRef.current) {
-      readerRef.current.reset();
-      readerRef.current = null;
-    }
-    if (videoRef.current?.srcObject) {
-      (videoRef.current.srcObject as MediaStream).getTracks().forEach((t) => t.stop());
-      videoRef.current.srcObject = null;
-    }
-    setScanning(false);
-  }, []);
-
   const lookupProduct = async (barcode: string) => {
     setLoading(true);
     setError(null);
@@ -76,12 +61,11 @@ export default function ScanBarcode() {
         throw new Error(creditResult.message || 'Erreur de crédits');
       }
 
-      const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
+      const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json`);
+      if (!res.ok) throw new Error('Le service produit est indisponible. Veuillez réessayer.');
       const json = await res.json();
-
       if (json.status !== 1 || !json.product) {
         setError('Produit non trouvé dans la base Open Food Facts');
-        setLoading(false);
         return;
       }
 
@@ -108,27 +92,13 @@ export default function ScanBarcode() {
     }
   };
 
-  const startScanning = async () => {
+  const { native, videoRef, scanning, cameraError, startScanning: startCamera, stopScanning } = useBarcodeScanner(lookupProduct);
+  const displayedError = error || cameraError;
+
+  const startScanning = () => {
     setProduct(null);
     setError(null);
-    setScanning(true);
-
-    try {
-      const { BrowserMultiFormatReader } = await import('@zxing/library');
-      const reader = new BrowserMultiFormatReader();
-      readerRef.current = reader;
-
-      await reader.decodeFromVideoDevice(null, videoRef.current!, (result) => {
-        if (result) {
-          const barcode = result.getText();
-          stopScanning();
-          lookupProduct(barcode);
-        }
-      });
-    } catch {
-      setError("Impossible d'accéder à la caméra. Vérifiez les permissions.");
-      setScanning(false);
-    }
+    void startCamera();
   };
 
   const handleSave = async () => {
@@ -156,12 +126,6 @@ export default function ScanBarcode() {
     }
   };
 
-  useEffect(() => {
-    return () => {
-      stopScanning();
-    };
-  }, [stopScanning]);
-
   const macro = (v: number | null) => (v != null ? Math.round(v * 10) / 10 : '—');
 
   return (
@@ -183,9 +147,14 @@ export default function ScanBarcode() {
         {!product && !loading && (
           <Card className="overflow-hidden mb-6">
             <CardContent className="p-0">
-              {scanning ? (
+              {scanning && native ? (
+                <div className="p-12 text-center" role="status">
+                  <Loader2 className="h-12 w-12 mx-auto mb-4 animate-spin text-primary" />
+                  <p className="text-muted-foreground">Caméra ouverte…</p>
+                </div>
+              ) : scanning ? (
                 <div className="relative">
-                  <video ref={videoRef} className="w-full aspect-[4/3] object-cover bg-black" />
+                  <video ref={videoRef} autoPlay muted playsInline aria-label="Caméra du scanner" className="w-full aspect-[4/3] object-cover bg-muted" />
                   {/* Scanning overlay */}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <div className="w-64 h-40 border-2 border-primary rounded-lg relative overflow-hidden">
@@ -223,11 +192,11 @@ export default function ScanBarcode() {
         )}
 
         {/* Error */}
-        {error && !loading && (
+        {displayedError && !loading && (
           <Card className="p-8 text-center border-destructive/50">
             <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
             <p className="font-semibold mb-2">Erreur</p>
-            <p className="text-muted-foreground mb-4">{error}</p>
+            <p className="text-muted-foreground mb-4">{displayedError}</p>
             <Button
               onClick={() => {
                 setError(null);
