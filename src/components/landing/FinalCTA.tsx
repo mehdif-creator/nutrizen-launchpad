@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { BillingToggle } from '@/components/landing/BillingToggle';
-import { formatEUR, getEffectiveMonthlyPrice, getPlanKey, getTotalPrice, type BillingInterval } from '@/config/pricing';
+import { formatEUR, getEffectiveMonthlyPrice, getPlanKey, getTotalPrice, TRIAL, type BillingInterval } from '@/config/pricing';
 import { trackInitiateCheckout } from '@/lib/metaPixel';
 import { trackCheckout as trackPinterestCheckout } from '@/lib/pinterestPixel';
 import type { FinalCTACopy } from '@/config/marketingCopy';
@@ -35,7 +35,24 @@ export const FinalCTA = ({ copy }: FinalCTAProps) => {
             {copy?.headline || 'Choisissez votre première étape.'}
           </h2>
 
-          <div className="max-w-md mx-auto">
+          <div className="max-w-md mx-auto space-y-4">
+            {/* Free trial card */}
+            <Card className="p-6 border-2 border-green-500/40 text-center space-y-3">
+              <p className="font-semibold text-lg">Je teste d'abord</p>
+              <p className="text-sm text-muted-foreground">
+                {TRIAL.days} jours gratuits · {TRIAL.credits} crédits offerts
+              </p>
+              <Button
+                onClick={() => navigate('/auth/signup')}
+                size="lg"
+                variant="outline"
+                className="w-full border-green-500 text-green-600 hover:bg-green-500/10"
+              >
+                Démarrer l'essai gratuit
+              </Button>
+              <p className="text-xs text-muted-foreground">Sans carte bancaire</p>
+            </Card>
+
             {/* Paid card */}
             <Card className="p-6 border-2 border-accent text-center space-y-4 shadow-[0_0_20px_hsl(24_95%_52%/0.15)]">
               <p className="font-semibold text-lg">Je me lance</p>

@@ -16,6 +16,7 @@ import {
   getTotalPrice,
   getEffectiveMonthlyPrice,
   formatEUR,
+  TRIAL,
   type BillingInterval,
   type PlanTier,
 } from '@/config/pricing';
@@ -257,9 +258,14 @@ export default function Signup() {
           {!isPaid && !emailSent && (
             <>
               <div className="text-center mb-8">
+                <div className="inline-block px-4 py-1.5 bg-green-500/10 rounded-full mb-4">
+                  <span className="text-sm font-semibold text-green-600">
+                    Essai gratuit {TRIAL.days} jours
+                  </span>
+                </div>
                 <h1 className="text-2xl font-bold mb-1">Commencer gratuitement</h1>
                 <p className="text-muted-foreground text-sm">
-                  14 crédits offerts dès l'inscription
+                  {TRIAL.credits} crédits offerts dès l'inscription · sans carte bancaire
                 </p>
               </div>
 
