@@ -1,108 +1,89 @@
-import { lazy, Suspense } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useReferralTracking } from '@/hooks/useReferralTracking';
-import { useSeoMeta } from '@/hooks/useSeoMeta';
-import { SeoHead } from '@/components/seo/SeoHead';
-import { mainCopy } from '@/config/marketingCopy';
+import { lazy, Suspense } from "react";
+import { useNavigate } from "react-router-dom";
+import { useReferralTracking } from "@/hooks/useReferralTracking";
+import { useSeoMeta } from "@/hooks/useSeoMeta";
+import { SeoHead } from "@/components/seo/SeoHead";
+import { mainCopy } from "@/config/marketingCopy";
 
 // Eager: above the fold
-import { AnnouncementBar } from '@/components/landing/AnnouncementBar';
-import { PreHeader } from '@/components/landing/PreHeader';
-import { Header } from '@/components/landing/Header';
-import { HomeHero } from '@/components/landing/HomeHero';
-import { MadeForYou } from '@/components/landing/MadeForYou';
-import { Benefits } from '@/components/landing/Benefits';
+import { AnnouncementBar } from "@/components/landing/AnnouncementBar";
+import { PreHeader } from "@/components/landing/PreHeader";
+import { Header } from "@/components/landing/Header";
+import { HomeHero } from "@/components/landing/HomeHero";
+import { MadeForYou } from "@/components/landing/MadeForYou";
+import { Benefits } from "@/components/landing/Benefits";
 
 // Lazy: below the fold
-const ProfileQuiz = lazy(() =>
-  import('@/components/landing/ProfileQuiz').then((m) => ({ default: m.ProfileQuiz }))
-);
-const HowItWorks = lazy(() =>
-  import('@/components/landing/HowItWorks').then((m) => ({ default: m.HowItWorks }))
-);
+const ProfileQuiz = lazy(() => import("@/components/landing/ProfileQuiz").then((m) => ({ default: m.ProfileQuiz })));
+const HowItWorks = lazy(() => import("@/components/landing/HowItWorks").then((m) => ({ default: m.HowItWorks })));
 const ValueStackSection = lazy(() =>
-  import('@/components/landing/ValueStackSection').then((m) => ({ default: m.ValueStackSection }))
+  import("@/components/landing/ValueStackSection").then((m) => ({ default: m.ValueStackSection })),
 );
-const Guarantee = lazy(() =>
-  import('@/components/landing/Guarantee').then((m) => ({ default: m.Guarantee }))
-);
+const Guarantee = lazy(() => import("@/components/landing/Guarantee").then((m) => ({ default: m.Guarantee })));
 const GuaranteeCard = lazy(() =>
-  import('@/components/landing/GuaranteeCard').then((m) => ({ default: m.GuaranteeCard }))
+  import("@/components/landing/GuaranteeCard").then((m) => ({ default: m.GuaranteeCard })),
 );
 const RecipeGallery = lazy(() =>
-  import('@/components/landing/RecipeGallery').then((m) => ({ default: m.RecipeGallery }))
+  import("@/components/landing/RecipeGallery").then((m) => ({ default: m.RecipeGallery })),
 );
 const CommunityTestimonials = lazy(() =>
-  import('@/components/landing/CommunityTestimonials').then((m) => ({
+  import("@/components/landing/CommunityTestimonials").then((m) => ({
     default: m.CommunityTestimonials,
-  }))
+  })),
 );
-const ExampleWeek = lazy(() =>
-  import('@/components/landing/ExampleWeek').then((m) => ({ default: m.ExampleWeek }))
-);
-const Pricing = lazy(() =>
-  import('@/components/landing/Pricing').then((m) => ({ default: m.Pricing }))
-);
-const FAQ = lazy(() => import('@/components/landing/FAQ').then((m) => ({ default: m.FAQ })));
-const FinalCTA = lazy(() =>
-  import('@/components/landing/FinalCTA').then((m) => ({ default: m.FinalCTA }))
-);
-const Footer = lazy(() =>
-  import('@/components/landing/Footer').then((m) => ({ default: m.Footer }))
-);
+const ExampleWeek = lazy(() => import("@/components/landing/ExampleWeek").then((m) => ({ default: m.ExampleWeek })));
+const Pricing = lazy(() => import("@/components/landing/Pricing").then((m) => ({ default: m.Pricing })));
+const FAQ = lazy(() => import("@/components/landing/FAQ").then((m) => ({ default: m.FAQ })));
+const FinalCTA = lazy(() => import("@/components/landing/FinalCTA").then((m) => ({ default: m.FinalCTA })));
+const Footer = lazy(() => import("@/components/landing/Footer").then((m) => ({ default: m.Footer })));
 const MobileStickyCTA = lazy(() =>
-  import('@/components/landing/MobileStickyCTA').then((m) => ({ default: m.MobileStickyCTA }))
+  import("@/components/landing/MobileStickyCTA").then((m) => ({ default: m.MobileStickyCTA })),
 );
-const ScrollToTop = lazy(() =>
-  import('@/components/common/ScrollToTop').then((m) => ({ default: m.ScrollToTop }))
-);
+const ScrollToTop = lazy(() => import("@/components/common/ScrollToTop").then((m) => ({ default: m.ScrollToTop })));
 const LeadMagnetForm = lazy(() =>
-  import('@/components/landing/LeadMagnetForm').then((m) => ({ default: m.LeadMagnetForm }))
+  import("@/components/landing/LeadMagnetForm").then((m) => ({ default: m.LeadMagnetForm })),
 );
 
 const homeValueItems = [
   {
-    feature: 'Menus personnalisés 7j/7',
-    description: 'Adaptés à vos goûts, régimes alimentaires et composition du foyer',
-    value: 'valeur : ~80€/mois chez un diététicien',
+    feature: "Menus personnalisés 7j/7",
+    description: "Adaptés à vos goûts, régimes alimentaires et composition du foyer",
+    value: "valeur : ~80€/mois chez un diététicien",
   },
   {
-    feature: 'Liste de courses intelligente',
-    description: 'Générée automatiquement, groupée par rayon, anti-gaspillage',
-    value: 'valeur : ~20€/mois de gaspillage évité',
+    feature: "Liste de courses intelligente",
+    description: "Générée automatiquement, groupée par rayon, anti-gaspillage",
+    value: "valeur : ~20€/mois de gaspillage évité",
   },
   {
-    feature: 'Suivi nutritionnel automatique',
-    description: 'Calories, protéines, glucides, lipides — sans calcul de votre part',
-    value: 'valeur : ~40€/mois (app nutrition premium)',
+    feature: "Suivi nutritionnel automatique",
+    description: "Calories, protéines, glucides, lipides — sans calcul de votre part",
+    value: "valeur : ~40€/mois (app nutrition premium)",
   },
   {
-    feature: '+500 recettes accessibles',
-    description: 'Simples, rapides, testées par de vrais utilisateurs',
-    value: 'valeur : ~15€/mois (livre de recettes)',
+    feature: "+5000 recettes accessibles",
+    description: "Simples, rapides, testées par de vrais utilisateurs",
+    value: "valeur : ~15€/mois (livre de recettes)",
   },
   {
-    feature: 'Nouveaux menus chaque semaine',
-    description: 'Vous ne mangez jamais deux fois la même semaine',
-    value: 'inclus',
+    feature: "Nouveaux menus chaque semaine",
+    description: "Vous ne mangez jamais deux fois la même semaine",
+    value: "inclus",
   },
   {
-    feature: 'Scan code-barres intelligent',
-    description:
-      'Scannez un produit en supermarché et obtenez instantanément son analyse nutritionnelle',
-    value: 'valeur : ~10€/mois (app nutrition)',
+    feature: "Scan code-barres intelligent",
+    description: "Scannez un produit en supermarché et obtenez instantanément son analyse nutritionnelle",
+    value: "valeur : ~10€/mois (app nutrition)",
   },
   {
-    feature: 'Analyse photo de repas par IA',
-    description:
-      'Prenez votre assiette en photo — calories, macros et conseils en quelques secondes',
-    value: 'valeur : ~15€/mois (coach nutrition)',
+    feature: "Analyse photo de repas par IA",
+    description: "Prenez votre assiette en photo — calories, macros et conseils en quelques secondes",
+    value: "valeur : ~15€/mois (coach nutrition)",
   },
   {
-    feature: 'Inspi Frigo — recettes depuis vos ingrédients',
-    description:
-      'Photographiez votre frigo, notre IA vous propose des recettes avec ce que vous avez',
-    value: 'valeur : ~20€/mois (anti-gaspillage)',
+    feature: "Inspi Frigo — recettes depuis vos ingrédients",
+    description: "Photographiez votre frigo, notre IA vous propose des recettes avec ce que vous avez",
+    value: "valeur : ~20€/mois (anti-gaspillage)",
   },
 ];
 
@@ -112,13 +93,13 @@ const Index = () => {
   useSeoMeta(mainCopy.seo.title, mainCopy.seo.description);
 
   const handleCtaClick = () => {
-    navigate('/auth/signup?plan=starter');
+    navigate("/auth/signup?plan=starter");
   };
 
   const handleExampleClick = () => {
-    const element = document.getElementById('exemples');
+    const element = document.getElementById("exemples");
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      element.scrollIntoView({ behavior: "smooth" });
     }
   };
 
@@ -131,35 +112,32 @@ const Index = () => {
         ogType="website"
         jsonLd={[
           {
-            '@context': 'https://schema.org',
-            '@type': 'Organization',
-            name: 'NutriZen',
-            url: 'https://mynutrizen.fr',
-            logo: 'https://mynutrizen.fr/icons/icon-192.png',
-            sameAs: [
-              'https://www.pinterest.com/nutrizen_fr',
-              'https://www.instagram.com/nutrizen_fr',
-            ],
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: "NutriZen",
+            url: "https://mynutrizen.fr",
+            logo: "https://mynutrizen.fr/icons/icon-192.png",
+            sameAs: ["https://www.pinterest.com/nutrizen_fr", "https://www.instagram.com/nutrizen_fr"],
           },
           {
-            '@context': 'https://schema.org',
-            '@type': 'WebSite',
-            name: 'NutriZen',
-            url: 'https://mynutrizen.fr',
-            inLanguage: 'fr-FR',
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            name: "NutriZen",
+            url: "https://mynutrizen.fr",
+            inLanguage: "fr-FR",
             potentialAction: {
-              '@type': 'SearchAction',
-              target: 'https://mynutrizen.fr/blog?q={search_term_string}',
-              'query-input': 'required name=search_term_string',
+              "@type": "SearchAction",
+              target: "https://mynutrizen.fr/blog?q={search_term_string}",
+              "query-input": "required name=search_term_string",
             },
           },
           {
-            '@context': 'https://schema.org',
-            '@type': 'FAQPage',
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
             mainEntity: mainCopy.faq.items.map((it) => ({
-              '@type': 'Question',
+              "@type": "Question",
               name: it.question,
-              acceptedAnswer: { '@type': 'Answer', text: it.answer },
+              acceptedAnswer: { "@type": "Answer", text: it.answer },
             })),
           },
         ]}
