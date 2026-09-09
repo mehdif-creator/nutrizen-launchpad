@@ -2,9 +2,12 @@
 
 ## Ajustement demandé du scanner (API 3.1.2)
 
-- [ ] Vérifier les options exactes de la version installée et la prise en charge EAN/UPC.
-- [ ] Ajuster exclusivement le flux natif, sans modifier Open Food Facts, crédits, sauvegarde, Web ou authentification.
-- [ ] Vérifier l’isolation native/Web, l’annulation et les permissions avec des tests ciblés.
+- [x] Vérifier les exports, types et sources installés de la version 3.1.2 : `hint` unique, `ALL` couvre EAN-13/EAN-8/UPC-A/UPC-E sans priorité configurable.
+- [x] Sélectionner ML Kit sur Android, caméra arrière ; conserver le branchement natif déjà présent et le scanner Web inchangé.
+- [x] Vérifier l’isolation native/Web, l’annulation et les permissions : 11 tests ciblés réussis avec les véritables enums du plugin.
+- Open Food Facts, crédits, sauvegarde, UI, authentification, Preferences et deep links non modifiés.
+
+## Correctifs précédents et validation externe
 
 - [x] Corriger le CORS des analyses Scan Repas et Inspi Frigo ; fonctions redéployées et origines natives vérifiées.
 - [x] Brancher le scanner natif ; conserver le scanner Web avec démarrage après montage de la vidéo.
