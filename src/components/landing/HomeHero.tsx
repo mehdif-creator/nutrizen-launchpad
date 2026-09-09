@@ -155,7 +155,7 @@ export const HomeHero = ({ onCtaClick }: HomeHeroProps) => {
               <div className="flex items-center gap-3">
                 <CalendarDays className="w-6 h-6 text-emerald-400" />
                 <div>
-                  <div className="text-2xl font-bold text-white">7 repas</div>
+                  <div className="text-2xl font-bold text-white">14 repas</div>
                   <div className="text-xs text-white/70">
                     planifiés
                     <br />
