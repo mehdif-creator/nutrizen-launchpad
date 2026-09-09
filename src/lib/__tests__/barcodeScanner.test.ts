@@ -2,23 +2,24 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { cameraErrorMessage, scanNativeBarcode } from '../barcodeScanner';
 
 const { scanBarcode } = vi.hoisted(() => ({ scanBarcode: vi.fn() }));
-vi.mock('@capacitor/barcode-scanner', () => ({
+// Keep the installed plugin's real exports/enums: old API guesses cannot pass.
+vi.mock('@capacitor/barcode-scanner', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@capacitor/barcode-scanner')>(),
   CapacitorBarcodeScanner: { scanBarcode },
-  CapacitorBarcodeScannerTypeHint: { ALL: 17 },
-  CapacitorBarcodeScannerCameraDirection: { BACK: 1 },
-  CapacitorBarcodeScannerAndroidScanningLibrary: { ZXING: 'zxing' },
 }));
 
 describe('scanner natif', () => {
   beforeEach(() => vi.resetAllMocks());
 
-  it('utilise la caméra arrière native et retourne le code produit', async () => {
+  it('utilise ML Kit, la caméra arrière et ALL pour couvrir les quatre formats EAN/UPC', async () => {
+    const { CapacitorBarcodeScannerTypeHint: hints } = await import('@capacitor/barcode-scanner');
+    expect([hints.EAN_13, hints.EAN_8, hints.UPC_A, hints.UPC_E]).toEqual([9, 10, 14, 15]);
     scanBarcode.mockResolvedValue({ ScanResult: ' 3017620422003 ', format: 9 });
     expect(await scanNativeBarcode()).toBe('3017620422003');
     expect(scanBarcode).toHaveBeenCalledWith(expect.objectContaining({
       hint: 17,
       cameraDirection: 1,
-      android: { scanningLibrary: 'zxing' },
+       android: { scanningLibrary: 'mlkit' },
     }));
   });
 

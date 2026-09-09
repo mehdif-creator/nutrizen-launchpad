@@ -9,6 +9,9 @@ export async function scanNativeBarcode(): Promise<string | null> {
 
   try {
     const result = await CapacitorBarcodeScanner.scanBarcode({
+      // API 3.1.2 accepts ONE hint, not an array or a formats option.
+      // ALL includes EAN_13, EAN_8, UPC_A and UPC_E in a single scan;
+      // this version cannot prioritize a subset of formats.
       hint: CapacitorBarcodeScannerTypeHint.ALL,
       cameraDirection: CapacitorBarcodeScannerCameraDirection.BACK,
       scanInstructions: 'Placez le code-barres du produit dans le cadre',
@@ -16,7 +19,8 @@ export async function scanNativeBarcode(): Promise<string | null> {
       cancelButtonAccessibilityLabel: 'Annuler le scan',
       torchButtonOnAccessibilityLabel: 'Éteindre la lampe',
       torchButtonOffAccessibilityLabel: 'Allumer la lampe',
-      android: { scanningLibrary: CapacitorBarcodeScannerAndroidScanningLibrary.ZXING },
+      // No ZXing on native: ML Kit on Android; Apple Vision on iOS.
+      android: { scanningLibrary: CapacitorBarcodeScannerAndroidScanningLibrary.MLKIT },
     });
     return result.ScanResult?.trim() || null;
   } catch (error) {

@@ -92,7 +92,12 @@ export default function ScanBarcode() {
     }
   };
 
-  const { native, videoRef, scanning, cameraError, startScanning: startCamera, stopScanning } = useBarcodeScanner(lookupProduct);
+  // The hook uses isNativePlatform(): Capacitor's ScanResult reaches lookupProduct
+  // directly; only the browser path mounts a video and imports @zxing/library.
+  const {
+    native, videoRef, scanning, cameraError,
+    startScanning: startCamera, stopScanning,
+  } = useBarcodeScanner(lookupProduct);
   const displayedError = error || cameraError;
 
   const startScanning = () => {
