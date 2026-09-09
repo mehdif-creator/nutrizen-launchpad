@@ -1,5 +1,11 @@
 # Correction des outils sur l’application native
 
+## Ajustement demandé du scanner (API 3.1.2)
+
+- [ ] Vérifier les options exactes de la version installée et la prise en charge EAN/UPC.
+- [ ] Ajuster exclusivement le flux natif, sans modifier Open Food Facts, crédits, sauvegarde, Web ou authentification.
+- [ ] Vérifier l’isolation native/Web, l’annulation et les permissions avec des tests ciblés.
+
 - [x] Corriger le CORS des analyses Scan Repas et Inspi Frigo ; fonctions redéployées et origines natives vérifiées.
 - [x] Brancher le scanner natif ; conserver le scanner Web avec démarrage après montage de la vidéo.
 - [x] Ajouter les tests et les consignes de permissions Android/iOS dans `docs/MOBILE_APP.md`.
