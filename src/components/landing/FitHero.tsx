@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Star, Check, Shield, ArrowRight, TrendingDown } from "lucide-react";
 import fitHeroImage from "@/assets/fit-hero.jpg";
-import { RecipeCatalogHighlight } from '@/components/landing/RecipeCatalogHighlight';
 import { HeroTopOffer } from '@/components/landing/HeroTopOffer';
 
 interface FitHeroProps {
@@ -49,8 +48,6 @@ export const FitHero = ({ onCtaClick }: FitHeroProps) => {
               <span className="text-white/30">•</span>
               <span className="text-emerald-400 font-semibold">PERFORMANCE</span>
             </div>
-
-            <RecipeCatalogHighlight />
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.05] tracking-tight">
               Mange pour{" "}
