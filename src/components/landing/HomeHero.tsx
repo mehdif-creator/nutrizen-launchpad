@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Star, Check, Shield, ArrowRight, Timer, CalendarDays } from "lucide-react";
 import homeHeroImage from "@/assets/home-hero.jpg";
 import { RecipeCatalogHighlight } from '@/components/landing/RecipeCatalogHighlight';
+import { HeroTopOffer } from '@/components/landing/HeroTopOffer';
 
 interface HomeHeroProps {
   onCtaClick: () => void;
