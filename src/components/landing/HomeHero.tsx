@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Star, Check, Shield, ArrowRight, Timer, CalendarDays } from "lucide-react";
 import homeHeroImage from "@/assets/home-hero.jpg";
-import { RecipeCatalogHighlight } from '@/components/landing/RecipeCatalogHighlight';
+import { HeroTopOffer } from '@/components/landing/HeroTopOffer';
 
 interface HomeHeroProps {
   onCtaClick: () => void;
@@ -38,6 +38,8 @@ export const HomeHero = ({ onCtaClick }: HomeHeroProps) => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Left: Content */}
           <div className="min-w-0 space-y-6 max-w-xl">
+            <HeroTopOffer />
+
             {/* Persona pills */}
             <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm text-xs md:text-sm">
               <span className="text-emerald-400 font-semibold">PERSONNALISÉ</span>
@@ -46,8 +48,6 @@ export const HomeHero = ({ onCtaClick }: HomeHeroProps) => {
               <span className="text-white/30">•</span>
               <span className="text-emerald-400 font-semibold">ÉQUILIBRÉ</span>
             </div>
-
-            <RecipeCatalogHighlight />
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.05] tracking-tight">
               Arrêtez de vous demander quoi manger.
