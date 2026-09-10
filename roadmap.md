@@ -1,3 +1,9 @@
+# Mise en avant de l’offre de rentrée et des recettes
+
+- [ ] Mettre en avant RENTREE50 sur l’accueil, Fit et Mum, à saisir au paiement et valable jusqu’au 30 septembre 2026 inclus.
+- [ ] Afficher « Près de 4 000 recettes disponibles » et « Des centaines de nouvelles recettes ajoutées régulièrement », sans montant de remise non confirmé.
+- [ ] Vérifier les trois pages, la copie du code et le masquage automatique après expiration ; conserver l’essai gratuit et les paiements existants.
+
 # Correction des outils sur l’application native
 
 ## Ajustement demandé du scanner (API 3.1.2)

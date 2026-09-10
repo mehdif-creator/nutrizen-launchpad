@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { Star, Check, Shield, ArrowRight, Timer, CalendarDays, Leaf } from "lucide-react";
+import { Star, Check, Shield, ArrowRight, Timer, CalendarDays } from "lucide-react";
 import mumHeroImage from "@/assets/mum-hero.jpg";
+import { RecipeCatalogHighlight } from '@/components/landing/RecipeCatalogHighlight';
 
 interface MumHeroProps {
   onCtaClick: () => void;
@@ -46,12 +47,7 @@ export const MumHero = ({ onCtaClick }: MumHeroProps) => {
               <span className="text-emerald-400 font-semibold">ÉQUILIBRE</span>
             </div>
 
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-xs md:text-sm">
-              <Leaf className="w-4 h-4 text-emerald-400" />
-              <span className="font-semibold text-emerald-300 tracking-wide">
-                MENUS ADAPTÉS AUX MAMANS ET À LA VRAIE VIE
-              </span>
-            </div>
+            <RecipeCatalogHighlight />
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.05] tracking-tight">
               Des repas de famille qui tiennent dans une{" "}
