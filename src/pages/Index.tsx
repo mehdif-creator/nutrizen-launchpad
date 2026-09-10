@@ -4,6 +4,7 @@ import { useReferralTracking } from "@/hooks/useReferralTracking";
 import { useSeoMeta } from "@/hooks/useSeoMeta";
 import { SeoHead } from "@/components/seo/SeoHead";
 import { mainCopy } from "@/config/marketingCopy";
+import { RECIPE_CATALOG_COPY } from '@/config/landingOffer';
 
 // Eager: above the fold
 import { AnnouncementBar } from "@/components/landing/AnnouncementBar";
@@ -61,8 +62,8 @@ const homeValueItems = [
     value: "valeur : ~40€/mois (app nutrition premium)",
   },
   {
-    feature: "+5000 recettes accessibles",
-    description: "Simples, rapides, testées par de vrais utilisateurs",
+    feature: RECIPE_CATALOG_COPY.title,
+    description: RECIPE_CATALOG_COPY.updates,
     value: "valeur : ~15€/mois (livre de recettes)",
   },
   {

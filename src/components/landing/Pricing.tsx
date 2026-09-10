@@ -18,6 +18,7 @@ import {
 } from "@/config/pricing";
 import { trackInitiateCheckout } from "@/lib/metaPixel";
 import { trackCheckout as trackPinterestCheckout } from "@/lib/pinterestPixel";
+import { RentreePromotion } from '@/components/landing/RentreePromotion';
 
 interface ComparisonCopy {
   without: string[];
@@ -175,6 +176,8 @@ export const Pricing = ({ pricingNote, comparison = defaultComparison }: Pricing
             <p className="text-sm text-accent-foreground">💡 {pricingNote}</p>
           </div>
         )}
+
+        <RentreePromotion placement="pricing" />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
 
