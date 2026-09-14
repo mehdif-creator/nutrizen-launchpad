@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { PLANS, TRIAL, formatEUR } from '@/config/pricing';
-import { setNativePlanChoice, type NativePlanChoice } from '@/lib/native/nativeStartup';
+import { type NativePlanChoice } from '@/lib/native/nativeStartup';
+import { savePlanSelection, type PlanSelection } from '@/lib/native/planStatus';
 import { startNativePurchase } from '@/lib/native/billing';
 
 interface PaywallCard {
@@ -56,6 +57,12 @@ const CARDS: PaywallCard[] = [
   },
 ];
 
+/** Paywall card → Supabase `profiles.plan_selection` value. */
+const SELECTION_BY_CHOICE: Record<Exclude<NativePlanChoice, 'free'>, PlanSelection> = {
+  premium: 'starter',
+  premium_plus: 'premium',
+};
+
 /**
  * Native-only paywall (Capacitor). Shown once after onboarding.
  * The purchase layer lives in `src/lib/native/billing.ts` so that Google Play
@@ -70,15 +77,21 @@ export default function NativePaywall() {
     if (!user || pending) return;
     setPending(choice);
     try {
+      // The chosen formula is persisted in Supabase (profiles.plan_selection),
+      // never in Capacitor Preferences.
       if (choice === 'free') {
-        await setNativePlanChoice(user.id, 'free');
+        const ok = await savePlanSelection(user.id, 'trial');
+        if (!ok) {
+          toast.error("Impossible d'enregistrer votre choix. Réessayez.");
+          return;
+        }
         navigate('/app/dashboard', { replace: true });
         return;
       }
 
       const result = await startNativePurchase(choice);
       if (result.status === 'purchased') {
-        await setNativePlanChoice(user.id, choice);
+        await savePlanSelection(user.id, SELECTION_BY_CHOICE[choice]);
         toast.success('Merci ! Votre abonnement est actif.');
         navigate('/app/dashboard', { replace: true });
       } else if (result.status === 'unavailable') {
