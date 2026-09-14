@@ -5,6 +5,8 @@ import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { useReferralTracking } from '@/hooks/useReferralTracking';
 import { useAffiliateTracking } from '@/hooks/useAffiliateTracking';
 import { usePageTracking } from '@/hooks/usePageTracking';
+import { isNativePlatform } from '@/lib/platform';
+import { NativeEntryRouter } from '@/components/native/NativeEntryRouter';
 
 // Eager: always needed on first render
 import Index from './pages/Index';
@@ -38,6 +40,7 @@ const SupabaseDebug = lazy(() => import('./pages/app/SupabaseDebug'));
 const DayMenu = lazy(() => import('./pages/app/DayMenu'));
 const ScanBarcode = lazy(() => import('./pages/app/ScanBarcode'));
 const Credits = lazy(() => import('./pages/app/Credits'));
+const NativePaywall = lazy(() => import('./pages/native/NativePaywall'));
 
 // Admin
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
@@ -118,7 +121,8 @@ const App = () => {
       }
     >
       <Routes>
-        <Route path="/" element={<Index />} />
+        {/* Web: landing page unchanged. Native (Capacitor): dedicated entry router. */}
+        <Route path="/" element={isNativePlatform() ? <NativeEntryRouter /> : <Index />} />
         <Route path="/i/:code" element={<ReferralRedirect />} />
 
         {/* Auth */}
@@ -278,6 +282,19 @@ const App = () => {
             <ProtectedRoute>
               <Credits />
             </ProtectedRoute>
+          }
+        />
+        {/* Native paywall (Capacitor only; on the web it redirects to the landing page) */}
+        <Route
+          path="/app/paywall"
+          element={
+            isNativePlatform() ? (
+              <ProtectedRoute>
+                <NativePaywall />
+              </ProtectedRoute>
+            ) : (
+              <Navigate to="/" replace />
+            )
           }
         />
         <Route path="/pricing" element={<Navigate to="/" replace />} />
