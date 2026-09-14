@@ -1,22 +1,22 @@
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
 import { hasSeenNativeIntro } from '@/lib/native/nativeStartup';
+import { useNativeStartupRoute } from '@/hooks/useNativeStartupRoute';
 import NativeWelcome from '@/pages/native/NativeWelcome';
 
 /**
  * Native-only entry point for "/" (Capacitor Android/iOS).
  * The marketing landing page is never rendered inside the app.
  *
- * - session being restored → splash
- * - signed in              → /app/dashboard (ProtectedRoute then handles
- *                            onboarding, paywall and admin redirects)
- * - first launch           → native welcome screen
- * - already launched once  → login screen
+ * Decision (Supabase = source of truth, see useNativeStartupRoute):
+ * - no session          → native welcome (first launch) or login screen
+ * - onboarding pending  → /app/onboarding
+ * - no plan yet         → /app/paywall
+ * - plan active         → /app/dashboard
  */
 export function NativeEntryRouter() {
-  const { user, initializingSession } = useAuth();
+  const destination = useNativeStartupRoute();
   const [introSeen, setIntroSeen] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -29,7 +29,7 @@ export function NativeEntryRouter() {
     };
   }, []);
 
-  if (initializingSession || introSeen === null) {
+  if (destination === 'loading' || introSeen === null) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -38,7 +38,12 @@ export function NativeEntryRouter() {
     );
   }
 
-  if (user) return <Navigate to="/app/dashboard" replace />;
-  if (!introSeen) return <NativeWelcome />;
-  return <Navigate to="/auth/login" replace />;
+  if (destination === 'auth') {
+    if (!introSeen) return <NativeWelcome />;
+    return <Navigate to="/auth/login" replace />;
+  }
+
+  if (destination === 'onboarding') return <Navigate to="/app/onboarding" replace />;
+  if (destination === 'paywall') return <Navigate to="/app/paywall" replace />;
+  return <Navigate to="/app/dashboard" replace />;
 }
