@@ -13,6 +13,7 @@ import { CookieConsent } from '@/components/common/CookieConsent';
 import { InstallBanner } from '@/components/app/InstallBanner';
 import { AdminLiveListener } from '@/components/admin/AdminLiveListener';
 import { NativeAuthGate } from '@/components/common/NativeAuthGate';
+import { NativeStartupProvider } from '@/contexts/NativeStartupContext';
 
 interface AppProvidersProps {
   children: React.ReactNode;
