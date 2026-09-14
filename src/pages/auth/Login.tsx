@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { signInWithGoogle } from '@/lib/auth/oauth';
-import { getWebOrigin } from '@/lib/platform';
+import { getWebOrigin, isNativePlatform } from '@/lib/platform';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,6 +18,11 @@ export default function Login() {
   // Support redirect after login (e.g. from /credits)
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirect');
+
+  // Native (Capacitor): dedicated public screens — the web keeps its own links.
+  const native = isNativePlatform();
+  const plansHref = native ? '/native/plans' : '/#pricing';
+  const homeHref = native ? '/native/welcome' : '/';
 
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,7 +126,7 @@ export default function Login() {
 
             <div className="text-center text-sm text-muted-foreground pt-4">
               Pas encore de compte ?{' '}
-              <Link to="/#pricing" className="text-primary hover:underline font-medium">
+              <Link to={plansHref} className="text-primary hover:underline font-medium">
                 Voir les formules
               </Link>
             </div>
@@ -129,7 +134,7 @@ export default function Login() {
         </div>
 
         <div className="text-center mt-4">
-          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
+          <Link to={homeHref} className="text-sm text-muted-foreground hover:text-foreground">
             ← Retour à l'accueil
           </Link>
         </div>
