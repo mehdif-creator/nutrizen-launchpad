@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, Loader2 } from 'lucide-react';
+import { Check, Loader2, RefreshCw, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -15,41 +15,72 @@ import {
 } from '@/lib/native/nativeStartup';
 import { savePlanSelection, type PlanSelection } from '@/lib/native/planStatus';
 import { activateFreeTrial } from '@/lib/native/trial';
-import { startNativePurchase } from '@/lib/native/billing';
+import {
+  PLAN_BY_CHOICE,
+  getStorePrices,
+  getSubscriptionManagementUrl,
+  initNativeBilling,
+  isNativeBillingAvailable,
+  restoreNativePurchases,
+  startNativePurchase,
+  type StorePriceInfo,
+} from '@/lib/native/billing';
+import type { StorePlanKey } from '@/config/revenuecat';
 
-
-/** Paywall card → Supabase `profiles.plan_selection` value. */
+/** Paywall card → Supabase `profiles.plan_selection` value (UI intent only). */
 const SELECTION_BY_CHOICE: Record<Exclude<NativePlanChoice, 'free'>, PlanSelection> = {
   premium: 'starter',
   premium_plus: 'premium',
 };
 
 /**
- * Native-only paywall (Capacitor). Shown once after onboarding.
- * The purchase layer lives in `src/lib/native/billing.ts` so that Google Play
- * Billing / StoreKit can be connected later without changing this screen.
+ * Native-only paywall (Capacitor). All purchases go through
+ * `src/lib/native/billing.ts` → RevenueCat → Google Play / App Store.
+ * Stripe is never used here; the free 7-day trial stays on Supabase.
  */
 export default function NativePaywall() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { refresh } = useNativeStartup();
   const [pending, setPending] = useState<NativePlanChoice | null>(null);
+  const [restoring, setRestoring] = useState(false);
   const [intent, setIntent] = useState<NativePlanChoice | null>(null);
+  const [prices, setPrices] = useState<Partial<Record<StorePlanKey, StorePriceInfo>>>({});
+  const [loadingPrices, setLoadingPrices] = useState(isNativeBillingAvailable());
+  const [manageUrl, setManageUrl] = useState<string | null>(null);
 
-  // Plan intent picked on the public plans screen before signup (local UI only).
   useEffect(() => {
     readNativePlanIntent().then(setIntent);
   }, []);
 
+  const loadPrices = useCallback(async () => {
+    if (!user || !isNativeBillingAvailable()) {
+      setLoadingPrices(false);
+      return;
+    }
+    setLoadingPrices(true);
+    await initNativeBilling(user.id);
+    const [storePrices, url] = await Promise.all([
+      getStorePrices(),
+      getSubscriptionManagementUrl(user.id),
+    ]);
+    setPrices(storePrices);
+    setManageUrl(url);
+    setLoadingPrices(false);
+  }, [user]);
+
+  useEffect(() => {
+    void loadPrices();
+  }, [loadPrices]);
+
   const choose = async (choice: NativePlanChoice) => {
-    if (!user || pending) return;
+    if (!user || pending || restoring) return;
     setPending(choice);
     void clearNativePlanIntent();
     setIntent(null);
     try {
-      // Free offer: activated by the existing NutriZen server logic
-      // (grant_welcome_credits → 11 crédits + subscription trialing 7 jours).
-      // The RPC is idempotent, so a double click never creates two trials.
+      // Free offer: existing NutriZen server logic (grant_welcome_credits),
+      // idempotent — a double tap never creates two trials.
       if (choice === 'free') {
         const result = await activateFreeTrial(user.id);
         if (!result.ok) {
@@ -66,20 +97,55 @@ export default function NativePaywall() {
         return;
       }
 
-      const result = await startNativePurchase(choice);
+      const result = await startNativePurchase(choice, user.id);
       if (result.status === 'purchased') {
+        // UI intent only — the entitlement itself comes from the store sync.
         await savePlanSelection(user.id, SELECTION_BY_CHOICE[choice]);
         refresh();
         toast.success('Merci ! Votre abonnement est actif.');
         navigate('/app/dashboard', { replace: true });
-      } else if (result.status === 'unavailable') {
+      } else if (result.status === 'pending') {
+        refresh();
         toast.info(result.message);
+      } else if (result.status === 'cancelled') {
+        toast.info('Achat annulé.');
+      } else if (result.status === 'unavailable' || result.status === 'error') {
+        toast.error(result.message);
       }
     } finally {
       setPending(null);
     }
   };
 
+  const restore = async () => {
+    if (!user || restoring || pending) return;
+    setRestoring(true);
+    try {
+      const result = await restoreNativePurchases(user.id);
+      if (result.status === 'restored') {
+        refresh();
+        toast.success('Vos achats ont été restaurés.');
+        navigate('/app/dashboard', { replace: true });
+      } else if (result.status === 'nothing') {
+        toast.info('Aucun abonnement à restaurer sur ce compte.');
+      } else {
+        toast.error(result.message || 'Restauration impossible.');
+      }
+    } finally {
+      setRestoring(false);
+    }
+  };
+
+  const priceLabel = (choice: NativePlanChoice, fallback: string) => {
+    if (choice === 'free') return fallback;
+    const plan = PLAN_BY_CHOICE[choice as Exclude<NativePlanChoice, 'free'>];
+    const store = prices[plan];
+    if (store) return `${store.priceString} / mois`;
+    if (loadingPrices) return '…';
+    return fallback;
+  };
+
+  const busy = pending !== null || restoring;
 
   return (
     <div className="min-h-screen bg-background px-4 py-8">
@@ -98,6 +164,13 @@ export default function NativePaywall() {
           </p>
         )}
 
+        {loadingPrices && (
+          <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            Chargement des tarifs…
+          </p>
+        )}
+
         <div className="space-y-4">
           {NATIVE_OFFER_CARDS.map((card) => (
             <Card
@@ -107,7 +180,7 @@ export default function NativePaywall() {
               <div className="flex items-baseline justify-between gap-2">
                 <h2 className="text-lg font-semibold text-card-foreground">{card.title}</h2>
                 <span className="text-base font-bold text-primary whitespace-nowrap">
-                  {card.priceLabel}
+                  {priceLabel(card.choice, card.priceLabel)}
                 </span>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">{card.subtitle}</p>
@@ -124,18 +197,44 @@ export default function NativePaywall() {
               <Button
                 className="mt-5 w-full h-12 text-base"
                 variant={card.highlight ? 'default' : 'outline'}
-                disabled={pending !== null}
+                disabled={busy}
                 onClick={() => choose(card.choice)}
               >
                 {pending === card.choice && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {card.choice === 'free' ? 'Continuer gratuitement' : `Choisir ${card.title}`}
+                {pending === card.choice && card.choice !== 'free'
+                  ? 'Achat en cours…'
+                  : card.choice === 'free'
+                    ? 'Continuer gratuitement'
+                    : `Choisir ${card.title}`}
               </Button>
             </Card>
           ))}
         </div>
 
+        <Button variant="ghost" className="w-full h-11" disabled={busy} onClick={restore}>
+          {restoring ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCw className="mr-2 h-4 w-4" />
+          )}
+          Restaurer mes achats
+        </Button>
+
+        {manageUrl && (
+          <a
+            href={manageUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground underline"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            Gérer mon abonnement
+          </a>
+        )}
+
         <p className="text-center text-xs text-muted-foreground">
-          Les paiements dans l'application passeront par Google Play et l'App Store.
+          Les abonnements sont facturés par Google Play (ou l'App Store) et résiliables à tout
+          moment depuis votre compte store.
         </p>
       </div>
     </div>

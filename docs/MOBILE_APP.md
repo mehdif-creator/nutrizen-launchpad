@@ -154,3 +154,46 @@ redéployées. L’authentification et les règles de crédits restent inchangé
 
 Les tests automatisés et les prérequêtes CORS ne remplacent pas cette validation
 physique : aucun téléphone Android/iPhone n’est accessible depuis cet environnement.
+
+## Abonnements natifs (RevenueCat — Android d'abord)
+
+Chaîne : `NativePaywall` → `src/lib/native/billing.ts` → RevenueCat → Google Play Billing →
+entitlement RevenueCat → `revenuecat-sync` / `revenuecat-webhook` → `store_subscriptions`
+(+ miroir `profiles.plan_tier`) → `NativeStartupContext.refresh()` → dashboard.
+Stripe n'est jamais appelé dans l'app native ; le web Stripe est inchangé.
+
+### Produits & entitlements (noms exacts)
+- Produit Play `nutrizen_starter_monthly` → entitlement RevenueCat `starter` (carte « Premium »)
+- Produit Play `nutrizen_premium_monthly` → entitlement RevenueCat `premium` (carte « Premium+ »)
+- Offering RevenueCat : `default` (les deux packages)
+- L'essai gratuit 7 jours / 11 crédits reste 100 % Supabase (`grant_welcome_credits`), hors Play.
+
+### Configuration RevenueCat
+1. Projet → App Android, lier Google Play (Service Account JSON + accès Play Console).
+2. Products : importer les deux produits ci-dessus.
+3. Entitlements : `starter` (produit starter), `premium` (produit premium).
+4. Offering `default` avec un package par produit.
+5. API keys : clé publique Android → `VITE_REVENUECAT_ANDROID_KEY` (front), clé secrète `sk_...`
+   → secret `REVENUECAT_SECRET_KEY` (edge functions uniquement).
+6. Integrations → Webhooks : URL `https://<project>.supabase.co/functions/v1/revenuecat-webhook`,
+   header Authorization = valeur du secret `REVENUECAT_WEBHOOK_SECRET`.
+
+### Google Play Console
+- Deux abonnements mensuels avec les identifiants exacts ci-dessus + un plan de base actif.
+- Compte de service lié à RevenueCat (droits « Afficher les données financières » + API).
+- App publiée au moins en test interne, testeurs de licence ajoutés (achats de test).
+
+### Synchronisation Supabase
+- `store_subscriptions` (RLS : lecture de sa propre ligne uniquement) est écrite exclusivement
+  côté serveur ; `profiles.plan_selection` n'accorde jamais de droit payant.
+- `getPlanStatus()` priorise : store → subscriptions Stripe → plan_tier → plan_selection →
+  essai historique (`welcome_credits_granted`).
+- Perte d'entitlement store : `plan_tier` repasse à `free` seulement s'il n'y a pas
+  d'abonnement Stripe actif (les abonnés web sont préservés).
+
+### launchMode Android
+`android:launchMode="singleTask"` est conservé : il est nécessaire au deep link
+`nutrizen://auth/callback` (Google OAuth natif). Le risque RevenueCat lié à `singleTask` est un
+callback d'achat perdu si l'activité est recréée ; l'architecture le neutralise puisque l'état réel
+est toujours relu côté serveur (`revenuecat-sync` au montage du paywall, bouton « Restaurer mes
+achats », webhook RevenueCat). Ne pas changer `launchMode` sans retester OAuth de bout en bout.
