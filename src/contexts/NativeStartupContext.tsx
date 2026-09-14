@@ -145,7 +145,8 @@ export function NativeStartupProvider({ children }: { children: React.ReactNode 
   }, [user, initializingSession, attempt]);
 
   return (
-    <NativeStartupContext.Provider value={{ destination, errorMessage, retry }}>
+    <NativeStartupContext.Provider value={{ destination, errorMessage, retry, refresh: retry }}>
+
       {children}
     </NativeStartupContext.Provider>
   );
