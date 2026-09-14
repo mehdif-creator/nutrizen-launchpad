@@ -5,10 +5,13 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNativeStartup } from '@/contexts/NativeStartupContext';
 import { PLANS, TRIAL, formatEUR } from '@/config/pricing';
 import { type NativePlanChoice } from '@/lib/native/nativeStartup';
 import { savePlanSelection, type PlanSelection } from '@/lib/native/planStatus';
+import { activateFreeTrial } from '@/lib/native/trial';
 import { startNativePurchase } from '@/lib/native/billing';
+
 
 interface PaywallCard {
   choice: NativePlanChoice;
