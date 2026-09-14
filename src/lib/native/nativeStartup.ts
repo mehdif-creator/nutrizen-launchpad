@@ -1,18 +1,16 @@
 /**
- * Native-only (Capacitor) local startup state, persisted with Capacitor Preferences.
+ * Native-only (Capacitor) **local UI state**, persisted with Capacitor Preferences.
  *
- * Only *local UI* facts live here (has the intro been shown? has the user
- * already made a plan choice on this device?). Account and subscription truth
- * always stays in Supabase.
+ * Preferences holds *only* device-level interface facts (has the native intro
+ * been shown on this device?). It is NEVER the source of truth for the plan,
+ * the subscription status or entitlements — those live in Supabase, see
+ * `src/lib/native/planStatus.ts`.
  *
  * On the web every function is a safe no-op so the browser flow is unchanged.
  */
 import { isNativePlatform } from '@/lib/platform';
 
 const INTRO_SEEN_KEY = 'nutrizen.native.introSeen';
-const PAYWALL_CHOICE_PREFIX = 'nutrizen.native.paywallChoice.';
-
-export type NativePlanChoice = 'free' | 'premium' | 'premium_plus';
 
 async function prefs() {
   const { Preferences } = await import('@capacitor/preferences');
@@ -38,25 +36,5 @@ export async function markNativeIntroSeen(): Promise<void> {
   }
 }
 
-export async function getNativePlanChoice(userId: string): Promise<NativePlanChoice | null> {
-  if (!isNativePlatform()) return 'free';
-  try {
-    const { value } = await (await prefs()).get({ key: PAYWALL_CHOICE_PREFIX + userId });
-    if (value === 'free' || value === 'premium' || value === 'premium_plus') return value;
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-export async function setNativePlanChoice(
-  userId: string,
-  choice: NativePlanChoice
-): Promise<void> {
-  if (!isNativePlatform()) return;
-  try {
-    await (await prefs()).set({ key: PAYWALL_CHOICE_PREFIX + userId, value: choice });
-  } catch {
-    /* ignore */
-  }
-}
+/** Paywall card identifiers (UI only). Mapped to Supabase `plan_selection`. */
+export type NativePlanChoice = 'free' | 'premium' | 'premium_plus';
