@@ -291,3 +291,13 @@ period = "1h"
 [functions.marketing-contacts-auto-sync]
 verify_jwt = false
 
+
+[functions.revenuecat-sync]
+verify_jwt = true
+
+[functions.revenuecat-sync.rate_limit]
+limit = 60
+period = "1h"
+
+[functions.revenuecat-webhook]
+verify_jwt = false
