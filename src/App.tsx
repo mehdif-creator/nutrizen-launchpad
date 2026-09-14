@@ -121,7 +121,8 @@ const App = () => {
       }
     >
       <Routes>
-        <Route path="/" element={<Index />} />
+        {/* Web: landing page unchanged. Native (Capacitor): dedicated entry router. */}
+        <Route path="/" element={isNativePlatform() ? <NativeEntryRouter /> : <Index />} />
         <Route path="/i/:code" element={<ReferralRedirect />} />
 
         {/* Auth */}
@@ -281,6 +282,19 @@ const App = () => {
             <ProtectedRoute>
               <Credits />
             </ProtectedRoute>
+          }
+        />
+        {/* Native paywall (Capacitor only; on the web it redirects to the landing page) */}
+        <Route
+          path="/app/paywall"
+          element={
+            isNativePlatform() ? (
+              <ProtectedRoute>
+                <NativePaywall />
+              </ProtectedRoute>
+            ) : (
+              <Navigate to="/" replace />
+            )
           }
         />
         <Route path="/pricing" element={<Navigate to="/" replace />} />
