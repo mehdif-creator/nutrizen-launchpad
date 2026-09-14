@@ -5,6 +5,8 @@ import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { useReferralTracking } from '@/hooks/useReferralTracking';
 import { useAffiliateTracking } from '@/hooks/useAffiliateTracking';
 import { usePageTracking } from '@/hooks/usePageTracking';
+import { isNativePlatform } from '@/lib/platform';
+import { NativeEntryRouter } from '@/components/native/NativeEntryRouter';
 
 // Eager: always needed on first render
 import Index from './pages/Index';
@@ -38,6 +40,7 @@ const SupabaseDebug = lazy(() => import('./pages/app/SupabaseDebug'));
 const DayMenu = lazy(() => import('./pages/app/DayMenu'));
 const ScanBarcode = lazy(() => import('./pages/app/ScanBarcode'));
 const Credits = lazy(() => import('./pages/app/Credits'));
+const NativePaywall = lazy(() => import('./pages/native/NativePaywall'));
 
 // Admin
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
