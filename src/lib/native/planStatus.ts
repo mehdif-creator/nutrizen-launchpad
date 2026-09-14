@@ -22,12 +22,13 @@ export interface PlanStatus {
   /** 'unknown' when Supabase could not be read — callers must not assume a plan. */
   state: 'has_plan' | 'no_plan' | 'unknown';
   /** Where the plan comes from, for debugging / UI. */
-  source: 'subscription' | 'plan_tier' | 'plan_selection' | null;
+  source: 'subscription' | 'plan_tier' | 'plan_selection' | 'legacy_trial' | null;
   /** Paid/trial subscription status when present. */
   subscriptionStatus: string | null;
   planTier: string | null;
   planSelection: PlanSelection | null;
 }
+
 
 const cache = new Map<string, { status: PlanStatus; timestamp: number }>();
 const CACHE_TTL = 15000;
