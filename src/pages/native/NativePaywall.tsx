@@ -5,10 +5,13 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNativeStartup } from '@/contexts/NativeStartupContext';
 import { PLANS, TRIAL, formatEUR } from '@/config/pricing';
 import { type NativePlanChoice } from '@/lib/native/nativeStartup';
 import { savePlanSelection, type PlanSelection } from '@/lib/native/planStatus';
+import { activateFreeTrial } from '@/lib/native/trial';
 import { startNativePurchase } from '@/lib/native/billing';
+
 
 interface PaywallCard {
   choice: NativePlanChoice;
@@ -71,20 +74,28 @@ const SELECTION_BY_CHOICE: Record<Exclude<NativePlanChoice, 'free'>, PlanSelecti
 export default function NativePaywall() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { refresh } = useNativeStartup();
   const [pending, setPending] = useState<NativePlanChoice | null>(null);
 
   const choose = async (choice: NativePlanChoice) => {
     if (!user || pending) return;
     setPending(choice);
     try {
-      // The chosen formula is persisted in Supabase (profiles.plan_selection),
-      // never in Capacitor Preferences.
+      // Free offer: activated by the existing NutriZen server logic
+      // (grant_welcome_credits → 11 crédits + subscription trialing 7 jours).
+      // The RPC is idempotent, so a double click never creates two trials.
       if (choice === 'free') {
-        const ok = await savePlanSelection(user.id, 'trial');
-        if (!ok) {
-          toast.error("Impossible d'enregistrer votre choix. Réessayez.");
+        const result = await activateFreeTrial(user.id);
+        if (!result.ok) {
+          toast.error(result.message || "Impossible d'activer l'essai gratuit. Réessayez.");
           return;
         }
+        refresh();
+        toast.success(
+          result.alreadyActive
+            ? 'Votre essai est actif. Bon appétit !'
+            : `Essai de ${TRIAL.days} jours activé · ${TRIAL.credits} crédits offerts`
+        );
         navigate('/app/dashboard', { replace: true });
         return;
       }
@@ -92,6 +103,7 @@ export default function NativePaywall() {
       const result = await startNativePurchase(choice);
       if (result.status === 'purchased') {
         await savePlanSelection(user.id, SELECTION_BY_CHOICE[choice]);
+        refresh();
         toast.success('Merci ! Votre abonnement est actif.');
         navigate('/app/dashboard', { replace: true });
       } else if (result.status === 'unavailable') {
@@ -101,6 +113,7 @@ export default function NativePaywall() {
       setPending(null);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-background px-4 py-8">

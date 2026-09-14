@@ -543,15 +543,24 @@ const App = () => {
         <Route path="/pro" element={<Pro />} />
         <Route path="/affiliate" element={<Affiliate />} />
         <Route path="/affiliation" element={<Affiliate />} />
-        <Route path="/post-checkout" element={<PostCheckout />} />
+        {/* Stripe post-checkout screens are web-only; native never reaches Stripe. */}
+        <Route
+          path="/post-checkout"
+          element={isNativePlatform() ? <Navigate to="/" replace /> : <PostCheckout />}
+        />
         <Route
           path="/post-checkout-profile"
           element={
-            <ProtectedRoute skipOnboardingCheck>
-              <PostCheckoutProfile />
-            </ProtectedRoute>
+            isNativePlatform() ? (
+              <Navigate to="/" replace />
+            ) : (
+              <ProtectedRoute skipOnboardingCheck>
+                <PostCheckoutProfile />
+              </ProtectedRoute>
+            )
           }
         />
+
         <Route path="/credits" element={<Navigate to="/app" replace />} />
         <Route path="/a-propos" element={<About />} />
         <Route path="/about" element={<About />} />

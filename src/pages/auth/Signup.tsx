@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { signInWithGoogle } from '@/lib/auth/oauth';
-import { getWebOrigin } from '@/lib/platform';
+import { getWebOrigin, isNativePlatform } from '@/lib/platform';
 import { Loader2, Shield, CheckCircle, Mail } from 'lucide-react';
 import { trackSignup as trackPinterestSignup } from '@/lib/pinterestPixel';
 import { trackCompleteRegistration } from '@/lib/analytics';
@@ -52,9 +52,14 @@ export default function Signup() {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
-  const plan = searchParams.get('plan') ?? 'starter';
-  const isPaid = (PAID_PLAN_KEYS as readonly string[]).includes(plan);
+  // Native (Capacitor): Stripe checkout is never part of the app flow.
+  // Signup is always the free/account-creation flow; the native paywall
+  // (Google Play / StoreKit) handles paid offers after onboarding.
+  const native = isNativePlatform();
+  const plan = native ? 'free' : (searchParams.get('plan') ?? 'starter');
+  const isPaid = !native && (PAID_PLAN_KEYS as readonly string[]).includes(plan);
   const planInfo = isPaid ? describePlan(plan) : null;
+
 
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);

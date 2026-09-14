@@ -35,7 +35,10 @@ export interface NativeStartupState {
   /** Human readable reason of the failure, only set when destination === 'error'. */
   errorMessage: string | null;
   retry: () => void;
+  /** Same as retry() — re-reads Supabase after a plan/onboarding change. */
+  refresh: () => void;
 }
+
 
 const NativeStartupContext = createContext<NativeStartupState | null>(null);
 
@@ -142,7 +145,8 @@ export function NativeStartupProvider({ children }: { children: React.ReactNode 
   }, [user, initializingSession, attempt]);
 
   return (
-    <NativeStartupContext.Provider value={{ destination, errorMessage, retry }}>
+    <NativeStartupContext.Provider value={{ destination, errorMessage, retry, refresh: retry }}>
+
       {children}
     </NativeStartupContext.Provider>
   );

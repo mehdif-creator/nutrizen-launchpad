@@ -42,9 +42,11 @@ export default function NativeWelcome() {
       </div>
 
       <div className="space-y-3">
-        <Button className="w-full h-12 text-base" onClick={() => go('/auth/signup')}>
+        {/* Native: never the Stripe checkout signup — the paywall comes after onboarding. */}
+        <Button className="w-full h-12 text-base" onClick={() => go('/auth/signup?plan=free')}>
           Commencer
         </Button>
+
         <Button
           variant="outline"
           className="w-full h-12 text-base"
