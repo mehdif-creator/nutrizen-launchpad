@@ -102,8 +102,20 @@ export async function getPlanStatus(userId: string): Promise<PlanStatus> {
           ? notExpired(sub?.trial_end)
           : false;
 
+    // Store entitlement (Google Play / App Store) written ONLY by the
+    // `revenuecat-sync` / `revenuecat-webhook` edge functions (server verified).
+    const store = storeRes.error ? null : storeRes.data;
+    const storeActive =
+      !!store &&
+      (store.status === 'active' || store.status === 'in_grace') &&
+      notExpired(store.expires_at);
+    const storeEntitlement = storeActive
+      ? ((store?.entitlement as 'starter' | 'premium' | null) ?? null)
+      : null;
+
     let source: PlanStatus['source'] = null;
-    if (activeSubscription) source = 'subscription';
+    if (storeEntitlement) source = 'store_subscription';
+    else if (activeSubscription) source = 'subscription';
     else if (planTier && planTier !== 'free') source = 'plan_tier';
     else if (planSelection) source = 'plan_selection';
     else if (legacyTrial) source = 'legacy_trial';
@@ -114,6 +126,7 @@ export async function getPlanStatus(userId: string): Promise<PlanStatus> {
       subscriptionStatus,
       planTier,
       planSelection,
+      storeEntitlement,
     };
 
 
@@ -130,6 +143,7 @@ export async function getPlanStatus(userId: string): Promise<PlanStatus> {
       subscriptionStatus: null,
       planTier: null,
       planSelection: null,
+      storeEntitlement: null,
     };
   }
 }
