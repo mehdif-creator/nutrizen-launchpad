@@ -41,6 +41,8 @@ const DayMenu = lazy(() => import('./pages/app/DayMenu'));
 const ScanBarcode = lazy(() => import('./pages/app/ScanBarcode'));
 const Credits = lazy(() => import('./pages/app/Credits'));
 const NativePaywall = lazy(() => import('./pages/native/NativePaywall'));
+const NativeWelcomePage = lazy(() => import('./pages/native/NativeWelcome'));
+const NativePlans = lazy(() => import('./pages/native/NativePlans'));
 
 // Admin
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
@@ -124,6 +126,16 @@ const App = () => {
         {/* Web: landing page unchanged. Native (Capacitor): dedicated entry router. */}
         <Route path="/" element={isNativePlatform() ? <NativeEntryRouter /> : <Index />} />
         <Route path="/i/:code" element={<ReferralRedirect />} />
+
+        {/* Native public screens (Capacitor only; no auth, no auto-redirect) */}
+        <Route
+          path="/native/welcome"
+          element={isNativePlatform() ? <NativeWelcomePage /> : <Navigate to="/" replace />}
+        />
+        <Route
+          path="/native/plans"
+          element={isNativePlatform() ? <NativePlans /> : <Navigate to="/" replace />}
+        />
 
         {/* Auth */}
         <Route path="/auth/login" element={<Login />} />
