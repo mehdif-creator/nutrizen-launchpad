@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react';
 import { hasSeenNativeIntro } from '@/lib/native/nativeStartup';
 import { useNativeStartupRoute } from '@/hooks/useNativeStartupRoute';
 import NativeWelcome from '@/pages/native/NativeWelcome';
+import { NativeStartupError } from '@/components/native/NativeStartupError';
 
 /**
  * Native-only entry point for "/" (Capacitor Android/iOS).
@@ -37,6 +38,8 @@ export function NativeEntryRouter() {
       </div>
     );
   }
+
+  if (destination === 'error') return <NativeStartupError />;
 
   if (destination === 'auth') {
     if (!introSeen) return <NativeWelcome />;
