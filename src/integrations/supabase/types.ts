@@ -1957,6 +1957,8 @@ export type Database = {
           onboarding_status: string
           onboarding_step: number | null
           onboarding_version: number
+          plan_selected_at: string | null
+          plan_selection: string | null
           plan_tier: string
           portion_strategy: string
           referral_code: string | null
@@ -1990,6 +1992,8 @@ export type Database = {
           onboarding_status?: string
           onboarding_step?: number | null
           onboarding_version?: number
+          plan_selected_at?: string | null
+          plan_selection?: string | null
           plan_tier?: string
           portion_strategy?: string
           referral_code?: string | null
@@ -2023,6 +2027,8 @@ export type Database = {
           onboarding_status?: string
           onboarding_step?: number | null
           onboarding_version?: number
+          plan_selected_at?: string | null
+          plan_selection?: string | null
           plan_tier?: string
           portion_strategy?: string
           referral_code?: string | null
