@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -8,7 +8,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNativeStartup } from '@/contexts/NativeStartupContext';
 import { TRIAL } from '@/config/pricing';
 import { NATIVE_OFFER_CARDS } from '@/config/nativeOffers';
-import { type NativePlanChoice } from '@/lib/native/nativeStartup';
+import {
+  type NativePlanChoice,
+  readNativePlanIntent,
+  clearNativePlanIntent,
+} from '@/lib/native/nativeStartup';
 import { savePlanSelection, type PlanSelection } from '@/lib/native/planStatus';
 import { activateFreeTrial } from '@/lib/native/trial';
 import { startNativePurchase } from '@/lib/native/billing';
@@ -30,10 +34,18 @@ export default function NativePaywall() {
   const { user } = useAuth();
   const { refresh } = useNativeStartup();
   const [pending, setPending] = useState<NativePlanChoice | null>(null);
+  const [intent, setIntent] = useState<NativePlanChoice | null>(null);
+
+  // Plan intent picked on the public plans screen before signup (local UI only).
+  useEffect(() => {
+    readNativePlanIntent().then(setIntent);
+  }, []);
 
   const choose = async (choice: NativePlanChoice) => {
     if (!user || pending) return;
     setPending(choice);
+    void clearNativePlanIntent();
+    setIntent(null);
     try {
       // Free offer: activated by the existing NutriZen server logic
       // (grant_welcome_credits → 11 crédits + subscription trialing 7 jours).
@@ -78,6 +90,13 @@ export default function NativePaywall() {
             Vous pouvez commencer gratuitement et changer à tout moment.
           </p>
         </header>
+
+        {intent && intent !== 'free' && (
+          <p className="rounded-xl bg-accent/10 p-3 text-center text-xs text-foreground">
+            Formule choisie avant votre inscription :{' '}
+            <strong>{intent === 'premium' ? 'Premium' : 'Premium+'}</strong>
+          </p>
+        )}
 
         <div className="space-y-4">
           {NATIVE_OFFER_CARDS.map((card) => (
