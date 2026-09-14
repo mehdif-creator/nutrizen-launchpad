@@ -3066,6 +3066,51 @@ export type Database = {
         }
         Relationships: []
       }
+      store_subscriptions: {
+        Row: {
+          created_at: string
+          entitlement: string | null
+          environment: string | null
+          expires_at: string | null
+          product_id: string | null
+          provider: string
+          raw: Json | null
+          rc_app_user_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          will_renew: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          entitlement?: string | null
+          environment?: string | null
+          expires_at?: string | null
+          product_id?: string | null
+          provider?: string
+          raw?: Json | null
+          rc_app_user_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          will_renew?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          entitlement?: string | null
+          environment?: string | null
+          expires_at?: string | null
+          product_id?: string | null
+          provider?: string
+          raw?: Json | null
+          rc_app_user_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          will_renew?: boolean | null
+        }
+        Relationships: []
+      }
       stripe_events: {
         Row: {
           created_at: string
