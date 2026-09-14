@@ -22,11 +22,19 @@ export interface PlanStatus {
   /** 'unknown' when Supabase could not be read — callers must not assume a plan. */
   state: 'has_plan' | 'no_plan' | 'unknown';
   /** Where the plan comes from, for debugging / UI. */
-  source: 'subscription' | 'plan_tier' | 'plan_selection' | 'legacy_trial' | null;
+  source:
+    | 'store_subscription'
+    | 'subscription'
+    | 'plan_tier'
+    | 'plan_selection'
+    | 'legacy_trial'
+    | null;
   /** Paid/trial subscription status when present. */
   subscriptionStatus: string | null;
   planTier: string | null;
   planSelection: PlanSelection | null;
+  /** Active store entitlement (Google Play / App Store) verified server-side. */
+  storeEntitlement: 'starter' | 'premium' | null;
 }
 
 
@@ -48,7 +56,7 @@ export async function getPlanStatus(userId: string): Promise<PlanStatus> {
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) return cached.status;
 
   try {
-    const [profileRes, subRes] = await Promise.all([
+    const [profileRes, subRes, storeRes] = await Promise.all([
       supabase
         .from('profiles')
         .select('plan_tier, plan_selection, plan_selected_at, welcome_credits_granted')
@@ -57,6 +65,11 @@ export async function getPlanStatus(userId: string): Promise<PlanStatus> {
       supabase
         .from('subscriptions')
         .select('status, plan, trial_end, current_period_end')
+        .eq('user_id', userId)
+        .maybeSingle(),
+      supabase
+        .from('store_subscriptions')
+        .select('entitlement, status, expires_at')
         .eq('user_id', userId)
         .maybeSingle(),
     ]);
@@ -69,6 +82,7 @@ export async function getPlanStatus(userId: string): Promise<PlanStatus> {
         subscriptionStatus: null,
         planTier: null,
         planSelection: null,
+        storeEntitlement: null,
       };
     }
 
