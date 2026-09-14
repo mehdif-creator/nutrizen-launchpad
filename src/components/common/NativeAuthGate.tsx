@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { isNativePlatform } from '@/lib/platform';
 import { useNativeAuthDeepLink } from '@/hooks/useNativeAuthDeepLink';
 import { useNativeStartupRoute } from '@/hooks/useNativeStartupRoute';
+import { NativeStartupError } from '@/components/native/NativeStartupError';
 
 const PAYWALL_PATH = '/app/paywall';
 const ONBOARDING_PATH = '/app/onboarding';
@@ -37,6 +38,7 @@ export function NativeAuthGate({ children }: { children: React.ReactNode }) {
   const inApp = !!user && location.pathname.startsWith('/app');
 
   if (inApp) {
+    if (destination === 'error') return <NativeStartupError />;
     if (destination === 'loading' && location.pathname !== ONBOARDING_PATH) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-background">
