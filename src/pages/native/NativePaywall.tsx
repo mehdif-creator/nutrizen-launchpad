@@ -6,59 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNativeStartup } from '@/contexts/NativeStartupContext';
-import { PLANS, TRIAL, formatEUR } from '@/config/pricing';
+import { TRIAL } from '@/config/pricing';
+import { NATIVE_OFFER_CARDS } from '@/config/nativeOffers';
 import { type NativePlanChoice } from '@/lib/native/nativeStartup';
 import { savePlanSelection, type PlanSelection } from '@/lib/native/planStatus';
 import { activateFreeTrial } from '@/lib/native/trial';
 import { startNativePurchase } from '@/lib/native/billing';
 
-
-interface PaywallCard {
-  choice: NativePlanChoice;
-  title: string;
-  priceLabel: string;
-  subtitle: string;
-  features: string[];
-  highlight?: boolean;
-}
-
-/** Cards are derived from the existing NutriZen offers (src/config/pricing.ts). */
-const CARDS: PaywallCard[] = [
-  {
-    choice: 'free',
-    title: 'Free',
-    priceLabel: 'Gratuit',
-    subtitle: `${TRIAL.days} jours pour tester · ${TRIAL.credits} crédits offerts`,
-    features: [
-      `${TRIAL.credits} crédits offerts`,
-      'Sans carte bancaire',
-      'Accès aux recettes et à la liste de courses',
-    ],
-  },
-  {
-    choice: 'premium',
-    title: 'Premium',
-    priceLabel: `${formatEUR(PLANS.starter.monthlyPrice)} / mois`,
-    subtitle: PLANS.starter.tagline,
-    features: [
-      `${PLANS.starter.credits} crédits par mois`,
-      `Report jusqu'à ${PLANS.starter.rolloverCap} crédits`,
-      'Menus illimités pour votre famille',
-    ],
-    highlight: true,
-  },
-  {
-    choice: 'premium_plus',
-    title: 'Premium+',
-    priceLabel: `${formatEUR(PLANS.premium.monthlyPrice)} / mois`,
-    subtitle: PLANS.premium.tagline,
-    features: [
-      `${PLANS.premium.credits} crédits par mois`,
-      `Report jusqu'à ${PLANS.premium.rolloverCap} crédits`,
-      'Tous les outils IA (Scan repas, Inspi Frigo, code-barres)',
-    ],
-  },
-];
 
 /** Paywall card → Supabase `profiles.plan_selection` value. */
 const SELECTION_BY_CHOICE: Record<Exclude<NativePlanChoice, 'free'>, PlanSelection> = {
@@ -126,7 +80,7 @@ export default function NativePaywall() {
         </header>
 
         <div className="space-y-4">
-          {CARDS.map((card) => (
+          {NATIVE_OFFER_CARDS.map((card) => (
             <Card
               key={card.choice}
               className={`p-5 ${card.highlight ? 'border-primary border-2' : ''}`}
