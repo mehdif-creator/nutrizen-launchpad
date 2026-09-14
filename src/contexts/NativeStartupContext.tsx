@@ -35,7 +35,10 @@ export interface NativeStartupState {
   /** Human readable reason of the failure, only set when destination === 'error'. */
   errorMessage: string | null;
   retry: () => void;
+  /** Same as retry() — re-reads Supabase after a plan/onboarding change. */
+  refresh: () => void;
 }
+
 
 const NativeStartupContext = createContext<NativeStartupState | null>(null);
 

@@ -51,7 +51,7 @@ export async function getPlanStatus(userId: string): Promise<PlanStatus> {
     const [profileRes, subRes] = await Promise.all([
       supabase
         .from('profiles')
-        .select('plan_tier, plan_selection, plan_selected_at')
+        .select('plan_tier, plan_selection, plan_selected_at, welcome_credits_granted')
         .eq('id', userId)
         .maybeSingle(),
       supabase
@@ -74,6 +74,10 @@ export async function getPlanStatus(userId: string): Promise<PlanStatus> {
 
     const planTier = (profileRes.data?.plan_tier as string | null) ?? null;
     const planSelection = (profileRes.data?.plan_selection as PlanSelection | null) ?? null;
+    // Historical web users: the trial was materialised only by the welcome
+    // credits grant (profiles.welcome_credits_granted), sometimes without any
+    // `subscriptions` row. Those accounts already have an offer.
+    const legacyTrial = profileRes.data?.welcome_credits_granted === true;
     const sub = subRes.error ? null : subRes.data;
     const subscriptionStatus = (sub?.status as string | null) ?? null;
 
@@ -88,6 +92,7 @@ export async function getPlanStatus(userId: string): Promise<PlanStatus> {
     if (activeSubscription) source = 'subscription';
     else if (planTier && planTier !== 'free') source = 'plan_tier';
     else if (planSelection) source = 'plan_selection';
+    else if (legacyTrial) source = 'legacy_trial';
 
     const status: PlanStatus = {
       state: source ? 'has_plan' : 'no_plan',
@@ -96,6 +101,7 @@ export async function getPlanStatus(userId: string): Promise<PlanStatus> {
       planTier,
       planSelection,
     };
+
 
     cache.set(userId, { status, timestamp: Date.now() });
     return status;
