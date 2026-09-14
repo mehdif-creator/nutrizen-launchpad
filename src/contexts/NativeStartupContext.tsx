@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { clearOnboardingCache, getOnboardingStatus } from '@/lib/onboarding/status';
 import { clearPlanStatusCache, getPlanStatus } from '@/lib/native/planStatus';
 import { createLogger } from '@/lib/logger';
+import { isNativePlatform } from '@/lib/platform';
 
 const logger = createLogger('NativeStartup');
 
@@ -82,6 +83,12 @@ export function NativeStartupProvider({ children }: { children: React.ReactNode 
   }, [user]);
 
   useEffect(() => {
+    // Web is untouched: no startup read at all outside Capacitor.
+    if (!isNativePlatform()) {
+      setDestination('auth');
+      setErrorMessage(null);
+      return;
+    }
     if (initializingSession) {
       setDestination('loading');
       setErrorMessage(null);
