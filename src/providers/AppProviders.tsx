@@ -37,15 +37,17 @@ export function AppProviders({ children }: AppProvidersProps) {
             <ThemeProvider>
               <LanguageProvider>
                 <AuthProvider>
-                  <TooltipProvider>
-                    <AdminLiveListener />
-                    <NativeAuthGate>{children}</NativeAuthGate>
-                    <Toaster />
-                    <CookieConsent />
-                    <InstallBanner />
-                    {/* Only show React Query devtools in development */}
-                    {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
-                  </TooltipProvider>
+                  <NativeStartupProvider>
+                    <TooltipProvider>
+                      <AdminLiveListener />
+                      <NativeAuthGate>{children}</NativeAuthGate>
+                      <Toaster />
+                      <CookieConsent />
+                      <InstallBanner />
+                      {/* Only show React Query devtools in development */}
+                      {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
+                    </TooltipProvider>
+                  </NativeStartupProvider>
                 </AuthProvider>
               </LanguageProvider>
             </ThemeProvider>
