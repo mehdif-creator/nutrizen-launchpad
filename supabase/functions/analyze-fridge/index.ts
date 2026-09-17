@@ -7,6 +7,8 @@
  */
 import { createClient } from '../_shared/deps.ts';
 import { getCorsHeaders, generateRequestId, Logger, logEdgeFunctionError } from '../_shared/security.ts';
+import { checkRateLimit, rateLimitExceededResponse } from '../_shared/rateLimit.ts';
+import { validateBase64Image } from '../_shared/imageValidation.ts';
 
 const FEATURE_KEY = 'inspi_frigo';
 const DEFAULT_COST = 6;
@@ -52,20 +54,40 @@ Deno.serve(async (req) => {
 
     logger.info('User authenticated', { userId: user.id });
 
-    // ── Parse body ───────────────────────────────────────────────────────────
-    const body = await req.json();
-    const { image_base64, request_id } = body as { image_base64?: string; request_id?: string };
+    // ── Rate limiting: 10 appels / heure / utilisateur ────────────────────────
+    const rl = await checkRateLimit(supabaseClient, {
+      identifier: `user:${user.id}`,
+      endpoint:   'analyze-fridge',
+      maxTokens:  60,
+      refillRate: 1,
+      cost:       6,
+    });
+    if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
 
-    if (!image_base64 || typeof image_base64 !== 'string') {
+    // ── Parse body ───────────────────────────────────────────────────────────
+    let body: Record<string, unknown>;
+    try {
+      body = await req.json();
+    } catch {
       return new Response(
-        JSON.stringify({ error: 'Image manquante. Veuillez sélectionner une photo.' }),
+        JSON.stringify({ error: 'Requête invalide.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    const { image_base64, request_id } = body as { image_base64?: unknown; request_id?: unknown };
+
+    // ── Image validation (MIME réel, taille max 6 Mo) ─────────────────────────
+    const imageCheck = validateBase64Image(image_base64);
+    if (!imageCheck.ok) {
+      return new Response(
+        JSON.stringify({ error: imageCheck.error }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    if (!request_id || typeof request_id !== 'string') {
+    if (!request_id || typeof request_id !== 'string' || request_id.length > 128) {
       return new Response(
-        JSON.stringify({ error: 'Identifiant de requête manquant.' }),
+        JSON.stringify({ error: 'Identifiant de requête manquant ou invalide.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -131,11 +153,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Extract base64 data (remove data URL prefix if present)
-    const base64Clean = image_base64.replace(/^data:image\/\w+;base64,/, '');
-    // Determine mime type
-    const mimeMatch = image_base64.match(/^data:(image\/\w+);base64,/);
-    const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+    // Validated base64 payload + real MIME type detected from the magic bytes
+    const base64Clean = imageCheck.base64;
+    const mimeType = imageCheck.mimeType;
 
     const prompt = `Analyse cette photo de frigo ou d'ingrédients et retourne UNIQUEMENT un objet JSON valide, sans markdown ni texte autour, avec exactement ces champs :
 {

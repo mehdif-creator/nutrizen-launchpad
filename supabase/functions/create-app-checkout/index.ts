@@ -1,6 +1,7 @@
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from '../_shared/deps.ts';
 import { getCorsHeaders, generateRequestId, Logger } from '../_shared/security.ts';
+import { checkRateLimit, rateLimitExceededResponse } from '../_shared/rateLimit.ts';
 
 /** Subscription plan-key → env var holding the Stripe price id. */
 const PLAN_ENV_KEYS: Record<string, string> = {
@@ -57,6 +58,16 @@ Deno.serve(async (req) => {
     if (userError || !user?.email) {
       return fail(401, "UNAUTHORIZED", "Session invalide. Reconnecte-toi.");
     }
+
+    // ── Rate limiting: 5 tentatives de paiement / heure / utilisateur ──
+    const rl = await checkRateLimit(supabaseAdmin, {
+      identifier: `user:${user.id}`,
+      endpoint:   "create-app-checkout",
+      maxTokens:  60,
+      refillRate: 1,
+      cost:       12,
+    });
+    if (!rl.allowed) return rateLimitExceededResponse(jsonHeaders, rl.retryAfter);
 
     let body: Record<string, unknown> = {};
     try {

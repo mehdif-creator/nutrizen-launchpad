@@ -1,6 +1,8 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from '../_shared/deps.ts';
 import { getCorsHeaders } from '../_shared/security.ts';
+import { checkRateLimit, rateLimitExceededResponse } from '../_shared/rateLimit.ts';
+import { validateBase64Image } from '../_shared/imageValidation.ts';
 
 const FEATURE_KEY = 'inspi_frigo';
 const FEATURE_COST = 6;
@@ -75,13 +77,32 @@ Deno.serve(async (req) => {
 
     console.log('[analyze-fridge-photo] User authenticated:', user.id);
 
-    // ── Parse body ──
-    const body = await req.json();
-    const { image } = body;
+    // ── Rate limiting: 10 appels / heure / utilisateur ──
+    const rl = await checkRateLimit(supabaseClient, {
+      identifier: `user:${user.id}`,
+      endpoint:   'analyze-fridge-photo',
+      maxTokens:  60,
+      refillRate: 1,
+      cost:       6,
+    });
+    if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
 
-    if (!image || typeof image !== 'string') {
+    // ── Parse body ──
+    let body: Record<string, unknown>;
+    try {
+      body = await req.json();
+    } catch {
       return new Response(
-        JSON.stringify({ error: 'Le champ "image" est requis (base64 data URL).' }),
+        JSON.stringify({ error: 'Requête invalide.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ── Image validation (MIME réel, taille max 6 Mo) ──
+    const imageCheck = validateBase64Image((body as { image?: unknown }).image);
+    if (!imageCheck.ok) {
+      return new Response(
+        JSON.stringify({ error: imageCheck.error }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -120,7 +141,7 @@ Deno.serve(async (req) => {
 
     console.log('[analyze-fridge-photo] Calling OpenAI...');
 
-    const base64Data = image.includes(',') ? image.split(',')[1] : image;
+    const base64Data = imageCheck.base64;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -138,7 +159,7 @@ Deno.serve(async (req) => {
             content: [
               {
                 type: 'image_url',
-                image_url: { url: `data:image/jpeg;base64,${base64Data}`, detail: 'high' },
+                image_url: { url: `data:${imageCheck.mimeType};base64,${base64Data}`, detail: 'high' },
               },
               {
                 type: 'text',

@@ -1,4 +1,12 @@
 import { createClient } from '../_shared/deps.ts';
+import { checkRateLimit, rateLimitExceededResponse } from '../_shared/rateLimit.ts';
+
+// Conversation limits (protection contre les boucles clients et les payloads anormaux)
+const MAX_INCOMING_MESSAGES = 60;      // rejeté au-delà, AVANT slice()
+const MAX_MESSAGE_CHARS = 4000;        // un message utilisateur normal reste très en dessous
+const MAX_CONVERSATION_CHARS = 24000;  // total transmis au modèle (10 derniers messages)
+const ALLOWED_ROLES = ['user', 'assistant', 'system'] as const;
+const ALLOWED_MODES = ['support', 'nutrition'] as const;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -82,12 +90,63 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { mode, messages } = await req.json();
-    if (!mode || !messages || !Array.isArray(messages)) {
-      return new Response(JSON.stringify({ error: 'Paramètres invalides' }), {
+    // ── Rate limiting: 30 appels / heure / utilisateur ──
+    const rl = await checkRateLimit(userClient, {
+      identifier: `user:${user.id}`,
+      endpoint:   'nutrizen-chat',
+      maxTokens:  60,
+      refillRate: 1,
+      cost:       2,
+    });
+    if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
+
+    const badRequest = (message: string) =>
+      new Response(JSON.stringify({ error: message }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+
+    let payload: { mode?: unknown; messages?: unknown };
+    try {
+      payload = await req.json();
+    } catch {
+      return badRequest('Requête invalide');
+    }
+    const { mode, messages } = payload;
+
+    if (typeof mode !== 'string' || !(ALLOWED_MODES as readonly string[]).includes(mode)) {
+      return badRequest('Paramètres invalides');
+    }
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return badRequest('Paramètres invalides');
+    }
+    if (messages.length > MAX_INCOMING_MESSAGES) {
+      return badRequest('Conversation trop longue. Veuillez démarrer une nouvelle discussion.');
+    }
+
+    const safeMessages: { role: string; content: string }[] = [];
+    for (const raw of messages) {
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+        return badRequest('Format de message invalide');
+      }
+      const { role, content } = raw as { role?: unknown; content?: unknown };
+      if (typeof role !== 'string' || !(ALLOWED_ROLES as readonly string[]).includes(role)) {
+        return badRequest('Rôle de message invalide');
+      }
+      if (typeof content !== 'string' || content.length === 0) {
+        return badRequest('Contenu de message invalide');
+      }
+      if (content.length > MAX_MESSAGE_CHARS) {
+        return badRequest('Message trop long. Merci de le raccourcir.');
+      }
+      safeMessages.push({ role, content });
+    }
+
+    // 10 derniers messages (comportement inchangé) + plafond cumulé
+    const recentMessages = safeMessages.slice(-10);
+    const totalChars = recentMessages.reduce((sum, m) => sum + m.content.length, 0);
+    if (totalChars > MAX_CONVERSATION_CHARS) {
+      return badRequest('Conversation trop volumineuse. Veuillez démarrer une nouvelle discussion.');
     }
 
     // For nutrition mode: check credits first, consume after success
@@ -128,7 +187,7 @@ Deno.serve(async (req) => {
         model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
-          ...messages.slice(-10),
+          ...recentMessages,
         ],
         stream: true,
         max_tokens: 800,
