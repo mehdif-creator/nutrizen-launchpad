@@ -2,6 +2,7 @@ import { createClient } from '../_shared/deps.ts';
 import { z } from 'npm:zod@3.22.4';
 import { checkRateLimit, rateLimitExceededResponse } from '../_shared/rateLimit.ts';
 import { getCorsHeaders } from '../_shared/security.ts';
+import { validateImageFile } from '../_shared/imageValidation.ts';
 
 Deno.serve(async (req) => {
   const origin = req.headers.get('origin');
@@ -117,20 +118,21 @@ Deno.serve(async (req) => {
     // Get the form data from the request
     const formData = await req.formData();
     const image = formData.get('image');
-    
+
     if (!image || !(image instanceof File)) {
-      throw new Error('No valid image provided');
+      return new Response(
+        JSON.stringify({ error: 'Aucune image reçue', status: 'error' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
-    
-    // Validate file size (max 10MB)
-    if (image.size > 10 * 1024 * 1024) {
-      throw new Error('Image file too large (max 10MB)');
-    }
-    
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    if (!allowedTypes.includes(image.type)) {
-      throw new Error('Invalid image type. Allowed: JPEG, PNG, WebP');
+
+    // Validate size (6 MB max), declared MIME and REAL magic bytes
+    const imageCheck = await validateImageFile(image);
+    if (!imageCheck.ok) {
+      return new Response(
+        JSON.stringify({ error: imageCheck.error, status: 'error' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log('Image received, forwarding to n8n webhook...');

@@ -37,8 +37,36 @@ Deno.serve(async (req) => {
       .eq('user_id', userData.user.id).eq('role', 'admin').maybeSingle();
     if (!roleRow) return json({ error: 'forbidden' }, 403);
 
-    const body = await req.json().catch(() => ({}));
-    const action = body.action as string;
+    // ── Body validation (liste blanche stricte, aucun champ recopié en base) ──
+    const rawBody = await req.json().catch(() => null);
+    if (rawBody === null || typeof rawBody !== 'object' || Array.isArray(rawBody)) {
+      return json({ error: 'invalid_body' }, 400);
+    }
+    const body = rawBody as Record<string, unknown>;
+
+    const ALLOWED_ACTIONS = ['stats', 'backfill', 'export_csv', 'sync_brevo'] as const;
+    const ALLOWED_KEYS = ['action', 'only_pending', 'limit'];
+
+    const unknownKeys = Object.keys(body).filter((k) => !ALLOWED_KEYS.includes(k));
+    if (unknownKeys.length > 0) {
+      return json({ error: 'unknown_parameter', details: unknownKeys }, 400);
+    }
+
+    const action = typeof body.action === 'string' ? body.action : '';
+    if (!(ALLOWED_ACTIONS as readonly string[]).includes(action)) {
+      return json({ error: 'unknown_action' }, 400);
+    }
+
+    if (body.only_pending !== undefined && typeof body.only_pending !== 'boolean') {
+      return json({ error: 'invalid_only_pending' }, 400);
+    }
+
+    if (
+      body.limit !== undefined &&
+      (typeof body.limit !== 'number' || !Number.isInteger(body.limit) || body.limit < 1 || body.limit > 1000)
+    ) {
+      return json({ error: 'invalid_limit' }, 400);
+    }
 
     if (action === 'stats') {
       const { data, error } = await admin.rpc('rpc_marketing_contacts_stats');

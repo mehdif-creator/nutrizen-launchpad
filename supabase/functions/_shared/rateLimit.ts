@@ -1,4 +1,10 @@
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+/**
+ * Minimal structural type: accepts any Supabase client instance (esm.sh or npm build)
+ * without coupling this helper to one SDK build's type declarations.
+ */
+interface RpcCapableClient {
+  rpc: (fn: string, params?: Record<string, unknown>) => PromiseLike<{ data: any; error: any }>;
+}
 
 export interface RateLimitOptions {
   /** Unique key for this caller, e.g. `user:uuid` or `admin:uuid` or `ip:x.x.x.x` */
@@ -25,7 +31,7 @@ export interface RateLimitResult {
  * traffic due to infrastructure issues.
  */
 export async function checkRateLimit(
-  client: SupabaseClient,
+  client: RpcCapableClient,
   opts: RateLimitOptions
 ): Promise<RateLimitResult> {
   try {

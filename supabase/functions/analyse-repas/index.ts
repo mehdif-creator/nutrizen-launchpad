@@ -1,6 +1,8 @@
 // dotenv not needed in Supabase Edge Functions (env vars are injected)
 import { createClient } from "../_shared/deps.ts";
 import { getCorsHeaders, logEdgeFunctionError } from "../_shared/security.ts";
+import { checkRateLimit, rateLimitExceededResponse } from "../_shared/rateLimit.ts";
+import { validateImageFile } from "../_shared/imageValidation.ts";
 
 Deno.serve(async (req) => {
   const origin = req.headers.get("origin");
@@ -38,14 +40,45 @@ Deno.serve(async (req) => {
 
     console.log(`[analyse-repas] Authenticated user: ${user.id}`);
 
-    // ── Parse form data ─────────────────────────────────────────────────
-    const formData = await req.formData();
-    const image = formData.get("image") as File | null;
-    const requestId = formData.get("request_id") as string | null;
+    // ── Rate limiting: 10 appels / heure / utilisateur ───────────────────
+    const rl = await checkRateLimit(supabase, {
+      identifier: `user:${user.id}`,
+      endpoint:   "analyse-repas",
+      maxTokens:  60,
+      refillRate: 1,
+      cost:       6,
+    });
+    if (!rl.allowed) return rateLimitExceededResponse(corsHeaders, rl.retryAfter);
 
-    if (!image) {
+    // ── Parse form data ─────────────────────────────────────────────────
+    let formData: FormData;
+    try {
+      formData = await req.formData();
+    } catch {
+      return new Response(
+        JSON.stringify({ status: "erreur", message: "Requête invalide" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    const image = formData.get("image");
+    const rawRequestId = formData.get("request_id");
+    const requestId =
+      typeof rawRequestId === "string" && rawRequestId.length > 0 && rawRequestId.length <= 128
+        ? rawRequestId
+        : null;
+
+    if (!image || !(image instanceof File)) {
       return new Response(
         JSON.stringify({ status: "erreur", message: "Aucune image reçue" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // ── Image validation (MIME réel, taille max 6 Mo) ────────────────────
+    const imageCheck = await validateImageFile(image);
+    if (!imageCheck.ok) {
+      return new Response(
+        JSON.stringify({ status: "erreur", message: imageCheck.error }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -96,15 +129,14 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── Encode image ────────────────────────────────────────────────────
-    const arrayBuffer = await image.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
+    // ── Encode image (bytes déjà validés) ───────────────────────────────
+    const bytes = imageCheck.bytes;
     let binary = "";
     for (let i = 0; i < bytes.length; i += 8192) {
       binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
     }
     const base64 = btoa(binary);
-    const mimeType = image.type || "image/jpeg";
+    const mimeType = imageCheck.mimeType;
 
     const openaiKey = Deno.env.get("OPENAI_API_KEY");
     if (!openaiKey) {
