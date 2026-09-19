@@ -311,15 +311,27 @@ function buildHead(o: HeadOptions): string {
   <!-- /prerendered meta -->`;
 }
 
-function writePage(routePath: string, template: string, head: string, body: string, title: string) {
+function writePage(
+  routePath: string,
+  template: string,
+  head: string,
+  body: string,
+  title: string,
+  bodyInsideRoot = false,
+) {
   let html = stripExistingMeta(template);
   html = html.replace(/<title>[^<]*<\/title>/, `<title>${escapeAttr(title)}</title>`);
   html = html.replace('</head>', `${head}\n</head>`);
   if (body) {
-    html = html.replace(
-      '<div id="root"></div>',
-      `<div id="prerendered-content">${body}</div>\n    ${REMOVAL_SCRIPT}\n    <div id="root"></div>`,
-    );
+    html = bodyInsideRoot
+      ? html.replace(
+          '<div id="root"></div>',
+          `<div id="root"><div id="prerendered-content">${body}</div></div>`,
+        )
+      : html.replace(
+          '<div id="root"></div>',
+          `<div id="prerendered-content">${body}</div>\n    <div id="root"></div>\n    ${REMOVAL_SCRIPT}`,
+        );
   }
   const target =
     routePath === '/' ? resolve(DIST, 'index.html') : resolve(DIST, `.${routePath}`, 'index.html');
@@ -384,17 +396,34 @@ function articleBody(a: Article, related: Article[]): string {
 
 
 function hubBody(articles: Article[]): string {
-  return `<div style="max-width:768px;margin:0 auto;padding:32px 20px;line-height:1.7">
-    <nav aria-label="Fil d'Ariane"><a href="/">Accueil</a> › <span>Blog</span></nav>
-    <h1>Blog NutriZen</h1>
-    <p>Conseils nutrition, astuces cuisine et guides pratiques — ${articles.length} articles.</p>
-    <ul>${articles
+  const visibleArticles = articles.slice(0, 12);
+  return `<main class="container py-16">
+    <div class="max-w-5xl mx-auto">
+      <header class="text-center mb-8">
+        <h1 class="text-4xl font-bold mb-3 text-foreground">Blog NutriZen</h1>
+        <p class="text-lg text-muted-foreground">Conseils nutrition, astuces cuisine et guides pratiques</p>
+      </header>
+      <p class="text-sm text-muted-foreground mb-6">${articles.length} articles</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">${visibleArticles
       .map(
-        (a) =>
-          `<li><a href="/blog/${a.slug}">${escapeAttr(a.title)}</a><br/><span>${escapeAttr(truncate(a.description, 120))}</span></li>`,
+        (a) => `<a href="/blog/${a.slug}" class="group block">
+          <article class="border border-border rounded-2xl overflow-hidden bg-card flex flex-col h-full">
+            ${
+              a.image !== FALLBACK_IMAGE
+                ? `<div class="h-[200px] overflow-hidden flex-shrink-0"><img src="${escapeAttr(a.image)}" alt="${escapeAttr(a.h1)}" loading="lazy" width="800" height="450" class="w-full h-full object-cover" /></div>`
+                : '<div class="h-[200px] bg-secondary" aria-hidden="true"></div>'
+            }
+            <div class="p-5 flex-1 flex flex-col">
+              ${a.category ? `<span class="text-xs font-semibold text-primary mb-2">${escapeAttr(a.category)}</span>` : ''}
+              <h2 class="text-[1.0625rem] font-bold text-foreground mb-2.5 leading-snug">${escapeAttr(a.title)}</h2>
+              <p class="text-sm text-muted-foreground leading-relaxed mb-4 flex-1">${escapeAttr(truncate(a.description, 150))}</p>
+            </div>
+          </article>
+        </a>`,
       )
-      .join('')}</ul>
-  </div>`;
+      .join('')}</div>
+    </div>
+  </main>`;
 }
 
 // ── static routes ────────────────────────────────────────────────────────────
@@ -502,9 +531,13 @@ async function main() {
   const articles = allArticles.slice(0, MAX_PRERENDERED_ARTICLES);
 
   const hubTitle = 'Blog NutriZen — Conseils nutrition & recettes healthy';
+  const hubTemplate = template.replace(
+    /\s*<noscript>\s*<div style="padding:2rem;text-align:center;font-family:sans-serif;">\s*<p><strong>JavaScript requis<\/strong><\/p>\s*<p>NutriZen nécessite JavaScript pour fonctionner\. Merci de l'activer dans les paramètres de votre navigateur\.<\/p>\s*<\/div>\s*<\/noscript>/,
+    '',
+  );
   writePage(
     '/blog',
-    template,
+    hubTemplate,
     buildHead({
       title: hubTitle,
       description: `Découvrez nos ${articles.length} articles nutrition, astuces cuisine et guides pratiques pour manger sainement au quotidien.`,
@@ -521,6 +554,7 @@ async function main() {
     }),
     hubBody(articles),
     hubTitle,
+    true,
   );
 
   const tokens = (s: string) =>
