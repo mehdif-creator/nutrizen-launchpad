@@ -275,7 +275,11 @@ export default function BlogPost() {
       '@type': 'BlogPosting',
       headline: h1 || article.title,
       description: metaDescription || undefined,
-      image: heroImage ? `https://mynutrizen.fr${heroImage}`.replace(/^(https:\/\/mynutrizen\.fr)(https?:\/\/)/, '$2') : undefined,
+      image: heroImage
+        ? heroImage.startsWith('http')
+          ? heroImage
+          : `https://mynutrizen.fr${heroImage}`
+        : undefined,
       datePublished: article.published_at || undefined,
       dateModified: article.updated_at || article.published_at || undefined,
       author: { '@type': 'Organization', name: article.author || 'NutriZen', url: 'https://mynutrizen.fr' },
