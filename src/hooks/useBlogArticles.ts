@@ -9,6 +9,8 @@ export interface BlogArticle {
   cover_url: string | null;
   tags: string[] | null;
   published_at: string | null;
+  updated_at: string | null;
+  redirect_to_slug: string | null;
   content: string | null;
   author: string | null;
   // SEO Factory fields
