@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, Navigate } from 'react-router-dom';
 import { Header } from '@/components/landing/Header';
 import { Footer } from '@/components/landing/Footer';
 import { AppHeader } from '@/components/app/AppHeader';
@@ -11,11 +11,19 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SocialShareButtons } from '@/components/share/SocialShareButtons';
 import { useBlogArticleBySlug, useBlogArticles } from '@/hooks/useBlogArticles';
-import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
+import { useRef, useState, type SyntheticEvent } from 'react';
 import { getCategoryLabel } from '@/lib/categoryMapping';
 import DOMPurify from 'isomorphic-dompurify';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { AuthorBio } from '@/components/blog/AuthorBio';
+import { ImmediateAnswer } from '@/components/blog/ImmediateAnswer';
+import { ContextualCta } from '@/components/blog/ContextualCta';
+import {
+  buildBreadcrumbJsonLd,
+  buildFaqJsonLd,
+  extractVisibleFaq,
+  splitAtMiddleHeading,
+} from '@/lib/blog/seo';
 
 const BLOG_FALLBACK_IMAGE = '/img/hero-default.jpg';
 
@@ -64,70 +72,6 @@ function withImageFallback(e: SyntheticEvent<HTMLImageElement>) {
   img.src = BLOG_FALLBACK_IMAGE;
 }
 
-function useArticleSeoHead(article: ReturnType<typeof useBlogArticleBySlug>['article']) {
-  useEffect(() => {
-    if (!article) return;
-
-    const outline = article.outline as any;
-    const metaTitle = outline?.meta_title || article.title;
-    const metaDesc = outline?.meta_description || article.excerpt || '';
-    const ogImage = article.cover_url || '';
-    const canonical = `https://mynutrizen.fr/blog/${article.slug}`;
-
-    document.title = metaTitle;
-
-    const setMeta = (name: string, content: string, property = false) => {
-      const attr = property ? 'property' : 'name';
-      let el = document.querySelector(`meta[${attr}="${name}"]`) as HTMLMetaElement | null;
-      if (!el) {
-        el = document.createElement('meta');
-        el.setAttribute(attr, name);
-        document.head.appendChild(el);
-      }
-      el.setAttribute('content', content);
-    };
-
-    setMeta('description', metaDesc);
-    setMeta('og:title', metaTitle, true);
-    setMeta('og:description', metaDesc, true);
-    setMeta('og:image', ogImage, true);
-    setMeta('og:type', 'article', true);
-    setMeta('og:locale', 'fr_FR', true);
-    setMeta('og:site_name', 'NutriZen', true);
-    setMeta('og:url', canonical, true);
-    setMeta('twitter:card', 'summary_large_image');
-    setMeta('twitter:title', metaTitle);
-    setMeta('twitter:description', metaDesc);
-    setMeta('twitter:image', ogImage);
-    setMeta('robots', 'index, follow');
-
-    // Canonical
-    let canonicalEl = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
-    if (!canonicalEl) {
-      canonicalEl = document.createElement('link');
-      canonicalEl.rel = 'canonical';
-      document.head.appendChild(canonicalEl);
-    }
-    canonicalEl.href = canonical;
-
-    // JSON-LD
-    let ldEl = document.getElementById('article-jsonld');
-    if (!ldEl) {
-      ldEl = document.createElement('script');
-      ldEl.id = 'article-jsonld';
-      ldEl.setAttribute('type', 'application/ld+json');
-      document.head.appendChild(ldEl);
-    }
-    if (article.schema_json) {
-      ldEl.textContent = JSON.stringify(article.schema_json);
-    }
-
-    return () => {
-      document.title = 'NutriZen — Menus personnalisés';
-      ldEl?.remove();
-    };
-  }, [article]);
-}
 
 /** Inject "Pour aller plus loin" links before FAQ section in HTML */
 function injectInternalLinks(
@@ -174,7 +118,10 @@ export default function BlogPost() {
     scrollRef.current?.scrollBy({ left: dir * 300, behavior: 'smooth' });
   };
 
-  useArticleSeoHead(article);
+  // Consolidated duplicate → permanent client-side redirect (mirrors the 301)
+  if (article?.redirect_to_slug) {
+    return <Navigate to={`/blog/${article.redirect_to_slug}`} replace />;
+  }
 
   if (loading) {
     return (
@@ -273,6 +220,9 @@ export default function BlogPost() {
   rawHtml = rawHtml.replace(/\{\{IMAGE_\d+_URL\}\}/g, '');
   rawHtml = rawHtml.replace(/\{\{IMAGE_\d+_ALT\}\}/g, '');
 
+  // One H1 per page: the page header owns it, body headings start at H2
+  rawHtml = rawHtml.replace(/<h1(\s[^>]*)?>/gi, '<h2$1>').replace(/<\/h1>/gi, '</h2>');
+
   // 2. Replace ALL CTA URLs with the real pricing page
   rawHtml = rawHtml.split('{{NUTRIZEN_CTA_URL}}').join(pricingUrl);
   rawHtml = rawHtml.split('https://mynutrizen.fr/auth/signup').join(pricingUrl);
@@ -307,6 +257,47 @@ export default function BlogPost() {
   const htmlHasFaq =
     htmlContent.toLowerCase().includes('<details') || htmlContent.toLowerCase().includes('faq');
   const showExternalFaq = faqItems && faqItems.length > 0 && !htmlHasFaq;
+
+  // ── SEO derived values (real data only) ───────────────────────────────────
+  const metaTitle = outline?.meta_title || article.title;
+  const metaDescription = outline?.meta_description || article.excerpt || '';
+  const immediateAnswer =
+    draftMeta?.quick_answer || outline?.quick_answer || outline?.excerpt || article.excerpt || '';
+  const [contentBefore, contentAfter] = splitAtMiddleHeading(htmlContent);
+
+  // FAQPage only when an FAQ is actually visible on the page
+  const visibleFaq = showExternalFaq
+    ? (faqItems ?? []).map((f) => ({ q: f.q, a: f.a }))
+    : extractVisibleFaq(htmlContent);
+  const faqJsonLd = buildFaqJsonLd(visibleFaq);
+
+  const canonicalUrl = `https://mynutrizen.fr/blog/${article.slug}`;
+  const jsonLd: Record<string, unknown>[] = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: h1 || article.title,
+      description: metaDescription || undefined,
+      image: heroImage
+        ? heroImage.startsWith('http')
+          ? heroImage
+          : `https://mynutrizen.fr${heroImage}`
+        : undefined,
+      datePublished: article.published_at || undefined,
+      dateModified: article.updated_at || article.published_at || undefined,
+      author: { '@type': 'Organization', name: article.author || 'NutriZen', url: 'https://mynutrizen.fr' },
+      publisher: {
+        '@type': 'Organization',
+        name: 'NutriZen',
+        logo: { '@type': 'ImageObject', url: 'https://mynutrizen.fr/icons/icon-192.png' },
+      },
+      mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
+      url: canonicalUrl,
+      inLanguage: 'fr-FR',
+    },
+    buildBreadcrumbJsonLd('https://mynutrizen.fr', h1 || article.title, article.slug),
+    ...(faqJsonLd ? [faqJsonLd] : []),
+  ];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -359,47 +350,35 @@ export default function BlogPost() {
             </figure>
           )}
 
-          {/* Per-route SEO + BlogPosting JSON-LD (E-E-A-T / GEO) */}
+          {/* Per-route SEO + BlogPosting / FAQPage / Breadcrumb JSON-LD */}
           <SeoHead
-            title={(article.outline as any)?.meta_title || article.title}
-            description={(article.outline as any)?.meta_description || article.excerpt || ''}
+            title={metaTitle}
+            description={metaDescription}
             canonicalPath={`/blog/${article.slug}`}
             ogType="article"
             ogImage={heroImage || undefined}
-            jsonLd={{
-              '@context': 'https://schema.org',
-              '@type': 'BlogPosting',
-              headline: h1 || article.title,
-              description:
-                (article.outline as any)?.meta_description || article.excerpt || undefined,
-              image: heroImage || undefined,
-              datePublished: article.published_at || undefined,
-              dateModified: article.published_at || undefined,
-              author: {
-                '@type': 'Person',
-                name: article.author || 'Équipe NutriZen',
-              },
-              publisher: {
-                '@type': 'Organization',
-                name: 'NutriZen',
-                logo: {
-                  '@type': 'ImageObject',
-                  url: 'https://mynutrizen.fr/icons/icon-192.png',
-                },
-              },
-              mainEntityOfPage: {
-                '@type': 'WebPage',
-                '@id': `https://mynutrizen.fr/blog/${article.slug}`,
-              },
-              inLanguage: 'fr-FR',
-            }}
+            jsonLd={jsonLd}
           />
+
+          {/* Immediate answer (query answered before the long-form content) */}
+          <ImmediateAnswer answer={immediateAnswer} />
 
           {/* Article Content */}
           <article
             className="article-content prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-a:text-primary"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(htmlContent) }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(contentBefore) }}
           />
+
+          {/* One contextual CTA inside long articles */}
+          {contentAfter && <ContextualCta topic={h1 || article.title} />}
+
+          {contentAfter && (
+            <article
+              className="article-content prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-a:text-primary"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(contentAfter) }}
+            />
+          )}
+
 
           {/* FAQ from draft_meta if not in HTML */}
           {showExternalFaq && (

@@ -70,7 +70,7 @@ async function main() {
   const blogEntries: string[] = [];
 
   const seoArticles = await sb<Record<string, any>>(
-    'seo_articles?status=eq.published&slug=not.is.null&select=slug,updated_at,created_at&order=updated_at.desc',
+    'seo_articles?status=eq.published&slug=not.is.null&redirect_to_slug=is.null&select=slug,updated_at,created_at&order=updated_at.desc',
   );
   for (const a of seoArticles) {
     const slug = String(a.slug || '');
@@ -81,13 +81,13 @@ async function main() {
   }
 
   const blogPosts = await sb<Record<string, any>>(
-    'blog_posts?published_at=not.is.null&slug=not.is.null&select=slug,published_at,created_at&order=published_at.desc',
+    'blog_posts?published_at=not.is.null&slug=not.is.null&redirect_to_slug=is.null&select=slug,published_at,updated_at,created_at&order=published_at.desc',
   );
   for (const p of blogPosts) {
     const slug = String(p.slug || '');
     if (!slug || seen.has(slug)) continue;
     seen.add(slug);
-    const lastmod = (p.published_at || p.created_at || '').substring(0, 10) || undefined;
+    const lastmod = (p.updated_at || p.published_at || p.created_at || '').substring(0, 10) || undefined;
     blogEntries.push(buildUrlEntry({ loc: `/blog/${slug}`, lastmod, changefreq: 'monthly', priority: '0.6' }));
   }
 

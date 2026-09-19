@@ -17,6 +17,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
+import { resolveContextualCtaCopy } from '../src/lib/blog/cta';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = resolve(__dirname, '..', 'dist');
@@ -94,7 +95,10 @@ function cleanArticleHtml(html: string): string {
       /<figure[^>]*>\s*<img[^>]*src=""[^>]*\/?>\s*(?:<figcaption[^>]*>.*?<\/figcaption>\s*)?<\/figure>/gi,
       '',
     )
-    .replace(/<img[^>]*src=""[^>]*\/?>/gi, '');
+    .replace(/<img[^>]*src=""[^>]*\/?>/gi, '')
+    // one H1 per page: the page title owns it, body headings start at H2
+    .replace(/<h1(\s[^>]*)?>/gi, '<h2$1>')
+    .replace(/<\/h1>/gi, '</h2>');
 }
 
 function resolveImagePlaceholders(html: string, images: unknown[]): string {
@@ -139,11 +143,29 @@ interface Article {
   title: string;
   h1: string;
   description: string;
+  /** 2–4 sentence answer shown before the long-form content. */
+  quickAnswer: string;
   image: string;
   html: string;
-  publishedTime: string | null;
+  datePublished: string | null;
+  dateModified: string | null;
+  author: string;
   category: string;
-  schemaJson: Record<string, unknown> | null;
+  faq: { q: string; a: string }[];
+}
+
+/** FAQ actually visible in the article HTML (<details><summary>…). */
+function extractVisibleFaq(html: string): { q: string; a: string }[] {
+  const out: { q: string; a: string }[] = [];
+  const blocks = html.match(/<details[\s\S]*?<\/details>/gi) || [];
+  for (const block of blocks) {
+    const sum = block.match(/<summary[^>]*>([\s\S]*?)<\/summary>/i);
+    if (!sum) continue;
+    const q = stripHtml(sum[1]);
+    const a = stripHtml(block.replace(/<summary[^>]*>[\s\S]*?<\/summary>/i, ''));
+    if (q.length > 5 && a.length > 15) out.push({ q, a });
+  }
+  return out;
 }
 
 async function fetchArticles(): Promise<Article[]> {
@@ -151,33 +173,39 @@ async function fetchArticles(): Promise<Article[]> {
   const seen = new Set<string>();
 
   const seoRows = await sb<Record<string, any>>(
-    'seo_articles?status=eq.published&slug=not.is.null&select=slug,keyword,outline,image_urls,draft_html,schema_json,cluster_context,updated_at,created_at&order=updated_at.desc',
+    'seo_articles?status=eq.published&slug=not.is.null&redirect_to_slug=is.null&select=slug,keyword,outline,draft_meta,image_urls,draft_html,cluster_context,updated_at,created_at&order=updated_at.desc',
   );
   for (const a of seoRows) {
     const slug = String(a.slug || '');
     if (!slug || seen.has(slug)) continue;
     seen.add(slug);
     const o = a.outline || {};
+    const meta = a.draft_meta || {};
     const images: unknown[] = Array.isArray(a.image_urls) ? a.image_urls : [];
     let html = String(a.draft_html || '');
     html = cleanArticleHtml(resolveImagePlaceholders(html, images));
     const first = images[0];
     const image = (typeof first === 'string' ? first : (first as { url?: string })?.url) || '';
+    const visibleFaq = extractVisibleFaq(html);
+    const metaFaq: { q: string; a: string }[] = Array.isArray(meta.faq) ? meta.faq : [];
     out.push({
       slug,
       title: o.meta_title || o.title || o.h1 || a.keyword || slug,
       h1: o.h1 || o.title || a.keyword || slug,
       description: resolveDescription(o.meta_description, o.excerpt, firstParagraph(html)),
+      quickAnswer: stripHtml(String(meta.quick_answer || o.quick_answer || o.excerpt || '')),
       image: toAbsolute(image),
       html,
-      publishedTime: a.updated_at || a.created_at || null,
+      datePublished: a.created_at || a.updated_at || null,
+      dateModified: a.updated_at || a.created_at || null,
+      author: 'NutriZen',
       category: a.cluster_context || '',
-      schemaJson: a.schema_json || null,
+      faq: visibleFaq.length ? visibleFaq : metaFaq,
     });
   }
 
   const blogRows = await sb<Record<string, any>>(
-    'blog_posts?published_at=not.is.null&slug=not.is.null&select=slug,title,excerpt,content,cover_url,published_at,tags&order=published_at.desc',
+    'blog_posts?published_at=not.is.null&slug=not.is.null&select=slug,title,excerpt,content,cover_url,published_at,created_at,author,tags&order=published_at.desc',
   );
   for (const p of blogRows) {
     const slug = String(p.slug || '');
@@ -189,16 +217,20 @@ async function fetchArticles(): Promise<Article[]> {
       title: p.title || slug,
       h1: p.title || slug,
       description: resolveDescription(p.excerpt, firstParagraph(html)),
+      quickAnswer: stripHtml(String(p.excerpt || '')),
       image: toAbsolute(p.cover_url || ''),
       html,
-      publishedTime: p.published_at || null,
+      datePublished: p.published_at || p.created_at || null,
+      dateModified: p.published_at || null,
+      author: p.author || 'NutriZen',
       category: Array.isArray(p.tags) ? p.tags[0] || '' : '',
-      schemaJson: null,
+      faq: extractVisibleFaq(html),
     });
   }
 
   return out;
 }
+
 
 // ── HTML building ────────────────────────────────────────────────────────────
 
@@ -230,6 +262,8 @@ interface HeadOptions {
   image?: string;
   type?: 'website' | 'article';
   publishedTime?: string | null;
+  modifiedTime?: string | null;
+  author?: string;
   jsonLd?: Record<string, unknown>[];
 }
 
@@ -256,6 +290,8 @@ function buildHead(o: HeadOptions): string {
   <meta name="twitter:description" content="${d}" />
   <meta name="twitter:image" content="${img}" />
   ${o.publishedTime ? `<meta property="article:published_time" content="${escapeAttr(o.publishedTime)}" />` : ''}
+  ${o.modifiedTime ? `<meta property="article:modified_time" content="${escapeAttr(o.modifiedTime)}" />` : ''}
+  ${o.author ? `<meta name="author" content="${escapeAttr(o.author)}" />` : ''}
   ${ld}
   <!-- /prerendered meta -->`;
 }
@@ -276,24 +312,61 @@ function writePage(routePath: string, template: string, head: string, body: stri
   writeFileSync(target, html, 'utf-8');
 }
 
+/** Splits long HTML at the <h2> closest to the middle (for one inline CTA). */
+function splitAtMiddleHeading(html: string): [string, string] {
+  if (!html || html.length < 6000) return [html, ''];
+  const positions: number[] = [];
+  const re = /<h2[\s>]/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) positions.push(m.index);
+  if (positions.length < 4) return [html, ''];
+  const mid = html.length / 2;
+  const target = positions
+    .slice(1, -1)
+    .reduce((best, p) => (Math.abs(p - mid) < Math.abs(best - mid) ? p : best), positions[1]);
+  return [html.slice(0, target), html.slice(target)];
+}
+
+function contextualCtaHtml(topic: string): string {
+  const c = resolveContextualCtaCopy(topic);
+  return `<aside class="nz-inline-cta"><p><strong>${escapeAttr(c.headline)}</strong></p><p>${escapeAttr(c.body)}</p><p><a href="${c.to}">${escapeAttr(c.action)}</a></p></aside>`;
+}
+
 function articleBody(a: Article, related: Article[]): string {
   const h1 = escapeAttr(a.h1);
-  const date = formatDateFr(a.publishedTime);
+  const dateLabel = formatDateFr(a.datePublished);
+  const modifiedLabel = formatDateFr(a.dateModified);
+  const [before, after] = splitAtMiddleHeading(a.html);
   const relatedHtml = related.length
-    ? `<section><h2>Articles similaires</h2><ul>${related
+    ? `<section><h2>À lire aussi sur le même sujet</h2><ul>${related
         .map((r) => `<li><a href="/blog/${r.slug}">${escapeAttr(r.title)}</a></li>`)
         .join('')}</ul></section>`
     : '';
+  const quickAnswer =
+    a.quickAnswer && a.quickAnswer.length > 60
+      ? `<aside aria-label="Réponse rapide"><h2>Réponse rapide</h2><p>${escapeAttr(a.quickAnswer)}</p></aside>`
+      : '';
 
   return `<div style="max-width:768px;margin:0 auto;padding:32px 20px;line-height:1.7">
     <nav aria-label="Fil d'Ariane"><a href="/">Accueil</a> › <a href="/blog">Blog</a> › <span>${h1}</span></nav>
-    <h1>${h1}</h1>
-    <p>${date ? `${date} · ` : ''}${readTime(a.html)} min de lecture · ${SITE_NAME}</p>
-    ${a.image !== FALLBACK_IMAGE ? `<img src="${escapeAttr(a.image)}" alt="${h1}" width="1200" height="630" style="width:100%;height:auto" />` : ''}
-    <article>${a.html}</article>
+    <article>
+      <header>
+        <h1>${h1}</h1>
+        <p>
+          ${a.datePublished ? `Publié le <time datetime="${escapeAttr(a.datePublished)}">${dateLabel}</time>` : ''}
+          ${a.dateModified && a.dateModified !== a.datePublished ? ` · Mis à jour le <time datetime="${escapeAttr(a.dateModified)}">${modifiedLabel}</time>` : ''}
+          · ${readTime(a.html)} min de lecture · Par <span>${escapeAttr(a.author)}</span>
+        </p>
+      </header>
+      ${a.image !== FALLBACK_IMAGE ? `<img src="${escapeAttr(a.image)}" alt="${h1}" width="1200" height="630" style="width:100%;height:auto" />` : ''}
+      ${quickAnswer}
+      ${before}
+      ${after ? contextualCtaHtml(a.h1) + after : ''}
+    </article>
     ${relatedHtml}
   </div>`;
 }
+
 
 function hubBody(articles: Article[]): string {
   return `<div style="max-width:768px;margin:0 auto;padding:32px 20px;line-height:1.7">
@@ -435,21 +508,40 @@ async function main() {
     hubTitle,
   );
 
+  const tokens = (s: string) =>
+    new Set(
+      s
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .split(/[^a-z0-9]+/)
+        .filter((w) => w.length > 3),
+    );
+
   for (const a of articles) {
     const canonical = `${SITE_URL}/blog/${a.slug}`;
+    const own = tokens(a.h1);
     const related = articles
-      .filter((x) => x.slug !== a.slug && (!a.category || x.category === a.category))
-      .slice(0, 3);
+      .filter((x) => x.slug !== a.slug)
+      .map((x) => {
+        const shared = [...tokens(x.h1)].filter((w) => own.has(w)).length;
+        return { x, score: shared * 2 + (a.category && x.category === a.category ? 1 : 0) };
+      })
+      .sort((p, q) => q.score - p.score)
+      .slice(0, 3)
+      .map((r) => r.x);
+
     const jsonLd: Record<string, unknown>[] = [
-      a.schemaJson || {
+      {
         '@context': 'https://schema.org',
-        '@type': 'Article',
+        '@type': 'BlogPosting',
         headline: a.h1,
         description: a.description,
         image: a.image,
         url: canonical,
-        datePublished: a.publishedTime,
-        author: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
+        datePublished: a.datePublished,
+        dateModified: a.dateModified || a.datePublished,
+        author: { '@type': 'Organization', name: a.author || SITE_NAME, url: SITE_URL },
         publisher: {
           '@type': 'Organization',
           name: SITE_NAME,
@@ -457,7 +549,7 @@ async function main() {
           logo: { '@type': 'ImageObject', url: `${SITE_URL}/icons/icon-192.png` },
         },
         mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
-        inLanguage: 'fr',
+        inLanguage: 'fr-FR',
       },
       {
         '@context': 'https://schema.org',
@@ -470,6 +562,19 @@ async function main() {
       },
     ];
 
+    // FAQPage only when the page really shows those questions
+    if (a.faq.length > 0) {
+      jsonLd.push({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: a.faq.map((f) => ({
+          '@type': 'Question',
+          name: f.q,
+          acceptedAnswer: { '@type': 'Answer', text: f.a },
+        })),
+      });
+    }
+
     writePage(
       `/blog/${a.slug}`,
       template,
@@ -479,13 +584,16 @@ async function main() {
         canonical,
         image: a.image,
         type: 'article',
-        publishedTime: a.publishedTime,
+        publishedTime: a.datePublished,
+        modifiedTime: a.dateModified,
+        author: a.author,
         jsonLd,
       }),
       articleBody(a, related),
       `${a.title} — ${SITE_NAME}`,
     );
   }
+
 
   console.log(
     `[prerender] ${1 + STATIC_ROUTES.length + 1 + articles.length} pages written (${articles.length} articles)`,

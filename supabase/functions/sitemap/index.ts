@@ -43,10 +43,12 @@ Deno.serve(async (_req) => {
     const addedSlugs = new Set<string>();
 
     // 1. seo_articles — use the new slug column directly
+    //    Consolidated duplicates (redirect_to_slug) must stay out of the sitemap.
     const { data: seoArticles, error: seoErr } = await admin
       .from('seo_articles')
       .select('slug, updated_at, created_at')
       .eq('status', 'published')
+      .is('redirect_to_slug', null)
       .not('slug', 'is', null);
 
     if (seoErr) console.error('[sitemap] seo_articles error:', seoErr.message);
@@ -64,7 +66,8 @@ Deno.serve(async (_req) => {
     // 2. blog_posts
     const { data: blogPosts, error: blogErr } = await admin
       .from('blog_posts')
-      .select('slug, published_at, created_at')
+      .select('slug, published_at, updated_at, created_at')
+      .is('redirect_to_slug', null)
       .not('published_at', 'is', null)
       .not('slug', 'is', null);
 
@@ -74,7 +77,7 @@ Deno.serve(async (_req) => {
       for (const p of blogPosts) {
         if (!p.slug || addedSlugs.has(p.slug)) continue;
         addedSlugs.add(p.slug);
-        const date = ((p.published_at || p.created_at || '2025-01-15') as string).substring(0, 10);
+        const date = ((p.updated_at || p.published_at || p.created_at || '2025-01-15') as string).substring(0, 10);
         entries.push(urlEntry(`${SITE}/blog/${p.slug}`, date, 'monthly', '0.6'));
       }
     }

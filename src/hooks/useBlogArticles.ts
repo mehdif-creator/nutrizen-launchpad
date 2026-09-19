@@ -9,6 +9,8 @@ export interface BlogArticle {
   cover_url: string | null;
   tags: string[] | null;
   published_at: string | null;
+  updated_at: string | null;
+  redirect_to_slug: string | null;
   content: string | null;
   author: string | null;
   // SEO Factory fields
@@ -39,7 +41,9 @@ function mapSeoArticle(a: any): BlogArticle {
     excerpt: outline?.excerpt || null,
     cover_url: images?.[0]?.url || images?.[0] || null,
     tags: a.cluster_context ? [a.cluster_context] : null,
-    published_at: a.updated_at || a.created_at,
+    published_at: a.created_at || a.updated_at,
+    updated_at: a.updated_at || a.created_at || null,
+    redirect_to_slug: a.redirect_to_slug ?? null,
     content: a.draft_html,
     author: 'NutriZen',
     cluster_context: a.cluster_context,
@@ -62,6 +66,8 @@ function mapBlogPost(p: any): BlogArticle {
     cover_url: p.cover_url,
     tags: p.tags,
     published_at: p.published_at || p.created_at,
+    updated_at: p.published_at || p.created_at || null,
+    redirect_to_slug: null,
     content: p.content,
     author: p.author,
     cluster_context: null,
@@ -92,10 +98,13 @@ export function useBlogArticles() {
 
         const manual = (manualRes.data || []).map(mapBlogPost);
         const seo = (seoRes.data || []).map(mapSeoArticle);
-        const all = [...manual, ...seo].sort(
-          (a, b) =>
-            new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime()
-        );
+        const all = [...manual, ...seo]
+          // consolidated duplicates must not be listed anymore
+          .filter((a) => !a.redirect_to_slug)
+          .sort(
+            (a, b) =>
+              new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime()
+          );
 
         setArticles(all);
       } catch (error) {
@@ -129,8 +138,10 @@ export function useBlogArticleBySlug(slug: string | undefined) {
           .eq('slug', slug)
           .maybeSingle();
 
+        let current: BlogArticle | null = null;
+
         if (manual) {
-          setArticle(mapBlogPost(manual));
+          current = mapBlogPost(manual);
         } else {
           // Try seo_articles by slug column (indexed O(1) lookup)
           const { data: seoMatch } = await supabase
@@ -140,42 +151,62 @@ export function useBlogArticleBySlug(slug: string | undefined) {
             .eq('slug', slug)
             .maybeSingle();
 
-          if (seoMatch) {
-            setArticle(mapSeoArticle(seoMatch));
-          }
+          if (seoMatch) current = mapSeoArticle(seoMatch);
         }
+        setArticle(current);
 
-        // Fetch related articles (3 most recent published SEO articles, excluding current)
+        // Candidate pool for contextual internal linking
         const { data: relatedSeo } = await supabase
           .from('seo_articles')
           .select('*')
           .eq('status', 'published')
           .order('updated_at', { ascending: false })
-          .limit(10);
+          .limit(60);
 
         const { data: relatedManual } = await supabase
           .from('blog_posts')
           .select('*')
           .not('published_at', 'is', null)
           .order('published_at', { ascending: false })
-          .limit(10);
+          .limit(20);
 
         const allMapped = [
           ...(relatedManual || []).map(mapBlogPost),
           ...(relatedSeo || []).map(mapSeoArticle),
-        ];
+        ].filter((a) => !a.redirect_to_slug);
 
         // Build set of all valid published slugs
         const slugSet = new Set(allMapped.map((a) => a.slug).filter(Boolean));
         setValidSlugs(slugSet);
 
-        const allRelated = allMapped
+        const pool = allMapped
           .filter((a) => a.slug !== slug)
           .sort(
             (a, b) =>
               new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime()
-          )
-          .slice(0, 3);
+          );
+
+        // Prefer semantically close articles (same cluster, then shared keywords)
+        const cluster = current?.cluster_context || null;
+        const currentWords = new Set(
+          (current?.title || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .split(/[^a-z0-9]+/)
+            .filter((w) => w.length > 3)
+        );
+        const score = (a: BlogArticle) => {
+          const words = (a.title || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .split(/[^a-z0-9]+/)
+            .filter((w) => w.length > 3);
+          const shared = words.filter((w) => currentWords.has(w)).length;
+          return shared * 2 + (cluster && a.cluster_context === cluster ? 1 : 0);
+        };
+        const allRelated = [...pool].sort((a, b) => score(b) - score(a)).slice(0, 3);
 
         setRelatedArticles(allRelated);
       } catch (error) {
