@@ -62,6 +62,12 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://mynutrizen.fr/blog/gonfler-gateau-sans-levure</loc>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://mynutrizen.fr/blog/que-faire-courgettes-recettes-healthy</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
@@ -69,12 +75,6 @@
   </url>
   <url>
     <loc>https://mynutrizen.fr/blog/viande-hachee-repas-sains</loc>
-    <lastmod>2026-09-19</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://mynutrizen.fr/blog/gonfler-gateau-sans-levure</loc>
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -813,12 +813,6 @@
   </url>
   <url>
     <loc>https://mynutrizen.fr/blog/recette-printemps-facile-rapide</loc>
-    <lastmod>2026-04-21</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://mynutrizen.fr/blog/combien-de-pates-par-personne</loc>
     <lastmod>2026-04-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
