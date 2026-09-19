@@ -64,70 +64,6 @@ function withImageFallback(e: SyntheticEvent<HTMLImageElement>) {
   img.src = BLOG_FALLBACK_IMAGE;
 }
 
-function useArticleSeoHead(article: ReturnType<typeof useBlogArticleBySlug>['article']) {
-  useEffect(() => {
-    if (!article) return;
-
-    const outline = article.outline as any;
-    const metaTitle = outline?.meta_title || article.title;
-    const metaDesc = outline?.meta_description || article.excerpt || '';
-    const ogImage = article.cover_url || '';
-    const canonical = `https://mynutrizen.fr/blog/${article.slug}`;
-
-    document.title = metaTitle;
-
-    const setMeta = (name: string, content: string, property = false) => {
-      const attr = property ? 'property' : 'name';
-      let el = document.querySelector(`meta[${attr}="${name}"]`) as HTMLMetaElement | null;
-      if (!el) {
-        el = document.createElement('meta');
-        el.setAttribute(attr, name);
-        document.head.appendChild(el);
-      }
-      el.setAttribute('content', content);
-    };
-
-    setMeta('description', metaDesc);
-    setMeta('og:title', metaTitle, true);
-    setMeta('og:description', metaDesc, true);
-    setMeta('og:image', ogImage, true);
-    setMeta('og:type', 'article', true);
-    setMeta('og:locale', 'fr_FR', true);
-    setMeta('og:site_name', 'NutriZen', true);
-    setMeta('og:url', canonical, true);
-    setMeta('twitter:card', 'summary_large_image');
-    setMeta('twitter:title', metaTitle);
-    setMeta('twitter:description', metaDesc);
-    setMeta('twitter:image', ogImage);
-    setMeta('robots', 'index, follow');
-
-    // Canonical
-    let canonicalEl = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
-    if (!canonicalEl) {
-      canonicalEl = document.createElement('link');
-      canonicalEl.rel = 'canonical';
-      document.head.appendChild(canonicalEl);
-    }
-    canonicalEl.href = canonical;
-
-    // JSON-LD
-    let ldEl = document.getElementById('article-jsonld');
-    if (!ldEl) {
-      ldEl = document.createElement('script');
-      ldEl.id = 'article-jsonld';
-      ldEl.setAttribute('type', 'application/ld+json');
-      document.head.appendChild(ldEl);
-    }
-    if (article.schema_json) {
-      ldEl.textContent = JSON.stringify(article.schema_json);
-    }
-
-    return () => {
-      document.title = 'NutriZen — Menus personnalisés';
-      ldEl?.remove();
-    };
-  }, [article]);
-}
 
 /** Inject "Pour aller plus loin" links before FAQ section in HTML */
 function injectInternalLinks(
@@ -307,6 +243,43 @@ export default function BlogPost() {
   const htmlHasFaq =
     htmlContent.toLowerCase().includes('<details') || htmlContent.toLowerCase().includes('faq');
   const showExternalFaq = faqItems && faqItems.length > 0 && !htmlHasFaq;
+
+  // ── SEO derived values (real data only) ───────────────────────────────────
+  const metaTitle = outline?.meta_title || article.title;
+  const metaDescription = outline?.meta_description || article.excerpt || '';
+  const immediateAnswer =
+    draftMeta?.quick_answer || outline?.quick_answer || outline?.excerpt || article.excerpt || '';
+  const [contentBefore, contentAfter] = splitAtMiddleHeading(htmlContent);
+
+  // FAQPage only when an FAQ is actually visible on the page
+  const visibleFaq = showExternalFaq
+    ? (faqItems ?? []).map((f) => ({ q: f.q, a: f.a }))
+    : extractVisibleFaq(htmlContent);
+  const faqJsonLd = buildFaqJsonLd(visibleFaq);
+
+  const canonicalUrl = `https://mynutrizen.fr/blog/${article.slug}`;
+  const jsonLd: Record<string, unknown>[] = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: h1 || article.title,
+      description: metaDescription || undefined,
+      image: heroImage ? `https://mynutrizen.fr${heroImage}`.replace(/^(https:\/\/mynutrizen\.fr)(https?:\/\/)/, '$2') : undefined,
+      datePublished: article.published_at || undefined,
+      dateModified: article.updated_at || article.published_at || undefined,
+      author: { '@type': 'Organization', name: article.author || 'NutriZen', url: 'https://mynutrizen.fr' },
+      publisher: {
+        '@type': 'Organization',
+        name: 'NutriZen',
+        logo: { '@type': 'ImageObject', url: 'https://mynutrizen.fr/icons/icon-192.png' },
+      },
+      mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
+      url: canonicalUrl,
+      inLanguage: 'fr-FR',
+    },
+    buildBreadcrumbJsonLd('https://mynutrizen.fr', h1 || article.title, article.slug),
+    ...(faqJsonLd ? [faqJsonLd] : []),
+  ];
 
   return (
     <div className="min-h-screen flex flex-col">
