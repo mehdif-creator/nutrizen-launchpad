@@ -258,6 +258,8 @@ interface HeadOptions {
   image?: string;
   type?: 'website' | 'article';
   publishedTime?: string | null;
+  modifiedTime?: string | null;
+  author?: string;
   jsonLd?: Record<string, unknown>[];
 }
 
@@ -284,6 +286,8 @@ function buildHead(o: HeadOptions): string {
   <meta name="twitter:description" content="${d}" />
   <meta name="twitter:image" content="${img}" />
   ${o.publishedTime ? `<meta property="article:published_time" content="${escapeAttr(o.publishedTime)}" />` : ''}
+  ${o.modifiedTime ? `<meta property="article:modified_time" content="${escapeAttr(o.modifiedTime)}" />` : ''}
+  ${o.author ? `<meta name="author" content="${escapeAttr(o.author)}" />` : ''}
   ${ld}
   <!-- /prerendered meta -->`;
 }
@@ -304,24 +308,61 @@ function writePage(routePath: string, template: string, head: string, body: stri
   writeFileSync(target, html, 'utf-8');
 }
 
+/** Splits long HTML at the <h2> closest to the middle (for one inline CTA). */
+function splitAtMiddleHeading(html: string): [string, string] {
+  if (!html || html.length < 6000) return [html, ''];
+  const positions: number[] = [];
+  const re = /<h2[\s>]/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) positions.push(m.index);
+  if (positions.length < 4) return [html, ''];
+  const mid = html.length / 2;
+  const target = positions
+    .slice(1, -1)
+    .reduce((best, p) => (Math.abs(p - mid) < Math.abs(best - mid) ? p : best), positions[1]);
+  return [html.slice(0, target), html.slice(target)];
+}
+
+function contextualCtaHtml(topic: string): string {
+  const c = resolveContextualCtaCopy(topic);
+  return `<aside class="nz-inline-cta"><p><strong>${escapeAttr(c.headline)}</strong></p><p>${escapeAttr(c.body)}</p><p><a href="${c.to}">${escapeAttr(c.action)}</a></p></aside>`;
+}
+
 function articleBody(a: Article, related: Article[]): string {
   const h1 = escapeAttr(a.h1);
-  const date = formatDateFr(a.publishedTime);
+  const dateLabel = formatDateFr(a.datePublished);
+  const modifiedLabel = formatDateFr(a.dateModified);
+  const [before, after] = splitAtMiddleHeading(a.html);
   const relatedHtml = related.length
-    ? `<section><h2>Articles similaires</h2><ul>${related
+    ? `<section><h2>À lire aussi sur le même sujet</h2><ul>${related
         .map((r) => `<li><a href="/blog/${r.slug}">${escapeAttr(r.title)}</a></li>`)
         .join('')}</ul></section>`
     : '';
+  const quickAnswer =
+    a.quickAnswer && a.quickAnswer.length > 60
+      ? `<aside aria-label="Réponse rapide"><h2>Réponse rapide</h2><p>${escapeAttr(a.quickAnswer)}</p></aside>`
+      : '';
 
   return `<div style="max-width:768px;margin:0 auto;padding:32px 20px;line-height:1.7">
     <nav aria-label="Fil d'Ariane"><a href="/">Accueil</a> › <a href="/blog">Blog</a> › <span>${h1}</span></nav>
-    <h1>${h1}</h1>
-    <p>${date ? `${date} · ` : ''}${readTime(a.html)} min de lecture · ${SITE_NAME}</p>
-    ${a.image !== FALLBACK_IMAGE ? `<img src="${escapeAttr(a.image)}" alt="${h1}" width="1200" height="630" style="width:100%;height:auto" />` : ''}
-    <article>${a.html}</article>
+    <article>
+      <header>
+        <h1>${h1}</h1>
+        <p>
+          ${a.datePublished ? `Publié le <time datetime="${escapeAttr(a.datePublished)}">${dateLabel}</time>` : ''}
+          ${a.dateModified && a.dateModified !== a.datePublished ? ` · Mis à jour le <time datetime="${escapeAttr(a.dateModified)}">${modifiedLabel}</time>` : ''}
+          · ${readTime(a.html)} min de lecture · Par <span>${escapeAttr(a.author)}</span>
+        </p>
+      </header>
+      ${a.image !== FALLBACK_IMAGE ? `<img src="${escapeAttr(a.image)}" alt="${h1}" width="1200" height="630" style="width:100%;height:auto" />` : ''}
+      ${quickAnswer}
+      ${before}
+      ${after ? contextualCtaHtml(a.h1) + after : ''}
+    </article>
     ${relatedHtml}
   </div>`;
 }
+
 
 function hubBody(articles: Article[]): string {
   return `<div style="max-width:768px;margin:0 auto;padding:32px 20px;line-height:1.7">
