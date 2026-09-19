@@ -43,10 +43,12 @@ Deno.serve(async (_req) => {
     const addedSlugs = new Set<string>();
 
     // 1. seo_articles — use the new slug column directly
+    //    Consolidated duplicates (redirect_to_slug) must stay out of the sitemap.
     const { data: seoArticles, error: seoErr } = await admin
       .from('seo_articles')
       .select('slug, updated_at, created_at')
       .eq('status', 'published')
+      .is('redirect_to_slug', null)
       .not('slug', 'is', null);
 
     if (seoErr) console.error('[sitemap] seo_articles error:', seoErr.message);
