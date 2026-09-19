@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, Navigate } from 'react-router-dom';
 import { Header } from '@/components/landing/Header';
 import { Footer } from '@/components/landing/Footer';
 import { AppHeader } from '@/components/app/AppHeader';
@@ -11,11 +11,19 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SocialShareButtons } from '@/components/share/SocialShareButtons';
 import { useBlogArticleBySlug, useBlogArticles } from '@/hooks/useBlogArticles';
-import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
+import { useRef, useState, type SyntheticEvent } from 'react';
 import { getCategoryLabel } from '@/lib/categoryMapping';
 import DOMPurify from 'isomorphic-dompurify';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { AuthorBio } from '@/components/blog/AuthorBio';
+import { ImmediateAnswer } from '@/components/blog/ImmediateAnswer';
+import { ContextualCta } from '@/components/blog/ContextualCta';
+import {
+  buildBreadcrumbJsonLd,
+  buildFaqJsonLd,
+  extractVisibleFaq,
+  splitAtMiddleHeading,
+} from '@/lib/blog/seo';
 
 const BLOG_FALLBACK_IMAGE = '/img/hero-default.jpg';
 
@@ -110,7 +118,10 @@ export default function BlogPost() {
     scrollRef.current?.scrollBy({ left: dir * 300, behavior: 'smooth' });
   };
 
-  useArticleSeoHead(article);
+  // Consolidated duplicate → permanent client-side redirect (mirrors the 301)
+  if (article?.redirect_to_slug) {
+    return <Navigate to={`/blog/${article.redirect_to_slug}`} replace />;
+  }
 
   if (loading) {
     return (
