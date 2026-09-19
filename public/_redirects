@@ -4,6 +4,9 @@
 /fr/blog/*            /blog/:splat       301
 /blog/                /blog              301
 
+# Duplicate article consolidated into its canonical version
+/blog/que-faire-courgettes-recettes-healthy  /blog/que-faire-avec-des-courgettes-12-recettes-fitness  301
+
 # Sitemap proxy (forced so it wins even if a file exists)
 /sitemap.xml  https://pghdaozgxkbtsxwydemd.supabase.co/functions/v1/sitemap  200!
 
