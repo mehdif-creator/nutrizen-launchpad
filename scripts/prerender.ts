@@ -396,7 +396,6 @@ function articleBody(a: Article, related: Article[]): string {
 
 
 function hubBody(articles: Article[]): string {
-  const visibleArticles = articles.slice(0, 12);
   return `<main class="container py-16">
     <div class="max-w-5xl mx-auto">
       <header class="text-center mb-8">
@@ -404,7 +403,7 @@ function hubBody(articles: Article[]): string {
         <p class="text-lg text-muted-foreground">Conseils nutrition, astuces cuisine et guides pratiques</p>
       </header>
       <p class="text-sm text-muted-foreground mb-6">${articles.length} articles</p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">${visibleArticles
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">${articles
       .map(
         (a) => `<a href="/blog/${a.slug}" class="group block">
           <article class="border border-border rounded-2xl overflow-hidden bg-card flex flex-col h-full">
