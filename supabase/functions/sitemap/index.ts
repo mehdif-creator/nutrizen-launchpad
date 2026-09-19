@@ -77,7 +77,7 @@ Deno.serve(async (_req) => {
       for (const p of blogPosts) {
         if (!p.slug || addedSlugs.has(p.slug)) continue;
         addedSlugs.add(p.slug);
-        const date = ((p.published_at || p.created_at || '2025-01-15') as string).substring(0, 10);
+        const date = ((p.updated_at || p.published_at || p.created_at || '2025-01-15') as string).substring(0, 10);
         entries.push(urlEntry(`${SITE}/blog/${p.slug}`, date, 'monthly', '0.6'));
       }
     }
