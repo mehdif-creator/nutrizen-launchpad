@@ -504,21 +504,40 @@ async function main() {
     hubTitle,
   );
 
+  const tokens = (s: string) =>
+    new Set(
+      s
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .split(/[^a-z0-9]+/)
+        .filter((w) => w.length > 3),
+    );
+
   for (const a of articles) {
     const canonical = `${SITE_URL}/blog/${a.slug}`;
+    const own = tokens(a.h1);
     const related = articles
-      .filter((x) => x.slug !== a.slug && (!a.category || x.category === a.category))
-      .slice(0, 3);
+      .filter((x) => x.slug !== a.slug)
+      .map((x) => {
+        const shared = [...tokens(x.h1)].filter((w) => own.has(w)).length;
+        return { x, score: shared * 2 + (a.category && x.category === a.category ? 1 : 0) };
+      })
+      .sort((p, q) => q.score - p.score)
+      .slice(0, 3)
+      .map((r) => r.x);
+
     const jsonLd: Record<string, unknown>[] = [
-      a.schemaJson || {
+      {
         '@context': 'https://schema.org',
-        '@type': 'Article',
+        '@type': 'BlogPosting',
         headline: a.h1,
         description: a.description,
         image: a.image,
         url: canonical,
-        datePublished: a.publishedTime,
-        author: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
+        datePublished: a.datePublished,
+        dateModified: a.dateModified || a.datePublished,
+        author: { '@type': 'Organization', name: a.author || SITE_NAME, url: SITE_URL },
         publisher: {
           '@type': 'Organization',
           name: SITE_NAME,
@@ -526,7 +545,7 @@ async function main() {
           logo: { '@type': 'ImageObject', url: `${SITE_URL}/icons/icon-192.png` },
         },
         mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
-        inLanguage: 'fr',
+        inLanguage: 'fr-FR',
       },
       {
         '@context': 'https://schema.org',
@@ -539,6 +558,19 @@ async function main() {
       },
     ];
 
+    // FAQPage only when the page really shows those questions
+    if (a.faq.length > 0) {
+      jsonLd.push({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: a.faq.map((f) => ({
+          '@type': 'Question',
+          name: f.q,
+          acceptedAnswer: { '@type': 'Answer', text: f.a },
+        })),
+      });
+    }
+
     writePage(
       `/blog/${a.slug}`,
       template,
@@ -548,13 +580,16 @@ async function main() {
         canonical,
         image: a.image,
         type: 'article',
-        publishedTime: a.publishedTime,
+        publishedTime: a.datePublished,
+        modifiedTime: a.dateModified,
+        author: a.author,
         jsonLd,
       }),
       articleBody(a, related),
       `${a.title} — ${SITE_NAME}`,
     );
   }
+
 
   console.log(
     `[prerender] ${1 + STATIC_ROUTES.length + 1 + articles.length} pages written (${articles.length} articles)`,
