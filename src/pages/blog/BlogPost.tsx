@@ -363,21 +363,13 @@ export default function BlogPost() {
           {/* Immediate answer (query answered before the long-form content) */}
           <ImmediateAnswer answer={immediateAnswer} />
 
-          {/* Article Content */}
-          <article
-            className="article-content prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-a:text-primary"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(contentBefore) }}
-          />
+          {/* Article Content (interactive widgets injected at their placeholder) */}
+          <ArticleHtml html={contentBefore} />
 
           {/* One contextual CTA inside long articles */}
           {contentAfter && <ContextualCta topic={h1 || article.title} />}
 
-          {contentAfter && (
-            <article
-              className="article-content prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-a:text-primary"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(contentAfter) }}
-            />
-          )}
+          {contentAfter && <ArticleHtml html={contentAfter} />}
 
 
           {/* FAQ from draft_meta if not in HTML */}
