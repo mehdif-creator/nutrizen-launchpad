@@ -103,14 +103,22 @@ function cleanArticleHtml(html: string): string {
     .replace(/<\/h1>/gi, '</h2>');
 }
 
-function resolveImagePlaceholders(html: string, images: unknown[]): string {
+function resolveImagePlaceholders(html: string, images: unknown[], title = ''): string {
   let out = html;
   images.forEach((img, i) => {
     const n = i + 1;
-    const url = typeof img === 'string' ? img : ((img as { url?: string })?.url ?? '');
-    const alt = typeof img === 'string' ? '' : ((img as { alt?: string })?.alt ?? '');
-    if (url?.trim()) out = out.split(`{{IMAGE_${n}_URL}}`).join(url.trim());
-    if (alt) out = out.split(`{{IMAGE_${n}_ALT}}`).join(alt);
+    const url = (typeof img === 'string' ? img : ((img as { url?: string })?.url ?? '')).trim();
+    const alt =
+      (typeof img === 'string' ? '' : ((img as { alt?: string })?.alt ?? '')) || title;
+    if (url) {
+      // Same output as BlogPost.tsx: attribute placeholders get the URL, standalone
+      // placeholders become a real <figure><img>, never a bare URL in the body text.
+      out = out.split(`src="{{IMAGE_${n}_URL}}"`).join(`src="${url}"`);
+      out = out.split(`src='{{IMAGE_${n}_URL}}'`).join(`src="${url}"`);
+      const inlineImage = `<figure class="my-6"><img src="${url}" alt="${escapeHtml(alt)}" loading="lazy" class="w-full rounded-xl object-cover" /></figure>`;
+      out = out.split(`{{IMAGE_${n}_URL}}`).join(inlineImage);
+    }
+    if (alt) out = out.split(`{{IMAGE_${n}_ALT}}`).join(escapeHtml(alt));
   });
   return out;
 }
