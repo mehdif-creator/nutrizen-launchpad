@@ -220,6 +220,9 @@ export default function BlogPost() {
   rawHtml = rawHtml.replace(/\{\{IMAGE_\d+_URL\}\}/g, '');
   rawHtml = rawHtml.replace(/\{\{IMAGE_\d+_ALT\}\}/g, '');
 
+  // One H1 per page: the page header owns it, body headings start at H2
+  rawHtml = rawHtml.replace(/<h1(\s[^>]*)?>/gi, '<h2$1>').replace(/<\/h1>/gi, '</h2>');
+
   // 2. Replace ALL CTA URLs with the real pricing page
   rawHtml = rawHtml.split('{{NUTRIZEN_CTA_URL}}').join(pricingUrl);
   rawHtml = rawHtml.split('https://mynutrizen.fr/auth/signup').join(pricingUrl);
