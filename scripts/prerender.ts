@@ -88,6 +88,8 @@ const toAbsolute = (url: string): string => {
 
 function cleanArticleHtml(html: string): string {
   return html
+    // interactive widgets are React-only; the static reference tables stay
+    .replace(/\{\{PASTA_CALCULATOR\}\}/g, '')
     .replace(/\{\{IMAGE_\d+_URL\}\}/g, '')
     .replace(/\{\{IMAGE_\d+_ALT\}\}/g, '')
     .replace(/\{\{NUTRIZEN_CTA_URL\}\}/g, `${SITE_URL}/`)
