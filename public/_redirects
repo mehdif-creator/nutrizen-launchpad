@@ -4,8 +4,9 @@
 /fr/blog/*            /blog/:splat       301
 /blog/                /blog              301
 
-# Duplicate article consolidated into its canonical version
+# Duplicate articles consolidated into their canonical version
 /blog/que-faire-avec-des-courgettes-12-recettes-fitness  /blog/que-faire-courgettes-recettes-healthy  301
+/blog/combien-de-pates-par-personne  /blog/combien-pates-par-personne  301
 
 # Sitemap proxy (forced so it wins even if a file exists)
 /sitemap.xml  https://pghdaozgxkbtsxwydemd.supabase.co/functions/v1/sitemap  200!
