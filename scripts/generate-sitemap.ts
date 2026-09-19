@@ -70,7 +70,7 @@ async function main() {
   const blogEntries: string[] = [];
 
   const seoArticles = await sb<Record<string, any>>(
-    'seo_articles?status=eq.published&slug=not.is.null&select=slug,updated_at,created_at&order=updated_at.desc',
+    'seo_articles?status=eq.published&slug=not.is.null&redirect_to_slug=is.null&select=slug,updated_at,created_at&order=updated_at.desc',
   );
   for (const a of seoArticles) {
     const slug = String(a.slug || '');
