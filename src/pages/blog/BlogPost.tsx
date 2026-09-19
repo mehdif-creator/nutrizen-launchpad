@@ -11,13 +11,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SocialShareButtons } from '@/components/share/SocialShareButtons';
 import { useBlogArticleBySlug, useBlogArticles } from '@/hooks/useBlogArticles';
-import { useRef, useState, type SyntheticEvent } from 'react';
+import { Fragment, useRef, useState, type SyntheticEvent } from 'react';
 import { getCategoryLabel } from '@/lib/categoryMapping';
 import DOMPurify from 'isomorphic-dompurify';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { AuthorBio } from '@/components/blog/AuthorBio';
 import { ImmediateAnswer } from '@/components/blog/ImmediateAnswer';
 import { ContextualCta } from '@/components/blog/ContextualCta';
+import { PastaCalculator } from '@/components/blog/PastaCalculator';
 import {
   buildBreadcrumbJsonLd,
   buildFaqJsonLd,
@@ -94,6 +95,38 @@ function injectInternalLinks(
     return html.slice(0, lastH2) + linksHtml + html.slice(lastH2);
   }
   return html + linksHtml;
+}
+
+/** Interactive widgets that articles can embed through a placeholder token. */
+const ARTICLE_WIDGETS: Record<string, () => JSX.Element> = {
+  '{{PASTA_CALCULATOR}}': () => <PastaCalculator />,
+};
+const WIDGET_SPLIT_RE = /(\{\{PASTA_CALCULATOR\}\})/;
+
+/**
+ * Renders sanitized article HTML and replaces widget placeholders by their
+ * React component. The static reference tables stay in the HTML, so the page
+ * remains useful even if a widget never renders.
+ */
+function ArticleHtml({ html }: { html: string }) {
+  if (!html) return null;
+  const parts = html.split(WIDGET_SPLIT_RE).filter((p) => p !== '');
+
+  return (
+    <>
+      {parts.map((part, i) => {
+        const widget = ARTICLE_WIDGETS[part.trim()];
+        if (widget) return <Fragment key={i}>{widget()}</Fragment>;
+        return (
+          <article
+            key={i}
+            className="article-content prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-a:text-primary"
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(part) }}
+          />
+        );
+      })}
+    </>
+  );
 }
 
 export default function BlogPost() {
@@ -363,21 +396,13 @@ export default function BlogPost() {
           {/* Immediate answer (query answered before the long-form content) */}
           <ImmediateAnswer answer={immediateAnswer} />
 
-          {/* Article Content */}
-          <article
-            className="article-content prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-a:text-primary"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(contentBefore) }}
-          />
+          {/* Article Content (interactive widgets injected at their placeholder) */}
+          <ArticleHtml html={contentBefore} />
 
           {/* One contextual CTA inside long articles */}
           {contentAfter && <ContextualCta topic={h1 || article.title} />}
 
-          {contentAfter && (
-            <article
-              className="article-content prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-a:text-primary"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(contentAfter) }}
-            />
-          )}
+          {contentAfter && <ArticleHtml html={contentAfter} />}
 
 
           {/* FAQ from draft_meta if not in HTML */}

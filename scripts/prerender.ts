@@ -88,6 +88,8 @@ const toAbsolute = (url: string): string => {
 
 function cleanArticleHtml(html: string): string {
   return html
+    // interactive widgets are React-only; the static reference tables stay
+    .replace(/\{\{PASTA_CALCULATOR\}\}/g, '')
     .replace(/\{\{IMAGE_\d+_URL\}\}/g, '')
     .replace(/\{\{IMAGE_\d+_ALT\}\}/g, '')
     .replace(/\{\{NUTRIZEN_CTA_URL\}\}/g, `${SITE_URL}/`)
@@ -172,9 +174,13 @@ async function fetchArticles(): Promise<Article[]> {
   const out: Article[] = [];
   const seen = new Set<string>();
 
-  const seoRows = await sb<Record<string, any>>(
-    'seo_articles?status=eq.published&slug=not.is.null&redirect_to_slug=is.null&select=slug,keyword,outline,draft_meta,image_urls,draft_html,cluster_context,updated_at,created_at&order=updated_at.desc',
-  );
+  // No server-side `order` here: sorting these wide rows in Postgres hits the
+  // PostgREST statement timeout. We fetch then sort locally (same result).
+  const seoRows = (
+    await sb<Record<string, any>>(
+      'seo_articles?status=eq.published&slug=not.is.null&redirect_to_slug=is.null&select=slug,keyword,outline,draft_meta,image_urls,draft_html,cluster_context,updated_at,created_at',
+    )
+  ).sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || '')));
   for (const a of seoRows) {
     const slug = String(a.slug || '');
     if (!slug || seen.has(slug)) continue;
