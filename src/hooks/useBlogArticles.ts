@@ -98,10 +98,13 @@ export function useBlogArticles() {
 
         const manual = (manualRes.data || []).map(mapBlogPost);
         const seo = (seoRes.data || []).map(mapSeoArticle);
-        const all = [...manual, ...seo].sort(
-          (a, b) =>
-            new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime()
-        );
+        const all = [...manual, ...seo]
+          // consolidated duplicates must not be listed anymore
+          .filter((a) => !a.redirect_to_slug)
+          .sort(
+            (a, b) =>
+              new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime()
+          );
 
         setArticles(all);
       } catch (error) {
