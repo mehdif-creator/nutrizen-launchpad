@@ -531,9 +531,13 @@ async function main() {
   const articles = allArticles.slice(0, MAX_PRERENDERED_ARTICLES);
 
   const hubTitle = 'Blog NutriZen — Conseils nutrition & recettes healthy';
+  const hubTemplate = template.replace(
+    /\s*<noscript>\s*<div style="padding:2rem;text-align:center;font-family:sans-serif;">\s*<p><strong>JavaScript requis<\/strong><\/p>\s*<p>NutriZen nécessite JavaScript pour fonctionner\. Merci de l'activer dans les paramètres de votre navigateur\.<\/p>\s*<\/div>\s*<\/noscript>/,
+    '',
+  );
   writePage(
     '/blog',
-    template,
+    hubTemplate,
     buildHead({
       title: hubTitle,
       description: `Découvrez nos ${articles.length} articles nutrition, astuces cuisine et guides pratiques pour manger sainement au quotidien.`,
