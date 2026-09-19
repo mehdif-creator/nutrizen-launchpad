@@ -359,47 +359,35 @@ export default function BlogPost() {
             </figure>
           )}
 
-          {/* Per-route SEO + BlogPosting JSON-LD (E-E-A-T / GEO) */}
+          {/* Per-route SEO + BlogPosting / FAQPage / Breadcrumb JSON-LD */}
           <SeoHead
-            title={(article.outline as any)?.meta_title || article.title}
-            description={(article.outline as any)?.meta_description || article.excerpt || ''}
+            title={metaTitle}
+            description={metaDescription}
             canonicalPath={`/blog/${article.slug}`}
             ogType="article"
             ogImage={heroImage || undefined}
-            jsonLd={{
-              '@context': 'https://schema.org',
-              '@type': 'BlogPosting',
-              headline: h1 || article.title,
-              description:
-                (article.outline as any)?.meta_description || article.excerpt || undefined,
-              image: heroImage || undefined,
-              datePublished: article.published_at || undefined,
-              dateModified: article.published_at || undefined,
-              author: {
-                '@type': 'Person',
-                name: article.author || 'Équipe NutriZen',
-              },
-              publisher: {
-                '@type': 'Organization',
-                name: 'NutriZen',
-                logo: {
-                  '@type': 'ImageObject',
-                  url: 'https://mynutrizen.fr/icons/icon-192.png',
-                },
-              },
-              mainEntityOfPage: {
-                '@type': 'WebPage',
-                '@id': `https://mynutrizen.fr/blog/${article.slug}`,
-              },
-              inLanguage: 'fr-FR',
-            }}
+            jsonLd={jsonLd}
           />
+
+          {/* Immediate answer (query answered before the long-form content) */}
+          <ImmediateAnswer answer={immediateAnswer} />
 
           {/* Article Content */}
           <article
             className="article-content prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-a:text-primary"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(htmlContent) }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(contentBefore) }}
           />
+
+          {/* One contextual CTA inside long articles */}
+          {contentAfter && <ContextualCta topic={h1 || article.title} />}
+
+          {contentAfter && (
+            <article
+              className="article-content prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-a:text-primary"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(contentAfter) }}
+            />
+          )}
+
 
           {/* FAQ from draft_meta if not in HTML */}
           {showExternalFaq && (
