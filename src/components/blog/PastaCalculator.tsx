@@ -38,8 +38,10 @@ export function PastaCalculator() {
   const result = useMemo(() => {
     const ref = DRY_REFERENCE[role];
     const factor = kind === 'fraiches' ? FRESH_FACTOR : 1;
-    const low = Math.round((adults * ref.adult[0] + children * ref.child[0]) * factor);
-    const high = Math.round((adults * ref.adult[1] + children * ref.child[1]) * factor);
+    // Repères culinaires : on arrondit à 5 g près pour éviter une fausse précision.
+    const round5 = (n: number) => Math.round(n / 5) * 5;
+    const low = round5((adults * ref.adult[0] + children * ref.child[0]) * factor);
+    const high = round5((adults * ref.adult[1] + children * ref.child[1]) * factor);
     // Rendement approximatif à la cuisson pour les pâtes sèches (x2 à x2,5).
     const cookedLow = kind === 'seches' ? Math.round(low * 2) : null;
     const cookedHigh = kind === 'seches' ? Math.round(high * 2.5) : null;
