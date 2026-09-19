@@ -81,7 +81,7 @@ async function main() {
   }
 
   const blogPosts = await sb<Record<string, any>>(
-    'blog_posts?published_at=not.is.null&slug=not.is.null&select=slug,published_at,created_at&order=published_at.desc',
+    'blog_posts?published_at=not.is.null&slug=not.is.null&redirect_to_slug=is.null&select=slug,published_at,updated_at,created_at&order=published_at.desc',
   );
   for (const p of blogPosts) {
     const slug = String(p.slug || '');
