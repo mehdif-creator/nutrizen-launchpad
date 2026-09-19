@@ -11,13 +11,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SocialShareButtons } from '@/components/share/SocialShareButtons';
 import { useBlogArticleBySlug, useBlogArticles } from '@/hooks/useBlogArticles';
-import { useRef, useState, type SyntheticEvent } from 'react';
+import { Fragment, useRef, useState, type SyntheticEvent } from 'react';
 import { getCategoryLabel } from '@/lib/categoryMapping';
 import DOMPurify from 'isomorphic-dompurify';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { AuthorBio } from '@/components/blog/AuthorBio';
 import { ImmediateAnswer } from '@/components/blog/ImmediateAnswer';
 import { ContextualCta } from '@/components/blog/ContextualCta';
+import { PastaCalculator } from '@/components/blog/PastaCalculator';
 import {
   buildBreadcrumbJsonLd,
   buildFaqJsonLd,
