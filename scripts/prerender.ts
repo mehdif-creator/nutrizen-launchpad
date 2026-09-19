@@ -115,10 +115,10 @@ function resolveImagePlaceholders(html: string, images: unknown[], title = ''): 
       // placeholders become a real <figure><img>, never a bare URL in the body text.
       out = out.split(`src="{{IMAGE_${n}_URL}}"`).join(`src="${url}"`);
       out = out.split(`src='{{IMAGE_${n}_URL}}'`).join(`src="${url}"`);
-      const inlineImage = `<figure class="my-6"><img src="${url}" alt="${escapeHtml(alt)}" loading="lazy" class="w-full rounded-xl object-cover" /></figure>`;
+      const inlineImage = `<figure class="my-6"><img src="${url}" alt="${escapeAttr(alt)}" loading="lazy" class="w-full rounded-xl object-cover" /></figure>`;
       out = out.split(`{{IMAGE_${n}_URL}}`).join(inlineImage);
     }
-    if (alt) out = out.split(`{{IMAGE_${n}_ALT}}`).join(escapeHtml(alt));
+    if (alt) out = out.split(`{{IMAGE_${n}_ALT}}`).join(escapeAttr(alt));
   });
   return out;
 }
@@ -197,7 +197,8 @@ async function fetchArticles(): Promise<Article[]> {
     const meta = a.draft_meta || {};
     const images: unknown[] = Array.isArray(a.image_urls) ? a.image_urls : [];
     let html = String(a.draft_html || '');
-    html = cleanArticleHtml(resolveImagePlaceholders(html, images));
+    const articleTitleForAlt = String((a.outline || {}).h1 || (a.outline || {}).title || a.keyword || slug);
+    html = cleanArticleHtml(resolveImagePlaceholders(html, images, articleTitleForAlt));
     const first = images[0];
     const image = (typeof first === 'string' ? first : (first as { url?: string })?.url) || '';
     const visibleFaq = extractVisibleFaq(html);
