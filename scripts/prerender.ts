@@ -95,7 +95,10 @@ function cleanArticleHtml(html: string): string {
       /<figure[^>]*>\s*<img[^>]*src=""[^>]*\/?>\s*(?:<figcaption[^>]*>.*?<\/figcaption>\s*)?<\/figure>/gi,
       '',
     )
-    .replace(/<img[^>]*src=""[^>]*\/?>/gi, '');
+    .replace(/<img[^>]*src=""[^>]*\/?>/gi, '')
+    // one H1 per page: the page title owns it, body headings start at H2
+    .replace(/<h1(\s[^>]*)?>/gi, '<h2$1>')
+    .replace(/<\/h1>/gi, '</h2>');
 }
 
 function resolveImagePlaceholders(html: string, images: unknown[]): string {
