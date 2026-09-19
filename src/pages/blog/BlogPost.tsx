@@ -96,6 +96,38 @@ function injectInternalLinks(
   return html + linksHtml;
 }
 
+/** Interactive widgets that articles can embed through a placeholder token. */
+const ARTICLE_WIDGETS: Record<string, () => JSX.Element> = {
+  '{{PASTA_CALCULATOR}}': () => <PastaCalculator />,
+};
+const WIDGET_SPLIT_RE = /(\{\{PASTA_CALCULATOR\}\})/;
+
+/**
+ * Renders sanitized article HTML and replaces widget placeholders by their
+ * React component. The static reference tables stay in the HTML, so the page
+ * remains useful even if a widget never renders.
+ */
+function ArticleHtml({ html }: { html: string }) {
+  if (!html) return null;
+  const parts = html.split(WIDGET_SPLIT_RE).filter((p) => p !== '');
+
+  return (
+    <>
+      {parts.map((part, i) => {
+        const widget = ARTICLE_WIDGETS[part.trim()];
+        if (widget) return <Fragment key={i}>{widget()}</Fragment>;
+        return (
+          <article
+            key={i}
+            className="article-content prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-a:text-primary"
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(part) }}
+          />
+        );
+      })}
+    </>
+  );
+}
+
 export default function BlogPost() {
   const { slug } = useParams();
   const { user } = useAuth();
