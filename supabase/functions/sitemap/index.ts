@@ -66,7 +66,8 @@ Deno.serve(async (_req) => {
     // 2. blog_posts
     const { data: blogPosts, error: blogErr } = await admin
       .from('blog_posts')
-      .select('slug, published_at, created_at')
+      .select('slug, published_at, updated_at, created_at')
+      .is('redirect_to_slug', null)
       .not('published_at', 'is', null)
       .not('slug', 'is', null);
 
