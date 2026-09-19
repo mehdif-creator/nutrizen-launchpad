@@ -139,11 +139,29 @@ interface Article {
   title: string;
   h1: string;
   description: string;
+  /** 2–4 sentence answer shown before the long-form content. */
+  quickAnswer: string;
   image: string;
   html: string;
-  publishedTime: string | null;
+  datePublished: string | null;
+  dateModified: string | null;
+  author: string;
   category: string;
-  schemaJson: Record<string, unknown> | null;
+  faq: { q: string; a: string }[];
+}
+
+/** FAQ actually visible in the article HTML (<details><summary>…). */
+function extractVisibleFaq(html: string): { q: string; a: string }[] {
+  const out: { q: string; a: string }[] = [];
+  const blocks = html.match(/<details[\s\S]*?<\/details>/gi) || [];
+  for (const block of blocks) {
+    const sum = block.match(/<summary[^>]*>([\s\S]*?)<\/summary>/i);
+    if (!sum) continue;
+    const q = stripHtml(sum[1]);
+    const a = stripHtml(block.replace(/<summary[^>]*>[\s\S]*?<\/summary>/i, ''));
+    if (q.length > 5 && a.length > 15) out.push({ q, a });
+  }
+  return out;
 }
 
 async function fetchArticles(): Promise<Article[]> {
@@ -151,33 +169,39 @@ async function fetchArticles(): Promise<Article[]> {
   const seen = new Set<string>();
 
   const seoRows = await sb<Record<string, any>>(
-    'seo_articles?status=eq.published&slug=not.is.null&select=slug,keyword,outline,image_urls,draft_html,schema_json,cluster_context,updated_at,created_at&order=updated_at.desc',
+    'seo_articles?status=eq.published&slug=not.is.null&redirect_to_slug=is.null&select=slug,keyword,outline,draft_meta,image_urls,draft_html,cluster_context,updated_at,created_at&order=updated_at.desc',
   );
   for (const a of seoRows) {
     const slug = String(a.slug || '');
     if (!slug || seen.has(slug)) continue;
     seen.add(slug);
     const o = a.outline || {};
+    const meta = a.draft_meta || {};
     const images: unknown[] = Array.isArray(a.image_urls) ? a.image_urls : [];
     let html = String(a.draft_html || '');
     html = cleanArticleHtml(resolveImagePlaceholders(html, images));
     const first = images[0];
     const image = (typeof first === 'string' ? first : (first as { url?: string })?.url) || '';
+    const visibleFaq = extractVisibleFaq(html);
+    const metaFaq: { q: string; a: string }[] = Array.isArray(meta.faq) ? meta.faq : [];
     out.push({
       slug,
       title: o.meta_title || o.title || o.h1 || a.keyword || slug,
       h1: o.h1 || o.title || a.keyword || slug,
       description: resolveDescription(o.meta_description, o.excerpt, firstParagraph(html)),
+      quickAnswer: stripHtml(String(meta.quick_answer || o.quick_answer || o.excerpt || '')),
       image: toAbsolute(image),
       html,
-      publishedTime: a.updated_at || a.created_at || null,
+      datePublished: a.created_at || a.updated_at || null,
+      dateModified: a.updated_at || a.created_at || null,
+      author: 'NutriZen',
       category: a.cluster_context || '',
-      schemaJson: a.schema_json || null,
+      faq: visibleFaq.length ? visibleFaq : metaFaq,
     });
   }
 
   const blogRows = await sb<Record<string, any>>(
-    'blog_posts?published_at=not.is.null&slug=not.is.null&select=slug,title,excerpt,content,cover_url,published_at,tags&order=published_at.desc',
+    'blog_posts?published_at=not.is.null&slug=not.is.null&select=slug,title,excerpt,content,cover_url,published_at,created_at,author,tags&order=published_at.desc',
   );
   for (const p of blogRows) {
     const slug = String(p.slug || '');
@@ -189,16 +213,20 @@ async function fetchArticles(): Promise<Article[]> {
       title: p.title || slug,
       h1: p.title || slug,
       description: resolveDescription(p.excerpt, firstParagraph(html)),
+      quickAnswer: stripHtml(String(p.excerpt || '')),
       image: toAbsolute(p.cover_url || ''),
       html,
-      publishedTime: p.published_at || null,
+      datePublished: p.published_at || p.created_at || null,
+      dateModified: p.published_at || null,
+      author: p.author || 'NutriZen',
       category: Array.isArray(p.tags) ? p.tags[0] || '' : '',
-      schemaJson: null,
+      faq: extractVisibleFaq(html),
     });
   }
 
   return out;
 }
+
 
 // ── HTML building ────────────────────────────────────────────────────────────
 
