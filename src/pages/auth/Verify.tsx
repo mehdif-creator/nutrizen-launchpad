@@ -1,11 +1,19 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { emitWebhookEvent } from '@/lib/webhooks';
+import RecoveryPassword from './RecoveryPassword';
 
 export default function Verify() {
+  const location = useLocation();
+  return new URLSearchParams(location.search).get('recovery') === '1'
+    ? <RecoveryPassword />
+    : <VerifyAccount />;
+}
+
+function VerifyAccount() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 

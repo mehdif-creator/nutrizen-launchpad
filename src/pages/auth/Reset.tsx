@@ -20,7 +20,7 @@ export default function Reset() {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${getWebOrigin()}/auth/verify`,
+        redirectTo: `${getWebOrigin()}/auth/verify?recovery=1`,
       });
 
       if (error) throw error;
