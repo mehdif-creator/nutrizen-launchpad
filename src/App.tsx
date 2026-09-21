@@ -84,6 +84,7 @@ const BlogPost = lazy(() => import('./pages/blog/BlogPost'));
 const MentionsLegales = lazy(() => import('./pages/legal/MentionsLegales'));
 const CGV = lazy(() => import('./pages/legal/CGV'));
 const Confidentialite = lazy(() => import('./pages/legal/Confidentialite'));
+const SuppressionCompte = lazy(() => import('./pages/legal/SuppressionCompte'));
 const Resiliation = lazy(() => import('./pages/legal/Resiliation'));
 
 // Other
@@ -533,6 +534,7 @@ const App = () => {
         <Route path="/legal/mentions" element={<MentionsLegales />} />
         <Route path="/legal/cgv" element={<CGV />} />
         <Route path="/legal/confidentialite" element={<Confidentialite />} />
+        <Route path="/legal/suppression-compte" element={<SuppressionCompte />} />
         <Route path="/legal/resiliation" element={<Resiliation />} />
 
         {/* Share (public, no auth wall) */}

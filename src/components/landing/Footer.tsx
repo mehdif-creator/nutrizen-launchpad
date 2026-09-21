@@ -19,6 +19,7 @@ export const Footer = () => {
       links: [
         { label: t('footer.cgv'), href: '/legal/cgv' },
         { label: t('footer.privacy'), href: '/legal/confidentialite' },
+        { label: 'Supprimer mon compte', href: '/legal/suppression-compte' },
         { label: t('footer.mentions'), href: '/legal/mentions' },
       ],
     },
