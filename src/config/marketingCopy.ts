@@ -65,7 +65,7 @@ export const mainCopy: PageMarketingCopy = {
   seo: {
     title: 'NutriZen — Arrêtez de vous demander quoi manger ce soir',
     description:
-      'NutriZen génère vos menus de la semaine en 2 minutes — adaptés à vos goûts, contraintes et budget. Liste de courses incluse. Sans engagement.',
+      'NutriZen crée vos menus personnalisés, vos recettes et votre liste de courses en quelques minutes. Moins de charge mentale, moins d’improvisation.',
   },
   hero: {
     badge: 'Planification repas · Sans régime · Sans prise de tête',

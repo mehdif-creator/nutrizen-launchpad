@@ -264,17 +264,22 @@ const REMOVAL_SCRIPT = `<script>
 
 function stripExistingMeta(html: string): string {
   return html
-    .replace(/<meta\s+name="description"[^>]*>/g, '')
-    .replace(/<link\s+rel="canonical"[^>]*>/g, '')
-    .replace(/<meta\s+property="og:(title|description|url|type)"[^>]*>/g, '')
-    .replace(/<meta\s+name="twitter:(title|description)"[^>]*>/g, '');
+    .replace(/<meta\b(?=[^>]*\bname="description")[^>]*>/g, '')
+    .replace(/<link\b(?=[^>]*\brel="canonical")[^>]*>/g, '')
+    .replace(/<meta\b(?=[^>]*\bproperty="og:(title|description|url|type|site_name|image(?::(?:width|height|type|alt))?)")[^>]*>/g, '')
+    .replace(/<meta\b(?=[^>]*\bname="twitter:(card|site|title|description|image)")[^>]*>/g, '');
 }
 
 interface HeadOptions {
   title: string;
   description: string;
+  ogTitle?: string;
   canonical: string;
   image?: string;
+  imageAlt?: string;
+  imageType?: string;
+  imageWidth?: number;
+  imageHeight?: number;
   type?: 'website' | 'article';
   publishedTime?: string | null;
   modifiedTime?: string | null;
@@ -284,26 +289,34 @@ interface HeadOptions {
 
 function buildHead(o: HeadOptions): string {
   const t = escapeAttr(o.title);
+  const socialTitle = escapeAttr(o.ogTitle || o.title);
   const d = escapeAttr(o.description);
   const url = escapeAttr(o.canonical);
   const img = escapeAttr(o.image || FALLBACK_IMAGE);
+  const imageAlt = o.imageAlt ? escapeAttr(o.imageAlt) : null;
   const ld = (o.jsonLd || [])
     .map((x) => `<script type="application/ld+json">${JSON.stringify(x)}</script>`)
     .join('\n  ');
 
   return `
   <!-- prerendered meta -->
-  <meta name="description" content="${d}" />
+  <meta data-rh="true" name="description" content="${d}" />
   <meta name="robots" content="index, follow" />
-  <link rel="canonical" href="${url}" />
-  <meta property="og:type" content="${o.type || 'website'}" />
-  <meta property="og:url" content="${url}" />
-  <meta property="og:title" content="${t}" />
-  <meta property="og:description" content="${d}" />
-  <meta property="og:image" content="${img}" />
-  <meta name="twitter:title" content="${t}" />
-  <meta name="twitter:description" content="${d}" />
-  <meta name="twitter:image" content="${img}" />
+  <link data-rh="true" rel="canonical" href="${url}" />
+  <meta data-rh="true" property="og:type" content="${o.type || 'website'}" />
+  <meta data-rh="true" property="og:url" content="${url}" />
+  <meta data-rh="true" property="og:title" content="${socialTitle}" />
+  <meta data-rh="true" property="og:description" content="${d}" />
+  <meta data-rh="true" property="og:image" content="${img}" />
+  ${o.imageWidth ? `<meta data-rh="true" property="og:image:width" content="${o.imageWidth}" />` : ''}
+  ${o.imageHeight ? `<meta data-rh="true" property="og:image:height" content="${o.imageHeight}" />` : ''}
+  ${o.imageType ? `<meta data-rh="true" property="og:image:type" content="${escapeAttr(o.imageType)}" />` : ''}
+  ${imageAlt ? `<meta data-rh="true" property="og:image:alt" content="${imageAlt}" />` : ''}
+  <meta data-rh="true" property="og:site_name" content="${SITE_NAME}" />
+  <meta data-rh="true" name="twitter:card" content="summary_large_image" />
+  <meta data-rh="true" name="twitter:title" content="${socialTitle}" />
+  <meta data-rh="true" name="twitter:description" content="${d}" />
+  <meta data-rh="true" name="twitter:image" content="${img}" />
   ${o.publishedTime ? `<meta property="article:published_time" content="${escapeAttr(o.publishedTime)}" />` : ''}
   ${o.modifiedTime ? `<meta property="article:modified_time" content="${escapeAttr(o.modifiedTime)}" />` : ''}
   ${o.author ? `<meta name="author" content="${escapeAttr(o.author)}" />` : ''}
@@ -486,7 +499,7 @@ async function main() {
 
   const homeTitle = 'NutriZen — Menus nutritionnels personnalisés sur-mesure';
   const homeDesc =
-    'Menus nutritionnels personnalisés selon vos objectifs. Plan sur-mesure en 30s + liste de courses automatique.';
+    'NutriZen crée vos menus personnalisés, vos recettes et votre liste de courses en quelques minutes. Moins de charge mentale, moins d’improvisation.';
 
   writePage(
     '/',
@@ -494,7 +507,13 @@ async function main() {
     buildHead({
       title: homeTitle,
       description: homeDesc,
+      ogTitle: 'Vos menus de la semaine en 2 minutes | NutriZen',
       canonical: `${SITE_URL}/`,
+      image: `${SITE_URL}/og/nutrizen-og-v2.jpg`,
+      imageAlt: 'NutriZen organise vos menus, recettes et liste de courses de la semaine',
+      imageType: 'image/jpeg',
+      imageWidth: 1200,
+      imageHeight: 630,
       jsonLd: [
         {
           '@context': 'https://schema.org',

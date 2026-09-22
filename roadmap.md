@@ -6,6 +6,12 @@
 - Validation : 8 tests ciblés réussis ; copie réelle du code, lien vers les tarifs et affichage vérifiés sur les trois pages à 1280 px et 390 px, sans erreur navigateur en français.
 - Expiration de l’affichage au 1er octobre 2026 à minuit, heure de Paris ; configuration et éligibilité Stripe inchangées.
 
+# Aperçu social de l’accueil
+
+- [x] Créer une image Open Graph 1200 × 630 avec la vraie interface hebdomadaire NutriZen.
+- [x] Remplacer uniquement les métadonnées sociales et la description de l’accueil, dans le HTML initial et après chargement.
+- [x] Vérifier le pré-rendu, l’unicité des balises, l’accès public à l’image et le typage ; validation automatique du projet passée.
+
 # Correction des outils sur l’application native
 
 ## Ajustement demandé du scanner (API 3.1.2)
