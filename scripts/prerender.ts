@@ -300,23 +300,23 @@ function buildHead(o: HeadOptions): string {
 
   return `
   <!-- prerendered meta -->
-  <meta name="description" content="${d}" />
+  <meta data-rh="true" name="description" content="${d}" />
   <meta name="robots" content="index, follow" />
-  <link rel="canonical" href="${url}" />
-  <meta property="og:type" content="${o.type || 'website'}" />
-  <meta property="og:url" content="${url}" />
-  <meta property="og:title" content="${socialTitle}" />
-  <meta property="og:description" content="${d}" />
-  <meta property="og:image" content="${img}" />
-  ${o.imageWidth ? `<meta property="og:image:width" content="${o.imageWidth}" />` : ''}
-  ${o.imageHeight ? `<meta property="og:image:height" content="${o.imageHeight}" />` : ''}
-  ${o.imageType ? `<meta property="og:image:type" content="${escapeAttr(o.imageType)}" />` : ''}
-  ${imageAlt ? `<meta property="og:image:alt" content="${imageAlt}" />` : ''}
-  <meta property="og:site_name" content="${SITE_NAME}" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="${socialTitle}" />
-  <meta name="twitter:description" content="${d}" />
-  <meta name="twitter:image" content="${img}" />
+  <link data-rh="true" rel="canonical" href="${url}" />
+  <meta data-rh="true" property="og:type" content="${o.type || 'website'}" />
+  <meta data-rh="true" property="og:url" content="${url}" />
+  <meta data-rh="true" property="og:title" content="${socialTitle}" />
+  <meta data-rh="true" property="og:description" content="${d}" />
+  <meta data-rh="true" property="og:image" content="${img}" />
+  ${o.imageWidth ? `<meta data-rh="true" property="og:image:width" content="${o.imageWidth}" />` : ''}
+  ${o.imageHeight ? `<meta data-rh="true" property="og:image:height" content="${o.imageHeight}" />` : ''}
+  ${o.imageType ? `<meta data-rh="true" property="og:image:type" content="${escapeAttr(o.imageType)}" />` : ''}
+  ${imageAlt ? `<meta data-rh="true" property="og:image:alt" content="${imageAlt}" />` : ''}
+  <meta data-rh="true" property="og:site_name" content="${SITE_NAME}" />
+  <meta data-rh="true" name="twitter:card" content="summary_large_image" />
+  <meta data-rh="true" name="twitter:title" content="${socialTitle}" />
+  <meta data-rh="true" name="twitter:description" content="${d}" />
+  <meta data-rh="true" name="twitter:image" content="${img}" />
   ${o.publishedTime ? `<meta property="article:published_time" content="${escapeAttr(o.publishedTime)}" />` : ''}
   ${o.modifiedTime ? `<meta property="article:modified_time" content="${escapeAttr(o.modifiedTime)}" />` : ''}
   ${o.author ? `<meta name="author" content="${escapeAttr(o.author)}" />` : ''}
