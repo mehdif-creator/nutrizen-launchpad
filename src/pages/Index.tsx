@@ -109,6 +109,7 @@ const Index = () => {
       <SeoHead
         title={mainCopy.seo.title}
         description={mainCopy.seo.description}
+        ogTitle="Vos menus de la semaine en 2 minutes | NutriZen"
         canonicalPath="/"
         ogImage="/og/nutrizen-og-v2.jpg"
         ogImageAlt="NutriZen organise vos menus, recettes et liste de courses de la semaine"

@@ -273,6 +273,7 @@ function stripExistingMeta(html: string): string {
 interface HeadOptions {
   title: string;
   description: string;
+  ogTitle?: string;
   canonical: string;
   image?: string;
   imageAlt?: string;
@@ -288,6 +289,7 @@ interface HeadOptions {
 
 function buildHead(o: HeadOptions): string {
   const t = escapeAttr(o.title);
+  const socialTitle = escapeAttr(o.ogTitle || o.title);
   const d = escapeAttr(o.description);
   const url = escapeAttr(o.canonical);
   const img = escapeAttr(o.image || FALLBACK_IMAGE);
@@ -303,7 +305,7 @@ function buildHead(o: HeadOptions): string {
   <link rel="canonical" href="${url}" />
   <meta property="og:type" content="${o.type || 'website'}" />
   <meta property="og:url" content="${url}" />
-  <meta property="og:title" content="${t}" />
+  <meta property="og:title" content="${socialTitle}" />
   <meta property="og:description" content="${d}" />
   <meta property="og:image" content="${img}" />
   ${o.imageWidth ? `<meta property="og:image:width" content="${o.imageWidth}" />` : ''}
@@ -312,7 +314,7 @@ function buildHead(o: HeadOptions): string {
   ${imageAlt ? `<meta property="og:image:alt" content="${imageAlt}" />` : ''}
   <meta property="og:site_name" content="${SITE_NAME}" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="${t}" />
+  <meta name="twitter:title" content="${socialTitle}" />
   <meta name="twitter:description" content="${d}" />
   <meta name="twitter:image" content="${img}" />
   ${o.publishedTime ? `<meta property="article:published_time" content="${escapeAttr(o.publishedTime)}" />` : ''}
@@ -495,7 +497,7 @@ async function main() {
   const templatePath = resolve(DIST, 'index.html');
   const template = readFileSync(templatePath, 'utf-8');
 
-  const homeTitle = 'Vos menus de la semaine en 2 minutes | NutriZen';
+  const homeTitle = 'NutriZen — Menus nutritionnels personnalisés sur-mesure';
   const homeDesc =
     'NutriZen crée vos menus personnalisés, vos recettes et votre liste de courses en quelques minutes. Moins de charge mentale, moins d’improvisation.';
 
@@ -505,6 +507,7 @@ async function main() {
     buildHead({
       title: homeTitle,
       description: homeDesc,
+      ogTitle: 'Vos menus de la semaine en 2 minutes | NutriZen',
       canonical: `${SITE_URL}/`,
       image: `${SITE_URL}/og/nutrizen-og-v2.jpg`,
       imageAlt: 'NutriZen organise vos menus, recettes et liste de courses de la semaine',

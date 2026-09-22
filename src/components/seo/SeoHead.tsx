@@ -6,6 +6,7 @@ const DEFAULT_OG = `${SITE}/img/og-default.png`;
 export interface SeoHeadProps {
   title: string;
   description: string;
+  ogTitle?: string;
   /** Path beginning with `/` or absolute URL. Defaults to current route at render time. */
   canonicalPath?: string;
   ogImage?: string;
@@ -22,6 +23,7 @@ export interface SeoHeadProps {
 export function SeoHead({
   title,
   description,
+  ogTitle,
   canonicalPath,
   ogImage = DEFAULT_OG,
   ogImageAlt,
@@ -43,7 +45,7 @@ export function SeoHead({
       <link rel="canonical" href={canonical} />
       {noIndex && <meta name="robots" content="noindex, nofollow" />}
       <meta property="og:type" content={ogType} />
-      <meta property="og:title" content={title} />
+      <meta property="og:title" content={ogTitle || title} />
       <meta property="og:description" content={description} />
       <meta property="og:url" content={canonical} />
       <meta property="og:image" content={image} />
@@ -51,7 +53,7 @@ export function SeoHead({
       <meta property="og:site_name" content="NutriZen" />
       <meta property="og:locale" content="fr_FR" />
       <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={title} />
+      <meta name="twitter:title" content={ogTitle || title} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={image} />
       {ldArray.map((ld, i) => (

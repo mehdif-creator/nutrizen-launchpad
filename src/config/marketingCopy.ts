@@ -63,7 +63,7 @@ export interface PageMarketingCopy {
 // =====================================================
 export const mainCopy: PageMarketingCopy = {
   seo: {
-    title: 'Vos menus de la semaine en 2 minutes | NutriZen',
+    title: 'NutriZen — Arrêtez de vous demander quoi manger ce soir',
     description:
       'NutriZen crée vos menus personnalisés, vos recettes et votre liste de courses en quelques minutes. Moins de charge mentale, moins d’improvisation.',
   },
