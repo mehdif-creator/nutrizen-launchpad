@@ -11,6 +11,8 @@ import { Mail, Chrome } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [passwordMode, setPasswordMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -23,6 +25,21 @@ export default function Login() {
   const native = isNativePlatform();
   const plansHref = native ? '/native/plans' : '/#pricing';
   const homeHref = native ? '/native/welcome' : '/';
+
+  const handlePasswordLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (loading) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (error || !data.session) throw error || new Error('Missing session');
+      setPassword('');
+      const safeRedirect = redirectTo?.startsWith('/') && !redirectTo.startsWith('//') && !redirectTo.includes('\\') ? redirectTo : '/app';
+      navigate(safeRedirect, { replace: true });
+    } catch {
+      toast({ title: 'Connexion impossible', description: 'Vérifiez votre email et votre mot de passe NutriZen.', variant: 'destructive' });
+    } finally { setLoading(false); }
+  };
 
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,7 +108,7 @@ export default function Login() {
           </div>
 
           <div className="space-y-4">
-            <form onSubmit={handleMagicLink} className="space-y-4">
+            <form onSubmit={passwordMode ? handlePasswordLogin : handleMagicLink} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -104,11 +121,19 @@ export default function Login() {
                 />
               </div>
 
+              {passwordMode && <div className="space-y-2">
+                <Label htmlFor="login-password">Mot de passe NutriZen</Label>
+                <Input id="login-password" type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} required disabled={loading} />
+                <Link to="/auth/reset" className="text-sm text-primary underline">Définir ou réinitialiser mon mot de passe</Link>
+              </div>}
               <Button type="submit" className="w-full min-h-[52px]" disabled={loading}>
                 <Mail className="mr-2 h-4 w-4" />
-                {loading ? 'Envoi...' : 'Recevoir un nouveau lien magique'}
+                {passwordMode ? (loading ? 'Connexion...' : 'Se connecter') : (loading ? 'Envoi...' : 'Recevoir un nouveau lien magique')}
               </Button>
             </form>
+            <Button type="button" variant="outline" className="w-full" disabled={loading} onClick={() => { setPasswordMode(!passwordMode); setPassword(''); }}>
+              {passwordMode ? 'Utiliser un lien par email' : 'Se connecter avec un mot de passe'}
+            </Button>
 
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
