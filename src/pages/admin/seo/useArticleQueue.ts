@@ -33,7 +33,6 @@ export function useArticleQueue() {
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
-    await (supabase.rpc as any)('sync_article_queue_state');
     const { data, error, count } = await supabase
       .from('article_queue')
       .select('*', { count: 'exact' })
@@ -50,9 +49,16 @@ export function useArticleQueue() {
   }, []);
 
   useEffect(() => {
+    const syncQueueState = () => {
+      void (supabase.rpc as any)('sync_article_queue_state');
+    };
+    // Sync RPC: once on mount, then every 15 minutes (was: every 5s via fetchItems)
+    syncQueueState();
+    const syncInterval = setInterval(syncQueueState, 15 * 60 * 1000);
     fetchItems();
     pollingRef.current = setInterval(fetchItems, 5000);
     return () => {
+      clearInterval(syncInterval);
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
   }, [fetchItems]);
