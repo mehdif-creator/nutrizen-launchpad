@@ -10,7 +10,7 @@
 
 - [x] Créer une image Open Graph 1200 × 630 avec la vraie interface hebdomadaire NutriZen.
 - [x] Remplacer uniquement les métadonnées sociales et la description de l’accueil, dans le HTML initial et après chargement.
-- [ ] Vérifier le pré-rendu, l’unicité des balises, l’accès public à l’image, le typage et la compilation.
+- [x] Vérifier le pré-rendu, l’unicité des balises, l’accès public à l’image et le typage ; validation automatique du projet passée.
 
 # Correction des outils sur l’application native
 
