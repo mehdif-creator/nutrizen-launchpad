@@ -1573,6 +1573,39 @@ export type Database = {
         }
         Relationships: []
       }
+      native_store_receipts: {
+        Row: {
+          created_at: string
+          credits_reversed: number
+          environment: string
+          granted: boolean
+          product_id: string
+          refunded: boolean
+          transaction_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits_reversed?: number
+          environment: string
+          granted?: boolean
+          product_id: string
+          refunded?: boolean
+          transaction_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits_reversed?: number
+          environment?: string
+          granted?: boolean
+          product_id?: string
+          refunded?: boolean
+          transaction_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       oauth_states: {
         Row: {
           created_at: string
@@ -5942,10 +5975,30 @@ export type Database = {
         }
         Returns: Json
       }
+      rpc_refill_native_subscription: {
+        Args: {
+          p_environment: string
+          p_period_end: string
+          p_period_start: string
+          p_product_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       rpc_refund_credits_for_job: {
         Args: {
           p_feature: string
           p_original_idempotency_key: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      rpc_settle_native_pack: {
+        Args: {
+          p_environment: string
+          p_product_id: string
+          p_refund?: boolean
+          p_transaction_id: string
           p_user_id: string
         }
         Returns: Json
