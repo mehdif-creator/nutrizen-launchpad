@@ -10,6 +10,6 @@ export const isRentreeOfferActive = (now = Date.now()) =>
   now < Date.parse(RENTREE_OFFER.expiresAt);
 
 export const RECIPE_CATALOG_COPY = {
-  title: 'Près de 4 000 recettes disponibles',
+  title: 'Près de 5 000 recettes disponibles',
   updates: 'Des centaines de nouvelles recettes ajoutées régulièrement.',
 } as const;
