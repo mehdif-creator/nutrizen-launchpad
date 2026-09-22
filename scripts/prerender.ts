@@ -266,8 +266,8 @@ function stripExistingMeta(html: string): string {
   return html
     .replace(/<meta\s+name="description"[^>]*>/g, '')
     .replace(/<link\s+rel="canonical"[^>]*>/g, '')
-    .replace(/<meta\s+property="og:(title|description|url|type)"[^>]*>/g, '')
-    .replace(/<meta\s+name="twitter:(title|description)"[^>]*>/g, '');
+    .replace(/<meta\s+property="og:(title|description|url|type|site_name|image(?::(?:width|height|type|alt))?)"[^>]*>/g, '')
+    .replace(/<meta\s+name="twitter:(card|site|title|description|image)"[^>]*>/g, '');
 }
 
 interface HeadOptions {
@@ -275,6 +275,7 @@ interface HeadOptions {
   description: string;
   canonical: string;
   image?: string;
+  imageAlt?: string;
   type?: 'website' | 'article';
   publishedTime?: string | null;
   modifiedTime?: string | null;
@@ -287,6 +288,7 @@ function buildHead(o: HeadOptions): string {
   const d = escapeAttr(o.description);
   const url = escapeAttr(o.canonical);
   const img = escapeAttr(o.image || FALLBACK_IMAGE);
+  const imageAlt = escapeAttr(o.imageAlt || `${SITE_NAME} — menus et recettes personnalisés`);
   const ld = (o.jsonLd || [])
     .map((x) => `<script type="application/ld+json">${JSON.stringify(x)}</script>`)
     .join('\n  ');
@@ -301,6 +303,12 @@ function buildHead(o: HeadOptions): string {
   <meta property="og:title" content="${t}" />
   <meta property="og:description" content="${d}" />
   <meta property="og:image" content="${img}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:type" content="image/jpeg" />
+  <meta property="og:image:alt" content="${imageAlt}" />
+  <meta property="og:site_name" content="${SITE_NAME}" />
+  <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${t}" />
   <meta name="twitter:description" content="${d}" />
   <meta name="twitter:image" content="${img}" />
@@ -484,9 +492,9 @@ async function main() {
   const templatePath = resolve(DIST, 'index.html');
   const template = readFileSync(templatePath, 'utf-8');
 
-  const homeTitle = 'NutriZen — Menus nutritionnels personnalisés sur-mesure';
+  const homeTitle = 'Vos menus de la semaine en 2 minutes | NutriZen';
   const homeDesc =
-    'Menus nutritionnels personnalisés selon vos objectifs. Plan sur-mesure en 30s + liste de courses automatique.';
+    'NutriZen crée vos menus personnalisés, vos recettes et votre liste de courses en quelques minutes. Moins de charge mentale, moins d’improvisation.';
 
   writePage(
     '/',
@@ -495,6 +503,8 @@ async function main() {
       title: homeTitle,
       description: homeDesc,
       canonical: `${SITE_URL}/`,
+      image: `${SITE_URL}/og/nutrizen-og-v2.jpg`,
+      imageAlt: 'NutriZen organise vos menus, recettes et liste de courses de la semaine',
       jsonLd: [
         {
           '@context': 'https://schema.org',

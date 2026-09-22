@@ -110,6 +110,8 @@ const Index = () => {
         title={mainCopy.seo.title}
         description={mainCopy.seo.description}
         canonicalPath="/"
+        ogImage="/og/nutrizen-og-v2.jpg"
+        ogImageAlt="NutriZen organise vos menus, recettes et liste de courses de la semaine"
         ogType="website"
         jsonLd={[
           {

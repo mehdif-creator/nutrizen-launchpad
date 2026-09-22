@@ -9,6 +9,7 @@ export interface SeoHeadProps {
   /** Path beginning with `/` or absolute URL. Defaults to current route at render time. */
   canonicalPath?: string;
   ogImage?: string;
+  ogImageAlt?: string;
   ogType?: 'website' | 'article';
   noIndex?: boolean;
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
@@ -23,6 +24,7 @@ export function SeoHead({
   description,
   canonicalPath,
   ogImage = DEFAULT_OG,
+  ogImageAlt,
   ogType = 'website',
   noIndex = false,
   jsonLd,
@@ -45,6 +47,7 @@ export function SeoHead({
       <meta property="og:description" content={description} />
       <meta property="og:url" content={canonical} />
       <meta property="og:image" content={image} />
+      {ogImageAlt && <meta property="og:image:alt" content={ogImageAlt} />}
       <meta property="og:site_name" content="NutriZen" />
       <meta property="og:locale" content="fr_FR" />
       <meta name="twitter:card" content="summary_large_image" />
