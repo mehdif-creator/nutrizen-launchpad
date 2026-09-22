@@ -33,7 +33,6 @@ export function useArticleQueue() {
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
-    await (supabase.rpc as any)('sync_article_queue_state');
     const { data, error, count } = await supabase
       .from('article_queue')
       .select('*', { count: 'exact' })
