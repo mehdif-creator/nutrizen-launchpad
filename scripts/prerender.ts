@@ -264,10 +264,10 @@ const REMOVAL_SCRIPT = `<script>
 
 function stripExistingMeta(html: string): string {
   return html
-    .replace(/<meta\s+name="description"[^>]*>/g, '')
-    .replace(/<link\s+rel="canonical"[^>]*>/g, '')
-    .replace(/<meta\s+property="og:(title|description|url|type|site_name|image(?::(?:width|height|type|alt))?)"[^>]*>/g, '')
-    .replace(/<meta\s+name="twitter:(card|site|title|description|image)"[^>]*>/g, '');
+    .replace(/<meta\b(?=[^>]*\bname="description")[^>]*>/g, '')
+    .replace(/<link\b(?=[^>]*\brel="canonical")[^>]*>/g, '')
+    .replace(/<meta\b(?=[^>]*\bproperty="og:(title|description|url|type|site_name|image(?::(?:width|height|type|alt))?)")[^>]*>/g, '')
+    .replace(/<meta\b(?=[^>]*\bname="twitter:(card|site|title|description|image)")[^>]*>/g, '');
 }
 
 interface HeadOptions {
