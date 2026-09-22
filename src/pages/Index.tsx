@@ -5,6 +5,7 @@ import { useSeoMeta } from "@/hooks/useSeoMeta";
 import { SeoHead } from "@/components/seo/SeoHead";
 import { mainCopy } from "@/config/marketingCopy";
 import { RECIPE_CATALOG_COPY } from '@/config/landingOffer';
+import socialPreviewAsset from '@/assets/nutrizen-og-v3.jpg.asset.json';
 
 // Eager: above the fold
 import { AnnouncementBar } from "@/components/landing/AnnouncementBar";
@@ -111,7 +112,7 @@ const Index = () => {
         description={mainCopy.seo.description}
         ogTitle="Vos menus de la semaine en 2 minutes | NutriZen"
         canonicalPath="/"
-        ogImage="/og/nutrizen-og-v2.jpg"
+        ogImage={socialPreviewAsset.url}
         ogImageAlt="NutriZen organise vos menus, recettes et liste de courses de la semaine"
         ogType="website"
         jsonLd={[
