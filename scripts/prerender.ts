@@ -18,6 +18,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { resolveContextualCtaCopy } from '../src/lib/blog/cta';
+import socialPreviewAsset from '../src/assets/nutrizen-og-v3.jpg.asset.json';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = resolve(__dirname, '..', 'dist');
@@ -509,7 +510,7 @@ async function main() {
       description: homeDesc,
       ogTitle: 'Vos menus de la semaine en 2 minutes | NutriZen',
       canonical: `${SITE_URL}/`,
-      image: `${SITE_URL}/og/nutrizen-og-v2.jpg`,
+      image: `${SITE_URL}${socialPreviewAsset.url}`,
       imageAlt: 'NutriZen organise vos menus, recettes et liste de courses de la semaine',
       imageType: 'image/jpeg',
       imageWidth: 1200,
