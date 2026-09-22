@@ -29,7 +29,7 @@ export default function NativeWelcome() {
 
         <ul className="w-full max-w-xs space-y-3 text-left">
           {[
-            { icon: UtensilsCrossed, text: 'Près de 4 000 recettes disponibles' },
+            { icon: UtensilsCrossed, text: 'Près de 5 000 recettes disponibles' },
             { icon: Sparkles, text: 'Menus générés selon votre profil' },
             { icon: ShoppingBasket, text: 'Liste de courses automatique' },
           ].map(({ icon: Icon, text }) => (
