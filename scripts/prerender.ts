@@ -276,6 +276,9 @@ interface HeadOptions {
   canonical: string;
   image?: string;
   imageAlt?: string;
+  imageType?: string;
+  imageWidth?: number;
+  imageHeight?: number;
   type?: 'website' | 'article';
   publishedTime?: string | null;
   modifiedTime?: string | null;
@@ -288,7 +291,7 @@ function buildHead(o: HeadOptions): string {
   const d = escapeAttr(o.description);
   const url = escapeAttr(o.canonical);
   const img = escapeAttr(o.image || FALLBACK_IMAGE);
-  const imageAlt = escapeAttr(o.imageAlt || `${SITE_NAME} — menus et recettes personnalisés`);
+  const imageAlt = o.imageAlt ? escapeAttr(o.imageAlt) : null;
   const ld = (o.jsonLd || [])
     .map((x) => `<script type="application/ld+json">${JSON.stringify(x)}</script>`)
     .join('\n  ');
@@ -303,10 +306,10 @@ function buildHead(o: HeadOptions): string {
   <meta property="og:title" content="${t}" />
   <meta property="og:description" content="${d}" />
   <meta property="og:image" content="${img}" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-  <meta property="og:image:type" content="image/jpeg" />
-  <meta property="og:image:alt" content="${imageAlt}" />
+  ${o.imageWidth ? `<meta property="og:image:width" content="${o.imageWidth}" />` : ''}
+  ${o.imageHeight ? `<meta property="og:image:height" content="${o.imageHeight}" />` : ''}
+  ${o.imageType ? `<meta property="og:image:type" content="${escapeAttr(o.imageType)}" />` : ''}
+  ${imageAlt ? `<meta property="og:image:alt" content="${imageAlt}" />` : ''}
   <meta property="og:site_name" content="${SITE_NAME}" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${t}" />
@@ -505,6 +508,9 @@ async function main() {
       canonical: `${SITE_URL}/`,
       image: `${SITE_URL}/og/nutrizen-og-v2.jpg`,
       imageAlt: 'NutriZen organise vos menus, recettes et liste de courses de la semaine',
+      imageType: 'image/jpeg',
+      imageWidth: 1200,
+      imageHeight: 630,
       jsonLd: [
         {
           '@context': 'https://schema.org',
