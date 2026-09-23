@@ -104,7 +104,7 @@ export const MumHero = ({ onCtaClick }: MumHeroProps) => {
               ))}
             </ul>
 
-            <div className="pt-2 space-y-3">
+            <div className="pt-2 space-y-3 md:space-y-0">
               <MobileHeroPromotion />
 
               <Button
@@ -116,7 +116,7 @@ export const MumHero = ({ onCtaClick }: MumHeroProps) => {
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
 
-              <div className="flex items-center gap-2 text-sm text-white/70">
+              <div className="flex items-center gap-2 text-sm text-white/70 md:pt-3">
                 <Shield className="w-4 h-4 text-white/50" />
                 <span>Plan adapté à ton rythme</span>
                 <span className="text-white/30">•</span>
