@@ -29,7 +29,7 @@ export const AnnouncementBar = () => {
     <>
       <RentreePromotion />
       {!dismissed && (
-        <div className="relative flex min-h-11 items-center justify-center bg-primary py-2 pl-3 pr-12 text-center text-[11px] leading-4 text-primary-foreground sm:py-3 sm:pl-4 sm:pr-14 sm:text-sm sm:leading-normal">
+        <div className="relative hidden min-h-11 items-center justify-center bg-primary py-3 pl-4 pr-14 text-center text-sm leading-normal text-primary-foreground md:flex">
           <span className="max-w-sm sm:max-w-none">
             ✓ Essai gratuit 7 jours — 11 crédits offerts, sans carte bancaire{'  '}·{'  '}✓ Sans
             engagement{'  '}·{'  '}✓ Paiement sécurisé Stripe
