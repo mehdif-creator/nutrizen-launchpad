@@ -35,13 +35,13 @@ export const Header = ({ onCtaClick }: HeaderProps) => {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
+      <div className="container flex h-14 items-center justify-between md:h-16">
         {/* Logo */}
         <Link to="/" className="flex items-center hover:opacity-80 transition-tech">
           <img
             src={new URL('@/assets/nutrizen-main-logo.png', import.meta.url).href}
             alt="NutriZen Logo"
-            className="h-10 md:h-14 w-auto max-w-[120px]"
+            className="h-9 w-auto max-w-[120px] md:h-14"
           />
         </Link>
 

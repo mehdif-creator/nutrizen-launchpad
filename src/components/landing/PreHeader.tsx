@@ -22,23 +22,24 @@ export const PreHeader = () => {
 
   return (
     <div className="w-full bg-gradient-to-r from-primary to-accent text-white">
-      <div className="container py-2.5 flex items-center justify-center md:justify-between text-sm">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold">{t('preheader.trial')}</span>
+      <div className="container flex h-14 items-center justify-between px-3.5 text-sm md:h-auto md:py-2.5">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="text-[12px] font-semibold leading-[1.25] md:hidden">✨ Satisfait ou remboursé 30 jours</span>
+          <span className="hidden font-semibold md:inline">{t('preheader.trial')}</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-0.5 md:gap-2">
           <Button
             variant="ghost"
             size="sm"
             onClick={toggleTheme}
-            className="h-8 w-8 p-0 text-white hover:bg-white/20"
+            className="h-11 w-11 p-0 text-white hover:bg-white/20 md:h-8 md:w-8"
             aria-label="Toggle theme"
           >
             {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 gap-1 text-white hover:bg-white/20">
+              <Button variant="ghost" size="sm" className="h-11 min-w-11 gap-1 px-2 text-white hover:bg-white/20 md:h-8">
                 <Globe className="h-4 w-4" />
                 <span className="text-xs">{languages.find((l) => l.code === language)?.flag}</span>
               </Button>
