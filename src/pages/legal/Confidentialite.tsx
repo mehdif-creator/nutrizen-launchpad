@@ -9,7 +9,7 @@ export default function Confidentialite() {
       <main className="flex-1 container py-16">
         <div className="max-w-3xl mx-auto space-y-5 leading-relaxed [&_h1]:text-3xl [&_h1]:font-bold [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:pt-5 [&_h3]:font-semibold [&_h3]:pt-3 [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-6 [&_li]:mb-2">
           <h1>Politique de confidentialité – NutriZen</h1>
-          <p className="text-sm text-muted-foreground">Dernière mise à jour : 21 septembre 2026</p>
+          <p className="text-sm text-muted-foreground">Dernière mise à jour : 23 septembre 2026</p>
 
           <h2>1. Responsable du traitement</h2>
           <p>
@@ -226,7 +226,7 @@ export default function Confidentialite() {
 
           <h2>11. Mineurs</h2>
           <p>
-            L’application Android s’adresse aux personnes de 16 ans et plus. Le Service n’est pas destiné aux mineurs sans l’autorisation et la supervision d’un
+            L’application Android distribuée sur Google Play est réservée aux personnes de 18 ans et plus. Le site web n’est pas destiné aux mineurs sans l’autorisation et la supervision d’un
             représentant légal. Si un utilisateur estime qu’un mineur a fourni des données
             personnelles sans autorisation, il peut contacter l’éditeur afin de demander la
             suppression des données concernées.
