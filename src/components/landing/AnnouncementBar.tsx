@@ -29,8 +29,8 @@ export const AnnouncementBar = () => {
     <>
       <RentreePromotion />
       {!dismissed && (
-        <div className="bg-primary text-primary-foreground text-xs sm:text-sm text-center min-h-11 py-3 pl-4 pr-14 relative">
-          <span>
+        <div className="relative flex min-h-11 items-center justify-center bg-primary py-2 pl-3 pr-12 text-center text-[11px] leading-4 text-primary-foreground sm:py-3 sm:pl-4 sm:pr-14 sm:text-sm sm:leading-normal">
+          <span className="max-w-sm sm:max-w-none">
             ✓ Essai gratuit 7 jours — 11 crédits offerts, sans carte bancaire{'  '}·{'  '}✓ Sans
             engagement{'  '}·{'  '}✓ Paiement sécurisé Stripe
           </span>
@@ -39,7 +39,7 @@ export const AnnouncementBar = () => {
             variant="ghost"
             size="icon"
             onClick={handleDismiss}
-            className="absolute right-1 top-1/2 -translate-y-1/2 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+            className="absolute right-0.5 top-1/2 -translate-y-1/2 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground sm:right-1"
             aria-label="Fermer"
           >
             <X className="w-4 h-4" />
