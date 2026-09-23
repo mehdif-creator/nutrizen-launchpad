@@ -39,3 +39,9 @@
 - Les origines Android/iOS sont reflétées par les fonctions déployées ; une origine inconnue ne l’est pas.
 - Pas de test authentifié de bout en bout ni de validation caméra physique possible dans cet environnement.
 - Une publication Web seule ne suffit pas pour installer le nouveau plugin caméra : nouvelle compilation native nécessaire.
+# Déduplication du code promo sur ordinateur et tablette
+
+- [x] Masquer l’encart promo du bandeau principal à partir de 768 px : le code reste visible uniquement dans la barre promotionnelle du haut.
+- [x] Supprimer l’espace résiduel laissé par l’encart masqué afin que le bouton principal remonte naturellement.
+- [x] Conserver l’encart « -50 % avec RENTREE50 — Jusqu’au 30 septembre » sur mobile, dans le bandeau principal.
+- Validation : un seul code visible en haut à 768, 1024 et 1440 px ; encart mobile présent à 375 et 430 px ; aucun débordement horizontal ; 8 tests ciblés, style, typage et compilation réussis.
