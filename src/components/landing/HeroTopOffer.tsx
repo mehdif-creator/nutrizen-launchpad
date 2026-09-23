@@ -41,7 +41,7 @@ export const HeroTopOffer = () => {
   return (
     <div className="flex flex-wrap items-start gap-3">
       {active && (
-        <div className="inline-flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 backdrop-blur-sm">
+        <div className="hidden flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 backdrop-blur-sm md:inline-flex">
           <Ticket className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
           <span className="text-xs font-medium text-white/90">
             Code rentrée <time dateTime="2026-09-30">jusqu'au {RENTREE_OFFER.deadlineLabel}</time>
