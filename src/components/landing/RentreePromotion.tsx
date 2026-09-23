@@ -48,6 +48,7 @@ export const RentreePromotion = ({ placement = 'banner' }: { placement?: 'banner
       data-rentree-promotion
       className={cn(
         'border-y border-primary/20 bg-secondary text-secondary-foreground',
+        placement === 'banner' && 'max-md:hidden',
         placement === 'pricing' && 'mb-10',
       )}
     >

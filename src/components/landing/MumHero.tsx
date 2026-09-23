@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Star, Check, Shield, ArrowRight, Timer, CalendarDays } from "lucide-react";
 import mumHeroImage from "@/assets/mum-hero.jpg";
-import { HeroTopOffer } from '@/components/landing/HeroTopOffer';
+import { HeroTopOffer, MobileHeroPromotion } from '@/components/landing/HeroTopOffer';
 
 interface MumHeroProps {
   onCtaClick: () => void;
@@ -105,6 +105,8 @@ export const MumHero = ({ onCtaClick }: MumHeroProps) => {
             </ul>
 
             <div className="pt-2 space-y-3">
+              <MobileHeroPromotion />
+
               <Button
                 onClick={onCtaClick}
                 size="lg"

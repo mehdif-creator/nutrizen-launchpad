@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Star, Check, Shield, ArrowRight, TrendingDown } from "lucide-react";
 import fitHeroImage from "@/assets/fit-hero.jpg";
-import { HeroTopOffer } from '@/components/landing/HeroTopOffer';
+import { HeroTopOffer, MobileHeroPromotion } from '@/components/landing/HeroTopOffer';
 
 interface FitHeroProps {
   onCtaClick: () => void;
@@ -101,6 +101,8 @@ export const FitHero = ({ onCtaClick }: FitHeroProps) => {
             </ul>
 
             <div className="pt-2 space-y-3">
+              <MobileHeroPromotion />
+
               <Button
                 onClick={onCtaClick}
                 size="lg"
