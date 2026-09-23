@@ -53,7 +53,7 @@ export const RentreePromotion = ({ placement = 'banner' }: { placement?: 'banner
     >
       <div className={cn(
         'flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-center',
-        placement === 'banner' ? 'container px-4 py-3 max-md:min-h-[116px] max-md:flex-col max-md:flex-nowrap max-md:gap-1.5 max-md:py-3' : 'px-4 py-5',
+        placement === 'banner' ? 'container px-4 py-3 max-md:min-h-[116px] max-md:flex-col max-md:flex-nowrap max-md:gap-0.5 max-md:py-2' : 'px-4 py-5',
       )}>
         <div className={cn('space-y-1', placement === 'banner' && 'max-md:space-y-0')}>
           <p className="flex items-center justify-center gap-2 text-sm font-semibold">
