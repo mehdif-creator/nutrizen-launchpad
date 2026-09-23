@@ -53,33 +53,34 @@ export const RentreePromotion = ({ placement = 'banner' }: { placement?: 'banner
     >
       <div className={cn(
         'flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-center',
-        placement === 'banner' ? 'container px-4 py-3 max-md:min-h-[116px] max-md:flex-col max-md:flex-nowrap max-md:gap-0.5 max-md:py-2' : 'px-4 py-5',
+        placement === 'banner' ? 'container px-4 py-3 max-md:grid max-md:h-[78px] max-md:grid-cols-[1fr_auto] max-md:grid-rows-[42px_16px] max-md:gap-x-2 max-md:gap-y-1 max-md:px-3.5 max-md:py-2 max-md:text-left' : 'px-4 py-5',
       )}>
-        <div className={cn('space-y-1', placement === 'banner' && 'max-md:space-y-0')}>
-          <p className="flex items-center justify-center gap-2 text-sm font-semibold">
+        <div className={cn('space-y-1', placement === 'banner' && 'max-md:contents')}>
+          <p className="flex items-center justify-center gap-2 text-sm font-semibold max-md:justify-start max-md:text-[13px] max-md:leading-4">
             <Ticket className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
             Votre offre de rentrée
           </p>
-          <p className="text-xs font-normal leading-4 opacity-80">
-            Jusqu’au <time dateTime="2026-09-30">{RENTREE_OFFER.deadlineLabel}</time>
+          <p className="text-xs font-normal leading-4 opacity-80 max-md:row-start-2 max-md:self-center max-md:text-[11px]">
+            <span className="md:hidden">Jusqu’au <time dateTime="2026-09-30">30/09</time></span>
+            <span className="max-md:hidden">Jusqu’au <time dateTime="2026-09-30">{RENTREE_OFFER.deadlineLabel}</time></span>
           </p>
         </div>
         <div className={cn(
           'flex flex-wrap items-center justify-center gap-x-3 gap-y-1',
-          placement === 'banner' && 'max-md:block',
+          placement === 'banner' && 'max-md:col-start-2 max-md:row-start-1 max-md:block max-md:self-center',
         )}>
           <Button
             type="button"
             variant="outline"
             className={cn(
               'min-w-[164px] border-dashed border-primary/60 text-foreground',
-              placement === 'banner' && 'max-md:h-11 max-md:min-h-11 max-md:min-w-0 max-md:px-3 max-md:py-1.5',
+              placement === 'banner' && 'max-md:h-11 max-md:min-h-11 max-md:min-w-0 max-md:gap-1.5 max-md:rounded-md max-md:border-solid max-md:px-2.5 max-md:py-1',
             )}
             onClick={copyCode}
             aria-label={copyState === 'copied' ? 'Code RENTREE50 copié' : 'Copier le code RENTREE50'}
             title="Copier le code RENTREE50"
           >
-            <span className="font-mono text-base font-bold tracking-normal">{RENTREE_OFFER.code}</span>
+            <span className="font-mono text-base font-bold tracking-normal max-md:text-sm">{RENTREE_OFFER.code}</span>
             {copyState === 'copied' ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
           </Button>
           <p
@@ -95,7 +96,7 @@ export const RentreePromotion = ({ placement = 'banner' }: { placement?: 'banner
           </p>
         </div>
         {placement === 'banner' && (
-          <Button asChild variant="link" className="h-7 min-h-0 px-2 text-[13px] font-medium text-secondary-foreground md:min-h-10 md:text-sm">
+          <Button asChild variant="link" className="h-7 min-h-0 px-2 text-[13px] font-medium text-secondary-foreground max-md:col-start-2 max-md:row-start-2 max-md:h-4 max-md:min-h-0 max-md:self-center max-md:p-0 max-md:text-xs md:min-h-10 md:text-sm">
             <a href="#tarifs">Voir les offres <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></a>
           </Button>
         )}
