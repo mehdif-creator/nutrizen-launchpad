@@ -117,7 +117,7 @@ export const MobileHeroPromotion = () => {
 
   return (
     <div
-      className="inline-flex min-h-12 max-w-full items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 py-1.5 backdrop-blur-sm md:hidden"
+      className="inline-flex h-14 max-w-full items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 backdrop-blur-sm md:hidden"
       data-mobile-hero-promotion
     >
       <Ticket className="h-4 w-4 shrink-0 text-emerald-400" aria-hidden="true" />
@@ -128,7 +128,7 @@ export const MobileHeroPromotion = () => {
             type="button"
             variant="ghost"
             size="sm"
-            className="h-9 min-h-9 gap-1 px-1.5 font-mono text-[13px] font-bold text-emerald-400 hover:bg-white/10 hover:text-emerald-400"
+            className="h-10 min-h-10 gap-1 px-1.5 font-mono text-[13px] font-bold text-emerald-400 hover:bg-white/10 hover:text-emerald-400"
             onClick={copyCode}
             aria-label={copyState === 'copied' ? 'Code RENTREE50 copié' : 'Copier le code RENTREE50'}
           >
