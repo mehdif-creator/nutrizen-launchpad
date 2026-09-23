@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { callEdgeFunction } from '@/lib/edgeFn';
 import { AppHeader } from '@/components/app/AppHeader';
 import { AppFooter } from '@/components/app/AppFooter';
 import { Card } from '@/components/ui/card';
@@ -25,6 +27,7 @@ export default function Settings() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [deleting, setDeleting] = useState(false);
 
   const handleResetTutorial = async () => {
     if (!user) return;
@@ -75,12 +78,21 @@ export default function Settings() {
     }
   };
 
-  const handleDeleteAccount = () => {
-    toast({
-      title: 'Demande enregistrée',
-      description: 'Ton compte sera supprimé sous 7 jours.',
-      variant: 'destructive',
-    });
+  const handleDeleteAccount = async () => {
+    if (!user || deleting) return;
+    setDeleting(true);
+    try {
+      const result = await callEdgeFunction<{ success?: boolean }>('send-support-email', {
+        subject: 'Suppression du compte NutriZen et des données personnelles',
+        message: 'Je demande la suppression de mon compte NutriZen et de mes données personnelles associées. Merci de confirmer le traitement de cette demande. Je comprends que cette demande ne résilie pas automatiquement un abonnement Google Play, App Store ou Stripe.',
+      });
+      if (!result.success) throw new Error('Demande non confirmée');
+      toast({ title: 'Demande envoyée au support', description: 'Le support vous confirmera la suppression par email.' });
+    } catch {
+      toast({ title: 'Demande non envoyée', description: 'Réessayez ou contactez contact@aimy-digital.fr.', variant: 'destructive' });
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -210,12 +222,12 @@ export default function Settings() {
               Zone dangereuse
             </h2>
             <p className="text-xs md:text-sm text-muted-foreground mb-4">
-              Cette action est irréversible. Toutes tes données seront supprimées définitivement.
+              Demande la suppression de ton compte et des données associées au support.
             </p>
 
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="w-full sm:w-auto text-sm md:text-base">
+                <Button variant="destructive" disabled={deleting} className="w-full sm:w-auto text-sm md:text-base">
                   <Trash2 className="mr-2 h-4 w-4" />
                   Supprimer mon compte
                 </Button>
@@ -223,20 +235,22 @@ export default function Settings() {
               <AlertDialogContent className="max-w-[95vw] sm:max-w-lg">
                 <AlertDialogHeader>
                   <AlertDialogTitle className="text-base md:text-lg">
-                    Es-tu absolument sûr(e) ?
+                    Envoyer une demande de suppression ?
                   </AlertDialogTitle>
                   <AlertDialogDescription className="text-xs md:text-sm">
-                    Cette action est irréversible. Ton compte et toutes tes données seront
-                    définitivement supprimés de nos serveurs après 7 jours.
+                    Le support recevra ta demande et confirmera son traitement par email.
+                    Ton compte ne sera pas supprimé immédiatement. Cette demande ne résilie
+                    pas automatiquement tes abonnements.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="flex-col sm:flex-row gap-2">
                   <AlertDialogCancel className="w-full sm:w-auto">Annuler</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleDeleteAccount}
+                    disabled={deleting}
                     className="bg-destructive w-full sm:w-auto"
                   >
-                    Oui, supprimer mon compte
+                    Envoyer ma demande
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
