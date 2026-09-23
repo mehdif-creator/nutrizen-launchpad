@@ -78,8 +78,6 @@ export const FitHero = ({ onCtaClick }: FitHeroProps) => {
               simples, un suivi intelligent et des ajustements en temps réel.
             </p>
 
-            <MobileHeroPromotion />
-
             <ul className="space-y-3 pt-2">
               {[
                 {
@@ -103,6 +101,8 @@ export const FitHero = ({ onCtaClick }: FitHeroProps) => {
             </ul>
 
             <div className="pt-2 space-y-3">
+              <MobileHeroPromotion />
+
               <Button
                 onClick={onCtaClick}
                 size="lg"

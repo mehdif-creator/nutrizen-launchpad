@@ -76,8 +76,6 @@ export const MumHero = ({ onCtaClick }: MumHeroProps) => {
               les journées sont chargées.
             </p>
 
-            <MobileHeroPromotion />
-
             <ul className="space-y-3 pt-2">
               {[
                 { bold: "Repas familiaux simples", text: " : bons, rapides, adaptés au quotidien" },
@@ -107,6 +105,8 @@ export const MumHero = ({ onCtaClick }: MumHeroProps) => {
             </ul>
 
             <div className="pt-2 space-y-3">
+              <MobileHeroPromotion />
+
               <Button
                 onClick={onCtaClick}
                 size="lg"

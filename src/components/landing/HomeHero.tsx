@@ -78,8 +78,6 @@ export const HomeHero = ({ onCtaClick }: HomeHeroProps) => {
               pour ne plus perdre de temps à décider quoi manger.
             </p>
 
-            <MobileHeroPromotion />
-
             <ul className="space-y-3 pt-2">
               {[
                 { bold: "Menus personnalisés", text: " : adaptés à vos goûts et objectifs" },
@@ -100,6 +98,8 @@ export const HomeHero = ({ onCtaClick }: HomeHeroProps) => {
             </ul>
 
             <div className="pt-2 space-y-3">
+              <MobileHeroPromotion />
+
               <Button
                 onClick={onCtaClick}
                 size="lg"
