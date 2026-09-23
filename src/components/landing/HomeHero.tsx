@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Star, Check, Shield, ArrowRight, Timer, CalendarDays } from "lucide-react";
 import homeHeroImage from "@/assets/home-hero.jpg";
-import { HeroTopOffer } from '@/components/landing/HeroTopOffer';
+import { HeroTopOffer, MobileHeroPromotion } from '@/components/landing/HeroTopOffer';
 
 interface HomeHeroProps {
   onCtaClick: () => void;
@@ -77,6 +77,8 @@ export const HomeHero = ({ onCtaClick }: HomeHeroProps) => {
               NutriZen crée des menus personnalisés et des recettes adaptées à vos goûts, votre rythme et vos objectifs,
               pour ne plus perdre de temps à décider quoi manger.
             </p>
+
+            <MobileHeroPromotion />
 
             <ul className="space-y-3 pt-2">
               {[

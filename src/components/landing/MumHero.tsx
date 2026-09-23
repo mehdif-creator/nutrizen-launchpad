@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Star, Check, Shield, ArrowRight, Timer, CalendarDays } from "lucide-react";
 import mumHeroImage from "@/assets/mum-hero.jpg";
-import { HeroTopOffer } from '@/components/landing/HeroTopOffer';
+import { HeroTopOffer, MobileHeroPromotion } from '@/components/landing/HeroTopOffer';
 
 interface MumHeroProps {
   onCtaClick: () => void;
@@ -75,6 +75,8 @@ export const MumHero = ({ onCtaClick }: MumHeroProps) => {
               NutriZen Mum t'aide à prévoir des repas simples, équilibrés et réalistes pour toute la famille, même quand
               les journées sont chargées.
             </p>
+
+            <MobileHeroPromotion />
 
             <ul className="space-y-3 pt-2">
               {[

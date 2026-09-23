@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Star, Check, Shield, ArrowRight, TrendingDown } from "lucide-react";
 import fitHeroImage from "@/assets/fit-hero.jpg";
-import { HeroTopOffer } from '@/components/landing/HeroTopOffer';
+import { HeroTopOffer, MobileHeroPromotion } from '@/components/landing/HeroTopOffer';
 
 interface FitHeroProps {
   onCtaClick: () => void;
@@ -77,6 +77,8 @@ export const FitHero = ({ onCtaClick }: FitHeroProps) => {
               NutriZen Fit crée des plans de nutrition adaptés à tes objectifs et à ton mode de vie, avec des recettes
               simples, un suivi intelligent et des ajustements en temps réel.
             </p>
+
+            <MobileHeroPromotion />
 
             <ul className="space-y-3 pt-2">
               {[

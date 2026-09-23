@@ -22,7 +22,7 @@ export const PreHeader = () => {
 
   return (
     <div className="w-full bg-gradient-to-r from-primary to-accent text-white">
-      <div className="container flex h-14 items-center justify-between px-3.5 text-sm md:h-auto md:py-2.5">
+      <div className="container flex h-12 items-center justify-between px-3.5 text-sm md:h-auto md:py-2.5">
         <div className="flex min-w-0 items-center gap-2">
           <span className="flex items-center gap-1.5 text-[12px] font-semibold leading-[1.25] md:hidden">
             <Sparkles className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
