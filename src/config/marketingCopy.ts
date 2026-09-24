@@ -301,7 +301,7 @@ export const fitCopy: PageMarketingCopy = {
   finalCta: {
     headline: "Votre alimentation devrait être aussi sérieuse que votre entraînement.",
     button: "Calculer mes macros",
-    subtitle: "Rejoignez +4 000 sportifs qui ont arrêté de deviner ce qu'ils doivent manger.",
+    subtitle: "Rejoignez +500 sportifs qui ont arrêté de deviner ce qu'ils doivent manger.",
   },
 };
 
