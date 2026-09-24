@@ -423,7 +423,7 @@ export const mumCopy: PageMarketingCopy = {
   finalCta: {
     headline: "Une décision par semaine. Pas vingt et une.",
     button: "Voir mon premier menu famille",
-    subtitle: "Rejoignez +5 000 familles qui ont arrêté de se battre avec la question du dîner.",
+    subtitle: "Rejoignez +1 000 familles qui ont arrêté de se battre avec la question du dîner.",
   },
 };
 
