@@ -540,7 +540,16 @@ async function main() {
     writePage(
       r.path,
       template,
-      buildHead({ title: r.title, description: r.description, canonical: `${SITE_URL}${r.path}` }),
+      buildHead({
+        title: r.title,
+        description: r.description,
+        canonical: `${SITE_URL}${r.path}`,
+        image: `${SITE_URL}${socialPreviewAsset.url}`,
+        imageAlt: 'NutriZen organise vos menus, recettes et liste de courses de la semaine',
+        imageType: 'image/jpeg',
+        imageWidth: 1200,
+        imageHeight: 630,
+      }),
       '',
       r.title,
     );

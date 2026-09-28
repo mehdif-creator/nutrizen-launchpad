@@ -145,6 +145,8 @@ const Mum = () => {
         title={mumCopy.seo.title}
         description={mumCopy.seo.description}
         canonicalPath="/mum"
+        ogImage={socialPreviewAsset.url}
+        ogImageAlt="NutriZen organise vos menus, recettes et liste de courses de la semaine"
       />
       <AnnouncementBar />
       <PreHeader />

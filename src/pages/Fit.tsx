@@ -148,6 +148,8 @@ const Fit = () => {
         title={fitCopy.seo.title}
         description={fitCopy.seo.description}
         canonicalPath="/fit"
+        ogImage={socialPreviewAsset.url}
+        ogImageAlt="NutriZen organise vos menus, recettes et liste de courses de la semaine"
       />
       <AnnouncementBar />
       <PreHeader />
