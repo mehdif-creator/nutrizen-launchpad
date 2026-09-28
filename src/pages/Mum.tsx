@@ -22,6 +22,7 @@ import { useNavigate } from 'react-router-dom';
 import { useReferralTracking } from '@/hooks/useReferralTracking';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { mumCopy } from '@/config/marketingCopy';
+import socialPreviewAsset from '@/assets/nutrizen-og-v3.jpg.asset.json';
 
 const mumValueItems = [
   {
