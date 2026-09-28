@@ -21,6 +21,7 @@ export interface MenuGenerationResult {
  */
 export function useMenuGeneration() {
   const [generating, setGenerating] = useState(false);
+  const lockRef = useRef(false);
   const [lastError, setLastError] = useState<MenuGenerationResult | null>(null);
   const { toast } = useToast();
 
