@@ -14,7 +14,8 @@ import { StreakBar } from "@/components/app/StreakBar";
 import { ZenCreditsDisplay } from "@/components/app/ZenCreditsDisplay";
 import { InsufficientCreditsModal } from "@/components/app/InsufficientCreditsModal";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { CreditActionInProgress } from "@/components/common/CreditActionInProgress";
 import { supabase } from "@/integrations/supabase/client";
 import { useStreakUpdate } from "@/hooks/useStreakUpdate";
 import { Navigate, useNavigate, Link } from "react-router-dom";
@@ -130,6 +131,7 @@ export default function Dashboard() {
   useStreakUpdate(user?.id);
 
   const [generating, setGenerating] = useState(false);
+  const generatingLockRef = useRef(false);
   const [swapping, setSwapping] = useState(false);
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
   const [creditsError, setCreditsError] = useState<{
@@ -333,7 +335,7 @@ export default function Dashboard() {
   const profileLoading = !portions;
 
   const handleRegenWeek = async () => {
-    if (!user || generating || profileLoading) return;
+    if (!user || generating || generatingLockRef.current || profileLoading) return;
 
     // Gate: profile must be complete before menu generation
     if (!profileComplete) {
@@ -346,6 +348,7 @@ export default function Dashboard() {
       return;
     }
 
+    generatingLockRef.current = true;
     setGenerating(true);
     console.log("[handleRegenWeek] ── START ── userId:", user.id);
 
@@ -413,6 +416,7 @@ export default function Dashboard() {
         variant: "destructive",
       });
     } finally {
+      generatingLockRef.current = false;
       setGenerating(false);
       console.log("[handleRegenWeek] ── END ──");
     }
@@ -437,6 +441,10 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
       <AppHeader />
+      <CreditActionInProgress
+        open={generating || swapping}
+        title={generating ? "Génération de votre menu en cours…" : "Remplacement de la recette en cours…"}
+      />
 
       {/* Onboarding Coach */}
       <OnboardingCoach userId={user?.id} />

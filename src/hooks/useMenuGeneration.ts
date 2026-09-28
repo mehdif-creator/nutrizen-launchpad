@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { t } from '@/i18n/translations';
 import { queryClient } from '@/lib/queryClient';
@@ -21,6 +21,7 @@ export interface MenuGenerationResult {
  */
 export function useMenuGeneration() {
   const [generating, setGenerating] = useState(false);
+  const lockRef = useRef(false);
   const [lastError, setLastError] = useState<MenuGenerationResult | null>(null);
   const { toast } = useToast();
 
@@ -29,6 +30,8 @@ export function useMenuGeneration() {
    * Returns detailed result including safety gate errors
    */
   const generateMenu = async (): Promise<MenuGenerationResult> => {
+    if (lockRef.current) return { success: false, errorType: 'UNKNOWN', message: 'Génération déjà en cours' };
+    lockRef.current = true;
     setGenerating(true);
     setLastError(null);
 
@@ -107,6 +110,7 @@ export function useMenuGeneration() {
 
       return errorResult;
     } finally {
+      lockRef.current = false;
       setGenerating(false);
     }
   };
