@@ -110,6 +110,7 @@ export function useMenuGeneration() {
 
       return errorResult;
     } finally {
+      lockRef.current = false;
       setGenerating(false);
     }
   };
