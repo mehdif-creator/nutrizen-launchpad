@@ -22,6 +22,7 @@ import { useNavigate } from 'react-router-dom';
 import { useReferralTracking } from '@/hooks/useReferralTracking';
 import { SeoHead } from '@/components/seo/SeoHead';
 import { fitCopy } from '@/config/marketingCopy';
+import socialPreviewAsset from '@/assets/nutrizen-og-v3.jpg.asset.json';
 
 const fitValueItems = [
   {
@@ -148,6 +149,8 @@ const Fit = () => {
         title={fitCopy.seo.title}
         description={fitCopy.seo.description}
         canonicalPath="/fit"
+        ogImage={socialPreviewAsset.url}
+        ogImageAlt="NutriZen organise vos menus, recettes et liste de courses de la semaine"
       />
       <AnnouncementBar />
       <PreHeader />
