@@ -441,6 +441,10 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
       <AppHeader />
+      <CreditActionInProgress
+        open={generating || swapping}
+        title={generating ? "Génération de votre menu en cours…" : "Remplacement de la recette en cours…"}
+      />
 
       {/* Onboarding Coach */}
       <OnboardingCoach userId={user?.id} />
