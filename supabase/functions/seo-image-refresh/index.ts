@@ -88,13 +88,14 @@ async function generateAndStore(
     return null;
   }
 
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
     method: "POST",
     headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "google/gemini-2.5-flash-image",
-      messages: [{ role: "user", content: prompt.slice(0, 4000) }],
-      modalities: ["image", "text"],
+      model: "openai/gpt-image-2.5-sunburst",
+      prompt: prompt.slice(0, 4000),
+      size: "1536x1024",
+      n: 1,
     }),
   });
 
@@ -105,11 +106,12 @@ async function generateAndStore(
   }
 
   const data = await res.json();
-  const dataUrl = data?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-  if (!dataUrl || !dataUrl.startsWith("data:")) {
+  const b64 = data?.data?.[0]?.b64_json;
+  if (!b64) {
     console.error("[seo-image-refresh] No image returned by gateway");
     return null;
   }
+  const dataUrl = `data:image/png;base64,${b64}`;
 
   const { bytes, mime } = dataUrlToBytes(dataUrl);
   const ext = mime.includes("jpeg") || mime.includes("jpg") ? "jpg" : "png";

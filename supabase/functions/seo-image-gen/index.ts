@@ -18,13 +18,16 @@ async function generateImageViaGateway(prompt: string): Promise<string> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  // OpenAI image generations endpoint (gpt-image-2.5-sunburst).
+  // Landscape 1536x1024 fits blog hero/section slots.
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
     method: "POST",
     headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "google/gemini-2.5-flash-image",
-      messages: [{ role: "user", content: prompt }],
-      modalities: ["image", "text"],
+      model: "openai/gpt-image-2.5-sunburst",
+      prompt,
+      size: "1536x1024",
+      n: 1,
     }),
   });
 
@@ -37,11 +40,11 @@ async function generateImageViaGateway(prompt: string): Promise<string> {
   }
 
   const data = await res.json();
-  const dataUrl = data?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-  if (!dataUrl || !dataUrl.startsWith("data:")) {
+  const b64 = data?.data?.[0]?.b64_json;
+  if (!b64) {
     throw new Error("AI Gateway: empty image response");
   }
-  return dataUrl;
+  return `data:image/png;base64,${b64}`;
 }
 
 function dataUrlToBytes(dataUrl: string): { bytes: Uint8Array; mime: string } {
