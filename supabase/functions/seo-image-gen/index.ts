@@ -18,15 +18,16 @@ async function generateImageViaGateway(prompt: string): Promise<string> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-  // OpenAI Responses API with the image_generation tool (gpt-image-2.5-sunburst).
+  // OpenAI image generations endpoint (gpt-image-2.5-sunburst).
   // Landscape 1536x1024 fits blog hero/section slots.
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
     method: "POST",
     headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: "openai/gpt-image-2.5-sunburst",
-      input: prompt,
-      tools: [{ type: "image_generation", size: "1536x1024" }],
+      prompt,
+      size: "1536x1024",
+      n: 1,
     }),
   });
 
