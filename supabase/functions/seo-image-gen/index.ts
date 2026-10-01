@@ -40,11 +40,11 @@ async function generateImageViaGateway(prompt: string): Promise<string> {
   }
 
   const data = await res.json();
-  const imageCall = (data?.output || []).find((o: any) => o.type === "image_generation_call" && o.result);
-  if (!imageCall?.result) {
+  const b64 = data?.data?.[0]?.b64_json;
+  if (!b64) {
     throw new Error("AI Gateway: empty image response");
   }
-  return `data:image/png;base64,${imageCall.result}`;
+  return `data:image/png;base64,${b64}`;
 }
 
 function dataUrlToBytes(dataUrl: string): { bytes: Uint8Array; mime: string } {
