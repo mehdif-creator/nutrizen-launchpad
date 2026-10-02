@@ -1,5 +1,7 @@
 # Mise en avant de l’offre de rentrée et des recettes
 
+- [x] Remplacer l’offre expirée par OCTOBRE50 sur les trois accueils, avec date du 31 octobre 2026 inclus (heure de Paris) ; code Stripe déjà actif selon l’utilisateur.
+
 - [x] Mettre en avant RENTREE50 sur l’accueil, Fit et Mum, à saisir au paiement et valable jusqu’au 30 septembre 2026 inclus.
 - [x] Afficher « Près de 4 000 recettes disponibles » et « Des centaines de nouvelles recettes ajoutées régulièrement », sans montant de remise non confirmé.
 - [x] Vérifier les trois pages, la copie du code et le masquage automatique après expiration ; conserver l’essai gratuit et les paiements existants.

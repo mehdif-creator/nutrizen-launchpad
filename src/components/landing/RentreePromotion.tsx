@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, Check, Copy, Ticket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { RENTREE_OFFER, isRentreeOfferActive } from '@/config/landingOffer';
+import { OCTOBRE_OFFER, isOctobreOfferActive } from '@/config/landingOffer';
 import { cn } from '@/lib/utils';
 
 export const RentreePromotion = ({ placement = 'banner' }: { placement?: 'banner' | 'pricing' }) => {
-  const [active, setActive] = useState(isRentreeOfferActive);
+  const [active, setActive] = useState(isOctobreOfferActive);
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     const refresh = () => {
       clearTimeout(timer);
-      const remaining = Date.parse(RENTREE_OFFER.expiresAt) - Date.now();
+      const remaining = Date.parse(OCTOBRE_OFFER.expiresAt) - Date.now();
       setActive(remaining > 0);
       // Long browser timers overflow after ~24 days; recheck daily instead.
       if (remaining > 0) timer = setTimeout(refresh, Math.min(remaining, 86_400_000));
@@ -33,7 +33,7 @@ export const RentreePromotion = ({ placement = 'banner' }: { placement?: 'banner
 
   const copyCode = async () => {
     try {
-      await navigator.clipboard.writeText(RENTREE_OFFER.code);
+      await navigator.clipboard.writeText(OCTOBRE_OFFER.code);
       setCopyState('copied');
     } catch {
       setCopyState('error');
@@ -44,7 +44,7 @@ export const RentreePromotion = ({ placement = 'banner' }: { placement?: 'banner
 
   return (
     <aside
-      aria-label="Offre de rentrée"
+      aria-label="Offre d’octobre"
       data-rentree-promotion
       className={cn(
         'border-y border-primary/20 bg-secondary text-secondary-foreground',
@@ -59,11 +59,11 @@ export const RentreePromotion = ({ placement = 'banner' }: { placement?: 'banner
         <div className={cn('space-y-1', placement === 'banner' && 'max-md:contents')}>
           <p className="flex items-center justify-center gap-2 text-sm font-semibold max-md:justify-start max-md:text-[13px] max-md:leading-4">
             <Ticket className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-            Votre offre de rentrée
+            Votre offre d’octobre
           </p>
           <p className="text-xs font-normal leading-4 opacity-80 max-md:row-start-2 max-md:self-center max-md:text-[11px]">
-            <span className="md:hidden">Jusqu’au <time dateTime="2026-09-30">30/09</time></span>
-            <span className="max-md:hidden">Jusqu’au <time dateTime="2026-09-30">{RENTREE_OFFER.deadlineLabel}</time></span>
+            <span className="md:hidden">Jusqu’au <time dateTime="2026-10-31">31/10</time></span>
+            <span className="max-md:hidden">Jusqu’au <time dateTime="2026-10-31">{OCTOBRE_OFFER.deadlineLabel}</time></span>
           </p>
         </div>
         <div className={cn(
@@ -78,10 +78,10 @@ export const RentreePromotion = ({ placement = 'banner' }: { placement?: 'banner
               placement === 'banner' && 'max-md:h-11 max-md:min-h-11 max-md:min-w-0 max-md:gap-1.5 max-md:rounded-md max-md:border-solid max-md:px-2.5 max-md:py-1',
             )}
             onClick={copyCode}
-            aria-label={copyState === 'copied' ? 'Code RENTREE50 copié' : 'Copier le code RENTREE50'}
-            title="Copier le code RENTREE50"
+            aria-label={copyState === 'copied' ? 'Code OCTOBRE50 copié' : 'Copier le code OCTOBRE50'}
+            title="Copier le code OCTOBRE50"
           >
-            <span className="font-mono text-base font-bold tracking-normal max-md:text-sm">{RENTREE_OFFER.code}</span>
+            <span className="font-mono text-base font-bold tracking-normal max-md:text-sm">{OCTOBRE_OFFER.code}</span>
             {copyState === 'copied' ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
           </Button>
           <p
@@ -92,7 +92,7 @@ export const RentreePromotion = ({ placement = 'banner' }: { placement?: 'banner
             {copyState === 'copied'
               ? 'Code copié ! À saisir au paiement.'
               : copyState === 'error'
-                ? 'Copie indisponible : saisissez RENTREE50 au paiement.'
+                ? 'Copie indisponible : saisissez OCTOBRE50 au paiement.'
                 : 'À saisir dans « Code promotionnel » au paiement.'}
           </p>
         </div>
