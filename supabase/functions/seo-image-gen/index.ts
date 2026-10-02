@@ -15,16 +15,16 @@ function buildPrompt(rawPrompt: string, context: string): string {
 }
 
 async function generateImageViaGateway(prompt: string): Promise<string> {
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+  const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+  if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY not configured");
 
-  // OpenAI image generations endpoint (gpt-image-2.5-sunburst).
+  // OpenAI Images API, billed on the user's own OpenAI key.
   // Landscape 1536x1024 fits blog hero/section slots.
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
+  const res = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
-    headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "openai/gpt-image-2.5-sunburst",
+      model: "gpt-image-2.5-sunburst",
       prompt,
       size: "1536x1024",
       n: 1,
@@ -33,16 +33,16 @@ async function generateImageViaGateway(prompt: string): Promise<string> {
 
   if (!res.ok) {
     const errText = await res.text();
-    console.error("[seo-image-gen] Gateway error:", res.status, errText);
-    if (res.status === 429) throw new Error("Rate limit atteint sur le AI Gateway. Réessayez dans une minute.");
-    if (res.status === 402) throw new Error("Crédits AI Gateway épuisés. Ajoutez des crédits dans Settings > Workspace > Usage.");
-    throw new Error(`AI Gateway error ${res.status}: ${errText.slice(0, 200)}`);
+    console.error("[seo-image-gen] OpenAI error:", res.status, errText);
+    if (res.status === 429) throw new Error("Rate limit OpenAI atteint. Réessayez dans une minute.");
+    if (res.status === 401) throw new Error("Clé OpenAI invalide ou expirée.");
+    throw new Error(`OpenAI error ${res.status}: ${errText.slice(0, 200)}`);
   }
 
   const data = await res.json();
   const b64 = data?.data?.[0]?.b64_json;
   if (!b64) {
-    throw new Error("AI Gateway: empty image response");
+    throw new Error("OpenAI: empty image response");
   }
   return `data:image/png;base64,${b64}`;
 }
