@@ -82,17 +82,17 @@ async function generateAndStore(
   articleId: string,
   imageIndex: number
 ): Promise<string | null> {
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  if (!LOVABLE_API_KEY) {
-    console.error("[seo-image-refresh] LOVABLE_API_KEY missing");
+  const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+  if (!OPENAI_API_KEY) {
+    console.error("[seo-image-refresh] OPENAI_API_KEY missing");
     return null;
   }
 
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
+  const res = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
-    headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "openai/gpt-image-2.5-sunburst",
+      model: "gpt-image-2.5-sunburst",
       prompt: prompt.slice(0, 4000),
       size: "1536x1024",
       n: 1,
