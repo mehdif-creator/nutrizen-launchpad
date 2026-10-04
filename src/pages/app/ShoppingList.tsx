@@ -43,7 +43,7 @@ export default function ShoppingList() {
     setWeekStart(new Date(weekStartMs).toISOString().split('T')[0]);
   }, []);
 
-  const storageKey = user?.id ? `${STORAGE_KEY_PREFIX}${weekStart}` : null;
+  const storageKey = user?.id ? `${STORAGE_KEY_PREFIX}${user.id}_${weekStart}` : null;
 
   const loadCheckedState = useCallback((): Record<string, boolean> => {
     if (!storageKey) return {};
@@ -64,7 +64,10 @@ export default function ShoppingList() {
 
   const fetchList = useCallback(
     async (showRefreshing = false) => {
-      if (!user?.id || !weekStart) return;
+      if (!user?.id || !weekStart) {
+        setItems([]);
+        return;
+      }
       if (showRefreshing) setIsRefreshing(true);
       else setIsLoading(true);
 
@@ -77,48 +80,15 @@ export default function ShoppingList() {
 
         if (error) throw error;
 
-        let rawItems: RawShoppingItem[] = (data || []).map((row: any) => ({
+        const rawItems: RawShoppingItem[] = (data || []).map((row: any) => ({
           ingredient_name: row.ingredient_name,
           total_quantity: row.total_quantity,
           unit: row.unit,
           formatted_display: row.formatted_display,
         }));
 
-        // 2. If RPC returned nothing, try extracting from AI menu payload
-        if (rawItems.length === 0) {
-          const { data: menuData } = await supabase
-            .from('user_weekly_menus')
-            .select('payload')
-            .eq('user_id', user.id)
-            .eq('week_start', weekStart)
-            .maybeSingle();
-
-          const payload = menuData?.payload as any;
-          if (payload?.ai_generated && payload?.days) {
-            const aiItems: RawShoppingItem[] = [];
-            for (const day of payload.days) {
-              for (const meal of [day.lunch, day.dinner]) {
-                if (!meal?.ingredients) continue;
-                for (const ing of meal.ingredients) {
-                  const qty = parseFloat(ing.quantite) || 0;
-                  const unit = ing.unite || '';
-                  const name = ing.nom || '';
-                  if (!name) continue;
-                  aiItems.push({
-                    ingredient_name: name,
-                    total_quantity: qty,
-                    unit,
-                    formatted_display: qty > 0 ? `${qty} ${unit} ${name}`.trim() : name,
-                  });
-                }
-              }
-            }
-            rawItems = aiItems;
-          }
-        }
-
         // Merge & deduplicate through the pipeline
-        const merged = mergeShoppingItems(rawItems);
+        const merged = mergeShoppingItems(rawItems, true);
 
         const checkedState = loadCheckedState();
 
@@ -129,6 +99,7 @@ export default function ShoppingList() {
 
         setItems(displayItems);
       } catch (err) {
+        setItems([]);
         console.error('Error fetching shopping list:', err);
         toast({
           title: 'Erreur',
@@ -189,14 +160,11 @@ export default function ShoppingList() {
   const formatDate = (d: string) =>
     new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
-  const grouped = CATEGORY_ORDER.reduce(
-    (acc, cat) => {
-      const catItems = items.filter((i) => i.category === cat);
-      if (catItems.length > 0) acc[cat] = catItems;
-      return acc;
-    },
-    {} as Record<string, DisplayItem[]>
-  );
+  const grouped = CATEGORY_ORDER.reduce((acc, cat) => {
+    const catItems = items.filter((i) => i.category === cat);
+    if (catItems.length > 0) acc[cat] = catItems;
+    return acc;
+  }, {} as Record<string, DisplayItem[]>);
 
   const checkedCount = items.filter((i) => i.checked).length;
   const totalCount = items.length;

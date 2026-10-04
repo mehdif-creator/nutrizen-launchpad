@@ -103,10 +103,8 @@ describe('scaleIngredientText', () => {
     expect(scaleIngredientText('200g flour', 2)).toBe('400g flour');
   });
 
-  it('scales fractions (best effort - scales leading digit)', () => {
-    // Note: "1/2" matches the leading number regex first (captures "1"), so it scales "1" → "2"
-    // This is a known limitation of best-effort parsing
-    expect(scaleIngredientText('1/2 cup milk', 2)).toBe('2/2 cup milk');
+  it('scales the complete fraction', () => {
+    expect(scaleIngredientText('1/2 cup milk', 2)).toBe('1 cup milk');
   });
 
   it('no quantity unchanged', () => {

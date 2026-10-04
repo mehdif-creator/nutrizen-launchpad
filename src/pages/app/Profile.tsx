@@ -251,13 +251,7 @@ export default function Profile() {
       if (eating) {
         setMealsPerDay(eating.meals_per_day ?? null);
         setAppetiteSize(eating.appetite_size ?? '');
-        const PREP_CODE_TO_FORM: Record<string, string> = {
-          '15min': 'moins_10',
-          '15_30min': '10_20',
-          '30_45min': '20_40',
-          '45min_plus': 'plus_40',
-        };
-        const rawPrepTime = Array.isArray(eating.prep_time) ? (eating.prep_time[0] ?? '') : '';
+        const rawPrepTime = Array.isArray(eating.prep_time) ? eating.prep_time[0] ?? '' : '';
         setPrepTime(PREP_CODE_TO_FORM[rawPrepTime] || rawPrepTime);
         setBatchCooking(eating.batch_cooking ?? '');
         setCookingLevel(eating.cooking_level ?? '');
@@ -272,8 +266,8 @@ export default function Profile() {
           heure: m.meal_time
             ? String(m.meal_time).slice(0, 5)
             : m.meal_type === 'dejeuner'
-              ? '12:30'
-              : '19:30',
+            ? '12:30'
+            : '19:30',
           quiMange: m.who_eats === 'famille' ? 'tous' : m.who_eats || 'tous',
           membresSelectionnes: m.who_eats_custom || [],
           portionsOverride: m.portions_manual ? Number(m.portions) : null,
@@ -313,8 +307,8 @@ export default function Profile() {
           Array.isArray(foodStyle.cooking_method)
             ? foodStyle.cooking_method
             : foodStyle.cooking_method
-              ? [foodStyle.cooking_method as unknown as string]
-              : []
+            ? [foodStyle.cooking_method as unknown as string]
+            : []
         );
         setPreferOrganic(foodStyle.prefer_organic ?? false);
         setReduceSugar(foodStyle.reduce_sugar ?? false);
@@ -392,14 +386,18 @@ export default function Profile() {
 
   // Map form prep_time values → DB codes for edge function
   const PREP_TIME_TO_CODE: Record<string, string> = {
-    moins_10: '15min',
-    '10_20': '15_30min',
-    '20_40': '30_45min',
-    plus_40: '45min_plus',
+    moins_10: 'max_10min',
+    '10_20': 'max_20min',
+    '20_40': 'max_40min',
+    plus_40: 'unlimited',
   };
-  const PREP_CODE_TO_FORM: Record<string, string> = Object.fromEntries(
-    Object.entries(PREP_TIME_TO_CODE).map(([k, v]) => [v, k])
-  );
+  const PREP_CODE_TO_FORM: Record<string, string> = {
+    ...Object.fromEntries(Object.entries(PREP_TIME_TO_CODE).map(([k, v]) => [v, k])),
+    '15min': 'moins_10',
+    '15_30min': '10_20',
+    '30_45min': '20_40',
+    '45min_plus': 'plus_40',
+  };
 
   const handleSave = async () => {
     if (!user) {
@@ -416,6 +414,14 @@ export default function Profile() {
     const now = new Date().toISOString();
 
     try {
+      // Block generation while the profile's separate sections are being saved.
+      const { error: beginSaveError } = await supabase
+        .from('profiles')
+        .update({ menu_profile_ready: false })
+        .eq('id', user.id)
+        .select('id')
+        .single();
+      if (beginSaveError) throw beginSaveError;
       // Build allergies JSONB
       const allergiesJsonb: AllergyEntry[] = selectedAllergies.map((name) => ({
         name,
@@ -531,28 +537,28 @@ export default function Profile() {
               ? macroDistribution === 'high_protein'
                 ? 40
                 : macroDistribution === 'keto'
-                  ? 25
-                  : macroDistribution === 'high_carbs'
-                    ? 20
-                    : 30
+                ? 25
+                : macroDistribution === 'high_carbs'
+                ? 20
+                : 30
               : 30,
             macro_carbs_pct: macrosCustom
               ? macroDistribution === 'high_protein'
                 ? 30
                 : macroDistribution === 'keto'
-                  ? 25
-                  : macroDistribution === 'high_carbs'
-                    ? 60
-                    : 45
+                ? 25
+                : macroDistribution === 'high_carbs'
+                ? 60
+                : 45
               : 45,
             macro_fat_pct: macrosCustom
               ? macroDistribution === 'high_protein'
                 ? 30
                 : macroDistribution === 'keto'
-                  ? 50
-                  : macroDistribution === 'high_carbs'
-                    ? 20
-                    : 25
+                ? 50
+                : macroDistribution === 'high_carbs'
+                ? 20
+                : 25
               : 25,
             protein_g_per_kg: proteinGPerKg,
             dairy_preference: dairyPreference || null,
@@ -604,7 +610,11 @@ export default function Profile() {
       }
 
       // Upsert meals config: delete old then insert new (sequential for atomicity)
-      await supabase.from('user_meals_config').delete().eq('user_id', user.id);
+      const { error: deleteMealsError } = await supabase
+        .from('user_meals_config')
+        .delete()
+        .eq('user_id', user.id);
+      if (deleteMealsError) throw deleteMealsError;
       if (mealsUpserts.length > 0) {
         const { error: mealsErr } = await supabase.from('user_meals_config').insert(mealsUpserts);
         if (mealsErr) {
@@ -614,7 +624,7 @@ export default function Profile() {
       }
 
       // Also sync to legacy preferences + profiles for backward compat
-      await Promise.all([
+      const legacyResults = await Promise.all([
         supabase.from('preferences').upsert(
           {
             user_id: user.id,
@@ -670,41 +680,28 @@ export default function Profile() {
           .eq('id', user.id),
       ]);
 
+      const legacyError = legacyResults.find((result) => result.error)?.error;
+      if (legacyError) throw legacyError;
+      const { error: finishSaveError } = await supabase
+        .from('profiles')
+        .update({ menu_profile_ready: true })
+        .eq('id', user.id)
+        .select('id')
+        .single();
+      if (finishSaveError) throw finishSaveError;
+      queryClient.invalidateQueries({ queryKey: ['weeklyMenu'] });
+      queryClient.invalidateQueries({ queryKey: ['shoppingList'] });
+
       // Invalidate cached portions so dashboard picks up the new values immediately
       queryClient.invalidateQueries({ queryKey: ['effectivePortions'] });
       queryClient.invalidateQueries({ queryKey: ['weeklyRecipesByDay'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
 
       toast({
-        title: '✅ Vos préférences ont bien été enregistrées !',
-        description: 'Votre menu se régénère avec vos nouvelles préférences...',
+        title: 'Vos préférences ont été enregistrées',
+        description:
+          'Régénérez votre semaine depuis le tableau de bord pour appliquer vos nouveaux critères.',
       });
-
-      // Mark current menus as needing regeneration + trigger regeneration
-      try {
-        const { data: session } = await supabase.auth.getSession();
-        if (session.session) {
-          // Flag existing menus as needing regeneration
-          await supabase
-            .from('user_weekly_menus')
-            .update({ needs_regeneration: true })
-            .eq('user_id', user.id);
-
-          const { error: menuErr } = await supabase.functions.invoke('generate-menu', {
-            headers: { Authorization: `Bearer ${session.session.access_token}` },
-          });
-          if (menuErr) {
-            console.error('Edge Function error (generate-menu):', menuErr);
-          } else {
-            toast({
-              title: '🎉 Menu mis à jour !',
-              description: 'Votre menu hebdomadaire a été régénéré avec vos nouvelles préférences.',
-            });
-          }
-        }
-      } catch (menuError) {
-        console.error('Error regenerating menu:', menuError);
-      }
     } catch (error) {
       console.error('Error saving preferences:', error);
       setSaveError('Une erreur est survenue lors de la sauvegarde, veuillez réessayer.');
@@ -714,6 +711,9 @@ export default function Profile() {
         variant: 'destructive',
       });
     } finally {
+      queryClient.invalidateQueries({ queryKey: ['weeklyMenu'] });
+      queryClient.invalidateQueries({ queryKey: ['weeklyRecipesByDay'] });
+      queryClient.invalidateQueries({ queryKey: ['shoppingList'] });
       setSaving(false);
     }
   };
@@ -1166,7 +1166,11 @@ export default function Profile() {
                             key={frein}
                             type="button"
                             onClick={() => toggleInArray(mainBlockers, setMainBlockers, frein)}
-                            className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${mainBlockers.includes(frein) ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-foreground border-border hover:bg-accent'}`}
+                            className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                              mainBlockers.includes(frein)
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : 'bg-background text-foreground border-border hover:bg-accent'
+                            }`}
                           >
                             {frein}
                           </button>
@@ -1653,8 +1657,8 @@ export default function Profile() {
                                 {v === 'tres_epice'
                                   ? 'Très épicé'
                                   : v === 'epice'
-                                    ? 'Épicé'
-                                    : v.charAt(0).toUpperCase() + v.slice(1)}
+                                  ? 'Épicé'
+                                  : v.charAt(0).toUpperCase() + v.slice(1)}
                               </Label>
                             </div>
                           ))}
@@ -1747,7 +1751,9 @@ export default function Profile() {
                         className="gap-1"
                       >
                         <ChevronDown
-                          className={`h-4 w-4 transition-transform ${macrosCustom ? 'rotate-180' : ''}`}
+                          className={`h-4 w-4 transition-transform ${
+                            macrosCustom ? 'rotate-180' : ''
+                          }`}
                         />
                         Personnaliser la répartition des macros (avancé)
                       </Button>

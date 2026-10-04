@@ -1,12 +1,15 @@
 import { supabase } from '@/integrations/supabase/client';
 import { queryClient } from '@/lib/queryClient';
 import { createLogger } from '@/lib/logger';
+import { completeMenuRequest, menuRequestId } from '@/lib/menuRequests';
+import { getCurrentWeekStart } from '@/hooks/useWeeklyMenu';
 
 const logger = createLogger('generateMenu');
 
 export interface GenerateMenuResult {
   success: boolean;
   message?: string;
+  error_code?: string;
   menu_id?: string;
   usedFallback?: boolean;
   fallbackLevel?: number;
@@ -28,8 +31,11 @@ export async function generateMenuForUser(): Promise<GenerateMenuResult> {
 
     logger.info('Calling generate-menu edge function');
 
-    // Call Edge Function
+    const userId = session.session.user.id;
+    const week = getCurrentWeekStart();
+    // Reuse the request after a lost response, including across entry points.
     const { data, error } = await supabase.functions.invoke('generate-menu', {
+      body: { week_start: week, request_id: menuRequestId(userId, 'generate', week) },
       headers: {
         Authorization: `Bearer ${session.session.access_token}`,
       },
@@ -37,8 +43,27 @@ export async function generateMenuForUser(): Promise<GenerateMenuResult> {
 
     if (error) {
       logger.error('Edge function error', error);
+      try {
+        const body = await error.context?.json?.();
+        if (body)
+          return {
+            success: false,
+            message: body.message || body.error,
+            error_code: body.error_code,
+          };
+      } catch {
+        /* Keep the original transport error if no JSON response exists. */
+      }
       throw error;
     }
+
+    if (!data?.success)
+      return {
+        success: false,
+        message: data?.message || 'La génération n’a pas été confirmée.',
+        error_code: data?.error_code,
+      };
+    completeMenuRequest(userId, 'generate', week);
 
     logger.debug('Success', { data });
 
@@ -47,6 +72,11 @@ export async function generateMenuForUser(): Promise<GenerateMenuResult> {
       await queryClient.invalidateQueries({
         queryKey: ['weeklyMenu', session.session.user.id],
       });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['weeklyRecipesByDay', userId] }),
+        queryClient.invalidateQueries({ queryKey: ['shoppingList'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboardStats'] }),
+      ]);
     }
 
     return {

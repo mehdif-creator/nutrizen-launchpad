@@ -160,13 +160,9 @@ function MealSlot({
       </div>
       <Button
         onClick={() => {
-          const servingsParam =
-            recipe.servings && recipe.servings > 0
-              ? `?portions=${recipe.servings}`
-              : recipe.portion_factor && recipe.portion_factor > 0
-                ? `?portions=${recipe.portion_factor.toFixed(2)}`
-                : '';
-          navigate(`/app/recipes/${recipe.recipe_id}${servingsParam}`);
+          const query =
+            recipe.servings && recipe.servings > 0 ? `?servings=${recipe.servings}` : '';
+          navigate(`/app/recipes/${recipe.recipe_id}${query}`);
         }}
         size="sm"
         variant="ghost"
