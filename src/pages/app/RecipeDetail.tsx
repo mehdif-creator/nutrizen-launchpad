@@ -122,7 +122,7 @@ export default function RecipeDetail() {
 
       // Fetch current weekly menu payload
       // RPC added by migration 20261002060229 (types not yet regenerated).
-      const { data, error } = await (supabase.rpc as (...args: unknown[]) => Promise<{ data: unknown; error: unknown }>)('get_visible_weekly_menu', { p_user_id: user.id });
+      const { data, error } = await (supabase.rpc as unknown as (name: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: unknown }>)('get_visible_weekly_menu', { p_user_id: user.id });
       const menuData = data as { payload?: any; needs_regeneration?: boolean } | null;
 
       if (error || !menuData?.payload || menuData.needs_regeneration) {
