@@ -56,7 +56,8 @@ async function fetchWeeklyMenu(userId: string): Promise<WeeklyMenu | null> {
 
   logger.debug('Fetching menu', { userId, weekStart });
 
-  const { data: result, error } = await supabase.rpc('get_visible_weekly_menu', {
+  // RPC added by migration 20261002060229 (types not yet regenerated).
+  const { data: result, error } = await (supabase.rpc as unknown as (name: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: unknown }>)('get_visible_weekly_menu', {
     p_user_id: userId,
     p_week_start: weekStart,
   });
