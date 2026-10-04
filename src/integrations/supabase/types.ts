@@ -1968,7 +1968,6 @@ export type Database = {
       }
       profiles: {
         Row: {
-          menu_profile_ready: boolean
           affiliate_code: string | null
           avatar_url: string | null
           created_at: string | null
@@ -2004,7 +2003,6 @@ export type Database = {
           welcome_credits_granted: boolean
         }
         Insert: {
-          menu_profile_ready?: boolean
           affiliate_code?: string | null
           avatar_url?: string | null
           created_at?: string | null
@@ -2040,7 +2038,6 @@ export type Database = {
           welcome_credits_granted?: boolean
         }
         Update: {
-          menu_profile_ready?: boolean
           affiliate_code?: string | null
           avatar_url?: string | null
           created_at?: string | null
@@ -5800,10 +5797,6 @@ export type Database = {
       }
       get_user_forbidden_text: { Args: { p_user_id: string }; Returns: string }
       get_user_household_info: { Args: { p_user_id: string }; Returns: Json }
-      get_visible_weekly_menu: {
-        Args: { p_user_id: string; p_week_start?: string }
-        Returns: Json
-      }
       get_weekly_recipes_by_day: {
         Args: { p_user_id: string; p_week_start?: string }
         Returns: Json
