@@ -121,7 +121,8 @@ export default function RecipeDetail() {
       if (!user?.id) return;
 
       // Fetch current weekly menu payload
-      const { data, error } = await supabase.rpc('get_visible_weekly_menu', { p_user_id: user.id });
+      // RPC added by migration 20261002060229 (types not yet regenerated).
+      const { data, error } = await (supabase.rpc as (...args: unknown[]) => Promise<{ data: unknown; error: unknown }>)('get_visible_weekly_menu', { p_user_id: user.id });
       const menuData = data as { payload?: any; needs_regeneration?: boolean } | null;
 
       if (error || !menuData?.payload || menuData.needs_regeneration) {

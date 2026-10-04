@@ -417,7 +417,7 @@ export default function Profile() {
       // Block generation while the profile's separate sections are being saved.
       const { error: beginSaveError } = await supabase
         .from('profiles')
-        .update({ menu_profile_ready: false })
+        .update({ menu_profile_ready: false } as never)
         .eq('id', user.id)
         .select('id')
         .single();
@@ -684,7 +684,7 @@ export default function Profile() {
       if (legacyError) throw legacyError;
       const { error: finishSaveError } = await supabase
         .from('profiles')
-        .update({ menu_profile_ready: true })
+        .update({ menu_profile_ready: true } as never)
         .eq('id', user.id)
         .select('id')
         .single();
