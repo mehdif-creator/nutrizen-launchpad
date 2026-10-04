@@ -30,6 +30,7 @@ export interface WeeklyMenu {
   updated_at: string;
   used_fallback?: string | null;
   needs_regeneration?: boolean;
+  nutrition_note?: string;
   household?: {
     adults: number;
     children: number;
@@ -55,12 +56,20 @@ async function fetchWeeklyMenu(userId: string): Promise<WeeklyMenu | null> {
 
   logger.debug('Fetching menu', { userId, weekStart });
 
-  const { data, error } = await supabase
-    .from('user_weekly_menus')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('week_start', weekStart)
-    .maybeSingle();
+  const { data: result, error } = await supabase.rpc('get_visible_weekly_menu', {
+    p_user_id: userId,
+    p_week_start: weekStart,
+  });
+  const data = result as unknown as {
+    menu_id: string;
+    user_id: string;
+    week_start: string;
+    payload: unknown;
+    created_at: string;
+    updated_at: string;
+    needs_regeneration?: boolean;
+    used_fallback?: string;
+  };
 
   if (error) {
     logger.error('Error fetching menu', error);
@@ -75,6 +84,7 @@ async function fetchWeeklyMenu(userId: string): Promise<WeeklyMenu | null> {
   // Type cast payload defensively — payload may be null, a string, or malformed JSON
   let payload: {
     days?: WeeklyMenuDay[];
+    nutrition_note?: string;
     household?: {
       adults: number;
       children: number;
@@ -118,6 +128,7 @@ async function fetchWeeklyMenu(userId: string): Promise<WeeklyMenu | null> {
     used_fallback: data.used_fallback,
     needs_regeneration: data.needs_regeneration ?? false,
     household: payload?.household,
+    nutrition_note: payload?.nutrition_note,
   };
 }
 

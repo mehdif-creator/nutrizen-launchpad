@@ -1,49 +1,62 @@
-import { AppHeader } from "@/components/app/AppHeader";
-import { AppFooter } from "@/components/app/AppFooter";
-import { useAuth } from "@/contexts/AuthContext";
-import { useQueryClient } from "@tanstack/react-query";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Clock, Sparkles, Flame, Users, ShoppingCart, Share2, Copy, Brain, Trophy, Info, FileDown } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { StatCard } from "@/components/app/StatCard";
-import { Progress } from "@/components/app/Progress";
-import { MealCard } from "@/components/app/MealCard";
-import { Badge } from "@/components/ui/badge";
-import { StreakBar } from "@/components/app/StreakBar";
-import { ZenCreditsDisplay } from "@/components/app/ZenCreditsDisplay";
-import { InsufficientCreditsModal } from "@/components/app/InsufficientCreditsModal";
+import { menuRequestId, completeMenuRequest } from '@/lib/menuRequests';
+import { AppHeader } from '@/components/app/AppHeader';
+import { AppFooter } from '@/components/app/AppFooter';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQueryClient } from '@tanstack/react-query';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  Clock,
+  Sparkles,
+  Flame,
+  Users,
+  ShoppingCart,
+  Share2,
+  Copy,
+  Brain,
+  Trophy,
+  Info,
+  FileDown,
+} from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { StatCard } from '@/components/app/StatCard';
+import { Progress } from '@/components/app/Progress';
+import { MealCard } from '@/components/app/MealCard';
+import { Badge } from '@/components/ui/badge';
+import { StreakBar } from '@/components/app/StreakBar';
+import { ZenCreditsDisplay } from '@/components/app/ZenCreditsDisplay';
+import { InsufficientCreditsModal } from '@/components/app/InsufficientCreditsModal';
 
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { CreditActionInProgress } from "@/components/common/CreditActionInProgress";
-import { supabase } from "@/integrations/supabase/client";
-import { useStreakUpdate } from "@/hooks/useStreakUpdate";
-import { Navigate, useNavigate, Link } from "react-router-dom";
-import { useDashboardStats } from "@/hooks/useDashboardStats";
-import { useWeeklyMenu } from "@/hooks/useWeeklyMenu";
-import { OnboardingCoach } from "@/components/app/OnboardingCoach";
-import { useWeeklyRecipesByDay } from "@/hooks/useWeeklyRecipesByDay";
-import { DayCardWithRecipes } from "@/components/app/DayCardWithRecipes";
-import { useShoppingList } from "@/hooks/useShoppingList";
-import { mergeShoppingItems, type RawShoppingItem } from "@/lib/shoppingListUtils";
-import { exportWeeklyPackPdf } from "@/lib/pdfExport";
-import { formatHouseholdDisplay } from "@/lib/portions";
-import { getCurrentWeekStart } from "@/hooks/useWeeklyMenu";
-import { useCreditsReset } from "@/hooks/useCreditsReset";
-import { useEffectivePortions } from "@/hooks/useEffectivePortions";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ProgressionCardV2 } from "@/components/gamification/ProgressionCardV2";
-import { useGamificationState } from "@/hooks/useGamificationV2";
-import { LoadingMessages } from "@/components/common/LoadingMessages";
-import { ShareWeekCard } from "@/components/dashboard/ShareWeekCard";
-import { TutorialOnboarding } from "@/components/app/TutorialOnboarding";
-import { MobileBottomNav } from "@/components/app/MobileBottomNav";
-import { MobileTonightCard } from "@/components/app/MobileTonightCard";
-import { MobileDayCarousel } from "@/components/app/MobileDayCarousel";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { UpgradePremiumCard } from "@/components/app/UpgradePremiumCard";
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { CreditActionInProgress } from '@/components/common/CreditActionInProgress';
+import { supabase } from '@/integrations/supabase/client';
+import { useStreakUpdate } from '@/hooks/useStreakUpdate';
+import { Navigate, useNavigate, Link } from 'react-router-dom';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { useWeeklyMenu } from '@/hooks/useWeeklyMenu';
+import { OnboardingCoach } from '@/components/app/OnboardingCoach';
+import { useWeeklyRecipesByDay } from '@/hooks/useWeeklyRecipesByDay';
+import { DayCardWithRecipes } from '@/components/app/DayCardWithRecipes';
+import { useShoppingList } from '@/hooks/useShoppingList';
+import { mergeShoppingItems, type RawShoppingItem } from '@/lib/shoppingListUtils';
+import { exportWeeklyPackPdf } from '@/lib/pdfExport';
+import { formatHouseholdDisplay } from '@/lib/portions';
+import { getCurrentWeekStart } from '@/hooks/useWeeklyMenu';
+import { useCreditsReset } from '@/hooks/useCreditsReset';
+import { useEffectivePortions } from '@/hooks/useEffectivePortions';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ProgressionCardV2 } from '@/components/gamification/ProgressionCardV2';
+import { useGamificationState } from '@/hooks/useGamificationV2';
+import { LoadingMessages } from '@/components/common/LoadingMessages';
+import { ShareWeekCard } from '@/components/dashboard/ShareWeekCard';
+import { TutorialOnboarding } from '@/components/app/TutorialOnboarding';
+import { MobileBottomNav } from '@/components/app/MobileBottomNav';
+import { MobileTonightCard } from '@/components/app/MobileTonightCard';
+import { MobileDayCarousel } from '@/components/app/MobileDayCarousel';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { UpgradePremiumCard } from '@/components/app/UpgradePremiumCard';
 
-const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+const weekdays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
 export default function Dashboard() {
   const { user, subscription, refreshSubscription, isAdmin } = useAuth();
@@ -54,48 +67,60 @@ export default function Dashboard() {
 
   /** Invalidate all dashboard-related queries at once */
   const invalidateAll = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ["weeklyMenu"] });
-    queryClient.invalidateQueries({ queryKey: ["weeklyRecipesByDay"] });
-    queryClient.invalidateQueries({ queryKey: ["dashboardStats"] });
-    queryClient.invalidateQueries({ queryKey: ["userDashboard"] });
-    queryClient.invalidateQueries({ queryKey: ["gamification"] });
-    queryClient.invalidateQueries({ queryKey: ["shoppingList"] });
-    queryClient.invalidateQueries({ queryKey: ["effectivePortions"] });
+    queryClient.invalidateQueries({ queryKey: ['weeklyMenu'] });
+    queryClient.invalidateQueries({ queryKey: ['weeklyRecipesByDay'] });
+    queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
+    queryClient.invalidateQueries({ queryKey: ['userDashboard'] });
+    queryClient.invalidateQueries({ queryKey: ['gamification'] });
+    queryClient.invalidateQueries({ queryKey: ['shoppingList'] });
+    queryClient.invalidateQueries({ queryKey: ['effectivePortions'] });
   }, [queryClient]);
 
   // Use custom hooks for data fetching with realtime
   const { stats, isLoading: statsLoading } = useDashboardStats(user?.id);
-  const { menu, days, hasMenu, isLoading: menuLoading, householdAdults, householdChildren } = useWeeklyMenu(user?.id);
+  const {
+    menu,
+    days,
+    hasMenu,
+    isLoading: menuLoading,
+    householdAdults,
+    householdChildren,
+  } = useWeeklyMenu(user?.id);
 
   // Gamification V2 (realtime-backed)
   useGamificationState(); // subscribes to realtime for instant dashboard updates
 
   // Get weekly recipes grouped by day (lunch + dinner)
-  const { days: rpcWeeklyDays, isLoading: weeklyDaysLoading, hasDays: rpcHasDays } = useWeeklyRecipesByDay(user?.id);
+  const {
+    days: rpcWeeklyDays,
+    isLoading: weeklyDaysLoading,
+    hasDays: rpcHasDays,
+  } = useWeeklyRecipesByDay(user?.id);
 
   // Fallback: convert payload days to DayRecipes format for AI-generated menus
   // (RPC reads user_weekly_menu_items which is empty for AI menus)
   const weeklyDays = useMemo(() => {
     // RPC returns data from user_weekly_menu_items — only use if it has actual recipes
-    const rpcHasRecipes = rpcWeeklyDays.length > 0 && rpcWeeklyDays.some((d) => d.lunch || d.dinner);
+    const rpcHasRecipes =
+      rpcWeeklyDays.length > 0 && rpcWeeklyDays.some((d) => d.lunch || d.dinner);
     if (rpcHasRecipes) return rpcWeeklyDays;
 
     // Fallback: map from JSONB payload (AI-generated menus)
     if (!menu || !days || days.length === 0) return [];
 
     const weekStart = menu.week_start;
-    const dayNames = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+    const dayNames = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
     return days.map((day: any, index: number) => {
-      const dayDate = new Date(weekStart + "T00:00:00Z");
+      const dayDate = new Date(weekStart + 'T00:00:00Z');
       dayDate.setUTCDate(dayDate.getUTCDate() + index);
-      const dateStr = dayDate.toISOString().split("T")[0];
+      const dateStr = dayDate.toISOString().split('T')[0];
 
       const mapMeal = (meal: any) =>
         meal
           ? {
               recipe_id: meal.recipe_id || `ai-${index}-${meal.title}`,
-              title: meal.title || "Recette IA",
+              title: meal.title || 'Recette IA',
               image_url: meal.image_url || null,
               image_path: meal.image_path || null,
               prep_min: meal.prep_min || 0,
@@ -111,7 +136,7 @@ export default function Dashboard() {
 
       return {
         date: dateStr,
-        day_name: day.day || dayNames[index],
+        day_name: day.day_name || dayNames[index],
         day_index: index,
         lunch: mapMeal(day.lunch),
         dinner: mapMeal(day.dinner),
@@ -133,6 +158,7 @@ export default function Dashboard() {
   const [generating, setGenerating] = useState(false);
   const generatingLockRef = useRef(false);
   const [swapping, setSwapping] = useState(false);
+  const swappingLockRef = useRef(false);
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
   const [creditsError, setCreditsError] = useState<{
     currentBalance: number;
@@ -140,30 +166,30 @@ export default function Dashboard() {
     feature: string;
   } | null>(null);
 
-  const firstName = user?.user_metadata?.full_name?.split(" ")[0] || "toi";
+  const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'toi';
 
   useEffect(() => {
     // Check for successful credit purchase
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get("credits_purchased") === "true") {
+    if (urlParams.get('credits_purchased') === 'true') {
       // Force refresh credits after purchase
       invalidateAll();
-      const packParam = urlParams.get("pack");
+      const packParam = urlParams.get('pack');
       toast({
-        title: "Bravo 🎉",
+        title: 'Bravo 🎉',
         description: packParam
           ? `Tes Crédits Zen ont été ajoutés à ton compte !`
           : "Tu viens d'ajouter des Crédits Zen non expirants à ton compte !",
       });
-      window.history.replaceState({}, "", "/app/dashboard");
+      window.history.replaceState({}, '', '/app/dashboard');
     }
 
     // Scroll to credits section if requested
-    if (urlParams.get("scroll_to") === "credits") {
+    if (urlParams.get('scroll_to') === 'credits') {
       setTimeout(() => {
-        document.getElementById("credits")?.scrollIntoView({ behavior: "smooth" });
+        document.getElementById('credits')?.scrollIntoView({ behavior: 'smooth' });
       }, 500);
-      window.history.replaceState({}, "", "/app/dashboard");
+      window.history.replaceState({}, '', '/app/dashboard');
     }
   }, [toast]);
 
@@ -188,148 +214,157 @@ export default function Dashboard() {
 
   const todayData = useMemo(() => {
     if (!weeklyDays.length) return null;
-    const today = new Date().toISOString().split("T")[0];
+    const today = new Date().toISOString().split('T')[0];
     return weeklyDays.find((d) => d.date === today) || null;
   }, [weeklyDays]);
-
-  // Redirect admin to admin dashboard
-  if (isAdmin) {
-    return <Navigate to="/admin" replace />;
-  }
 
   const minutesSaved = stats.temps_gagne;
   const chargeMentalDrop = stats.charge_mentale_pct;
   const streak = stats.serie_en_cours_set_count;
   const refCount = stats.references_count;
   const validated = stats.objectif_hebdos_valide;
-  const referralUrl = "https://mynutrizen.fr/i/" + (user?.id.slice(0, 8) || "user");
+  const referralUrl = 'https://mynutrizen.fr/i/' + (user?.id.slice(0, 8) || 'user');
 
   const loading = statsLoading || menuLoading;
 
-  const handleSwap = useCallback(async (recipeId: string, mealType: "lunch" | "dinner", dayIndex: number) => {
-    if (!user?.id || !menu || swapping) return;
+  const handleSwap = useCallback(
+    async (recipeId: string, mealType: 'lunch' | 'dinner', dayIndex: number) => {
+      if (!user?.id || !menu || swapping || swappingLockRef.current) return;
+      swappingLockRef.current = true;
 
-    // Generate unique request_id for idempotency (prevents double-charge on double-click)
-    const requestId = crypto.randomUUID();
+      // Generate unique request_id for idempotency (prevents double-charge on double-click)
+      const identity = `${menu.menu_id}:${dayIndex}:${mealType}:${recipeId}`;
+      const requestId = menuRequestId(user.id, 'swap', identity);
 
-    try {
-      setSwapping(true);
+      try {
+        setSwapping(true);
 
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) {
-        throw new Error("No session");
-      }
+        const { data: session } = await supabase.auth.getSession();
+        if (!session.session) {
+          throw new Error('No session');
+        }
 
-      // Check if user has enough credits first
-      if (stats.credits_zen <= 0) {
-        setCreditsError({
-          currentBalance: stats.credits_zen,
-          required: 1,
-          feature: "swap",
+        // Check if user has enough credits first
+        if (stats.credits_zen <= 0) {
+          setCreditsError({
+            currentBalance: stats.credits_zen,
+            required: 1,
+            feature: 'swap',
+          });
+          setCreditsModalOpen(true);
+          return;
+        }
+
+        const { data, error } = await supabase.functions.invoke('use-swap', {
+          headers: {
+            Authorization: `Bearer ${session.session.access_token}`,
+          },
+          body: {
+            recipe_id: recipeId,
+            meal_plan_id: menu.menu_id,
+            meal_type: mealType,
+            day: dayIndex,
+            request_id: requestId,
+          },
         });
-        setCreditsModalOpen(true);
-        return;
-      }
 
-      const { data, error } = await supabase.functions.invoke("use-swap", {
-        headers: {
-          Authorization: `Bearer ${session.session.access_token}`,
-        },
-        body: {
-          recipe_id: recipeId,
-          meal_type: mealType,
-          day: dayIndex,
-          request_id: requestId,
-        },
-      });
-
-      // supabase.functions.invoke returns error for non-2xx responses
-      // Extract the response body to get specific error codes
-      let responseData = data;
-      if (error) {
-        try {
-          // FunctionsHttpError contains the response body in context
-          const errorBody = await (error as any)?.context?.json?.();
-          if (errorBody) {
-            responseData = errorBody;
-          } else {
+        // supabase.functions.invoke returns error for non-2xx responses
+        // Extract the response body to get specific error codes
+        let responseData = data;
+        if (error) {
+          try {
+            // FunctionsHttpError contains the response body in context
+            const errorBody = await (error as any)?.context?.json?.();
+            if (errorBody) {
+              responseData = errorBody;
+            } else {
+              throw error;
+            }
+          } catch (parseErr) {
+            // If we can't parse the error body, throw the original error
+            if (parseErr === error) throw error;
+            console.error('Error parsing swap response:', parseErr);
             throw error;
           }
-        } catch (parseErr) {
-          // If we can't parse the error body, throw the original error
-          if (parseErr === error) throw error;
-          console.error("Error parsing swap response:", parseErr);
-          throw error;
         }
-      }
 
-      if (responseData?.success) {
+        if (responseData?.success) {
+          completeMenuRequest(user.id, 'swap', identity);
+          toast({
+            title: 'Recette changée !',
+            description: `Nouvelle recette : ${
+              responseData.newRecipe?.title || 'OK'
+            }. Il te reste ${responseData.creditsRemaining} Crédits Zen.`,
+          });
+          invalidateAll();
+        } else if (responseData?.error_code === 'INSUFFICIENT_CREDITS') {
+          setCreditsError({
+            currentBalance: responseData.current_balance || 0,
+            required: responseData.required || 1,
+            feature: 'swap',
+          });
+          setCreditsModalOpen(true);
+        } else if (responseData?.error_code === 'DUPLICATE_REQUEST') {
+          invalidateAll();
+        } else {
+          const errorMsg =
+            responseData?.message || responseData?.error || 'Impossible de changer la recette.';
+          toast({
+            title: 'Erreur',
+            description: errorMsg,
+            variant: 'destructive',
+          });
+        }
+      } catch (error: any) {
+        console.error('Error swapping:', error);
+        // Try to extract meaningful message
+        let msg = 'Une erreur est survenue lors du swap.';
+        if (error?.message?.includes('rate limit') || error?.message?.includes('429')) {
+          msg = 'Trop de requêtes. Réessaie dans quelques secondes.';
+        } else if (error?.message?.includes('Unauthorized') || error?.message?.includes('401')) {
+          msg = 'Session expirée. Reconnecte-toi pour continuer.';
+        } else if (error?.message) {
+          msg = error.message;
+        }
         toast({
-          title: "Recette changée !",
-          description: `Nouvelle recette : ${responseData.newRecipe?.title || "OK"}. Il te reste ${responseData.creditsRemaining} Crédits Zen.`,
+          title: 'Erreur',
+          description: msg,
+          variant: 'destructive',
         });
-        invalidateAll();
-      } else if (responseData?.error_code === "INSUFFICIENT_CREDITS") {
-        setCreditsError({
-          currentBalance: responseData.current_balance || 0,
-          required: responseData.required || 1,
-          feature: "swap",
+      } finally {
+        swappingLockRef.current = false;
+        setSwapping(false);
+      }
+    },
+    [user?.id, menu, swapping, stats.credits_zen, toast, invalidateAll]
+  );
+
+  const handleValidateMeal = useCallback(
+    async (recipeId: string, mealType: 'lunch' | 'dinner') => {
+      try {
+        const { error } = await supabase.functions.invoke('meal-validated', {
+          body: { recipe_id: recipeId, meal_type: mealType },
         });
-        setCreditsModalOpen(true);
-      } else if (responseData?.error_code === "DUPLICATE_REQUEST") {
-        invalidateAll();
-      } else {
-        const errorMsg = responseData?.error || "Impossible de changer la recette.";
+
+        if (error) throw error;
+
         toast({
-          title: "Erreur",
-          description: errorMsg,
-          variant: "destructive",
+          title: 'Repas validé ✅',
+          description: '+2 points gagnés !',
+        });
+        // Explicitly invalidate queries for immediate UI update
+        invalidateAll();
+      } catch (error: any) {
+        console.error('Validate meal error:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Erreur',
+          description: error.message || 'Impossible de valider le repas.',
         });
       }
-    } catch (error: any) {
-      console.error("Error swapping:", error);
-      // Try to extract meaningful message
-      let msg = "Une erreur est survenue lors du swap.";
-      if (error?.message?.includes("rate limit") || error?.message?.includes("429")) {
-        msg = "Trop de requêtes. Réessaie dans quelques secondes.";
-      } else if (error?.message?.includes("Unauthorized") || error?.message?.includes("401")) {
-        msg = "Session expirée. Reconnecte-toi pour continuer.";
-      } else if (error?.message) {
-        msg = error.message;
-      }
-      toast({
-        title: "Erreur",
-        description: msg,
-        variant: "destructive",
-      });
-    } finally {
-      setSwapping(false);
-    }
-  }, [user?.id, menu, swapping, stats.credits_zen, toast, invalidateAll]);
-
-  const handleValidateMeal = useCallback(async (recipeId: string, mealType: "lunch" | "dinner") => {
-    try {
-      const { error } = await supabase.functions.invoke("meal-validated", {
-        body: { recipe_id: recipeId, meal_type: mealType },
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Repas validé ✅",
-        description: "+2 points gagnés !",
-      });
-      // Explicitly invalidate queries for immediate UI update
-      invalidateAll();
-    } catch (error: any) {
-      console.error("Validate meal error:", error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: error.message || "Impossible de valider le repas.",
-      });
-    }
-  }, [toast, invalidateAll]);
+    },
+    [toast, invalidateAll]
+  );
 
   const profileComplete = portions?.profile_complete === true;
   const profileLoading = !portions;
@@ -340,85 +375,92 @@ export default function Dashboard() {
     // Gate: profile must be complete before menu generation
     if (!profileComplete) {
       toast({
-        title: "Profil incomplet",
-        description: "Complete ton profil avant de générer tes menus personnalisés.",
-        variant: "destructive",
+        title: 'Profil incomplet',
+        description: 'Complete ton profil avant de générer tes menus personnalisés.',
+        variant: 'destructive',
       });
-      navigate("/app/profile");
+      navigate('/app/profile');
       return;
     }
 
+    const week = menu?.week_start || getCurrentWeekStart();
+    const requestId = menuRequestId(user.id, 'generate', week);
     generatingLockRef.current = true;
     setGenerating(true);
-    console.log("[handleRegenWeek] ── START ── userId:", user.id);
+    console.log('[handleRegenWeek] ── START ── userId:', user.id);
 
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
-        throw new Error("Session expirée. Reconnecte-toi.");
+        throw new Error('Session expirée. Reconnecte-toi.');
       }
-      console.log("[handleRegenWeek] Session OK, invoking generate-menu...");
+      console.log('[handleRegenWeek] Session OK, invoking generate-menu...');
 
-      const { data, error } = await supabase.functions.invoke("generate-menu", {
+      const { data, error } = await supabase.functions.invoke('generate-menu', {
+        body: { request_id: requestId, week_start: week },
         headers: {
           Authorization: `Bearer ${session.session.access_token}`,
         },
       });
 
-      console.log("[handleRegenWeek] Raw response:", { data, error });
+      console.log('[handleRegenWeek] Raw response:', { data, error });
 
       // supabase.functions.invoke puts non-2xx responses in error.context
       if (error) {
-        let errorMessage = error.message || "Erreur inconnue";
+        let errorMessage = error.message || 'Erreur inconnue';
         try {
           if ((error as any).context) {
             const body = await (error as any).context.json();
-            console.log("[handleRegenWeek] Error body from context:", body);
+            console.log('[handleRegenWeek] Error body from context:', body);
             errorMessage = body?.message || body?.error || errorMessage;
           }
         } catch (_) {
           /* ignore parse error */
         }
-        console.error("[handleRegenWeek] Error:", { message: errorMessage, error });
+        console.error('[handleRegenWeek] Error:', { message: errorMessage, error });
         toast({
-          title: "Génération impossible",
+          title: 'Génération impossible',
           description: errorMessage,
-          variant: "destructive",
+          variant: 'destructive',
         });
         return;
       }
 
       if (data?.success) {
-        console.log("[handleRegenWeek] ✅ Success:", data);
-        toast({ title: "Menus générés avec succès ✅" });
+        completeMenuRequest(user.id, 'generate', week);
+        console.log('[handleRegenWeek] ✅ Success:', data);
+        toast({ title: 'Menus générés avec succès ✅' });
         invalidateAll();
-      } else if (data?.error === "PROFILE_INCOMPLETE") {
+      } else if (data?.error === 'PROFILE_INCOMPLETE') {
         // Server-side profile gate — redirect to profile
         toast({
-          title: "Profil incomplet",
-          description: data.message || "Complete ton profil avant de générer tes menus.",
-          variant: "destructive",
+          title: 'Profil incomplet',
+          description: data.message || 'Complete ton profil avant de générer tes menus.',
+          variant: 'destructive',
         });
-        navigate("/app/profile");
+        navigate('/app/profile');
       } else {
-        console.warn("[handleRegenWeek] Non-success response:", data);
+        console.warn('[handleRegenWeek] Non-success response:', data);
         toast({
-          title: "Génération impossible",
-          description: data?.message || data?.error || "Impossible de générer un menu.",
-          variant: "destructive",
+          title: 'Génération impossible',
+          description: data?.message || data?.error || 'Impossible de générer un menu.',
+          variant: 'destructive',
         });
       }
     } catch (error) {
-      console.error("[handleRegenWeek] Exception:", error);
+      console.error('[handleRegenWeek] Exception:', error);
       toast({
-        title: "Erreur",
-        description: error instanceof Error ? error.message : "Impossible de générer la semaine. Réessaie plus tard.",
-        variant: "destructive",
+        title: 'Erreur',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Impossible de générer la semaine. Réessaie plus tard.',
+        variant: 'destructive',
       });
     } finally {
       generatingLockRef.current = false;
       setGenerating(false);
-      console.log("[handleRegenWeek] ── END ──");
+      console.log('[handleRegenWeek] ── END ──');
     }
   };
 
@@ -426,30 +468,43 @@ export default function Dashboard() {
     try {
       await navigator.clipboard.writeText(referralUrl);
       toast({
-        title: "Lien copié !",
-        description: "Partage-le pour inviter tes amis.",
+        title: 'Lien copié !',
+        description: 'Partage-le pour inviter tes amis.',
       });
     } catch (error) {
       toast({
-        title: "Erreur",
-        description: "Impossible de copier le lien.",
-        variant: "destructive",
+        title: 'Erreur',
+        description: 'Impossible de copier le lien.',
+        variant: 'destructive',
       });
     }
   }, [referralUrl, toast]);
+
+  if (isAdmin) return <Navigate to="/admin" replace />;
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
       <AppHeader />
       <CreditActionInProgress
         open={generating || swapping}
-        title={generating ? "Génération de votre menu en cours…" : "Remplacement de la recette en cours…"}
+        title={
+          generating ? 'Génération de votre menu en cours…' : 'Remplacement de la recette en cours…'
+        }
       />
 
       {/* Onboarding Coach */}
       <OnboardingCoach userId={user?.id} />
 
       <main className="flex-1 pb-20 md:pb-0">
+        {menu?.needs_regeneration && (
+          <p role="alert" className="mx-4 my-3 rounded-lg border p-3 text-sm">
+            Votre profil ou une recette a changé. Régénérez votre semaine pour vérifier sa
+            compatibilité.
+          </p>
+        )}
+        {menu?.nutrition_note && (
+          <p className="mx-4 my-3 text-sm text-muted-foreground">{menu.nutrition_note}</p>
+        )}
         {/* ═══ MOBILE CONDENSED HEADER ═══ */}
         <section className="md:hidden px-4 pt-4 pb-2 space-y-3">
           {/* Row 1: Name + badges */}
@@ -464,14 +519,18 @@ export default function Dashboard() {
               )}
               <div className="flex items-center gap-1 px-2 py-0.5 bg-primary/10 rounded-lg">
                 <Sparkles className="h-3.5 w-3.5 text-primary" />
-                <span className="text-xs font-bold text-primary">{statsLoading ? "—" : stats.credits_zen} crédits</span>
+                <span className="text-xs font-bold text-primary">
+                  {statsLoading ? '—' : stats.credits_zen} crédits
+                </span>
               </div>
             </div>
           </div>
           {/* Row 2: Progress bar only */}
           <div className="flex items-center gap-3">
             <Progress value={(validated / 5) * 100} className="flex-1 h-2" />
-            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">{validated}/5 jours</span>
+            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+              {validated}/5 jours
+            </span>
           </div>
         </section>
 
@@ -479,21 +538,30 @@ export default function Dashboard() {
         <section className="hidden md:block px-4 sm:px-6 lg:px-10 py-4 md:py-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 md:mb-6">
             <div>
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1">Salut, {firstName} ! 👋</h1>
-              <p className="text-sm md:text-base text-muted-foreground">Voici ton tableau de bord NutriZen</p>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1">
+                Salut, {firstName} ! 👋
+              </h1>
+              <p className="text-sm md:text-base text-muted-foreground">
+                Voici ton tableau de bord NutriZen
+              </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2" data-onboarding-target="generate-menu">
+            <div
+              className="flex flex-wrap items-center gap-2"
+              data-onboarding-target="generate-menu"
+            >
               <Button
                 onClick={handleRegenWeek}
                 size="sm"
                 disabled={generating || profileLoading || !profileComplete}
-                title={!profileComplete && !profileLoading ? "Complete ton profil d'abord" : undefined}
+                title={
+                  !profileComplete && !profileLoading ? "Complete ton profil d'abord" : undefined
+                }
               >
                 {generating
-                  ? "Génération..."
+                  ? 'Génération...'
                   : !profileComplete && !profileLoading
-                    ? "Profil à compléter"
-                    : "Régénérer la semaine"}
+                  ? 'Profil à compléter'
+                  : 'Régénérer la semaine'}
               </Button>
               {hasDays && (
                 <Button
@@ -503,29 +571,33 @@ export default function Dashboard() {
                     try {
                       const ws = getCurrentWeekStart();
                       // Fetch shopping list raw items for PDF
-                      const { data: rawData } = await supabase.rpc("get_shopping_list_from_weekly_menu", {
-                        p_user_id: user!.id,
-                        p_week_start: ws,
-                      });
+                      const { data: rawData, error: shoppingError } = await supabase.rpc(
+                        'get_shopping_list_from_weekly_menu',
+                        {
+                          p_user_id: user!.id,
+                          p_week_start: ws,
+                        }
+                      );
+                      if (shoppingError) throw shoppingError;
                       const rawItems: RawShoppingItem[] = (rawData || []).map((r: any) => ({
                         ingredient_name: r.ingredient_name,
                         total_quantity: r.total_quantity,
                         unit: r.unit,
                         formatted_display: r.formatted_display,
                       }));
-                      const merged = mergeShoppingItems(rawItems);
+                      const merged = mergeShoppingItems(rawItems, true);
                       const hhLabel = formatHouseholdDisplay(householdAdults, householdChildren);
                       exportWeeklyPackPdf(ws, weeklyDays, merged, hhLabel);
                       toast({
-                        title: "📥 PDF téléchargé",
-                        description: "Pack complet de la semaine.",
+                        title: '📥 PDF téléchargé',
+                        description: 'Pack complet de la semaine.',
                       });
                     } catch (err) {
-                      console.error("PDF export error:", err);
+                      console.error('PDF export error:', err);
                       toast({
-                        title: "Erreur",
-                        description: "Impossible de générer le PDF.",
-                        variant: "destructive",
+                        title: 'Erreur',
+                        description: 'Impossible de générer le PDF.',
+                        variant: 'destructive',
                       });
                     }
                   }}
@@ -551,10 +623,10 @@ export default function Dashboard() {
               className="flex-1"
             >
               {generating
-                ? "Génération..."
+                ? 'Génération...'
                 : !profileComplete && !profileLoading
-                  ? "Profil à compléter"
-                  : "Régénérer la semaine"}
+                ? 'Profil à compléter'
+                : 'Régénérer la semaine'}
             </Button>
             {hasDays && (
               <Button
@@ -563,29 +635,33 @@ export default function Dashboard() {
                 onClick={async () => {
                   try {
                     const ws = getCurrentWeekStart();
-                    const { data: rawData } = await supabase.rpc("get_shopping_list_from_weekly_menu", {
-                      p_user_id: user!.id,
-                      p_week_start: ws,
-                    });
+                    const { data: rawData, error: shoppingError } = await supabase.rpc(
+                      'get_shopping_list_from_weekly_menu',
+                      {
+                        p_user_id: user!.id,
+                        p_week_start: ws,
+                      }
+                    );
+                    if (shoppingError) throw shoppingError;
                     const rawItems: RawShoppingItem[] = (rawData || []).map((r: any) => ({
                       ingredient_name: r.ingredient_name,
                       total_quantity: r.total_quantity,
                       unit: r.unit,
                       formatted_display: r.formatted_display,
                     }));
-                    const merged = mergeShoppingItems(rawItems);
+                    const merged = mergeShoppingItems(rawItems, true);
                     const hhLabel = formatHouseholdDisplay(householdAdults, householdChildren);
                     exportWeeklyPackPdf(ws, weeklyDays, merged, hhLabel);
                     toast({
-                      title: "📥 PDF téléchargé",
-                      description: "Pack complet de la semaine.",
+                      title: '📥 PDF téléchargé',
+                      description: 'Pack complet de la semaine.',
                     });
                   } catch (err) {
-                    console.error("PDF export error:", err);
+                    console.error('PDF export error:', err);
                     toast({
-                      title: "Erreur",
-                      description: "Impossible de générer le PDF.",
-                      variant: "destructive",
+                      title: 'Erreur',
+                      description: 'Impossible de générer le PDF.',
+                      variant: 'destructive',
                     });
                   }
                 }}
@@ -611,7 +687,6 @@ export default function Dashboard() {
         <section className="md:hidden px-4 sm:px-6 lg:px-10 mb-6">
           <UpgradePremiumCard />
         </section>
-
 
         {/* Quick Links — hidden on mobile */}
         <section className="hidden md:block px-4 sm:px-6 lg:px-10 mb-6 md:mb-8">
@@ -681,7 +756,7 @@ export default function Dashboard() {
                 <div>
                   <StatCard
                     label="Crédits"
-                    value={statsLoading ? "—" : `${stats.credits_zen}`}
+                    value={statsLoading ? '—' : `${stats.credits_zen}`}
                     sub={
                       <span className="flex items-center gap-1">
                         Achetés + mensuels <Info className="h-3 w-3" />
@@ -732,7 +807,7 @@ export default function Dashboard() {
               <div className="col-span-full text-center py-12">
                 <p className="text-muted-foreground mb-4">Aucun menu généré pour cette semaine.</p>
                 <Button onClick={handleRegenWeek} disabled={generating}>
-                  {generating ? "Génération..." : "Générer ma semaine"}
+                  {generating ? 'Génération...' : 'Générer ma semaine'}
                 </Button>
               </div>
             ) : (
@@ -804,7 +879,7 @@ export default function Dashboard() {
                       householdAdults={householdAdults}
                       householdChildren={householdChildren}
                       effectivePortions={portions?.effective_servings_per_meal}
-                      data-onboarding-target={i === 0 ? "meal-card" : undefined}
+                      data-onboarding-target={i === 0 ? 'meal-card' : undefined}
                     />
                   ))}
                 </div>
@@ -829,13 +904,23 @@ export default function Dashboard() {
                   <ShoppingCart className="h-4 w-4 text-primary" />
                   Liste de courses
                 </h3>
-                <Button variant="outline" size="sm" className="text-xs" onClick={() => navigate("/app/shopping-list")}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={() => navigate('/app/shopping-list')}
+                >
                   <ShoppingCart className="h-3.5 w-3.5 mr-1" />
                   <span className="hidden sm:inline">Voir la liste</span>
                 </Button>
               </div>
               {shoppingListLoading ? (
-                <LoadingMessages variant="grocery" isLoading={true} skeletonCount={3} className="py-2" />
+                <LoadingMessages
+                  variant="grocery"
+                  isLoading={true}
+                  skeletonCount={3}
+                  className="py-2"
+                />
               ) : shoppingList.length > 0 ? (
                 <>
                   <ul className="text-xs md:text-sm text-muted-foreground space-y-1 max-h-36 overflow-y-auto">
@@ -855,7 +940,7 @@ export default function Dashboard() {
                     variant="ghost"
                     size="sm"
                     className="w-full mt-2 text-xs text-primary"
-                    onClick={() => navigate("/app/shopping-list")}
+                    onClick={() => navigate('/app/shopping-list')}
                   >
                     Voir toute la liste ({shoppingList.length} articles)
                   </Button>
@@ -869,7 +954,7 @@ export default function Dashboard() {
                     size="sm"
                     variant="outline"
                     className="text-xs"
-                    onClick={() => navigate("/app/shopping-list")}
+                    onClick={() => navigate('/app/shopping-list')}
                   >
                     <ShoppingCart className="h-3.5 w-3.5 mr-1" />
                     Accéder à la liste
@@ -887,8 +972,15 @@ export default function Dashboard() {
               <div className="text-xs md:text-sm text-muted-foreground mb-2">
                 Invite 5 amis → 1 mois offert. Et des avantages exclusifs au-delà.
               </div>
-              <div className="text-xs font-mono bg-muted border rounded-xl p-2 break-all mb-3">{referralUrl}</div>
-              <Button variant="outline" size="sm" className="w-full text-xs md:text-sm" onClick={handleCopyLink}>
+              <div className="text-xs font-mono bg-muted border rounded-xl p-2 break-all mb-3">
+                {referralUrl}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs md:text-sm"
+                onClick={handleCopyLink}
+              >
                 <Copy className="h-3.5 w-3.5 mr-1" />
                 Copier le lien
               </Button>
@@ -899,7 +991,6 @@ export default function Dashboard() {
           </aside>
         </section>
       </main>
-
 
       <AppFooter />
       <TutorialOnboarding />

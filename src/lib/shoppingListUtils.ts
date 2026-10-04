@@ -464,7 +464,7 @@ function buildDisplayLine(qty: string, name: string): string {
 
 export interface RawShoppingItem {
   ingredient_name: string;
-  total_quantity: number;
+  total_quantity: number | null;
   unit: string;
   formatted_display: string;
 }
@@ -486,7 +486,23 @@ interface Bucket {
   displayNames: string[];
 }
 
-export function mergeShoppingItems(raw: RawShoppingItem[]): MergedShoppingItem[] {
+export function mergeShoppingItems(raw: RawShoppingItem[], exact = false): MergedShoppingItem[] {
+  if (exact)
+    return raw.map((item) => {
+      const name = item.ingredient_name.trim();
+      const unit = canonicalizeUnit(item.unit);
+      const qty = item.total_quantity;
+      const number = qty == null ? '' : String(Math.round(qty * 1000) / 1000);
+      const label = unit === 'as_needed' ? '' : unitToFrench(unit, qty ?? 0);
+      const displayQty = number ? `${number}${label ? ' ' + label : ''}` : 'selon le goût';
+      return {
+        displayName: name,
+        displayQty,
+        displayLine: qty == null ? `${name} — selon le goût` : buildDisplayLine(displayQty, name),
+        category: getCategory(name),
+        normalizedKey: `${name.toLocaleLowerCase('fr')}|${unit}`,
+      };
+    });
   const buckets = new Map<string, Bucket>();
 
   for (const item of raw) {

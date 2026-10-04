@@ -72,7 +72,7 @@ export function formatQuantity(value: number, decimals: number = 1): string {
  * @returns Formatted string like "3.1 portions" or "1 portion"
  */
 export function formatPortions(portions: number): string {
-  const formatted = formatQuantity(portions, 1);
+  const formatted = String(Math.round(portions * 100) / 100);
   return `${formatted} portion${portions !== 1 ? 's' : ''}`;
 }
 
@@ -103,74 +103,60 @@ export function scaleNutrition(nutrition: NutritionValues, scale: number): Nutri
  * @param scale - Scale factor
  * @returns Scaled ingredient text
  */
-export function scaleIngredientText(ingredientText: string, scale: number): string {
-  if (scale === 1) return ingredientText;
-
-  // Match leading numbers, fractions, and ranges
-  const quantityPattern = /^(\d+(?:[.,]\d+)?(?:\s*[-–]\s*\d+(?:[.,]\d+)?)?)/;
-  const match = ingredientText.match(quantityPattern);
-
-  if (match) {
-    const originalQty = parseFloat(match[1].replace(',', '.').split(/[-–]/)[0]);
-    if (!isNaN(originalQty)) {
-      const scaledQty = originalQty * scale;
-      const formattedQty = formatQuantity(scaledQty, 1);
-      return ingredientText.replace(quantityPattern, formattedQty);
-    }
+export function parseQuantity(value: number | string): number | null {
+  if (typeof value === 'number') return Number.isFinite(value) && value >= 0 ? value : null;
+  const text = value
+    .trim()
+    .replace(',', '.')
+    .replace(/(\d)([½¼¾])/g, '$1 $2')
+    .replace(/½/g, '1/2')
+    .replace(/¼/g, '1/4')
+    .replace(/¾/g, '3/4');
+  const fraction = text.match(/^(?:(\d+)\s+)?(\d+)\/(\d+)$/);
+  if (fraction) {
+    const denominator = Number(fraction[3]);
+    return denominator > 0 ? Number(fraction[1] || 0) + Number(fraction[2]) / denominator : null;
   }
-
-  // Check for fraction-like patterns (1/2, 3/4, etc.)
-  const fractionPattern = /^(\d+)\/(\d+)/;
-  const fractionMatch = ingredientText.match(fractionPattern);
-
-  if (fractionMatch) {
-    const numerator = parseInt(fractionMatch[1]);
-    const denominator = parseInt(fractionMatch[2]);
-    const fractionValue = numerator / denominator;
-    const scaledValue = fractionValue * scale;
-    const formattedQty = formatQuantity(scaledValue, 2);
-    return ingredientText.replace(fractionPattern, formattedQty);
-  }
-
-  // No quantity found - return unchanged
-  return ingredientText;
+  if (!/^\d+(?:\.\d+)?$/.test(text)) return null;
+  return Number(text);
 }
 
-/**
- * Scale an entire ingredient object
- */
+export function scaleIngredientText(ingredientText: string, scale: number): string {
+  if (!Number.isFinite(scale) || scale <= 0) throw new Error('Invalid portion factor');
+  const amount = String.raw`(?:\d+\s*[½¼¾]|\d+\s+\d+/\d+|\d+/\d+|\d+(?:[.,]\d+)?|[½¼¾])`;
+  const pattern = new RegExp(`^(\\s*)(${amount})(?:\\s*([-–])\\s*(${amount}))?`);
+  const match = ingredientText.match(pattern);
+  if (!match) return ingredientText;
+  const first = parseQuantity(match[2]);
+  const last = match[4] ? parseQuantity(match[4]) : null;
+  if (first === null || (match[4] && last === null)) return ingredientText;
+  const quantity = (n: number) => String(Math.round(n * scale * 1000) / 1000);
+  return ingredientText.replace(
+    pattern,
+    `${match[1]}${quantity(first)}${last !== null ? '–' + quantity(last) : ''}`
+  );
+}
+
 export interface IngredientItem {
   name?: string;
+  nom?: string;
   ingredient?: string;
   quantity?: number | string;
+  quantite?: number | string;
+  amount?: number | string;
   unit?: string;
+  unite?: string;
   raw?: string;
 }
 
 export function scaleIngredient(ingredient: IngredientItem | string, scale: number): string {
-  if (typeof ingredient === 'string') {
-    return scaleIngredientText(ingredient, scale);
-  }
-
-  // Handle object format
-  const name = ingredient.name || ingredient.ingredient || '';
-  const qty = ingredient.quantity;
-  const unit = ingredient.unit || '';
-
-  if (qty !== undefined && qty !== null) {
-    const numQty = typeof qty === 'number' ? qty : parseFloat(String(qty));
-    if (!isNaN(numQty)) {
-      const scaledQty = formatQuantity(numQty * scale, 1);
-      return `${scaledQty}${unit ? ' ' + unit : ''} ${name}`.trim();
-    }
-  }
-
-  // Fallback to raw text or name
-  if (ingredient.raw) {
-    return scaleIngredientText(ingredient.raw, scale);
-  }
-
-  return name;
+  if (typeof ingredient === 'string') return scaleIngredientText(ingredient, scale);
+  const name = ingredient.name || ingredient.nom || ingredient.ingredient || '';
+  const qty = ingredient.quantity ?? ingredient.quantite ?? ingredient.amount;
+  const unit = ingredient.unit || ingredient.unite || '';
+  if (qty !== undefined && qty !== null)
+    return scaleIngredientText(`${qty} ${unit} ${name}`.replace(/\s+/g, ' ').trim(), scale);
+  return scaleIngredientText(ingredient.raw || name, scale);
 }
 
 /**

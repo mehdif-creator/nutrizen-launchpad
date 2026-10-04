@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
 import { t } from '@/i18n/translations';
 import { initializeNewUser } from '@/actions/initUser';
+import { generateMenuForUser } from '@/actions/generateMenu';
 
 /**
  * Post-checkout profile completion page
@@ -81,22 +82,20 @@ export default function PostCheckoutProfile() {
       setStep('generating');
       setGeneratingMenu(true);
 
-      const { data: session } = await supabase.auth.getSession();
-      if (session.session) {
-        const { error: menuError } = await supabase.functions.invoke('generate-menu', {
-          headers: {
-            Authorization: `Bearer ${session.session.access_token}`,
-          },
+      const result = await generateMenuForUser();
+      if (!result.success) {
+        toast({
+          title: 'Génération impossible',
+          description: result.message,
+          variant: 'destructive',
         });
-
-        if (menuError) {
-          console.error('Menu generation error:', menuError);
-          // Don't fail the flow, just notify
-          toast({
-            title: 'Menu en cours de génération',
-            description: 'Ton menu sera prêt dans quelques instants.',
-          });
-        }
+        setStep('profile');
+        if (
+          result.error_code === 'PROFILE_INCOMPLETE' ||
+          result.error_code === 'PROFILE_SAVE_INCOMPLETE'
+        )
+          navigate('/app/profile');
+        return;
       }
 
       setStep('complete');

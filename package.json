@@ -11,7 +11,8 @@
     "postbuild": "bunx tsx scripts/prerender.ts",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:menus": "vitest run src/actions/__tests__/generateMenu.test.ts src/lib/__tests__/menuRequests.test.ts src/lib/__tests__/portions.test.ts src/lib/__tests__/menuPlanning.test.ts src/pages/app/__tests__/RecipeDetail.portions.test.tsx && node tests/menu-transactions.test.mjs && node tests/menu-endpoints.test.cjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",
@@ -110,6 +111,7 @@
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
-    "vite": "^5.4.19"
+    "vite": "^5.4.19",
+    "@electric-sql/pglite": "0.3.14"
   }
 }

@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { AppHeader } from '@/components/app/AppHeader';
 import { AppFooter } from '@/components/app/AppFooter';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getRecipeImageUrl } from '@/lib/images';
 import { RecipeMacrosCard } from '@/components/app/RecipeMacrosCard';
 import { SubstitutionsTab } from '@/components/recipe/SubstitutionsTab';
-import { scaleIngredientText, formatQuantity } from '@/lib/portions';
+import { scaleIngredient, formatQuantity } from '@/lib/portions';
 import { useAwardXp } from '@/hooks/useAwardXp';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffectivePortions } from '@/hooks/useEffectivePortions';
@@ -42,6 +42,7 @@ interface Recipe {
   cook_time_min?: number;
   total_time_min?: number;
   servings?: number;
+  base_servings?: number;
   calories_kcal?: number;
   proteins_g?: number;
   carbs_g?: number;
@@ -59,6 +60,8 @@ interface Recipe {
 export default function RecipeDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const requestedServings = Number(searchParams.get('servings'));
   const { toast } = useToast();
   const { awardRecipeView } = useAwardXp();
   const { user } = useAuth();
@@ -69,13 +72,12 @@ export default function RecipeDetail() {
   const [activeTab, setActiveTab] = useState('recipe');
   const [sharing, setSharing] = useState(false);
 
-  const portionMultiplier = useMemo(() => {
-    if (effectivePortions && recipe) {
-      const baseServings = recipe.servings || 1;
-      return effectivePortions.effective_servings_per_meal / baseServings;
-    }
-    return 1;
-  }, [effectivePortions, recipe]);
+  const baseServings = recipe?.base_servings || recipe?.servings || 1;
+  const targetServings =
+    Number.isFinite(requestedServings) && requestedServings > 0 && requestedServings <= 50
+      ? requestedServings
+      : effectivePortions?.effective_servings_per_meal ?? baseServings;
+  const portionMultiplier = targetServings / baseServings;
 
   useEffect(() => {
     const loadRecipe = async () => {
@@ -119,15 +121,10 @@ export default function RecipeDetail() {
       if (!user?.id) return;
 
       // Fetch current weekly menu payload
-      const { data: menuData, error } = await supabase
-        .from('user_weekly_menus')
-        .select('payload')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc('get_visible_weekly_menu', { p_user_id: user.id });
+      const menuData = data as { payload?: any; needs_regeneration?: boolean } | null;
 
-      if (error || !menuData?.payload) {
+      if (error || !menuData?.payload || menuData.needs_regeneration) {
         throw new Error('Menu introuvable');
       }
 
@@ -199,12 +196,14 @@ export default function RecipeDetail() {
       diet_type: recipe.diet_type,
       prep_time_min: recipe.prep_time_min,
       total_time_min: recipe.total_time_min,
-      servings: recipe.servings,
+      servings: targetServings,
       calories_kcal: recipe.calories_kcal,
       proteins_g: recipe.proteins_g,
       carbs_g: recipe.carbs_g,
       fats_g: recipe.fats_g,
-      ingredients: Array.isArray(recipe.ingredients) ? recipe.ingredients : [],
+      ingredients: Array.isArray(recipe.ingredients)
+        ? recipe.ingredients.map((ing) => scaleIngredient(ing, portionMultiplier))
+        : [],
       instructions: Array.isArray(recipe.instructions) ? recipe.instructions : [],
     });
     toast({ title: '📥 PDF exporté', description: 'Votre recette a été téléchargée.' });
@@ -326,8 +325,8 @@ export default function RecipeDetail() {
                   {recipe.difficulty_level === 'beginner'
                     ? 'Débutant'
                     : recipe.difficulty_level === 'intermediate'
-                      ? 'Intermédiaire'
-                      : 'Expert'}
+                    ? 'Intermédiaire'
+                    : 'Expert'}
                 </Badge>
               )}
               {recipe.cuisine_type && <Badge variant="outline">{recipe.cuisine_type}</Badge>}
@@ -354,20 +353,16 @@ export default function RecipeDetail() {
                   <div className="text-lg font-semibold">{recipe.total_time_min} min</div>
                 </Card>
               )}
-              {recipe.servings && (
+              {baseServings > 0 && (
                 <Card className="p-4">
                   <div className="flex items-center gap-2 mb-1">
                     <Users className="h-4 w-4 text-primary" />
                     <span className="text-sm text-muted-foreground">Portions</span>
                   </div>
-                  <div className="text-lg font-semibold">
-                    {portionMultiplier !== 1
-                      ? `${(recipe.servings * portionMultiplier).toFixed(1)}`
-                      : recipe.servings}
-                  </div>
+                  <div className="text-lg font-semibold">{formatQuantity(targetServings, 2)}</div>
                   {portionMultiplier !== 1 && (
                     <div className="text-xs text-muted-foreground mt-1">
-                      Base : {recipe.servings} pers. × {portionMultiplier.toFixed(1)}
+                      Base : {baseServings} pers. × {portionMultiplier.toFixed(1)}
                     </div>
                   )}
                 </Card>
@@ -379,7 +374,7 @@ export default function RecipeDetail() {
                     <span className="text-sm text-muted-foreground">Calories</span>
                   </div>
                   <div className="text-lg font-semibold">
-                    {Math.round((recipe.calories_kcal || 0) * portionMultiplier)} kcal
+                    {Math.round(recipe.calories_kcal || 0)} kcal / portion
                   </div>
                   {portionMultiplier !== 1 && (
                     <div className="text-xs text-muted-foreground">
@@ -415,21 +410,7 @@ export default function RecipeDetail() {
                     <h2 className="text-xl font-semibold mb-4">Ingrédients</h2>
                     <ul className="space-y-2">
                       {ingredients.map((ingredient: any, index: number) => {
-                        let display: string;
-                        if (typeof ingredient === 'string') {
-                          display = scaleIngredientText(ingredient, portionMultiplier);
-                        } else {
-                          const name = ingredient.name || ingredient.ingredient || '';
-                          const qty = ingredient.quantity ?? ingredient.amount ?? null;
-                          const unit = ingredient.unit || '';
-                          if (qty !== null) {
-                            const scaled = qty * portionMultiplier;
-                            display =
-                              `${formatQuantity(scaled)}${unit ? ' ' + unit : ''} ${name}`.trim();
-                          } else {
-                            display = name;
-                          }
-                        }
+                        const display = scaleIngredient(ingredient, portionMultiplier);
                         return (
                           <li key={index} className="flex items-start gap-2">
                             <span className="text-primary mt-1">•</span>
@@ -497,7 +478,7 @@ export default function RecipeDetail() {
                 proteins={recipe.proteins_g}
                 carbs={recipe.carbs_g}
                 fats={recipe.fats_g}
-                servings={effectivePortions?.effective_servings_per_meal ?? (recipe.servings || 1)}
+                servings={targetServings}
                 isPartial={false}
               />
             </TabsContent>
