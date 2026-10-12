@@ -56,7 +56,7 @@ export default function Signup() {
   // Signup is always the free/account-creation flow; the native paywall
   // (Google Play / StoreKit) handles paid offers after onboarding.
   const native = isNativePlatform();
-  const plan = native ? 'free' : (searchParams.get('plan') ?? 'starter');
+  const plan = native ? 'free' : (searchParams.get('plan') ?? 'free');
   const isPaid = !native && (PAID_PLAN_KEYS as readonly string[]).includes(plan);
   const planInfo = isPaid ? describePlan(plan) : null;
 
