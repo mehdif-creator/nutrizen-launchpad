@@ -15,7 +15,7 @@ export const FitHero = ({ onCtaClick }: FitHeroProps) => {
         <img
           src={fitHeroImage}
           alt="Sportif préparant un repas fit avec NutriZen"
-          className="absolute right-0 top-0 h-full w-full object-cover object-right md:w-[65%] lg:w-[60%]"
+          className="absolute right-0 top-0 h-full w-full object-cover object-center md:object-right md:w-[65%] lg:w-[60%]"
           width={1280}
           height={1280}
           fetchPriority="high"
