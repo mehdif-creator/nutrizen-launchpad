@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
@@ -1462,6 +1462,33 @@ export type Database = {
           },
         ]
       }
+      menu_action_receipts: {
+        Row: {
+          action: string
+          created_at: string
+          input: Json
+          request_id: string
+          result: Json
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          input: Json
+          request_id: string
+          result: Json
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          input?: Json
+          request_id?: string
+          result?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       menu_generation_audit: {
         Row: {
           candidate_recipes_count: number | null
@@ -1985,6 +2012,7 @@ export type Database = {
           last_diagnostics_at: string | null
           locale: string | null
           meals_per_day: number
+          menu_profile_ready: boolean
           onboarding_completed: boolean | null
           onboarding_completed_at: string | null
           onboarding_status: string
@@ -2020,6 +2048,7 @@ export type Database = {
           last_diagnostics_at?: string | null
           locale?: string | null
           meals_per_day?: number
+          menu_profile_ready?: boolean
           onboarding_completed?: boolean | null
           onboarding_completed_at?: string | null
           onboarding_status?: string
@@ -2055,6 +2084,7 @@ export type Database = {
           last_diagnostics_at?: string | null
           locale?: string | null
           meals_per_day?: number
+          menu_profile_ready?: boolean
           onboarding_completed?: boolean | null
           onboarding_completed_at?: string | null
           onboarding_status?: string
@@ -2381,6 +2411,7 @@ export type Database = {
           proteins_g: number | null
           published: boolean | null
           rating: number | null
+          safety_review: Json | null
           salt_level: string | null
           servings: number | null
           source_name: string
@@ -2436,6 +2467,7 @@ export type Database = {
           proteins_g?: number | null
           published?: boolean | null
           rating?: number | null
+          safety_review?: Json | null
           salt_level?: string | null
           servings?: number | null
           source_name?: string
@@ -2491,6 +2523,7 @@ export type Database = {
           proteins_g?: number | null
           published?: boolean | null
           rating?: number | null
+          safety_review?: Json | null
           salt_level?: string | null
           servings?: number | null
           source_name?: string
@@ -4996,6 +5029,20 @@ export type Database = {
         Args: { p_credits: number; p_operation?: string; p_user_id: string }
         Returns: Json
       }
+      apply_stripe_subscription_credits: {
+        Args: {
+          p_amount: number
+          p_event_id: string
+          p_invoice_id: string
+          p_period_end: string
+          p_period_start: string
+          p_reason?: string
+          p_rollover_cap: number
+          p_tier: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       backfill_recipe_ingredients_from_recipes: {
         Args: { p_limit?: number }
         Returns: number
@@ -5086,6 +5133,19 @@ export type Database = {
       cleanup_expired_tokens: { Args: never; Returns: undefined }
       cleanup_oauth_states: { Args: { p_ttl?: string }; Returns: number }
       cleanup_old_checkout_sessions: { Args: never; Returns: undefined }
+      commit_weekly_menu: {
+        Args: {
+          p_action: string
+          p_context: Json
+          p_expected_payload: Json
+          p_input: Json
+          p_payload: Json
+          p_request_id: string
+          p_user_id: string
+          p_week_start: string
+        }
+        Returns: Json
+      }
       compute_recipe_macros: {
         Args: { p_recipe_id: string }
         Returns: undefined
@@ -5702,6 +5762,8 @@ export type Database = {
             }
             Returns: Json
           }
+      get_menu_profile_context: { Args: { p_user_id: string }; Returns: Json }
+      get_menu_recipe_catalog: { Args: { p_offset?: number }; Returns: Json }
       get_menu_servings_used: {
         Args: { p_day?: string; p_payload: Json }
         Returns: number
@@ -5797,6 +5859,10 @@ export type Database = {
       }
       get_user_forbidden_text: { Args: { p_user_id: string }; Returns: string }
       get_user_household_info: { Args: { p_user_id: string }; Returns: Json }
+      get_visible_weekly_menu: {
+        Args: { p_user_id: string; p_week_start?: string }
+        Returns: Json
+      }
       get_weekly_recipes_by_day: {
         Args: { p_user_id: string; p_week_start?: string }
         Returns: Json
@@ -5828,6 +5894,7 @@ export type Database = {
       household_portion_factor: { Args: { p_people: Json }; Returns: number }
       is_admin: { Args: never; Returns: boolean }
       is_onboarding_complete: { Args: { p_user_id: string }; Returns: boolean }
+      menu_ingredient_line: { Args: { p_ingredient: Json }; Returns: string }
       norm_txt: { Args: { input: string }; Returns: string }
       normalize_fraction: { Args: { p_text: string }; Returns: number }
       normalize_granularity: { Args: { _g: string }; Returns: string }
@@ -5844,6 +5911,14 @@ export type Database = {
       normalize_unit: { Args: { raw_unit: string }; Returns: string }
       parse_ingredient_line: {
         Args: { raw_line: string }
+        Returns: {
+          canonical_unit: string
+          ingredient_name: string
+          quantity: number
+        }[]
+      }
+      parse_menu_ingredient: {
+        Args: { p_ingredient: Json }
         Returns: {
           canonical_unit: string
           ingredient_name: string
