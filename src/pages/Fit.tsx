@@ -133,7 +133,7 @@ const Fit = () => {
   
 
   const handleCtaClick = () => {
-    navigate('/auth/signup?plan=starter');
+    navigate('/auth/signup?plan=free');
   };
 
   const handleExampleClick = () => {

@@ -95,7 +95,7 @@ const Index = () => {
   useSeoMeta(mainCopy.seo.title, mainCopy.seo.description);
 
   const handleCtaClick = () => {
-    navigate("/auth/signup?plan=starter");
+    navigate("/auth/signup?plan=free");
   };
 
   const handleExampleClick = () => {
